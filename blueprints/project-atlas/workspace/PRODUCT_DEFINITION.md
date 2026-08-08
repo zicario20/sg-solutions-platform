@@ -26,8 +26,8 @@ La separación física aprobada se mantiene: Astro en `apps/www` para el sitio p
 - CTA principal: **Agenda una evaluación**. CTA secundario: **Solicita una cotización**.
 - La cuenta del cliente nace de una relación comercial; no es la primera conversión.
 - Stripe gestiona cobros de servicios, no una suscripción para usar la plataforma.
-- La primera entrega es **Release 1 — Production Foundation**. Es funcionalmente acotada, pero apta para clientes reales y extensible sin reescritura desechable.
-- El primer vertical completo es **Business Formation**.
+- La primera familia de entrega es **Release 1 — Production Foundation**, dividida en **Release 1A — Minimum Real-Client Operations** y **Release 1B — Operational Maturity**. 1A es funcionalmente acotada, apta para clientes reales y extensible hacia 1B sin reescritura desechable.
+- El primer vertical completo al cierre de Release 1B es **Business Formation**; Release 1A lo opera de forma manual y segura sobre las primitivas comunes.
 
 ## Arquitectura de producto
 

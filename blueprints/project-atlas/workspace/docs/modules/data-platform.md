@@ -1,6 +1,6 @@
 # Module PRD — Data Platform
 
-- Owner: Product Architect
+- Owner: Codex Architecture Agent
 - Status: Approved baseline (Product Owner, 2026-08-02)
 - Catalog modules: M077, M080–M085, M097–M099 (documentary references only; not implementation authorization)
 

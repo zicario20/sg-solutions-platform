@@ -1,6 +1,7 @@
 # Dependency Map
 
-- Owner: Product Architect
+- Owner: Codex Architecture Agent
+- Final approver: Product Owner
 - Status: Approved conceptual dependency baseline
 - Update rule: actualizar antes de cambiar una dependencia de catálogo o límite de dominio
 

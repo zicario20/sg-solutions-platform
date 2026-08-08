@@ -1,25 +1,24 @@
 # Release Horizons
 
 - Owner: Product Owner
-- Status: Approved roadmap baseline
-- Update rule: sincronizar con `../../ROADMAP.md`, `MODULE_CATALOG.md`, `DEPENDENCY_MAP.md` y una decisión numerada
+- Maintainer: Codex Architecture Agent
+- Status: Baseline aligned to Release 1A/1B
+- Update rule: synchronize `../../ROADMAP.md`, catalog, dependency map and a numbered decision
 
-| Horizonte | Resultado | Condiciones de salida |
+| Horizon | Outcome | Exit conditions |
 |---|---|---|
-| Phase 0 — Blueprint & Design | Producto, arquitectura, inventario, diseño y gobierno coherentes. | Definición canónica y catálogo revisados; PRDs prioritarios definidos; implementación todavía no autorizada. |
-| R1.1 Platform Foundation | Base cloud-first segura y extensible. | Primitivas comunes, IAM, autorización, providers, catálogo/precios, consentimiento, auditoría, datos, observabilidad, backup y deploy verificados. |
-| R1.2 Public Sales Engine | Sitio que explica, capta y convierte. | Navegación pública, contenido bilingüe básico, formularios, atribución minimizada, CTAs y publicación de precios gobernada; R6 enriquece después el conocimiento. |
-| R1.3 Internal Operations Core | Operación diaria centralizada. | CRM, clientes, empresas, leads, órdenes, casos, tareas, calendario, documentos, pagos y reporting operativos. |
-| R1.4 Business Formation Vertical | Primer servicio completo de extremo a extremo. | Intake, orden, expediente, tareas, documentos, EIN, cumplimiento, firma electrónica, precio/cotización, aprobaciones y estado cliente conectados. |
-| R1.5 Client Portal & Launch | Clientes reales colaboran de forma segura. | Acceso delegado, estado, faltantes, siguiente paso, documentos, citas, mensajes y pagos; gates de lanzamiento aprobados. |
-| R2 — Credit Ecosystem | Operación de crédito trazable. | Verticales de crédito especificados, revisados legalmente y conectados a primitivas comunes. |
-| R3 — Taxes & Accounting | Operación fiscal/contable gobernada. | Controles de datos fiscales, retención, revisiones humanas y workflows especializados. |
-| R4 — Funding & Home Buying | Preparación y asistencia financiera. | Disclosures, elegibilidad no garantizada, partners y aprobaciones humanas documentados. |
-| R5 — Marketplace & Partners | Ecosistema externo desacoplado. | Catálogo/partners/providers, fuentes, vigencia, disclosures y seguridad de integraciones verificados. |
-| R6 — Knowledge & Documents | Conocimiento y documentos reutilizables. | Proveniencia, permisos y ampliación del procesamiento/generación sobre el portal y la firma ya operativos. |
-| R7 — Communications & Automation | Operación automatizada recuperable. | Canales, voice gateway, workflows, colas, idempotencia, fallbacks y bandeja humana con recuperación manual. |
-| R8 — AI Operations | IA asistiva y supervisada. | Minimización, evaluación, trazabilidad, límites de autoridad y human-in-the-loop aprobados. |
-| R9 — Scale & Hybrid Infrastructure | Capacidad híbrida justificada por métricas. | ADRs, threat model, costo, observabilidad, recuperación y límites cloud/local validados. |
-| R10 — Mobile & Expansion | Nuevas superficies por necesidad demostrada. | Evidencia de demanda, módulos registrados, PRD, UX, seguridad y Product Owner approval. |
+| Phase 0 — Blueprint & Design | Product, architecture, PRDs, security and governance are coherent. | Documentary audit accepted; required Product Owner decisions surfaced; implementation still explicitly gated. |
+| Release 1A — Minimum Real-Client Operations | SG Solutions can capture, charge and operate initial real clients safely with human control. | Core identity/staff MFA/RBAC, delegated access, CRM, clients/cases/tasks/notes, secure documents, essential public/lead/consent, basic scheduling, deposits/one-time payments, minimal portal, audit, recovery and a manual-safe Business Formation path validated. |
+| Release 1B — Operational Maturity | 1A matures compatibly for broader reliable operations. | Advanced Google reconciliation, plans/invoice maturity, expanded attribution/automation/observability/portal/reporting and complete Business Formation/EIN/compliance/e-sign workflow validated. |
+| R2 — Credit Ecosystem | Traceable credit operation. | Specialized legal/compliance review and shared-primitive integration. |
+| R3 — Taxes & Accounting | Governed tax/accounting operation. | Tax-data controls, retention, human review and specialized workflows. |
+| R4 — Funding & Home Buying | Preparation and assistance without guarantees. | Disclosures, eligibility uncertainty, partner boundaries and human approvals. |
+| R5 — Marketplace & Partners | Decoupled external ecosystem. | Offer provenance, partner/provider controls, disclosures and integration security. |
+| R6 — Knowledge & Documents | Reusable governed knowledge/document capabilities. | Provenance, permissions and private/public separation validated. |
+| R7 — Communications & Automation | Recoverable omnichannel automation. | Channels, workflows, queues, idempotency, fallbacks and human inbox. |
+| R8 — AI Operations | Assistive, supervised AI. | Minimization, evaluation, traceability, authority limits and human-in-the-loop. |
+| R9 — Scale & Hybrid Infrastructure | Metrics-justified hybrid capacity. | ADRs, threat model, recovery, cost and cloud/local boundaries validated. |
+| R10 — Mobile & Expansion | Evidence-driven new surfaces. | Demand evidence, registered modules, PRD, UX, security and Product Owner approval. |
 
-Un horizonte cerrado no implica que todos los módulos futuros estén implementados. El PCR identifica exactamente qué alcanzó `Operational` y qué permanece en el catálogo.
+The catalog's `R1.1–R1.5` values remain capability-workstream tags that span Release 1A/1B as
+mapped in `ROADMAP.md`; they are not separate products or authorization gates.

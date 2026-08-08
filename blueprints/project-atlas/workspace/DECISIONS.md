@@ -1,6 +1,7 @@
 # Decisions
 
-- Owner: Product Architect
+- Owner: Product Owner
+- Maintainer: Codex Architecture Agent
 - Status: Active decision record
 - Update rule: append numbered, dated decisions with reason and impact; never delete history
 
@@ -59,3 +60,65 @@ Decision: archive the E1–E3 blueprint, task queue and epics as superseded, non
 Reason: the E1–E3 sequence predates and is incomplete against the approved R1.1–R1.5 roadmap. In particular, it did not deliver R1.4 Business Formation with EIN, business compliance and electronic signature, nor govern the canonical M001–M110 catalog.
 
 Impact: the bundle root contains a documentary index only. Historical files live under `../archive/pre-roadmap-2026-08-02/` and must not be executed. The next step remains Product Owner review of the documentary roadmap.
+
+## 2026-08-08 — Decision 008
+
+Decision: make the repository-root `AGENTS.md` the universal governance entry point. Codex with the
+architecture skill is the architect; separately scoped Codex agents implement authorized work;
+ChatGPT is the independent auditor; the Product Owner is final authority. Remove tool-specific
+project governance and mandatory tool-specific workflows.
+
+Reason: permanent responsibilities and authority must remain stable across tools and sessions.
+
+Impact: no tool-specific project file can redefine scope, roles, architecture or workflow. The
+workspace `AGENTS.md` is only a path adapter to the root contract.
+
+## 2026-08-08 — Decision 009
+
+Decision: adopt secure case-based authorization inheritance under ADR 004. Client membership links
+identity but grants no case access; active case grants inherit only to client-visible children.
+Internal resources never inherit, Highly Sensitive documents may require additional access and any
+resource may block inheritance.
+
+Reason: per-resource grants for every ordinary item are operationally brittle, while email/client-
+status access is unsafe.
+
+Impact: domain services, RLS and Storage policies implement the same revocable model and require
+cross-client, block-inheritance and revocation tests.
+
+## 2026-08-08 — Decision 010
+
+Decision: establish four data classes, a quarantine/scan/promote upload lifecycle, application-level
+envelope encryption for selected Highly Sensitive fields and a documented backup/restore program.
+
+Reason: managed storage encryption and private buckets alone do not define a complete security or
+recovery architecture.
+
+Impact: `DATA_CLASSIFICATION.md`, `FILE_UPLOAD_SECURITY.md`, `BACKUP_AND_RECOVERY.md` and ADRs
+003/005 govern implementation. KMS vendor, detailed retention and some upload limits remain explicit
+Product Owner decisions before Build.
+
+## 2026-08-08 — Decision 011
+
+Decision: preserve Release 1 — Production Foundation while delivering it as Release 1A — Minimum
+Real-Client Operations followed by Release 1B — Operational Maturity. Existing R1.1–R1.5 labels are
+capability workstreams spanning the slices.
+
+Reason: the foundation must reach real clients sooner without producing disposable implementations
+or destabilizing the 110-module catalog.
+
+Impact: 1A uses final primitives and security boundaries with narrower behavior; 1B extends them
+compatibly and completes the Business Formation vertical.
+
+## 2026-08-08 — Decision 012
+
+Decision: treat `corepack pnpm scaffold:validate` as the Phase 0 executable acceptance gate while
+keeping `corepack pnpm build` as the future real-product build. Pin audited vulnerable transitive
+packages through exact pnpm workspace overrides without changing the approved stack.
+
+Reason: Phase 0 needs reproducible tooling evidence without creating unauthorized placeholder
+routes, and known dependency advisories must not remain in the checked-in lock graph.
+
+Impact: the lockfile pins corrected `esbuild`, `postcss` and `sharp` releases; tracked examples contain
+no embedded database credentials; the real Next/Astro build becomes applicable only after the
+Product Owner authorizes product routes through `GENERATE` and the relevant Build gate.

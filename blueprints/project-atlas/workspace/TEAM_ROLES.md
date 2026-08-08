@@ -1,19 +1,49 @@
 # Team Roles
 
 - Owner: Product Owner
-- Status: Active
-- Update rule: update when responsibility or required reviewer changes
+- Status: Approved permanent role model
+- Update rule: changes require Product Owner approval and a recorded decision
 
-Product Owner decides scope, priority, business model and launch. Product Architect owns PRDs, architecture, decisions and phase readiness. No skill, agent or automated check may change either authority implicitly.
+## Product Owner
 
-| Role | Required capability | Authority and limits |
+The user is the final authority for scope, priorities, business policy, architecture-sensitive
+changes, implementation authorization, merge and production release.
+
+## Codex Architecture Agent
+
+Codex, using the approved architecture skill, is the project architect. It designs module and data
+boundaries, technical decisions, ADRs, sequencing, security/integration architecture and consistency.
+It proposes; the Product Owner decides. It does not invent business policy.
+
+## Codex Implementation Agent
+
+When a Build gate is explicitly authorized, Codex implements approved work, tests, migrations and
+integrations. Architecture and implementation are separate responsibilities even when both use
+Codex. The implementation agent cannot redefine scope, approve architecture changes or independently
+certify its own work.
+
+## Independent Auditor
+
+ChatGPT is the independent auditor. It reviews architecture, documentation, implementation reports
+and repository state; identifies inconsistencies, risks and defects; and does not architect,
+implement, make business decisions or approve its own work. Findings advise the Product Owner.
+
+## Supporting roles
+
+| Role | Responsibility | Limit |
 |---|---|---|
-| Product Architect | `the-architect-main` | Produces approved PRDs, architecture, decisions and phase gates; does not authorize implementation by itself. |
-| Design specialist | `ui-ux-pro-max-skill-main/.claude/skills/ui-ux-pro-max/` | Produces the persisted design system, page overrides and UI handoff before visual implementation; cannot change business requirements. |
-| Implementation agent | `superpowers-main/` | Converts an approved module PRD into an executable plan, works in isolation, follows TDD and changes only task-authorized files. |
-| Independent code auditor | Separate agent/session | Reviews the complete diff against PRD, architecture, tests and accessibility without assuming the implementation is correct. |
-| Security auditor | `cyber-neo-main/skills/cyber-neo/` | Performs a strictly read-only security audit and reports findings; never fixes its own findings or runs the product. |
-| Corrector | `superpowers-main/` | Verifies each finding, fixes confirmed defects one at a time with regression tests and updates the same change set. |
-| GitHub Actions | Repository workflows | Supplies automated evidence; it never replaces independent review or Product Owner authority. |
+| Design specialist through Codex | Applies UI/UX Pro Max to design systems, flows and accessible handoff artifacts. | Cannot change business or authorization rules. |
+| Automated review agent | Inspects a bounded diff for requirements, architecture, tests, security or documentation. | Cannot self-approve or override the Product Owner/architect. |
+| Cyber Neo security auditor | Performs a read-only security assessment and writes an external report. | Never modifies the target or exposes secrets. |
+| Corrector | Verifies and corrects confirmed findings with regression evidence. | Is not the independent re-auditor. |
+| GitHub Actions | Produces repeatable automated evidence and blocks failing checks. | Does not replace independent review or Product Owner authority. |
 
-Official sequence: approved PRD/architecture -> UI/UX handoff when visual -> Superpowers plan -> isolated TDD implementation -> automated gates -> independent code audit -> Cyber Neo audit when security-sensitive -> correction -> retest and re-audit -> Product Owner gate when required.
+## Separation-of-duty rules
+
+- The architect proposes; the Product Owner decides.
+- The implementer implements; the implementer does not redefine scope.
+- The auditor audits; the auditor does not architect or implement.
+- The corrector corrects; a separate reviewer verifies the correction.
+- No agent may claim independent approval of its own output.
+
+The root `AGENTS.md` is the universal workflow and authority contract.

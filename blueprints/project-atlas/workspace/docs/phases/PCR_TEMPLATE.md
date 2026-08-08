@@ -1,6 +1,7 @@
 # Phase Completion Report Template
 
-- Owner: Product Architect
+- Owner: Product Owner
+- Maintainer: Codex Architecture Agent
 - Status: Active template
 - Update rule: revise when release evidence or governance requirements change
 

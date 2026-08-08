@@ -1,24 +1,39 @@
-# Module PRD index
+# Module PRD Index
 
-- Owner: Product Architect
-- Status: Documentary capability-area index; no Build gate authorization
-- Update rule: every future executable task must map to an individually approved catalog-module PRD; architecture-sensitive changes require a decision and Product Owner approval
+- Owner: Codex Architecture Agent
+- Final approver: Product Owner
+- Status: Documentary capability index; no Build gate authorization
+- Update rule: every future implementation unit maps to an approved module PRD and ADRs
 
-The documents below describe approved baseline capability areas. They do not replace the canonical [module catalog](../roadmap/MODULE_CATALOG.md), do not advance a module beyond `Registered` automatically and do not authorize implementation.
+The canonical catalog remains `../roadmap/MODULE_CATALOG.md`. The PRDs below specify bounded
+requirements but do not by themselves authorize code or advance a module beyond its recorded state.
 
-| Capability-area PRD | Scope |
+## Critical implementation-readiness PRDs
+
+| PRD | Primary capability |
 |---|---|
-| [platform-foundation.md](platform-foundation.md) | Platform shell and shared foundation. |
-| [design-system.md](design-system.md) | Design tokens, primitives and accessibility baseline. |
-| [data-platform.md](data-platform.md) | Transactional data foundation and migration authority. |
-| [identity-access.md](identity-access.md) | Identity, domain authorization, RLS and delegated access. |
-| [document-center.md](document-center.md) | Private document access and Storage boundaries. |
-| [public-growth.md](public-growth.md) | Public acquisition, content and lead capture. |
-| [crm-case-operations.md](crm-case-operations.md) | CRM, service orders, cases and internal work. |
-| [scheduling-calendar.md](scheduling-calendar.md) | Appointment and calendar boundaries. |
-| [billing.md](billing.md) | Catalog, pricing, quotes, invoices and Stripe boundaries. |
-| [client-portal.md](client-portal.md) | Delegated client collaboration. |
-| [automation-observability.md](automation-observability.md) | Durable jobs, telemetry and recovery. |
-| [delivery-governance.md](delivery-governance.md) | Verification, release evidence and PCR. |
+| [identity-access.md](identity-access.md) | Supabase identity, staff MFA, roles, resource grants, domain/RLS/Storage authorization. |
+| [crm-case-operations.md](crm-case-operations.md) | CRM, lead pipeline, assignment and conversion. |
+| [client-case-management.md](client-case-management.md) | Clients, businesses, service orders, cases, tasks and internal notes. |
+| [document-center.md](document-center.md) | Quarantine, scan, private storage, versions, grants, retention and downloads. |
+| [scheduling-calendar.md](scheduling-calendar.md) | Narrow scheduler, concurrency, IANA/DST and Google Calendar reconciliation. |
+| [billing.md](billing.md) | Quotes, invoices, Stripe, idempotency and reconciliation. |
+| [client-portal.md](client-portal.md) | Portal-safe projections, simple navigation and delegated access. |
+| [audit-activity-history.md](audit-activity-history.md) | Immutable minimized audit evidence and activity projections. |
+| [marketing-leads-consent.md](marketing-leads-consent.md) | Public capture, attribution, consent and CRM handoff. |
+| [content-financial-academy.md](content-financial-academy.md) | Sanity public content, Academy, editorial gates, sources and bilingual SEO. |
 
-The superseded E1–E3 mapping is preserved only in `../../../archive/pre-roadmap-2026-08-02/`. A future executable plan must be generated from approved individual module PRDs after the module reaches its Build gate and the Product Owner authorizes work.
+## Supporting capability PRDs
+
+| PRD | Scope |
+|---|---|
+| [platform-foundation.md](platform-foundation.md) | Non-product application/workspace foundation. |
+| [design-system.md](design-system.md) | Three-layer tokens, components and accessibility baseline. |
+| [data-platform.md](data-platform.md) | Transactional data and Drizzle migration authority. |
+| [public-growth.md](public-growth.md) | Umbrella for public acquisition and its critical PRDs. |
+| [automation-observability.md](automation-observability.md) | Durable jobs, telemetry minimization and recovery. |
+| [delivery-governance.md](delivery-governance.md) | Verification, independent review, release evidence and PCR. |
+
+Every unresolved business policy uses `[NEEDS PRODUCT OWNER DECISION: ...]`. A future executable
+plan may exist only after the relevant PRD is approved, dependencies/gates are satisfied and the
+Product Owner explicitly authorizes `GENERATE` and the Build gate.

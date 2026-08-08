@@ -1,6 +1,7 @@
 # Catálogo canónico de módulos
 
-- Owner: Product Architect
+- Owner: Product Owner
+- Maintainer: Codex Architecture Agent
 - Status: Approved inventory; every module begins Registered
 - Update rule: add, rename, regroup or move a module only with a recorded Product Owner decision and synchronized roadmap/dependency update
 
@@ -9,6 +10,7 @@ Los elementos siguientes son módulos conceptuales de una sola SG Solutions Plat
 ## Convenciones
 
 - **Surface:** Public, Client, Admin, Cross, Infra o Governance.
+- **Release:** `R1.1–R1.5` son etiquetas de workstream que atraviesan los cortes Release 1A/1B definidos en `ROADMAP.md`; no son entregas ni gates independientes.
 - **Deps:** dependencias primarias; las dependencias transitivas se rigen por [DEPENDENCY_MAP.md](DEPENDENCY_MAP.md).
 - **Data:** Low, Moderate, High o Restricted.
 - **Human:** aprobación humana mínima; otras gates pueden añadir revisores.

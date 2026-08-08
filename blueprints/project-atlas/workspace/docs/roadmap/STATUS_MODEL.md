@@ -1,6 +1,7 @@
 # Module Status and Gates
 
-- Owner: Product Architect
+- Owner: Product Owner
+- Maintainer: Codex Architecture Agent
 - Status: Approved governance model
 - Update rule: cambiar estados o gates solo mediante decisión registrada y sincronización con AGENTS y PCR
 
@@ -25,7 +26,7 @@
 | Product | ¿El problema, usuario, resultado y alcance están aprobados? | PRD o decisión del Product Owner. |
 | Architecture | ¿Reutiliza primitivas, respeta límites y documenta providers/datos? | ADR requerido o dependencias ambiguas. |
 | UX/Security | ¿La experiencia importante está aprobada y los riesgos/approvals están definidos? | Handoff UI/UX o threat/privacy review aplicable. |
-| Build | ¿Existe autorización explícita para iniciar y alcance de cambio controlado? | Estado distinto de Ready o tarea no autorizada. |
+| Build | ¿El Product Owner autorizó explícitamente `GENERATE` y el alcance de cambio controlado? | Estado distinto de Ready, `GENERATE` no autorizado o tarea no autorizada. |
 | Quality | ¿Pruebas, accesibilidad, rendimiento y auditorías independientes aportan evidencia fresca? | Gate fallido, hallazgo material sin resolver o autoauditoría. |
 | Release | ¿Es recuperable, observable y aceptado? | Falta PCR, rollback, documentación viva o aprobación requerida. |
 

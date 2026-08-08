@@ -1,7 +1,10 @@
 # ADR 001 — Authentication
 
-- Owner: Product Architect
+- Owner: Codex Architecture Agent
+- Final approver: Product Owner
 - Status: Accepted baseline
 - Update rule: supersede with a numbered ADR; never edit the historical decision silently
 
-Use Supabase Auth as identity provider. Keep business authorization in server-side domain services and Postgres/RLS. Client accounts are invite/delegation driven; identity alone grants no case access.
+Use Supabase Auth as identity provider. Keep business authorization in server-side domain services,
+Postgres RLS and Storage policies. Client accounts are invitation/delegation driven; identity and
+client membership alone grant no case access. Authorization inheritance follows ADR 004.

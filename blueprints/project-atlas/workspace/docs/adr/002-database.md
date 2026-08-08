@@ -1,6 +1,7 @@
 # ADR 002 — Database authority
 
-- Owner: Product Architect
+- Owner: Codex Architecture Agent
+- Final approver: Product Owner
 - Status: Accepted baseline
 - Update rule: supersede with a numbered ADR after architecture review
 

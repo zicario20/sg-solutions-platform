@@ -1,6 +1,6 @@
 # API Documentation Area
 
-- Owner: Product Architect
+- Owner: Codex Architecture Agent
 - Status: Reserved for versioned route contracts
 - Update rule: add a document before changing a public or cross-module API contract
 

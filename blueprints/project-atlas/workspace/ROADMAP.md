@@ -1,24 +1,65 @@
 # Roadmap de SG Solutions Platform
 
 - Owner: Product Owner
-- Status: Approved roadmap baseline
-- Update rule: cambiar horizontes, orden o alcance solo mediante decisión registrada; actualizar catálogo, estado y dependencias en el mismo cambio
+- Maintainer: Codex Architecture Agent
+- Status: Approved Release 1A/1B baseline (Product Owner instruction, 2026-08-08)
+- Update rule: cambiar alcance u orden mediante decisión registrada y sincronizar catálogo, estado y dependencias
 
-El roadmap entrega una sola plataforma por horizontes incrementales. Ningún horizonte es un producto independiente. Los módulos concretos se registran en [MODULE_CATALOG.md](docs/roadmap/MODULE_CATALOG.md); los objetivos y criterios de salida se detallan en [RELEASE_HORIZONS.md](docs/roadmap/RELEASE_HORIZONS.md).
+El roadmap entrega una sola plataforma por cortes compatibles. Ningún release es un producto
+independiente y ningún elemento del roadmap autoriza implementación por sí mismo.
 
 ## Phase 0 — Blueprint & Design
 
-Definición del producto, arquitectura, catálogo de 110 módulos conceptuales, dependencias, gobierno, PRDs, seguridad y diseño UX/UI. Esta fase es documental y no autoriza código.
+Definición del producto, arquitectura, catálogo conceptual, PRDs, decisiones de seguridad, modelo de
+datos, UX/UI, gobierno y reproducibilidad del scaffold. No incluye comportamiento de producto.
 
 ## Release 1 — Production Foundation
 
-Primera entrega apta para clientes reales y diseñada para evolución compatible, no para reemplazo.
+Release 1 conserva la arquitectura aprobada y se divide en dos cortes desplegables. Release 1A no es
+un prototipo: utiliza los identificadores, primitivas, políticas, migraciones y adapters definitivos,
+y Release 1B la amplía de forma compatible.
 
-1. **R1.1 Platform Foundation:** identidad, autorización, datos, provider abstractions, catálogo y motor de precios, seguridad, consentimiento, auditoría y base operativa.
-2. **R1.2 Public Sales Engine:** sitio público, contenido, formularios, captación, orientación, CTA y oferta gobernada.
-3. **R1.3 Internal Operations Core:** CRM, clientes, empresas, leads, órdenes, expedientes, tareas, calendario, documentos, pagos, configuración y reportes operativos.
-4. **R1.4 Business Formation Vertical:** primer vertical completo sobre las primitivas comunes, incluidos EIN, cumplimiento empresarial y firma electrónica.
-5. **R1.5 Client Portal & Launch:** seguimiento delegado, documentos, citas, mensajes, pagos y lanzamiento controlado.
+### Release 1A — Minimum Real-Client Operations
+
+Resultado: SG Solutions puede captar, cobrar y operar de forma segura un volumen inicial de clientes
+reales con intervención humana explícita.
+
+- identidad central, MFA obligatorio para staff, roles/permisos y acceso delegado;
+- registros de clientes/empresas y CRM con pipeline básico;
+- service orders, casos, tareas, notas internas, auditoría y próximos pasos;
+- Document Center seguro con cuarentena/scan contract y descargas autorizadas;
+- sitio público esencial, contenido bilingüe inicial, leads y consentimiento;
+- agenda básica con concurrencia segura y proyección Google controlada;
+- cotizaciones esenciales, depósitos y pagos únicos con Stripe/reconciliación mínima;
+- portal mínimo para servicios, estado, documentos, citas y pagos;
+- operación manual segura de Business Formation sobre primitivas comunes;
+- backups, despliegue, observabilidad y rutas manuales mínimas para operar clientes reales.
+
+### Release 1B — Operational Maturity
+
+Resultado: la misma foundation madura para mayor volumen, recuperación y consistencia operativa sin
+reescribir 1A.
+
+- sincronización Google avanzada, recurrencia externa, reconciliación y recovery ampliados;
+- payment plans, facturación/reconciliación avanzada, refunds/disputes operativos gobernados;
+- atribución y consentimiento ampliados sin datos sensibles;
+- automatizaciones durables adicionales y fallbacks operativos;
+- observabilidad, restore testing y alertas mejorados;
+- más workflows del portal, mensajería/notificaciones y perfil aprobado;
+- reporting operativo y workload/conversion insights minimizados;
+- Business Formation completo con EIN, compliance y firma electrónica bajo aprobación humana.
+
+## Workstreams de Release 1
+
+Los códigos históricos `R1.1–R1.5` del catálogo son workstreams de capacidad, no entregas separadas:
+
+1. **R1.1 Platform Foundation:** comienza en 1A y madura en 1B.
+2. **R1.2 Public Sales Engine:** experiencia/contenido esencial en 1A; amplitud y medición en 1B.
+3. **R1.3 Internal Operations Core:** operación mínima en 1A; reporting/automation maturity en 1B.
+4. **R1.4 Business Formation Vertical:** operación manual segura en 1A; vertical completo en 1B.
+5. **R1.5 Client Portal & Launch:** portal mínimo en 1A; workflows ampliados en 1B.
+
+Esta interpretación preserva el catálogo y evita convertir sus etiquetas en arquitecturas paralelas.
 
 ## Releases posteriores
 
@@ -26,17 +67,17 @@ Primera entrega apta para clientes reales y diseñada para evolución compatible
 - **R3 — Taxes & Accounting:** taxes, bookkeeping y contabilidad.
 - **R4 — Funding & Home Buying:** business funding y asistencia para compra de vivienda.
 - **R5 — Marketplace & Partners:** marketplace, recomendaciones, partners e integraciones financieras.
-- **R6 — Knowledge & Documents:** knowledge base, RAG, fuentes y ampliación del procesamiento y generación documental sobre el portal/firma existentes.
-- **R7 — Communications & Automation:** canales, voice gateway, workflow engine, n8n, browser automation, colas, fallbacks y aprobaciones operativas.
+- **R6 — Knowledge & Documents:** knowledge base, RAG, fuentes y procesamiento/generación ampliados.
+- **R7 — Communications & Automation:** canales, voice gateway, workflow engine, n8n, browser automation, colas, fallbacks y aprobaciones.
 - **R8 — AI Operations:** AI Hub y agentes especializados bajo human-in-the-loop.
-- **R9 — Scale & Hybrid Infrastructure:** escala, homelab, nodos locales/GPU y resiliencia híbrida.
-- **R10 — Mobile & Expansion:** experiencia móvil y expansiones aprobadas por evidencia; registrar nuevos módulos antes de especificarlos.
+- **R9 — Scale & Hybrid Infrastructure:** homelab, nodos locales/GPU y resiliencia híbrida cuando las métricas lo justifiquen.
+- **R10 — Mobile & Expansion:** experiencia móvil y expansiones aprobadas por evidencia.
 
 ## Reglas de secuenciación
 
-- Cloud-first; homelab e híbrido no bloquean Release 1.
-- Business Formation es el primer vertical completo.
-- Provider abstractions, marketplace/partners y motor de precios se reservan desde foundation sin construir anticipadamente sus releases completos.
-- Cada módulo avanza por el modelo de estados y gates de [STATUS_MODEL.md](docs/roadmap/STATUS_MODEL.md).
-- Ningún módulo pasa de `Registered` a trabajo ejecutable sin PRD aprobado y gates previos.
-- Cada módulo completado produce un PCR y actualiza `PROJECT_STATE.md`, `PROJECT_MEMORY.md`, `DECISIONS.md` cuando corresponda y `CHANGELOG.md`.
+- Cloud-first; homelab/híbrido no bloquean Release 1.
+- No se construye una versión desechable de una capacidad 1A.
+- Business Formation sigue siendo el primer vertical completo al cierre de Release 1B.
+- Marketplace, partners y provider abstractions reservan límites desde foundation; no adelantan el comportamiento completo de R5.
+- Cada módulo sigue `docs/roadmap/STATUS_MODEL.md` y requiere PRD/gates/decisión del Product Owner.
+- Cada módulo Operational produce PCR y sincroniza estado, memoria, decisiones y changelog.

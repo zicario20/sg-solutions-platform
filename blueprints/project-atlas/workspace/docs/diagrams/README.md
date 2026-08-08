@@ -1,6 +1,6 @@
 # Diagrams
 
-- Owner: Product Architect
+- Owner: Codex Architecture Agent
 - Status: Reserved for maintained architecture diagrams
 - Update rule: update when a diagram's underlying contract changes
 

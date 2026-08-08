@@ -1,11 +1,24 @@
-# Module PRD — Public Growth
+# Module PRD — Public Growth Umbrella
 
-- Owner: Product Architect
-- Status: Approved baseline (Product Owner, 2026-08-02)
-- Catalog modules: M001, M006, M020 (documentary references only; not implementation authorization)
+- Owner: Codex Architecture Agent
+- Final approver: Product Owner
+- Status: Approved capability map; detailed requirements live in linked critical PRDs; no Build gate
+- Catalog modules: M001, M002, M006, M020
 
-Goal: acquire qualified Illinois prospects through a bilingual, trustworthy and measurable public experience.
+The public surface acquires qualified Illinois prospects through a bilingual, trustworthy and
+measurable experience. It uses “Agenda una evaluación” as the primary CTA and “Solicita una
+cotización” secondarily. Essential content must work with minimal client JavaScript; accessibility,
+privacy, disclosures and clarity outrank conversion tactics.
 
-In scope: English/Spanish landing experience, public Sanity content, “Agenda una evaluación” primary CTA, quote secondary CTA, consented lead capture, minimized attribution and display of service prices only when the Product Owner activates an approved `public` or `from` mode. Account-first acquisition and sensitive operational content in Sanity remain out of scope.
+Detailed implementation requirements:
 
-Requirements: essential content works without client-side JavaScript; forms are accessible and rate-limited; lead writes are validated and idempotent; analytics excludes sensitive/free-text payloads; SEO and conversion never override clarity, disclosures or privacy.
+- [Marketing Leads and Consent](marketing-leads-consent.md) governs public forms, consent,
+  attribution, spam controls and CRM handoff.
+- [Public Content and Financial Academy](content-financial-academy.md) governs Sanity, Help Center,
+  Academy, bilingual editorial workflow, sources and SEO.
+- [CRM and Pipeline](crm-case-operations.md) governs lead operations after capture.
+- [Scheduling](scheduling-calendar.md) governs evaluation booking.
+- [Billing](billing.md) governs approved public prices, quotes and initial payment links.
+
+Account-first acquisition, sensitive operational content in Sanity and sensitive intake in public
+forms remain out of scope.

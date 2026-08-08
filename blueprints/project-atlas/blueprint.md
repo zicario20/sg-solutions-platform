@@ -33,7 +33,11 @@ Architecture authority: [ARCHITECTURE.md](workspace/ARCHITECTURE.md) and [Depend
 
 The [Module Catalog](workspace/docs/roadmap/MODULE_CATALOG.md) registers 110 conceptual modules. They are capabilities, not applications, repositories or deployment units. Every module starts `Registered`, which does not authorize implementation.
 
-The [Roadmap](workspace/ROADMAP.md) progresses through Phase 0 — Blueprint & Design; Release 1 — Production Foundation with R1.1 Platform Foundation, R1.2 Public Sales Engine, R1.3 Internal Operations Core, R1.4 Business Formation Vertical and R1.5 Client Portal & Launch; then R2 through R10. Business Formation is the first complete vertical. The strategy is cloud-first; homelab and hybrid infrastructure are later concerns.
+The [Roadmap](workspace/ROADMAP.md) progresses through Phase 0 and Release 1 — Production
+Foundation, delivered compatibly as Release 1A — Minimum Real-Client Operations and Release 1B —
+Operational Maturity, then R2 through R10. Historical R1.1–R1.5 labels are workstreams spanning
+the two delivery slices. Business Formation is the first complete vertical by the end of Release
+1B. The strategy is cloud-first; homelab and hybrid infrastructure are later concerns.
 
 Release outcomes: [RELEASE_HORIZONS.md](workspace/docs/roadmap/RELEASE_HORIZONS.md).
 
@@ -43,10 +47,17 @@ Modules advance through `Registered → Specified → Ready → In Progress → 
 
 No product code may be written before an approved module PRD, satisfied dependencies and explicit Build gate authorization from the Product Owner. Important screens require approved UI/UX first. Cyber Neo remains an independent read-only security auditor. Every operational module produces a PCR and updates current state, memory, decisions when applicable and changelog.
 
-Agent rules: [AGENTS.md](workspace/AGENTS.md). Current status: [PROJECT_STATE.md](workspace/PROJECT_STATE.md). Product principles: [PROJECT_PRINCIPLES.md](workspace/PROJECT_PRINCIPLES.md). Decisions: [DECISIONS.md](workspace/DECISIONS.md).
+Universal agent rules: [repository AGENTS.md](../../AGENTS.md). The workspace adapter is
+[workspace/AGENTS.md](workspace/AGENTS.md). Current status:
+[PROJECT_STATE.md](workspace/PROJECT_STATE.md). Sources of truth:
+[SOURCE_OF_TRUTH.md](workspace/SOURCE_OF_TRUTH.md). Product principles:
+[PROJECT_PRINCIPLES.md](workspace/PROJECT_PRINCIPLES.md). Decisions:
+[DECISIONS.md](workspace/DECISIONS.md).
 
 ## Current state and next step
 
-Phase 0 documentary review is active. Product implementation has not started and is not authorized. The next step is **Product Owner review of the documentary roadmap and design specification**.
+Phase 0 documentary remediation is active. The repository/tooling scaffold exists, but production
+product behavior has not been implemented and is not authorized. The next step is **Product Owner
+review of the remediated documentary baseline**.
 
 A future executable plan may be generated only from approved module PRDs after the module has passed its Build gate and the Product Owner has explicitly authorized implementation. The archived E1–E3 material under `archive/pre-roadmap-2026-08-02/` is historical and must not be executed.

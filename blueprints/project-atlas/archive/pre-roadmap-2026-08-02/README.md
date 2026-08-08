@@ -1,6 +1,6 @@
 # Archived pre-roadmap blueprint — 2026-08-02
 
-- Owner: Product Architect
+- Custodian: historical archive; no active project role or authority
 - Status: Superseded historical record; do not execute
 - Update rule: preserve unchanged except for archival metadata or corrections to this notice
 
