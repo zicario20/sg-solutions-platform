@@ -32,8 +32,9 @@ M001 includes:
 
 - the Astro public application shell, global header, footer, language switcher and mobile navigation;
 - Spanish-primary and English-equivalent route families;
-- Home, Services, Credit, Taxes, Business Formation, Business Funding, Home Buying Assistance,
-  Marketplace, About, Pricing, Contact, general FAQ and required policy/disclosure entry pages;
+- Home, Services, Credit, Credit Monitoring, Taxes, Business Formation, EIN, Business Compliance,
+  Business Funding, Home Buying Assistance, Marketplace, About, Pricing, Contact, general FAQ and
+  required policy/disclosure entry pages;
 - reusable public components, layout primitives and M001 design tokens;
 - typed bilingual content records with a boundary that can later be backed by Sanity;
 - service discovery, “how it works,” trust, disclosure and conversion sections;
@@ -237,7 +238,8 @@ static artifact.
 ## 17. Acceptance criteria
 
 - All scoped Spanish and English routes build and return the intended page.
-- Home explains SG Solutions and displays the six approved service groups without fabricated claims.
+- Home explains SG Solutions and displays the six approved service groups, including the nested
+  Credit Monitoring, EIN and Business Compliance offerings, without fabricated claims.
 - Each service page describes fit, process, preparation, limitations and next action.
 - Header, footer, mobile menu, language switcher, breadcrumbs and CTAs are consistent.
 - The exact supplied logo is displayed without distortion on a calm light surface.

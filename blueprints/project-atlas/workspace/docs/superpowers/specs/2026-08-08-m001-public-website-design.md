@@ -96,8 +96,11 @@ failure.
 - `/` — Inicio
 - `/servicios/`
 - `/servicios/credito/`
+- `/servicios/monitoreo-de-credito/`
 - `/servicios/taxes/`
 - `/servicios/formacion-de-negocios/`
+- `/servicios/ein/`
+- `/servicios/cumplimiento-empresarial/`
 - `/servicios/financiamiento-empresarial/`
 - `/servicios/comprar-casa/`
 - `/marketplace/`
@@ -110,7 +113,8 @@ failure.
 ### English routes
 
 Every route has an equivalent under `/en/`, including `/en/services/credit/`,
-`/en/services/taxes/`, `/en/services/business-formation/`, `/en/services/business-funding/`,
+`/en/services/credit-monitoring/`, `/en/services/taxes/`, `/en/services/business-formation/`,
+`/en/services/ein/`, `/en/services/business-compliance/`, `/en/services/business-funding/`,
 `/en/services/home-buying/`, `/en/marketplace/`, `/en/pricing/`, `/en/faq/`, `/en/about/`,
 `/en/contact/` and equivalent policy routes.
 
@@ -126,7 +130,8 @@ dominant. Mobile navigation uses one disclosure panel and no more than two hiera
 2. Header: logo, navigation, locale switch and primary CTA.
 3. Hero: value proposition, concise support copy, primary and secondary CTA, visual “growth path.”
 4. Trust rail: bilingual, clear process, human follow-up, privacy-first.
-5. Service navigator: six focused cards with audience result and link.
+5. Service navigator: six focused groups with nested paths for Credit Monitoring, EIN and Business
+   Compliance.
 6. Process: Tell us what you need → Evaluation → Clear next steps → Follow-up.
 7. Home Buying spotlight: a high-intent but non-guaranteed guided path.
 8. Education/FAQ preview: credible answers, no individualized advice.
