@@ -8,6 +8,15 @@
 El roadmap entrega una sola plataforma por cortes compatibles. Ningún release es un producto
 independiente y ningún elemento del roadmap autoriza implementación por sí mismo.
 
+## Active authorized delivery
+
+- **M001 Public Website:** `In Progress` under Decision 013.
+- Scope: Astro public routes, bilingual presentation, design system application, service discovery,
+  SEO, accessibility, tests and honest integration boundaries.
+- Excluded: behavior owned by M002/M003/M006/M007/M013/M017/M043 and all other modules without a
+  separate Build gate.
+- Exit: Quality gate, independent review, PCR and Product Owner acceptance.
+
 ## Phase 0 — Blueprint & Design
 
 Definición del producto, arquitectura, catálogo conceptual, PRDs, decisiones de seguridad, modelo de

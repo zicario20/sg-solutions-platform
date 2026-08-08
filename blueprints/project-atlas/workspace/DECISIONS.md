@@ -122,3 +122,19 @@ routes, and known dependency advisories must not remain in the checked-in lock g
 Impact: the lockfile pins corrected `esbuild`, `postcss` and `sharp` releases; tracked examples contain
 no embedded database credentials; the real Next/Astro build becomes applicable only after the
 Product Owner authorizes product routes through `GENERATE` and the relevant Build gate.
+
+## 2026-08-08 — Decision 013
+
+Decision: authorize `GENERATE` and a bounded Build gate for M001 Public Website. Codex must continue
+until the M001 implementation, verification evidence, independent review and PCR are complete. The
+approved “Financial Clarity” execution direction applies the existing Manrope/Inter and navy,
+cobalt, cyan, green, gold and light-surface baseline while preserving the supplied SG Solutions logo
+without modification.
+
+Reason: the Product Owner explicitly instructed Codex to begin with Module 1 and not stop until it is
+complete, then supplied the company logo as required visual context.
+
+Impact: M001 may create the Astro public routes, presentation components, bilingual content layer,
+SEO/accessibility behavior, tests and deployment-facing public configuration. It may not implement
+M002/M003/M006/M007/M013/M017/M043 behavior or invent contact facts, legal approval, testimonials,
+prices or provider integrations. Every other module remains gated.

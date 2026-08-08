@@ -44,3 +44,9 @@
   without changing the approved stack, and follow-up secret/dependency scans returned no findings.
 - A real product build was attempted for evidence and stopped because product routes do not yet
   exist. This is the intended Phase 0 boundary; placeholder behavior was not created to conceal it.
+- The Product Owner authorized `GENERATE` and the Build gate exclusively for M001 Public Website and
+  directed Codex to continue through completion. The approved visual baseline is translated as
+  “Financial Clarity,” using the supplied logo intact while rejecting the banner's visual density.
+- M001 received a dedicated 21-section PRD and persisted UX/UI execution specification. Dependent
+  lead, scheduling, payments, authentication, CRM, Help Center and marketplace behaviors remain in
+  their owning modules and are not simulated by M001.

@@ -28,3 +28,5 @@
   discovery, scaffold validation and framework declarations that add no product routes.
 - Removed embedded local test-database credentials and pinned corrected transitive `esbuild`,
   `postcss` and `sharp` versions after a read-only Cyber Neo dependency review.
+- Authorized and started the bounded M001 Public Website build with a complete module PRD and
+  persisted “Financial Clarity” UX/UI execution specification.

@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Approved capability map; detailed requirements live in linked critical PRDs; no Build gate
+- Status: Approved capability map; M001 Build gate active; M002, M006 and M020 remain gated
 - Catalog modules: M001, M002, M006, M020
 
 The public surface acquires qualified Illinois prospects through a bilingual, trustworthy and
@@ -12,6 +12,8 @@ privacy, disclosures and clarity outrank conversion tactics.
 
 Detailed implementation requirements:
 
+- [M001 Public Website](m001-public-website.md) governs the public shell, bilingual routes, service
+  presentation, conversion boundaries, accessibility and SEO.
 - [Marketing Leads and Consent](marketing-leads-consent.md) governs public forms, consent,
   attribution, spam controls and CRM handoff.
 - [Public Content and Financial Academy](content-financial-academy.md) governs Sanity, Help Center,

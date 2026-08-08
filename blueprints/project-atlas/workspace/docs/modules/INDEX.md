@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Documentary capability index; no Build gate authorization
+- Status: Documentary capability index; M001 has an explicitly authorized Build gate
 - Update rule: every future implementation unit maps to an approved module PRD and ADRs
 
 The canonical catalog remains `../roadmap/MODULE_CATALOG.md`. The PRDs below specify bounded
@@ -12,6 +12,7 @@ requirements but do not by themselves authorize code or advance a module beyond 
 
 | PRD | Primary capability |
 |---|---|
+| [m001-public-website.md](m001-public-website.md) | M001 bilingual public website, service discovery, honest conversion boundaries and SEO/accessibility contracts. |
 | [identity-access.md](identity-access.md) | Supabase identity, staff MFA, roles, resource grants, domain/RLS/Storage authorization. |
 | [crm-case-operations.md](crm-case-operations.md) | CRM, lead pipeline, assignment and conversion. |
 | [client-case-management.md](client-case-management.md) | Clients, businesses, service orders, cases, tasks and internal notes. |
@@ -34,6 +35,7 @@ requirements but do not by themselves authorize code or advance a module beyond 
 | [automation-observability.md](automation-observability.md) | Durable jobs, telemetry minimization and recovery. |
 | [delivery-governance.md](delivery-governance.md) | Verification, independent review, release evidence and PCR. |
 
-Every unresolved business policy uses `[NEEDS PRODUCT OWNER DECISION: ...]`. A future executable
-plan may exist only after the relevant PRD is approved, dependencies/gates are satisfied and the
-Product Owner explicitly authorizes `GENERATE` and the Build gate.
+Every unresolved business policy uses `[NEEDS PRODUCT OWNER DECISION: ...]`. An executable plan may
+exist only after the relevant PRD is approved, dependencies/gates are satisfied and the Product
+Owner explicitly authorizes `GENERATE` and the Build gate. Decision 013 authorizes this sequence
+only for M001; every other module remains gated.
