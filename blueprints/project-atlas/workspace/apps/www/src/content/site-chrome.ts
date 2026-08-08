@@ -65,7 +65,7 @@ export const SITE_CHROME: Record<Locale, SiteChromeCopy> = {
     nav: [
       { label: "Inicio", href: "/" },
       { label: "Servicios", href: "/servicios/" },
-      { label: "Recursos", href: "/preguntas-frecuentes/" },
+      { label: "Recursos", href: "/recursos/" },
       { label: "Nosotros", href: "/nosotros/" },
       { label: "Contacto", href: "/contacto/" },
     ],
@@ -104,7 +104,7 @@ export const SITE_CHROME: Record<Locale, SiteChromeCopy> = {
         { label: "Nosotros", href: "/nosotros/" },
         { label: "Contacto", href: "/contacto/" },
         { label: "Precios", href: "/precios/" },
-        { label: "FAQ", href: "/preguntas-frecuentes/" },
+        { label: "FAQ", href: "/recursos/preguntas-frecuentes/" },
       ],
       policies: [
         { label: "Privacidad", href: "/privacidad/" },
@@ -140,7 +140,7 @@ export const SITE_CHROME: Record<Locale, SiteChromeCopy> = {
     nav: [
       { label: "Home", href: "/en/" },
       { label: "Services", href: "/en/services/" },
-      { label: "Resources", href: "/en/faq/" },
+      { label: "Resources", href: "/en/resources/" },
       { label: "About", href: "/en/about/" },
       { label: "Contact", href: "/en/contact/" },
     ],
@@ -178,7 +178,7 @@ export const SITE_CHROME: Record<Locale, SiteChromeCopy> = {
         { label: "About", href: "/en/about/" },
         { label: "Contact", href: "/en/contact/" },
         { label: "Pricing", href: "/en/pricing/" },
-        { label: "FAQ", href: "/en/faq/" },
+        { label: "FAQ", href: "/en/resources/faq/" },
       ],
       policies: [
         { label: "Privacy", href: "/en/privacy/" },

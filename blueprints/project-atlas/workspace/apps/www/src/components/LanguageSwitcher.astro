@@ -6,16 +6,17 @@ import { getAlternatePath } from "../lib/routes";
 interface Props {
   locale: Locale;
   routeKey: RouteKey;
+  alternatePath?: string;
   compact?: boolean;
 }
 
-const { locale, routeKey, compact = false } = Astro.props;
+const { locale, routeKey, alternatePath, compact = false } = Astro.props;
 const alternateLocale = locale === "es" ? "en" : "es";
 ---
 
 <a
   class:list={["language-switcher", { "language-switcher--compact": compact }]}
-  href={getAlternatePath(routeKey, alternateLocale)}
+  href={alternatePath ?? getAlternatePath(routeKey, alternateLocale)}
   hreflang={alternateLocale}
   lang={alternateLocale}
   aria-label={SITE_CHROME[locale].language}

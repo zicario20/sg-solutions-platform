@@ -10,14 +10,18 @@ export interface SeoProjection {
   locale: "es" | "en";
 }
 
-export function createSeoProjection(page: PublicPage, origin: string): SeoProjection {
+export function createSeoProjection(
+  page: PublicPage,
+  origin: string,
+  alternatePath?: string,
+): SeoProjection {
   const base = normalizeOrigin(origin);
   const alternateLocale = page.locale === "es" ? "en" : "es";
   return {
     title: page.title,
     description: page.description,
     canonical: new URL(page.path, base).toString(),
-    alternate: new URL(getAlternatePath(page.routeKey, alternateLocale), base).toString(),
+    alternate: new URL(alternatePath ?? getAlternatePath(page.routeKey, alternateLocale), base).toString(),
     alternateLocale,
     locale: page.locale,
   };

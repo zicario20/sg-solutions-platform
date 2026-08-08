@@ -202,22 +202,6 @@ const pageDefinitions: PageDefinition[] = [
     },
   },
   {
-    routeKey: "faq",
-    kind: "standard",
-    es: {
-      path: "/preguntas-frecuentes/",
-      title: "Preguntas frecuentes | SG Solutions",
-      description:
-        "Respuestas generales sobre evaluaciones, servicios, documentos, precios y próximos pasos.",
-    },
-    en: {
-      path: "/en/faq/",
-      title: "Frequently asked questions | SG Solutions",
-      description:
-        "General answers about evaluations, services, documents, pricing and next steps.",
-    },
-  },
-  {
     routeKey: "about",
     kind: "standard",
     es: {

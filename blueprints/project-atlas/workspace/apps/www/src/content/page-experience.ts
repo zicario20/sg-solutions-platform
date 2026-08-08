@@ -390,7 +390,6 @@ function createGeneralSections(routeKey: RouteKey, locale: Locale): PublicSectio
       createNextStepSection(locale),
     ];
   }
-  if (routeKey === "faq") return createFaqSections(locale);
   if (routeKey === "about") {
     return [
       {
@@ -610,55 +609,6 @@ function createServicesSections(locale: Locale): PublicSection[] {
               title: "Marketplace",
               body: "Explore third-party product categories.",
               href: "/en/marketplace/",
-            },
-          ],
-    },
-    createNextStepSection(locale),
-  ];
-}
-
-function createFaqSections(locale: Locale): PublicSection[] {
-  const isSpanish = locale === "es";
-  return [
-    {
-      id: "common-questions",
-      title: isSpanish ? "Respuestas antes de comenzar" : "Answers before you begin",
-      variant: "faq",
-      items: isSpanish
-        ? [
-            {
-              title: "¿Tengo que crear una cuenta primero?",
-              body: "No. El proceso comercial comienza con una evaluación o cotización; la cuenta llega cuando corresponde.",
-            },
-            {
-              title: "¿Publican todos los precios?",
-              body: "No. Algunos servicios requieren una evaluación o cotización según el alcance.",
-            },
-            {
-              title: "¿Puedo enviar documentos por la web pública?",
-              body: "No. Los documentos sensibles deben utilizar el canal privado que se indique durante el proceso.",
-            },
-            {
-              title: "¿SG Solutions garantiza resultados?",
-              body: "No. Los resultados y decisiones dependen de información, terceros y condiciones aplicables.",
-            },
-          ]
-        : [
-            {
-              title: "Do I need to create an account first?",
-              body: "No. The commercial process starts with an evaluation or quote; an account follows when appropriate.",
-            },
-            {
-              title: "Are all prices public?",
-              body: "No. Some services require an evaluation or quote based on scope.",
-            },
-            {
-              title: "Can I upload documents on the public site?",
-              body: "No. Sensitive documents must use the private channel identified during the process.",
-            },
-            {
-              title: "Does SG Solutions guarantee results?",
-              body: "No. Results and decisions depend on information, third parties and applicable conditions.",
             },
           ],
     },

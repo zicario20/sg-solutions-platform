@@ -8,12 +8,14 @@ import "../styles/global.css";
 
 interface Props {
   page: PublicPage;
+  alternatePath?: string;
+  structuredData?: object;
 }
-const { page } = Astro.props;
+const { page, alternatePath, structuredData: providedStructuredData } = Astro.props;
 const copy = SITE_CHROME[page.locale];
 const origin = Astro.site?.toString() ?? "https://www.sgsllc.com";
-const seo = createSeoProjection(page, origin);
-const structuredData = createStructuredData(page, origin);
+const seo = createSeoProjection(page, origin, alternatePath);
+const structuredData = providedStructuredData ?? createStructuredData(page, origin);
 const serializedStructuredData = serializeStructuredData(structuredData);
 const esPage = page.locale === "es" ? seo.canonical : seo.alternate;
 const enPage = page.locale === "en" ? seo.canonical : seo.alternate;
@@ -47,7 +49,7 @@ const enPage = page.locale === "en" ? seo.canonical : seo.alternate;
   </head>
   <body>
     <a class="skip-link" href="#main-content">{copy.skip}</a>
-    <SiteHeader page={page} />
+    <SiteHeader page={page} alternatePath={alternatePath} />
     <main id="main-content"><slot /></main>
     <SiteFooter locale={page.locale} />
     <script is:inline src="/scripts/mobile-navigation.js" defer></script>

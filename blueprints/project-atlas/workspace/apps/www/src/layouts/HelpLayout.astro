@@ -1,0 +1,16 @@
+---
+import type { PublicPage } from "../domain/public-site";
+import BaseLayout from "./BaseLayout.astro";
+
+interface Props {
+  page: PublicPage;
+  alternatePath: string;
+  structuredData: object;
+}
+
+const { page, alternatePath, structuredData } = Astro.props;
+---
+
+<BaseLayout page={page} alternatePath={alternatePath} structuredData={structuredData}>
+  <slot />
+</BaseLayout>
