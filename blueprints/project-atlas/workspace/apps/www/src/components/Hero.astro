@@ -1,0 +1,36 @@
+---
+import type { PublicPage } from "../domain/public-site";
+import ActionLink from "./ActionLink.astro";
+import GrowthPathVisual from "./GrowthPathVisual.astro";
+
+interface Props {
+  page: PublicPage;
+}
+const { page } = Astro.props;
+const es = page.locale === "es";
+---
+
+<section class:list={["hero", { "hero--home": page.kind === "home" }] }>
+  <div class="site-container hero__grid">
+    <div class="hero__copy">
+      <p class="eyebrow"><span></span>{page.hero.eyebrow}</p>
+      <h1>{page.hero.heading}</h1>
+      <p class="hero__summary">{page.hero.summary}</p>
+      <div class="hero__actions">
+        <ActionLink action="evaluation" locale={page.locale} />
+        <a class="action-link action-link--secondary" href={es ? "/servicios/" : "/en/services/"}>
+          <span>{es ? "Explora los servicios" : "Explore services"}</span><span aria-hidden="true">→</span>
+        </a>
+      </div>
+      <p class="hero__note">
+        <span aria-hidden="true">✓</span>
+        {es ? "Sin promesas. Con contexto, alcance y próximos pasos visibles." : "No promises. Clear context, scope and next steps."}
+      </p>
+    </div>
+    {page.kind === "home" ? <GrowthPathVisual /> : (
+      <div class="hero__signal" aria-hidden="true">
+        <span></span><span></span><span></span><i></i>
+      </div>
+    )}
+  </div>
+</section>

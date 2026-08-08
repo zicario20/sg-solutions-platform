@@ -26,4 +26,20 @@ describe("M001 bilingual content contract", () => {
       expect(`${service.title} ${service.summary}`).not.toMatch(/\$\s*\d|guarantee|garantiz/i);
     }
   });
+
+  it("gives every page a complete hero and structured sections", () => {
+    for (const page of PUBLIC_PAGES) {
+      expect(page.hero.eyebrow.trim().length).toBeGreaterThan(2);
+      expect(page.hero.heading.trim().length).toBeGreaterThan(12);
+      expect(page.hero.summary.trim().length).toBeGreaterThan(60);
+      expect(page.sections.length).toBeGreaterThanOrEqual(page.kind === "service" ? 4 : 2);
+      expect(page.sections.every((section) => section.title.trim().length > 4)).toBe(true);
+    }
+  });
+
+  it("marks policy pages as pending qualified review instead of approved legal advice", () => {
+    const policyPages = PUBLIC_PAGES.filter((page) => page.kind === "policy");
+    expect(policyPages).toHaveLength(8);
+    expect(policyPages.every((page) => page.publicationState === "review-required")).toBe(true);
+  });
 });

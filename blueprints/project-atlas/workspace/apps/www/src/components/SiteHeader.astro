@@ -1,0 +1,92 @@
+---
+import { SITE_CHROME } from "../content/site-chrome";
+import type { PublicPage } from "../domain/public-site";
+import ActionLink from "./ActionLink.astro";
+import LanguageSwitcher from "./LanguageSwitcher.astro";
+import LogoLockup from "./LogoLockup.astro";
+
+interface Props {
+  page: PublicPage;
+}
+
+const { page } = Astro.props;
+const copy = SITE_CHROME[page.locale];
+const isActive = (href: string) =>
+  href === (page.locale === "es" ? "/" : "/en/") ? page.path === href : page.path.startsWith(href);
+---
+
+<header class="site-header">
+  <div class="utility-bar">
+    <div class="site-container utility-bar__inner">
+      <p>{copy.assistance}</p>
+      <ActionLink action="clientPortal" locale={page.locale} variant="text" />
+    </div>
+  </div>
+  <div class="site-container header-main">
+    <a class="brand-home" href={page.locale === "es" ? "/" : "/en/"} aria-label="SG Solutions">
+      <LogoLockup compact />
+    </a>
+
+    <nav class="desktop-nav" aria-label={page.locale === "es" ? "Navegación principal" : "Primary navigation"}>
+      <ul>
+        {
+          copy.nav.map((item) => (
+            <li>
+              <a href={item.href} aria-current={isActive(item.href) ? "page" : undefined}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="header-actions">
+      <LanguageSwitcher locale={page.locale} routeKey={page.routeKey} compact />
+      <ActionLink action="evaluation" locale={page.locale} />
+    </div>
+
+    <details class="mobile-nav">
+      <summary aria-label={copy.menu}>
+        <span class="mobile-nav__icon" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="sr-only">{copy.menu}</span>
+      </summary>
+      <div class="mobile-nav__panel">
+        <div class="mobile-nav__top">
+          <span>{page.locale === "es" ? "Navegación" : "Navigation"}</span>
+          <span aria-hidden="true">×</span>
+        </div>
+        <nav aria-label={page.locale === "es" ? "Navegación móvil" : "Mobile navigation"}>
+          <ul>
+            {
+              copy.nav.map((item) => (
+                <li>
+                  <a href={item.href} aria-current={isActive(item.href) ? "page" : undefined}>
+                    {item.label}<span aria-hidden="true">→</span>
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+        <LanguageSwitcher locale={page.locale} routeKey={page.routeKey} />
+        <ActionLink action="evaluation" locale={page.locale} />
+      </div>
+    </details>
+  </div>
+</header>
+
+<script>
+  for (const menu of document.querySelectorAll<HTMLDetailsElement>(".mobile-nav")) {
+    menu.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || !menu.open) return;
+      menu.open = false;
+      menu.querySelector<HTMLElement>("summary")?.focus();
+    });
+    menu.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => {
+        menu.open = false;
+      });
+    });
+  }
+</script>

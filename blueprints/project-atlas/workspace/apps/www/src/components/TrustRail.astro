@@ -1,0 +1,16 @@
+---
+import type { Locale } from "../domain/public-site";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const items =
+  locale === "es"
+    ? ["Atención bilingüe", "Proceso claro", "Seguimiento humano", "Privacidad primero"]
+    : ["Bilingual support", "Clear process", "Human follow-up", "Privacy first"];
+---
+
+<aside class="trust-rail" aria-label={locale === "es" ? "Principios de confianza" : "Trust principles"}>
+  <div class="site-container"><ul>{items.map((item) => <li><span aria-hidden="true">✓</span>{item}</li>)}</ul></div>
+</aside>

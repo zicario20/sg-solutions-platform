@@ -23,6 +23,29 @@ export type RouteKey =
 
 export type PageKind = "home" | "services" | "service" | "standard" | "policy";
 
+export type PublicationState = "published" | "review-required";
+export type SectionVariant = "cards" | "steps" | "checklist" | "feature" | "faq" | "prose";
+
+export interface PublicSectionItem {
+  title: string;
+  body: string;
+  href?: string;
+}
+
+export interface PublicSection {
+  id: string;
+  title: string;
+  intro?: string;
+  variant: SectionVariant;
+  items: PublicSectionItem[];
+}
+
+export interface PageHero {
+  eyebrow: string;
+  heading: string;
+  summary: string;
+}
+
 export interface PublicService {
   id:
     | Exclude<
@@ -53,4 +76,7 @@ export interface PublicPage {
   kind: PageKind;
   title: string;
   description: string;
+  hero: PageHero;
+  sections: PublicSection[];
+  publicationState: PublicationState;
 }

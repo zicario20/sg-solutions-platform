@@ -1,0 +1,30 @@
+---
+import type { PublicPage } from "../domain/public-site";
+
+interface Props {
+  page: PublicPage;
+}
+const { page } = Astro.props;
+const es = page.locale === "es";
+const items =
+  page.kind === "service"
+    ? [
+        { label: es ? "Inicio" : "Home", href: es ? "/" : "/en/" },
+        { label: es ? "Servicios" : "Services", href: es ? "/servicios/" : "/en/services/" },
+        { label: page.hero.heading },
+      ]
+    : [{ label: es ? "Inicio" : "Home", href: es ? "/" : "/en/" }, { label: page.hero.heading }];
+---
+
+{page.routeKey !== "home" && (
+  <nav class="breadcrumbs site-container" aria-label={es ? "Migas de pan" : "Breadcrumbs"}>
+    <ol>
+      {items.map((item, index) => (
+        <li>
+          {item.href ? <a href={item.href}>{item.label}</a> : <span aria-current="page">{item.label}</span>}
+          {index < items.length - 1 && <span aria-hidden="true">/</span>}
+        </li>
+      ))}
+    </ol>
+  </nav>
+)}

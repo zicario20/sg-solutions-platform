@@ -1,10 +1,11 @@
 import type { PublicPage, PublicService } from "../domain/public-site";
+import { createPageExperience } from "./page-experience";
 
 interface PageDefinition {
   routeKey: PublicPage["routeKey"];
   kind: PublicPage["kind"];
-  es: Omit<PublicPage, "routeKey" | "kind" | "locale">;
-  en: Omit<PublicPage, "routeKey" | "kind" | "locale">;
+  es: Pick<PublicPage, "path" | "title" | "description">;
+  en: Pick<PublicPage, "path" | "title" | "description">;
 }
 
 const pageDefinitions: PageDefinition[] = [
@@ -314,12 +315,26 @@ export const PUBLIC_PAGES: PublicPage[] = pageDefinitions.flatMap((definition) =
     kind: definition.kind,
     locale: "es",
     ...definition.es,
+    ...createPageExperience({
+      routeKey: definition.routeKey,
+      kind: definition.kind,
+      locale: "es",
+      title: definition.es.title,
+      description: definition.es.description,
+    }),
   },
   {
     routeKey: definition.routeKey,
     kind: definition.kind,
     locale: "en",
     ...definition.en,
+    ...createPageExperience({
+      routeKey: definition.routeKey,
+      kind: definition.kind,
+      locale: "en",
+      title: definition.en.title,
+      description: definition.en.description,
+    }),
   },
 ]);
 

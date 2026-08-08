@@ -1,0 +1,48 @@
+---
+import type { Locale, PublicSection } from "../domain/public-site";
+
+interface Props {
+  section: PublicSection;
+  locale: Locale;
+  index: number;
+}
+const { section, locale, index } = Astro.props;
+const isFeature = section.variant === "feature";
+---
+
+<section
+  id={section.id}
+  class:list={["content-section", `content-section--${section.variant}`, { "content-section--tint": index % 2 === 1 }]}
+>
+  <div class="site-container">
+    <div class="section-heading">
+      <p class="eyebrow"><span></span>{locale === "es" ? "Diseñado para avanzar" : "Designed to move forward"}</p>
+      <h2>{section.title}</h2>
+      {section.intro && <p>{section.intro}</p>}
+    </div>
+    {section.variant === "faq" ? (
+      <div class="faq-list">
+        {section.items.map((item) => (
+          <details>
+            <summary>{item.title}<span aria-hidden="true">+</span></summary>
+            <p>{item.body}</p>
+          </details>
+        ))}
+      </div>
+    ) : (
+      <div class:list={["section-items", `section-items--${section.variant}`]}>
+        {section.items.map((item, itemIndex) => (
+          <article class:list={["section-item", { "section-item--feature": isFeature }] }>
+            {section.variant === "steps" && <span class="step-number">0{itemIndex + 1}</span>}
+            {section.variant === "checklist" && <span class="check-mark" aria-hidden="true">✓</span>}
+            <div>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+              {item.href && <a class="text-link" href={item.href}>{locale === "es" ? "Conoce más" : "Learn more"}<span aria-hidden="true">→</span></a>}
+            </div>
+          </article>
+        ))}
+      </div>
+    )}
+  </div>
+</section>

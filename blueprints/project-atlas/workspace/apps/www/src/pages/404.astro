@@ -1,0 +1,35 @@
+---
+import ActionLink from "../components/ActionLink.astro";
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,follow" />
+    <title>Página no encontrada | SG Solutions</title>
+    <link rel="stylesheet" href="/src/styles/global.css" />
+  </head>
+  <body>
+    <main id="main-content" class="not-found">
+      <div class="site-container">
+        <p class="eyebrow"><span></span>Error 404</p>
+        <h1>No encontramos esa página</h1>
+        <p>La dirección pudo cambiar. Regresa al inicio o explora los servicios disponibles.</p>
+        <div class="hero__actions">
+          <a class="action-link action-link--primary" href="/">Volver al inicio</a>
+          <a class="action-link action-link--secondary" href="/en/">English</a>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
+
+<style>
+  @import "../styles/global.css";
+  .not-found { min-height: 100vh; display: grid; place-items: center; padding: 48px 0; background: linear-gradient(145deg, #fff, #eef6ff); }
+  .not-found .site-container { max-width: 720px; }
+  .not-found h1 { font-size: clamp(2.7rem, 8vw, 5.5rem); }
+  .not-found p:not(.eyebrow) { max-width: 56ch; margin-top: 22px; color: #526d82; font-size: 1.1rem; }
+</style>
