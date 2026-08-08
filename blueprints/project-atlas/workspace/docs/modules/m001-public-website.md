@@ -5,7 +5,7 @@
 - Surface: Public
 - Domain: Growth
 - Release: R1.2 / Release 1A
-- Status: Ready for the approved M001 Build gate
+- Status: PO Acceptance — implementation and local quality gate complete; not deployed
 - Last updated: 2026-08-08
 
 ## 1. Purpose

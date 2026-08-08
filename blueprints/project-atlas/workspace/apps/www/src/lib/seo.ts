@@ -39,7 +39,6 @@ export function createStructuredData(page: PublicPage, origin: string): object {
       description: page.description,
       url: seo.canonical,
       provider: organization,
-      areaServed: "US",
     };
   }
 
@@ -66,6 +65,13 @@ export function createStructuredData(page: PublicPage, origin: string): object {
     url: seo.canonical,
     inLanguage: page.locale,
   };
+}
+
+export function serializeStructuredData(value: object): string {
+  return JSON.stringify(value)
+    .replace(/</g, "\\u003c")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
 }
 
 function normalizeOrigin(origin: string): string {

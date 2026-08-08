@@ -22,8 +22,8 @@ const showUnavailable = page.routeKey === "contact";
 {page.publicationState === "review-required" && (
   <div class="review-banner" role="status">
     <div class="site-container">
-      <strong>{page.locale === "es" ? "Revisión requerida" : "Review required"}</strong>
-      <span>{page.locale === "es" ? "Este contenido no está aprobado para publicación legal en producción." : "This content is not approved for production legal publication."}</span>
+      <strong>{copy.reviewTitle}</strong>
+      <span>{copy.reviewBody}</span>
     </div>
   </div>
 )}
@@ -34,7 +34,7 @@ const showUnavailable = page.routeKey === "contact";
   <section class="integration-notice" aria-labelledby="integration-title">
     <div class="site-container integration-notice__inner">
       <div>
-        <p class="eyebrow"><span></span>{page.locale === "es" ? "Canal seguro" : "Secure channel"}</p>
+        <p class="eyebrow"><span></span>{copy.integrationEyebrow}</p>
         <h2 id="integration-title">{copy.unavailableTitle}</h2>
         <p>{copy.unavailableBody}</p>
       </div>
@@ -46,9 +46,9 @@ const showUnavailable = page.routeKey === "contact";
 <section class="final-cta">
   <div class="site-container final-cta__inner">
     <div>
-      <p class="eyebrow eyebrow--light"><span></span>{page.locale === "es" ? "El siguiente paso" : "The next step"}</p>
-      <h2>{page.locale === "es" ? "Empieza con una conversación clara" : "Start with a clear conversation"}</h2>
-      <p>{page.locale === "es" ? "Primero entendemos tu objetivo. Después definimos alcance, información y próximos pasos." : "We first understand your goal. Then we define scope, information and next steps."}</p>
+      <p class="eyebrow eyebrow--light"><span></span>{copy.finalEyebrow}</p>
+      <h2>{copy.finalHeading}</h2>
+      <p>{copy.finalBody}</p>
     </div>
     <ActionLink action="evaluation" locale={page.locale} />
   </div>

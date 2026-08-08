@@ -1,0 +1,71 @@
+---
+import { SITE_CHROME } from "../content/site-chrome";
+import type { Locale } from "../domain/public-site";
+import "../styles/global.css";
+
+interface Props {
+  locale: Locale;
+  adaptive?: boolean;
+}
+
+const { locale, adaptive = false } = Astro.props;
+const copy = SITE_CHROME[locale];
+const englishCopy = SITE_CHROME.en;
+const homeHref = locale === "es" ? "/" : "/en/";
+const servicesHref = locale === "es" ? "/servicios/" : "/en/services/";
+---
+
+<!doctype html>
+<html
+  lang={locale}
+  data-localized-404={adaptive ? "" : undefined}
+  data-en-title={adaptive ? englishCopy.notFoundTitle : undefined}
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,follow" />
+    <title>{copy.notFoundTitle}</title>
+  </head>
+  <body>
+    <main id="main-content" class="not-found">
+      <div class="site-container">
+        <p class="eyebrow"><span></span>Error 404</p>
+        <h1 data-en-text={adaptive ? englishCopy.notFoundHeading : undefined}>
+          {copy.notFoundHeading}
+        </h1>
+        <p data-en-text={adaptive ? englishCopy.notFoundBody : undefined}>{copy.notFoundBody}</p>
+        <div class="hero__actions">
+          <a
+            class="action-link action-link--primary"
+            href={homeHref}
+            data-en-text={adaptive ? englishCopy.notFoundHome : undefined}
+            data-en-href={adaptive ? "/en/" : undefined}>{copy.notFoundHome}</a
+          >
+          <a
+            class="action-link action-link--secondary"
+            href={servicesHref}
+            data-en-text={adaptive ? englishCopy.notFoundServices : undefined}
+            data-en-href={adaptive ? "/en/services/" : undefined}>{copy.notFoundServices}</a
+          >
+        </div>
+      </div>
+    </main>
+    {
+      adaptive && (
+        <noscript>
+          <section class="not-found__fallback" lang="en" aria-label="English recovery options">
+            <h2>{englishCopy.notFoundHeading}</h2>
+            <p>{englishCopy.notFoundBody}</p>
+            <p>
+              <a href="/en/">{englishCopy.notFoundHome}</a>
+              <span aria-hidden="true"> · </span>
+              <a href="/en/services/">{englishCopy.notFoundServices}</a>
+            </p>
+          </section>
+        </noscript>
+      )
+    }
+    {adaptive && <script is:inline src="/scripts/localized-404.js" defer></script>}
+  </body>
+</html>

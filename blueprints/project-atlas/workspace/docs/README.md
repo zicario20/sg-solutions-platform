@@ -26,6 +26,13 @@ Security and recovery authorities:
 - [Authorization Inheritance ADR](adr/004-authorization-inheritance.md)
 - [Encryption ADR](adr/005-encryption.md)
 
+M001 delivery evidence:
+
+- [UX and Accessibility Review](reviews/M001-UX-ACCESSIBILITY-REVIEW.md)
+- [Security Review](reviews/M001-SECURITY-REVIEW.md)
+- [Public Website Runbook](runbooks/M001-public-website.md)
+- [M001 Phase Completion Report](phases/PCR-M001-public-website.md)
+
 Approved design specifications live under `superpowers/specs/`. A specification documents an approved design; it is not implementation authorization.
 
 The active bundle entry point is [blueprint.md](../../blueprint.md). Superseded E1–E3 planning lives under `../../archive/pre-roadmap-2026-08-02/` and is non-executable. There is no active task queue during Phase 0 documentary review.

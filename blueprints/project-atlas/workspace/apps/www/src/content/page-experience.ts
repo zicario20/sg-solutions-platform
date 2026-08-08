@@ -230,7 +230,10 @@ export function createPageExperience(input: ExperienceInput): {
   publicationState: PublicPage["publicationState"];
 } {
   const copy = localized[input.locale];
-  const heading = ensureHeadingLength(input.title.replace(/ \| SG Solutions$/, ""), input.locale);
+  const heading = ensureHeadingLength(
+    input.title.replace(/^SG Solutions \| /, "").replace(/ \| SG Solutions$/, ""),
+    input.locale,
+  );
   const hero = {
     eyebrow: copy.eyebrow[input.kind],
     heading,

@@ -16,6 +16,7 @@
       "!!**/node_modules",
       "!!**/.turbo",
       "!!**/.next",
+      "!!**/.astro",
       "!!**/dist",
       "!!**/coverage",
       "!!**/playwright-report",

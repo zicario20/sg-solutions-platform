@@ -15,8 +15,8 @@ export const designTokens = {
       error: "#B42318",
     },
     font: {
-      heading: "Manrope, Inter, system-ui, sans-serif",
-      body: "Inter, system-ui, sans-serif",
+      heading: '"Manrope Variable", Manrope, "Inter Variable", Inter, system-ui, sans-serif',
+      body: '"Inter Variable", Inter, system-ui, sans-serif',
     },
     radius: {
       control: "12px",

@@ -9,51 +9,26 @@ interface Props {
 
 const { locale } = Astro.props;
 const copy = SITE_CHROME[locale];
-const es = locale === "es";
-const serviceLinks = es
-  ? [
-      ["Crédito", "/servicios/credito/"],
-      ["Taxes", "/servicios/taxes/"],
-      ["Formación de negocios", "/servicios/formacion-de-negocios/"],
-      ["Financiamiento", "/servicios/financiamiento-empresarial/"],
-      ["Comprar casa", "/servicios/comprar-casa/"],
-    ]
-  : [
-      ["Credit", "/en/services/credit/"],
-      ["Taxes", "/en/services/taxes/"],
-      ["Business formation", "/en/services/business-formation/"],
-      ["Business funding", "/en/services/business-funding/"],
-      ["Home buying", "/en/services/home-buying/"],
-    ];
+const homeHref = locale === "es" ? "/" : "/en/";
 ---
 
 <footer class="site-footer">
   <div class="site-container footer-grid">
     <div class="footer-brand">
-      <a href={es ? "/" : "/en/"} aria-label="SG Solutions"><LogoLockup /></a>
+      <a href={homeHref} aria-label="SG Solutions"><LogoLockup /></a>
       <p>{copy.footerSummary}</p>
     </div>
     <div>
       <h2>{copy.footerServices}</h2>
-      <ul>{serviceLinks.map(([label, href]) => <li><a href={href}>{label}</a></li>)}</ul>
+      <ul>{copy.footerLinks.services.map((item) => <li><a href={item.href}>{item.label}</a></li>)}</ul>
     </div>
     <div>
       <h2>{copy.footerCompany}</h2>
-      <ul>
-        <li><a href={es ? "/nosotros/" : "/en/about/"}>{es ? "Nosotros" : "About"}</a></li>
-        <li><a href={es ? "/contacto/" : "/en/contact/"}>{es ? "Contacto" : "Contact"}</a></li>
-        <li><a href={es ? "/precios/" : "/en/pricing/"}>{es ? "Precios" : "Pricing"}</a></li>
-        <li><a href={es ? "/preguntas-frecuentes/" : "/en/faq/"}>FAQ</a></li>
-      </ul>
+      <ul>{copy.footerLinks.company.map((item) => <li><a href={item.href}>{item.label}</a></li>)}</ul>
     </div>
     <div>
       <h2>{copy.footerPolicies}</h2>
-      <ul>
-        <li><a href={es ? "/privacidad/" : "/en/privacy/"}>{es ? "Privacidad" : "Privacy"}</a></li>
-        <li><a href={es ? "/terminos/" : "/en/terms/"}>{es ? "Términos" : "Terms"}</a></li>
-        <li><a href={es ? "/accesibilidad/" : "/en/accessibility/"}>{es ? "Accesibilidad" : "Accessibility"}</a></li>
-        <li><a href={es ? "/divulgaciones/" : "/en/disclosures/"}>{es ? "Divulgaciones" : "Disclosures"}</a></li>
-      </ul>
+      <ul>{copy.footerLinks.policies.map((item) => <li><a href={item.href}>{item.label}</a></li>)}</ul>
     </div>
   </div>
   <div class="site-container footer-bottom">

@@ -44,6 +44,15 @@ describe("M001 public action resolver", () => {
 
   it("keeps quote and portal fallbacks distinct", () => {
     expect(resolvePublicAction("quote", "es", {}).href).toBe("/contacto/?intent=cotizacion");
-    expect(resolvePublicAction("clientPortal", "en", {}).href).toBe("/client/");
+    expect(resolvePublicAction("clientPortal", "es", {})).toEqual({
+      available: false,
+      href: "/contacto/?intent=portal",
+      external: false,
+    });
+    expect(resolvePublicAction("clientPortal", "en", {})).toEqual({
+      available: false,
+      href: "/en/contact/?intent=portal",
+      external: false,
+    });
   });
 });

@@ -31,7 +31,7 @@ describe("tooling configuration", () => {
       expect.stringMatching(/\/\*\*$/),
     );
     expect(config.files?.includes).toEqual(
-      expect.arrayContaining(["!!**/.turbo", "!!**/.next", "!!**/node_modules"]),
+      expect.arrayContaining(["!!**/.turbo", "!!**/.next", "!!**/.astro", "!!**/node_modules"]),
     );
   });
 
@@ -76,7 +76,7 @@ describe("tooling configuration", () => {
     ]);
   });
 
-  it("keeps framework type declarations without adding product routes", () => {
+  it("keeps framework declarations and limits authorized routes to the public site", () => {
     const gitignore = readFileSync(".gitignore", "utf8");
 
     expect(existsSync("apps/app/next-env.d.ts")).toBe(true);
@@ -84,7 +84,7 @@ describe("tooling configuration", () => {
     expect(gitignore).not.toMatch(/^next-env\.d\.ts$/m);
     expect(existsSync("apps/app/app")).toBe(false);
     expect(existsSync("apps/app/pages")).toBe(false);
-    expect(existsSync("apps/www/src/pages")).toBe(false);
+    expect(existsSync("apps/www/src/pages")).toBe(true);
   });
 
   it("provides a Phase 0 scaffold validation command", () => {
@@ -96,7 +96,7 @@ describe("tooling configuration", () => {
   });
 
   it("pins audited transitive packages above known vulnerable versions", () => {
-    const pnpmWorkspace = readFileSync("pnpm-workspace.yaml", "utf8");
+    const pnpmWorkspace = readFileSync("pnpm-workspace.yaml", "utf8").replace(/\r\n/g, "\n");
 
     expect(pnpmWorkspace).toContain("overrides:\n");
     expect(pnpmWorkspace).toContain("  esbuild: 0.25.12\n");

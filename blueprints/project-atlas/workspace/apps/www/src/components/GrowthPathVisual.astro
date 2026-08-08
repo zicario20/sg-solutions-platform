@@ -1,3 +1,15 @@
+---
+import { SITE_CHROME } from "../content/site-chrome";
+import type { Locale } from "../domain/public-site";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = SITE_CHROME[locale];
+---
+
 <div class="growth-visual" aria-hidden="true">
   <svg viewBox="0 0 640 520" role="presentation">
     <defs>
@@ -34,9 +46,9 @@
     </g>
   </svg>
   <div class="growth-visual__badge growth-visual__badge--top">
-    <span class="status-dot"></span><span>Plan</span><strong>Claro</strong>
+    <span class="status-dot"></span><span>{copy.growthPlan}</span>
   </div>
   <div class="growth-visual__badge growth-visual__badge--bottom">
-    <span class="badge-check">✓</span><span>Próximo paso</span>
+    <span class="badge-check">✓</span><span>{copy.growthNextStep}</span>
   </div>
 </div>

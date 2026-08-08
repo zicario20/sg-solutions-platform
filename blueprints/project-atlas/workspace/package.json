@@ -19,9 +19,11 @@
     "scaffold:validate": "corepack pnpm lint && corepack pnpm format:check && corepack pnpm typecheck && corepack pnpm test && corepack pnpm contract:imports",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:www": "playwright test --config=playwright.www.config.ts",
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
     "@biomejs/biome": "2.5.6",
     "@playwright/test": "1.62.1",
     "@types/node": "24.13.3",

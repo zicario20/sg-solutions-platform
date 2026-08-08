@@ -1,5 +1,31 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2")
+    format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Manrope Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url("@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2")
+    format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
 :root {
   --color-brand-navy: #0a2540;
   --color-brand-cobalt: #0b63ce;
@@ -13,8 +39,8 @@
   --color-action-primary-hover: #084eaa;
   --color-focus: #00a3e0;
   --color-border-subtle: #d9e2ec;
-  --font-heading: Manrope, Inter, system-ui, sans-serif;
-  --font-body: Inter, system-ui, sans-serif;
+  --font-heading: "Manrope Variable", Manrope, "Inter Variable", Inter, system-ui, sans-serif;
+  --font-body: "Inter Variable", Inter, system-ui, sans-serif;
   --shadow-card: 0 18px 50px rgb(10 37 64 / 8%);
   --shadow-floating: 0 22px 70px rgb(10 37 64 / 16%);
   --control-min-size: 44px;
@@ -115,7 +141,7 @@ ol {
   font-size: 0.78rem;
 }
 .utility-bar__inner {
-  min-height: 36px;
+  min-height: var(--control-min-size);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -196,6 +222,7 @@ ol {
   gap: 10px;
 }
 .language-switcher {
+  min-width: var(--control-min-size);
   min-height: var(--control-min-size);
   display: inline-flex;
   align-items: center;
@@ -254,14 +281,14 @@ ol {
   color: var(--color-brand-cobalt);
 }
 .action-link--text {
-  min-height: 36px;
+  min-height: var(--control-min-size);
   padding: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
 }
 .utility-bar .action-link {
-  min-height: 36px;
+  min-height: var(--control-min-size);
   color: white;
   font-size: 0.78rem;
 }
@@ -330,7 +357,7 @@ ol {
 .breadcrumbs {
   padding-block: 18px 0;
   font-size: 0.82rem;
-  color: #627d98;
+  color: #526d82;
 }
 .breadcrumbs ol,
 .breadcrumbs li {
@@ -339,6 +366,10 @@ ol {
   gap: 9px;
 }
 .breadcrumbs a {
+  min-width: var(--control-min-size);
+  min-height: var(--control-min-size);
+  display: inline-flex;
+  align-items: center;
   color: var(--color-brand-cobalt);
 }
 .hero {
@@ -540,6 +571,8 @@ ol {
 }
 .content-section {
   padding: clamp(72px, 9vw, 118px) 0;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 720px;
 }
 .content-section--tint {
   background: var(--color-surface-subtle);
@@ -608,7 +641,7 @@ ol {
   position: absolute;
   top: 22px;
   left: 28px;
-  color: var(--color-brand-cyan);
+  color: var(--color-brand-cobalt);
   font-family: var(--font-heading);
   font-size: 1.35rem;
   font-weight: 800;
@@ -625,7 +658,10 @@ ol {
   font-weight: 900;
 }
 .text-link {
+  min-width: var(--control-min-size);
+  min-height: var(--control-min-size);
   display: inline-flex;
+  align-items: center;
   gap: 8px;
   margin-top: 18px;
   color: var(--color-brand-cobalt);
@@ -681,6 +717,8 @@ ol {
 .integration-notice {
   padding: 72px 0;
   background: #edf7ff;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 280px;
 }
 .integration-notice__inner {
   display: grid;
@@ -700,6 +738,8 @@ ol {
   color: white;
   background: var(--color-brand-navy);
   overflow: hidden;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
 }
 .final-cta::after {
   content: "";
@@ -736,6 +776,8 @@ ol {
   padding: 72px 0 28px;
   color: #c7d7e4;
   background: #061b2d;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 560px;
 }
 .footer-grid {
   display: grid;
@@ -760,6 +802,10 @@ ol {
   margin-top: 9px;
 }
 .site-footer a {
+  min-width: var(--control-min-size);
+  min-height: var(--control-min-size);
+  display: inline-flex;
+  align-items: center;
   color: #dbe7ef;
   text-decoration: none;
 }
@@ -780,6 +826,40 @@ ol {
   max-width: 90ch;
   justify-self: end;
   text-align: right;
+}
+.not-found {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 48px 0;
+  background: linear-gradient(145deg, #fff, #eef6ff);
+}
+.not-found .site-container {
+  max-width: 720px;
+}
+.not-found h1 {
+  font-size: clamp(2.7rem, 8vw, 5.5rem);
+}
+.not-found p:not(.eyebrow) {
+  max-width: 56ch;
+  margin-top: 22px;
+  color: #526d82;
+  font-size: 1.1rem;
+}
+.not-found__fallback {
+  padding: 32px 20px;
+  border-top: 1px solid var(--color-border-subtle);
+  text-align: center;
+}
+.not-found__fallback p {
+  margin-top: 12px;
+}
+.not-found__fallback a {
+  min-height: var(--control-min-size);
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-brand-cobalt);
+  font-weight: 750;
 }
 
 @media (max-width: 1100px) {
@@ -944,6 +1024,9 @@ ol {
   *::after {
     animation-duration: 0.01ms;
     animation-iteration-count: 1;
+  }
+  :root .action-link,
+  :root .faq-list summary span {
     transition-duration: 0.01ms;
   }
 }

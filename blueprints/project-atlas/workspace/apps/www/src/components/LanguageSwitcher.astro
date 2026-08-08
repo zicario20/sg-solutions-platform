@@ -18,6 +18,7 @@ const alternateLocale = locale === "es" ? "en" : "es";
   href={getAlternatePath(routeKey, alternateLocale)}
   hreflang={alternateLocale}
   lang={alternateLocale}
+  aria-label={SITE_CHROME[locale].language}
 >
   <span aria-hidden="true">{alternateLocale.toUpperCase()}</span>
   <span>{SITE_CHROME[locale].language}</span>

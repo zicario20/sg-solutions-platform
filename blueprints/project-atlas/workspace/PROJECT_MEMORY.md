@@ -50,3 +50,14 @@
 - M001 received a dedicated 21-section PRD and persisted UX/UI execution specification. Dependent
   lead, scheduling, payments, authentication, CRM, Help Center and marketplace behaviors remain in
   their owning modules and are not simulated by M001.
+- M001 was implemented as a static-first bilingual Astro public site with 19 Spanish and 19 English
+  content routes, operational endpoints, safe CTA fallbacks, self-hosted approved fonts, the exact
+  supplied logo, responsive components, SEO projections and Vercel security-header configuration.
+- The M001 quality gate passed 38 unit/contract tests and 32 desktop/mobile browser tests. Cyber Neo
+  found no exploitable vulnerability or exposed secret; its Low ignore-rule gap and Informational
+  JSON-LD hardening observation were corrected with regression tests. The module moved to Product
+  Owner acceptance, not Operational or deployed status.
+- Fresh post-review evidence superseded the preliminary M001 counts: 44 unit/contract tests and 40
+  desktop/mobile browser tests pass, Astro emits 40 static outputs, and independent review findings
+  covering CSP navigation, portal fallback, localization, touch targets, structured data and Vercel
+  routing were corrected. Cyber Neo follow-up found no exploitable vulnerability or exposed secret.
