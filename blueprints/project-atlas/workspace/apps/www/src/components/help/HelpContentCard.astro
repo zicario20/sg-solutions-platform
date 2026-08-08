@@ -1,0 +1,34 @@
+---
+import { getCategoryCopy, getCollectionCopy } from "../../content/help-center/categories";
+import type { PublicKnowledgeRecord } from "../../domain/help-center";
+import { getHelpCollectionPath, getHelpDetailPath } from "../../lib/help-routes";
+
+interface Props {
+  record: PublicKnowledgeRecord;
+}
+
+const { record } = Astro.props;
+const category = getCategoryCopy(record.locale, record.category);
+const collection = getCollectionCopy(record.locale, record.type);
+const reviewed = new Intl.DateTimeFormat(record.locale === "es" ? "es-US" : "en-US", {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+}).format(new Date(`${record.reviewedAt}T12:00:00.000Z`));
+---
+
+<article class="help-card">
+  <p class="help-card__meta">
+    <a href={getHelpCollectionPath(record.locale, record.type)}>{collection.title}</a> · {category.title}
+  </p>
+  <h2><a href={getHelpDetailPath(record.locale, record.type, record.slug)}>{record.title}</a></h2>
+  <p>{record.summary}</p>
+  <p class="help-card__review">
+    {record.locale === "es" ? `Revisado ${reviewed}` : `Reviewed ${reviewed}`}
+    {record.readingMinutes ? ` · ${record.readingMinutes} min` : ""}
+  </p>
+  <a class="help-card__link" href={getHelpDetailPath(record.locale, record.type, record.slug)}>
+    {record.locale === "es" ? "Leer recurso" : "Read resource"}<span aria-hidden="true">→</span>
+  </a>
+</article>

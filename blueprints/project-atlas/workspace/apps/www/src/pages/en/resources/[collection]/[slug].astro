@@ -1,0 +1,39 @@
+---
+import HelpDetailPage from "../../../../components/help/HelpDetailPage.astro";
+import { HELP_CONTENT } from "../../../../content/help-center";
+import type { PublicKnowledgeRecord } from "../../../../domain/help-center";
+import HelpLayout from "../../../../layouts/HelpLayout.astro";
+import { createHelpPageShell, getHelpDetailEntries } from "../../../../lib/help-pages";
+import {
+  getHelpAlternatePath,
+  getHelpCollectionSegment,
+  getHelpDetailPath,
+} from "../../../../lib/help-routes";
+import { createHelpStructuredData } from "../../../../lib/help-seo";
+
+export function getStaticPaths() {
+  return getHelpDetailEntries(HELP_CONTENT, "en", new Date()).map(({ record }) => ({
+    params: { collection: getHelpCollectionSegment(record.locale, record.type), slug: record.slug },
+    props: { record },
+  }));
+}
+
+interface Props {
+  record: PublicKnowledgeRecord;
+}
+const { record } = Astro.props;
+const path = getHelpDetailPath(record.locale, record.type, record.slug);
+const alternatePath = getHelpAlternatePath(record, HELP_CONTENT);
+const page = createHelpPageShell({
+  locale: "en",
+  path,
+  title: record.seoTitle,
+  description: record.seoDescription,
+  heading: record.title,
+  summary: record.summary,
+});
+---
+
+<HelpLayout page={page} alternatePath={alternatePath} structuredData={createHelpStructuredData(record, "https://www.sgsllc.com", path)}>
+  <HelpDetailPage record={record} />
+</HelpLayout>

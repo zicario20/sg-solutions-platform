@@ -33,10 +33,12 @@ describe("M002 route contract", () => {
       const otherLocale = record.locale === "es" ? "en" : "es";
       const pair = HELP_CONTENT.find(
         (candidate) =>
-          candidate.translationGroupId === record.translationGroupId && candidate.locale === otherLocale,
+          candidate.translationGroupId === record.translationGroupId &&
+          candidate.locale === otherLocale,
       );
       expect(pair).toBeDefined();
-      expect(alternate).toBe(getHelpDetailPath(otherLocale, pair!.type, pair!.slug));
+      if (!pair) throw new Error(`Missing ${otherLocale} pair for ${record.id}`);
+      expect(alternate).toBe(getHelpDetailPath(otherLocale, pair.type, pair.slug));
     }
   });
 

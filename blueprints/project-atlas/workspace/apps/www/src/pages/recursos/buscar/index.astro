@@ -1,0 +1,23 @@
+---
+import HelpBreadcrumbs from "../../../components/help/HelpBreadcrumbs.astro";
+import HelpHero from "../../../components/help/HelpHero.astro";
+import HelpSearch from "../../../components/help/HelpSearch.astro";
+import HelpLayout from "../../../layouts/HelpLayout.astro";
+import { createHelpPageShell } from "../../../lib/help-pages";
+
+const page = createHelpPageShell({
+  locale: "es",
+  path: "/recursos/buscar/",
+  title: "Buscar en el Centro de ayuda | SG Solutions",
+  description:
+    "Busca respuestas públicas y revisadas de SG Solutions sin enviar tu consulta al servidor.",
+  heading: "Encuentra una respuesta clara",
+  summary: "La búsqueda ocurre en tu navegador y solo consulta nuestro índice público.",
+});
+---
+
+<HelpLayout page={page} alternatePath="/en/resources/search/" structuredData={{ "@context": "https://schema.org", "@type": "WebPage", name: page.hero.heading, inLanguage: "es" }}>
+  <HelpBreadcrumbs locale="es" items={[{ label: "Centro de ayuda", href: "/recursos/" }, { label: "Buscar" }]} />
+  <HelpHero locale="es" heading={page.hero.heading} summary={page.hero.summary} compact />
+  <div class="help-section help-section--search"><div class="site-container"><HelpSearch locale="es" indexEndpoint="/recursos/indice-busqueda.json" /></div></div>
+</HelpLayout>

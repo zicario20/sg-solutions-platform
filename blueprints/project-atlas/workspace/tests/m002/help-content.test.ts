@@ -89,7 +89,9 @@ describe("M002 public content gate", () => {
 
     expect(listPublishedKnowledge(records, "es", { category: "payments" }, at)).toHaveLength(1);
     expect(listPublishedKnowledge(records, "es", { type: "guide" }, at)).toHaveLength(1);
-    expect(listPublishedKnowledge(records, "en", {}, at).map((item) => item.id)).toEqual(["english"]);
+    expect(listPublishedKnowledge(records, "en", {}, at).map((item) => item.id)).toEqual([
+      "english",
+    ]);
   });
 
   it("returns a published slug only within its requested locale and collection", () => {

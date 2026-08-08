@@ -1,0 +1,54 @@
+---
+import HelpCollectionPage from "../../../../components/help/HelpCollectionPage.astro";
+import { HELP_COLLECTIONS, HELP_CONTENT } from "../../../../content/help-center";
+import type { KnowledgeType, PublicKnowledgeRecord } from "../../../../domain/help-center";
+import HelpLayout from "../../../../layouts/HelpLayout.astro";
+import { listPublishedKnowledge } from "../../../../lib/help-content";
+import { createHelpPageShell } from "../../../../lib/help-pages";
+import { getHelpCollectionPath } from "../../../../lib/help-routes";
+import { createFaqPageStructuredData } from "../../../../lib/help-seo";
+
+export function getStaticPaths() {
+  return HELP_COLLECTIONS.map((entry) => ({
+    params: { collection: entry.en.pathSegment },
+    props: { type: entry.type },
+  }));
+}
+
+interface Props {
+  type: KnowledgeType;
+}
+const { type } = Astro.props;
+const definition = HELP_COLLECTIONS.find((entry) => entry.type === type);
+if (!definition) throw new Error(`Unknown help collection: ${type}`);
+const records: PublicKnowledgeRecord[] = listPublishedKnowledge(
+  HELP_CONTENT,
+  "en",
+  { type },
+  new Date(),
+);
+const path = getHelpCollectionPath("en", type);
+const page = createHelpPageShell({
+  locale: "en",
+  path,
+  title: `${definition.en.title} | SG Solutions`,
+  description: definition.en.description,
+  heading: definition.en.title,
+  summary: definition.en.description,
+});
+const structuredData =
+  type === "faq"
+    ? createFaqPageStructuredData(records, "https://www.sgsllc.com", path)
+    : {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: definition.en.title,
+        description: definition.en.description,
+        url: new URL(path, "https://www.sgsllc.com").toString(),
+        inLanguage: "en",
+      };
+---
+
+<HelpLayout page={page} alternatePath={getHelpCollectionPath("es", type)} structuredData={structuredData}>
+  <HelpCollectionPage locale="en" type={type} records={records} />
+</HelpLayout>

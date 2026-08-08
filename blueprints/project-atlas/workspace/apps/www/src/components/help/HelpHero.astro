@@ -1,0 +1,35 @@
+---
+import type { Locale } from "../../domain/public-site";
+import { getHelpSearchPath } from "../../lib/help-routes";
+
+interface Props {
+  locale: Locale;
+  eyebrow?: string;
+  heading: string;
+  summary: string;
+  compact?: boolean;
+}
+
+const {
+  locale,
+  eyebrow = locale === "es" ? "Centro de ayuda" : "Help Center",
+  heading,
+  summary,
+  compact = false,
+} = Astro.props;
+---
+
+<header class:list={["help-hero", compact && "help-hero--compact"]}>
+  <div class="site-container help-hero__inner">
+    <p class="eyebrow"><span></span>{eyebrow}</p>
+    <h1>{heading}</h1>
+    <p class="help-hero__summary">{summary}</p>
+    {!compact && (
+      <a class="help-search-entry" href={getHelpSearchPath(locale)}>
+        <span aria-hidden="true">⌕</span>
+        <span>{locale === "es" ? "Buscar en el centro de ayuda" : "Search the Help Center"}</span>
+        <span aria-hidden="true">→</span>
+      </a>
+    )}
+  </div>
+</header>

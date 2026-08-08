@@ -1,0 +1,54 @@
+---
+import HelpCollectionPage from "../../../components/help/HelpCollectionPage.astro";
+import { HELP_COLLECTIONS, HELP_CONTENT } from "../../../content/help-center";
+import type { KnowledgeType, PublicKnowledgeRecord } from "../../../domain/help-center";
+import HelpLayout from "../../../layouts/HelpLayout.astro";
+import { listPublishedKnowledge } from "../../../lib/help-content";
+import { createHelpPageShell } from "../../../lib/help-pages";
+import { getHelpCollectionPath } from "../../../lib/help-routes";
+import { createFaqPageStructuredData } from "../../../lib/help-seo";
+
+export function getStaticPaths() {
+  return HELP_COLLECTIONS.map((entry) => ({
+    params: { collection: entry.es.pathSegment },
+    props: { type: entry.type },
+  }));
+}
+
+interface Props {
+  type: KnowledgeType;
+}
+const { type } = Astro.props;
+const definition = HELP_COLLECTIONS.find((entry) => entry.type === type);
+if (!definition) throw new Error(`Unknown help collection: ${type}`);
+const records: PublicKnowledgeRecord[] = listPublishedKnowledge(
+  HELP_CONTENT,
+  "es",
+  { type },
+  new Date(),
+);
+const path = getHelpCollectionPath("es", type);
+const page = createHelpPageShell({
+  locale: "es",
+  path,
+  title: `${definition.es.title} | SG Solutions`,
+  description: definition.es.description,
+  heading: definition.es.title,
+  summary: definition.es.description,
+});
+const structuredData =
+  type === "faq"
+    ? createFaqPageStructuredData(records, "https://www.sgsllc.com", path)
+    : {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: definition.es.title,
+        description: definition.es.description,
+        url: new URL(path, "https://www.sgsllc.com").toString(),
+        inLanguage: "es",
+      };
+---
+
+<HelpLayout page={page} alternatePath={getHelpCollectionPath("en", type)} structuredData={structuredData}>
+  <HelpCollectionPage locale="es" type={type} records={records} />
+</HelpLayout>

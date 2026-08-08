@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { HELP_CONTENT } from "../../apps/www/src/content/help-center";
-import { createFaqPageStructuredData, createHelpSeo, createHelpStructuredData } from "../../apps/www/src/lib/help-seo";
 import { getHelpAlternatePath, getHelpDetailPath } from "../../apps/www/src/lib/help-routes";
+import {
+  createFaqPageStructuredData,
+  createHelpSeo,
+  createHelpStructuredData,
+} from "../../apps/www/src/lib/help-seo";
 import { serializeStructuredData } from "../../apps/www/src/lib/seo";
 
 const origin = "https://www.sgsllc.com";

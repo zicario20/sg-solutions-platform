@@ -1,0 +1,81 @@
+---
+import { HELP_CATEGORIES, HELP_COLLECTIONS } from "../../content/help-center";
+import type { Locale } from "../../domain/public-site";
+import { getHelpHubPath } from "../../lib/help-routes";
+import ActionLink from "../ActionLink.astro";
+
+interface Props {
+  locale: Locale;
+  indexEndpoint: string;
+}
+
+const { locale, indexEndpoint } = Astro.props;
+const copy =
+  locale === "es"
+    ? {
+        label: "Buscar en el centro de ayuda",
+        placeholder: "Ejemplo: utilización, documentos o USDA",
+        type: "Tipo de recurso",
+        category: "Tema",
+        allTypes: "Todos los tipos",
+        allCategories: "Todos los temas",
+        submit: "Buscar",
+        empty: "No encontramos respuestas que coincidan.",
+        emptyBody: "Prueba otra palabra o explora el Centro de ayuda por categoría.",
+        browse: "Explorar Centro de ayuda",
+      }
+    : {
+        label: "Search the Help Center",
+        placeholder: "Example: utilization, documents or USDA",
+        type: "Resource type",
+        category: "Topic",
+        allTypes: "All types",
+        allCategories: "All topics",
+        submit: "Search",
+        empty: "No matching answers were found.",
+        emptyBody: "Try another word or browse the Help Center by category.",
+        browse: "Browse Help Center",
+      };
+---
+
+<section class="help-search-panel" data-help-search data-index-endpoint={indexEndpoint} data-locale={locale}>
+  <form class="help-search-form" novalidate>
+    <label for={`help-search-${locale}`}>{copy.label}</label>
+    <div class="help-search-form__query">
+      <input id={`help-search-${locale}`} type="search" inputmode="search" autocomplete="off" placeholder={copy.placeholder} data-help-search-query />
+      <button type="submit">{copy.submit}</button>
+    </div>
+    <div class="help-search-form__filters">
+      <label>
+        <span>{copy.type}</span>
+        <select data-help-search-type>
+          <option value="">{copy.allTypes}</option>
+          {HELP_COLLECTIONS.map((entry) => <option value={entry.type}>{entry[locale].title}</option>)}
+        </select>
+      </label>
+      <label>
+        <span>{copy.category}</span>
+        <select data-help-search-category>
+          <option value="">{copy.allCategories}</option>
+          {HELP_CATEGORIES.map((entry) => <option value={entry.id}>{entry[locale].title}</option>)}
+        </select>
+      </label>
+    </div>
+  </form>
+  <p class="help-search-status" role="status" aria-live="polite" data-help-search-status></p>
+  <div class="help-search-results" data-help-search-results></div>
+  <div class="help-search-empty" data-help-search-empty hidden>
+    <h2>{copy.empty}</h2>
+    <p>{copy.emptyBody}</p>
+    <div>
+      <a class="action-link action-link--secondary" href={getHelpHubPath(locale)}>{copy.browse}</a>
+      <ActionLink action="evaluation" locale={locale} />
+    </div>
+  </div>
+  <noscript><p>{copy.emptyBody} <a href={getHelpHubPath(locale)}>{copy.browse}</a></p></noscript>
+</section>
+
+<script>
+  import { initializeHelpSearch } from "../../scripts/help-search";
+  initializeHelpSearch();
+</script>

@@ -1,0 +1,22 @@
+---
+import type { PublicKnowledgeRecord } from "../../domain/help-center";
+import KnowledgeBlocks from "./KnowledgeBlocks.astro";
+
+interface Props {
+  records: PublicKnowledgeRecord[];
+}
+
+const { records } = Astro.props;
+---
+
+<div class="help-faq-list">
+  {records.map((record) => (
+    <details data-help-faq>
+      <summary>
+        <span>{record.title}</span>
+        <span aria-hidden="true">+</span>
+      </summary>
+      <KnowledgeBlocks blocks={record.blocks} />
+    </details>
+  ))}
+</div>

@@ -1,0 +1,35 @@
+---
+import { getCollectionCopy } from "../../content/help-center/categories";
+import type { KnowledgeType, PublicKnowledgeRecord } from "../../domain/help-center";
+import type { Locale } from "../../domain/public-site";
+import { getHelpHubPath } from "../../lib/help-routes";
+import FaqCollection from "./FaqCollection.astro";
+import HelpBreadcrumbs from "./HelpBreadcrumbs.astro";
+import HelpContentCard from "./HelpContentCard.astro";
+import HelpHero from "./HelpHero.astro";
+
+interface Props {
+  locale: Locale;
+  type: KnowledgeType;
+  records: PublicKnowledgeRecord[];
+}
+
+const { locale, type, records } = Astro.props;
+const collection = getCollectionCopy(locale, type);
+const centerLabel = locale === "es" ? "Centro de ayuda" : "Help Center";
+---
+
+<HelpBreadcrumbs locale={locale} items={[{ label: centerLabel, href: getHelpHubPath(locale) }, { label: collection.title }]} />
+<HelpHero locale={locale} heading={collection.title} summary={collection.description} compact />
+
+<section class="help-section help-section--listing">
+  <div class="site-container">
+    {type === "faq" ? (
+      <FaqCollection records={records} />
+    ) : (
+      <div class="help-card-grid">
+        {records.map((record) => <HelpContentCard record={record} />)}
+      </div>
+    )}
+  </div>
+</section>

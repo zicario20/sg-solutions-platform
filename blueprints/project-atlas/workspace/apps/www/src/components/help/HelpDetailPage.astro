@@ -1,0 +1,86 @@
+---
+import { HELP_CONTENT } from "../../content/help-center";
+import { getCategoryCopy, getCollectionCopy } from "../../content/help-center/categories";
+import type { PublicKnowledgeRecord } from "../../domain/help-center";
+import { listPublishedKnowledge } from "../../lib/help-content";
+import { getHelpCollectionPath, getHelpDetailPath, getHelpHubPath } from "../../lib/help-routes";
+import HelpBreadcrumbs from "./HelpBreadcrumbs.astro";
+import HelpContentCard from "./HelpContentCard.astro";
+import HelpFeedback from "./HelpFeedback.astro";
+import HelpHero from "./HelpHero.astro";
+import KnowledgeBlocks from "./KnowledgeBlocks.astro";
+
+interface Props {
+  record: PublicKnowledgeRecord;
+}
+
+const { record } = Astro.props;
+const collection = getCollectionCopy(record.locale, record.type);
+const category = getCategoryCopy(record.locale, record.category);
+const publicRecords = listPublishedKnowledge(HELP_CONTENT, record.locale, {}, new Date());
+const related = record.relatedIds
+  .map((id) => publicRecords.find((candidate) => candidate.id === id))
+  .filter((candidate): candidate is PublicKnowledgeRecord => Boolean(candidate))
+  .slice(0, 3);
+const reviewed = new Intl.DateTimeFormat(record.locale === "es" ? "es-US" : "en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  timeZone: "UTC",
+}).format(new Date(`${record.reviewedAt}T12:00:00.000Z`));
+const reviewedLabel = record.locale === "es" ? `Revisado el ${reviewed}` : `Reviewed ${reviewed}`;
+---
+
+<HelpBreadcrumbs
+  locale={record.locale}
+  items={[
+    { label: record.locale === "es" ? "Centro de ayuda" : "Help Center", href: getHelpHubPath(record.locale) },
+    { label: collection.title, href: getHelpCollectionPath(record.locale, record.type) },
+    { label: record.title },
+  ]}
+/>
+<HelpHero locale={record.locale} eyebrow={`${collection.title} · ${category.title}`} heading={record.title} summary={record.summary} compact />
+
+<article class="help-article">
+  <div class="site-container help-article__layout">
+    <aside class="help-article__meta" aria-label={record.locale === "es" ? "Información editorial" : "Editorial information"}>
+      <p><strong>{reviewedLabel}</strong></p>
+      {record.readingMinutes && <p>{record.locale === "es" ? `${record.readingMinutes} min de lectura` : `${record.readingMinutes} min read`}</p>}
+      <p>{record.locale === "es" ? "Versión" : "Version"} {record.version}</p>
+    </aside>
+    <div class="help-article__body">
+      <KnowledgeBlocks blocks={record.blocks} />
+      <aside class="help-disclosure">
+        <h2>{record.locale === "es" ? "Importante" : "Important"}</h2>
+        <p>{record.disclosure}</p>
+      </aside>
+      {record.sources?.length ? (
+        <section class="help-sources">
+          <h2>{record.locale === "es" ? "Fuentes oficiales" : "Official sources"}</h2>
+          <ul>
+            {record.sources.map((source) => (
+              <li><a href={source.url} rel="external noopener noreferrer">{source.title}</a><span>{source.authority}</span></li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      <HelpFeedback contentId={record.id} locale={record.locale} />
+    </div>
+  </div>
+</article>
+
+{related.length > 0 && (
+  <section class="help-section help-section--tint">
+    <div class="site-container">
+      <div class="help-section__heading"><h2>{record.locale === "es" ? "Contenido relacionado" : "Related content"}</h2></div>
+      <div class="help-card-grid">{related.map((item) => <HelpContentCard record={item} />)}</div>
+    </div>
+  </section>
+)}
+
+<nav class="help-back-nav" aria-label={record.locale === "es" ? "Volver a la colección" : "Back to collection"}>
+  <div class="site-container">
+    <a href={getHelpCollectionPath(record.locale, record.type)}>← {collection.title}</a>
+    <a href={getHelpDetailPath(record.locale, record.type, record.slug)} aria-current="page" class="sr-only">{record.title}</a>
+  </div>
+</nav>

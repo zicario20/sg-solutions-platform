@@ -19,12 +19,24 @@ export function getHelpCollectionPath(locale: Locale, type: KnowledgeType): stri
   return `${getHelpHubPath(locale)}${getCollectionCopy(locale, type).pathSegment}/`;
 }
 
+export function getHelpCollectionSegment(locale: Locale, type: KnowledgeType): string {
+  return getCollectionCopy(locale, type).pathSegment;
+}
+
 export function getHelpDetailPath(locale: Locale, type: KnowledgeType, slug: string): string {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error(`Invalid help slug: ${slug}`);
   return `${getHelpCollectionPath(locale, type)}${slug}/`;
 }
 
-export function getHelpAlternatePath(record: KnowledgeRecord, records: KnowledgeRecord[]): string {
+type TranslatableKnowledgeRecord = Pick<
+  KnowledgeRecord,
+  "id" | "translationGroupId" | "locale" | "type" | "slug"
+>;
+
+export function getHelpAlternatePath(
+  record: TranslatableKnowledgeRecord,
+  records: TranslatableKnowledgeRecord[],
+): string {
   const alternateLocale = record.locale === "es" ? "en" : "es";
   const pair = records.find(
     (candidate) =>

@@ -24,12 +24,15 @@ describe("M002 integration with the M001 shell", () => {
   });
 
   it("allows an exact alternate path without changing existing M001 route lookup", () => {
-    const page = PUBLIC_PAGES.find((candidate) => candidate.routeKey === "about" && candidate.locale === "es");
+    const page = PUBLIC_PAGES.find(
+      (candidate) => candidate.routeKey === "about" && candidate.locale === "es",
+    );
     if (!page) throw new Error("Missing about fixture");
 
-    expect(createSeoProjection(page, "https://www.sgsllc.com", "/en/resources/articles/example/").alternate).toBe(
-      "https://www.sgsllc.com/en/resources/articles/example/",
-    );
+    expect(
+      createSeoProjection(page, "https://www.sgsllc.com", "/en/resources/articles/example/")
+        .alternate,
+    ).toBe("https://www.sgsllc.com/en/resources/articles/example/");
     expect(createSeoProjection(page, "https://www.sgsllc.com").alternate).toBe(
       "https://www.sgsllc.com/en/about/",
     );

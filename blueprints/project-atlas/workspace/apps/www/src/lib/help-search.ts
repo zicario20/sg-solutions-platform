@@ -79,9 +79,14 @@ export function searchHelp(
   return index
     .filter((document) => !filters.type || document.type === filters.type)
     .filter((document) => !filters.category || document.category === filters.category)
-    .map((document) => ({ ...document, score: scoreDocument(document, normalizedQuery, expandedTokens) }))
+    .map((document) => ({
+      ...document,
+      score: scoreDocument(document, normalizedQuery, expandedTokens),
+    }))
     .filter((document) => document.score > 0)
-    .sort((left, right) => right.score - left.score || left.title.localeCompare(right.title, locale));
+    .sort(
+      (left, right) => right.score - left.score || left.title.localeCompare(right.title, locale),
+    );
 }
 
 function createSearchDocumentPath(locale: Locale, type: KnowledgeType, slug: string): string {

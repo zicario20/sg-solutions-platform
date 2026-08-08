@@ -15,10 +15,7 @@ export function evaluateFreshness(record: KnowledgeRecord, at: Date): ContentFre
   return record.riskLevel === "low" ? "review_due" : "stale";
 }
 
-export function toPublicKnowledge(
-  record: KnowledgeRecord,
-  at: Date,
-): PublicKnowledgeRecord | null {
+export function toPublicKnowledge(record: KnowledgeRecord, at: Date): PublicKnowledgeRecord | null {
   if (record.status !== "published" || !record.audiences.includes("public")) return null;
   if (evaluateFreshness(record, at) === "stale") return null;
 

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { HELP_CATEGORIES, HELP_COLLECTIONS, HELP_CONTENT } from "../../apps/www/src/content/help-center";
+import {
+  HELP_CATEGORIES,
+  HELP_COLLECTIONS,
+  HELP_CONTENT,
+} from "../../apps/www/src/content/help-center";
 
 const requiredFaqCounts = {
   "getting-started": 7,
@@ -42,18 +46,22 @@ describe("M002 bilingual launch inventory", () => {
 
     for (const locale of ["es", "en"] as const) {
       expect(HELP_CATEGORIES.every((category) => category[locale].title.length > 2)).toBe(true);
-      expect(HELP_COLLECTIONS.every((collection) => collection[locale].title.length > 2)).toBe(true);
+      expect(HELP_COLLECTIONS.every((collection) => collection[locale].title.length > 2)).toBe(
+        true,
+      );
       for (const type of ["article", "guide", "checklist", "glossary", "program"] as const) {
-        expect(HELP_CONTENT.some((item) => item.locale === locale && item.type === type)).toBe(true);
+        expect(HELP_CONTENT.some((item) => item.locale === locale && item.type === type)).toBe(
+          true,
+        );
       }
     }
   });
 
   it("keeps content identifiers, localized slugs and relationships valid", () => {
     expect(new Set(HELP_CONTENT.map((item) => item.id)).size).toBe(HELP_CONTENT.length);
-    expect(new Set(HELP_CONTENT.map((item) => `${item.locale}:${item.type}:${item.slug}`)).size).toBe(
-      HELP_CONTENT.length,
-    );
+    expect(
+      new Set(HELP_CONTENT.map((item) => `${item.locale}:${item.type}:${item.slug}`)).size,
+    ).toBe(HELP_CONTENT.length);
 
     const ids = new Set(HELP_CONTENT.map((item) => item.id));
     for (const item of HELP_CONTENT) {
@@ -79,7 +87,12 @@ describe("M002 bilingual launch inventory", () => {
 
   it("does not publish unresolved policy, prices, guarantees or contact facts", () => {
     const text = HELP_CONTENT.map((item) =>
-      [item.title, item.summary, item.disclosure, ...item.blocks.map((block) => JSON.stringify(block))].join(" "),
+      [
+        item.title,
+        item.summary,
+        item.disclosure,
+        ...item.blocks.map((block) => JSON.stringify(block)),
+      ].join(" "),
     ).join(" ");
 
     expect(text).not.toMatch(/\$\s*\d/);

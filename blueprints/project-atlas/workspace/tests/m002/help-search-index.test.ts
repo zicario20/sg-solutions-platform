@@ -33,7 +33,13 @@ describe("M002 minimized search index", () => {
 
     expect(spanish.headers.get("content-type")).toBe("application/json; charset=utf-8");
     expect(english.headers.get("content-type")).toBe("application/json; charset=utf-8");
-    expect(spanishBody.every((entry) => entry.locale === "es" && entry.path.startsWith("/recursos/"))).toBe(true);
-    expect(englishBody.every((entry) => entry.locale === "en" && entry.path.startsWith("/en/resources/"))).toBe(true);
+    expect(
+      spanishBody.every((entry) => entry.locale === "es" && entry.path.startsWith("/recursos/")),
+    ).toBe(true);
+    expect(
+      englishBody.every(
+        (entry) => entry.locale === "en" && entry.path.startsWith("/en/resources/"),
+      ),
+    ).toBe(true);
   });
 });

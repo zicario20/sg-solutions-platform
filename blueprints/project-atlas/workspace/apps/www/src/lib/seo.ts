@@ -21,7 +21,10 @@ export function createSeoProjection(
     title: page.title,
     description: page.description,
     canonical: new URL(page.path, base).toString(),
-    alternate: new URL(alternatePath ?? getAlternatePath(page.routeKey, alternateLocale), base).toString(),
+    alternate: new URL(
+      alternatePath ?? getAlternatePath(page.routeKey, alternateLocale),
+      base,
+    ).toString(),
     alternateLocale,
     locale: page.locale,
   };

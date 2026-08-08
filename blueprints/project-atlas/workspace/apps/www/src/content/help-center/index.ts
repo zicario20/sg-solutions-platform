@@ -25,7 +25,8 @@ function validateHelpContent(records: KnowledgeRecord[]): void {
     if (localizedSlugs.has(slugKey)) throw new Error(`Duplicate help content slug: ${slugKey}`);
     localizedSlugs.add(slugKey);
 
-    if (!knownCategories.has(record.category)) throw new Error(`Unknown category: ${record.category}`);
+    if (!knownCategories.has(record.category))
+      throw new Error(`Unknown category: ${record.category}`);
     if (!knownTypes.has(record.type)) throw new Error(`Unknown type: ${record.type}`);
     if (record.blocks.length === 0) throw new Error(`Missing body blocks: ${record.id}`);
     if (record.riskLevel !== "low") {
@@ -40,7 +41,8 @@ function validateHelpContent(records: KnowledgeRecord[]): void {
 
   for (const record of records) {
     for (const relatedId of record.relatedIds) {
-      if (!ids.has(relatedId)) throw new Error(`Unknown related content ${relatedId} in ${record.id}`);
+      if (!ids.has(relatedId))
+        throw new Error(`Unknown related content ${relatedId} in ${record.id}`);
     }
   }
 }

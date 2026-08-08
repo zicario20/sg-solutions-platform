@@ -1,13 +1,21 @@
 import type { APIRoute } from "astro";
+import { HELP_CONTENT } from "../content/help-center";
 import { PUBLIC_PAGES } from "../content/site-content";
+import { getHelpSitemapPaths } from "../lib/help-pages";
 
 export const prerender = true;
 
 export const GET: APIRoute = () => {
-  const urls = PUBLIC_PAGES.filter((page) => page.publicationState === "published")
+  const publishedPaths = [
+    ...PUBLIC_PAGES.filter((page) => page.publicationState === "published").map(
+      (page) => page.path,
+    ),
+    ...getHelpSitemapPaths(HELP_CONTENT, new Date()),
+  ];
+  const urls = [...new Set(publishedPaths)]
     .map(
       (page) =>
-        `<url><loc>${escapeXml(new URL(page.path, "https://www.sgsllc.com").toString())}</loc></url>`,
+        `<url><loc>${escapeXml(new URL(page, "https://www.sgsllc.com").toString())}</loc></url>`,
     )
     .join("");
   return new Response(

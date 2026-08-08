@@ -1,0 +1,25 @@
+---
+import type { Locale } from "../../domain/public-site";
+
+interface Props {
+  contentId: string;
+  locale: Locale;
+}
+
+const { contentId, locale } = Astro.props;
+---
+
+<section class="help-feedback" data-help-feedback data-content-id={contentId} data-locale={locale}>
+  <h2>{locale === "es" ? "¿Te ayudó esta información?" : "Was this information helpful?"}</h2>
+  <p>{locale === "es" ? "No escribas ni compartas información personal." : "Do not type or share personal information."}</p>
+  <div class="help-feedback__actions">
+    <button type="button" data-helpful="yes" aria-pressed="false">{locale === "es" ? "Sí" : "Yes"}</button>
+    <button type="button" data-helpful="no" aria-pressed="false">No</button>
+  </div>
+  <p class="help-feedback__status" role="status" aria-live="polite" data-help-feedback-status></p>
+</section>
+
+<script>
+  import { initializeHelpFeedback } from "../../scripts/help-feedback";
+  initializeHelpFeedback();
+</script>

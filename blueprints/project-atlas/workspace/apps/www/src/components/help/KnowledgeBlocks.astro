@@ -1,0 +1,36 @@
+---
+import type { KnowledgeBlock } from "../../domain/help-center";
+
+interface Props {
+  blocks: KnowledgeBlock[];
+}
+
+const { blocks } = Astro.props;
+---
+
+<div class="help-prose">
+  {blocks.map((block) => {
+    if (block.type === "paragraph") return <p>{block.text}</p>;
+    if (block.type === "list") {
+      return <ul>{block.items.map((item) => <li>{item}</li>)}</ul>;
+    }
+    if (block.type === "steps") {
+      return (
+        <ol class="help-steps">
+          {block.items.map((item) => (
+            <li>
+              <h2>{item.title}</h2>
+              <p>{item.text}</p>
+            </li>
+          ))}
+        </ol>
+      );
+    }
+    return (
+      <aside class:list={["help-callout", `help-callout--${block.tone}`]}>
+        <h2>{block.title}</h2>
+        <p>{block.text}</p>
+      </aside>
+    );
+  })}
+</div>

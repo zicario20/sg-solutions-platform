@@ -1,0 +1,27 @@
+---
+import HelpHubPage from "../../components/help/HelpHubPage.astro";
+import HelpLayout from "../../layouts/HelpLayout.astro";
+import { createHelpPageShell } from "../../lib/help-pages";
+
+const page = createHelpPageShell({
+  locale: "es",
+  path: "/recursos/",
+  title: "Centro de ayuda | SG Solutions",
+  description: "Respuestas generales, guías y recursos bilingües de SG Solutions.",
+  heading: "Respuestas claras para avanzar",
+  summary:
+    "Explora información general y revisada sobre nuestros servicios, procesos y próximos pasos.",
+});
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: page.hero.heading,
+  description: page.description,
+  url: "https://www.sgsllc.com/recursos/",
+  inLanguage: "es",
+};
+---
+
+<HelpLayout page={page} alternatePath="/en/resources/" structuredData={structuredData}>
+  <HelpHubPage locale="es" />
+</HelpLayout>

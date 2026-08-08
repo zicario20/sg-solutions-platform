@@ -1,0 +1,100 @@
+---
+import { HELP_CATEGORIES, HELP_COLLECTIONS, HELP_CONTENT } from "../../content/help-center";
+import type { Locale } from "../../domain/public-site";
+import { listPublishedKnowledge } from "../../lib/help-content";
+import { getHelpCollectionPath, getHelpSearchPath } from "../../lib/help-routes";
+import ActionLink from "../ActionLink.astro";
+import HelpBreadcrumbs from "./HelpBreadcrumbs.astro";
+import HelpHero from "./HelpHero.astro";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const publicRecords = listPublishedKnowledge(HELP_CONTENT, locale, {}, new Date());
+const copy =
+  locale === "es"
+    ? {
+        heading: "Respuestas claras para avanzar",
+        summary:
+          "Explora información general y revisada sobre nuestros servicios, procesos y próximos pasos.",
+        popular: "Explora por tipo de recurso",
+        categories: "Encuentra orientación por tema",
+        support: "¿Necesitas revisar tu situación?",
+        supportBody:
+          "El contenido público es general. Una evaluación permite entender tu objetivo y el alcance aplicable.",
+        search: "Buscar todas las respuestas",
+      }
+    : {
+        heading: "Clear answers to move forward",
+        summary:
+          "Explore reviewed general information about our services, processes and next steps.",
+        popular: "Explore by resource type",
+        categories: "Find guidance by topic",
+        support: "Need to review your situation?",
+        supportBody:
+          "Public content is general. An evaluation helps clarify your goal and the applicable scope.",
+        search: "Search all answers",
+      };
+---
+
+<HelpBreadcrumbs locale={locale} items={[{ label: locale === "es" ? "Centro de ayuda" : "Help Center" }]} />
+<HelpHero locale={locale} heading={copy.heading} summary={copy.summary} />
+
+<section class="help-section help-section--collections">
+  <div class="site-container">
+    <div class="help-section__heading">
+      <p class="eyebrow"><span></span>{locale === "es" ? "Formatos" : "Formats"}</p>
+      <h2>{copy.popular}</h2>
+    </div>
+    <div class="help-collection-grid">
+      {HELP_COLLECTIONS.map((entry) => {
+        const item = entry[locale];
+        return (
+          <a class="help-collection-tile" href={getHelpCollectionPath(locale, entry.type)}>
+            <span class="help-collection-tile__mark" aria-hidden="true"></span>
+            <span>
+              <strong>{item.title}</strong>
+              <small>{item.description}</small>
+            </span>
+            <span aria-hidden="true">→</span>
+          </a>
+        );
+      })}
+    </div>
+  </div>
+</section>
+
+<section class="help-section help-section--tint">
+  <div class="site-container">
+    <div class="help-section__heading">
+      <p class="eyebrow"><span></span>{locale === "es" ? "Temas" : "Topics"}</p>
+      <h2>{copy.categories}</h2>
+    </div>
+    <div class="help-category-grid">
+      {HELP_CATEGORIES.map((entry) => {
+        const item = entry[locale];
+        const count = publicRecords.filter((record) => record.category === entry.id).length;
+        return (
+          <a href={`${getHelpSearchPath(locale)}?category=${entry.id}`}>
+            <span class="help-category-grid__top"><strong>{item.title}</strong><small>{count}</small></span>
+            <span>{item.description}</span>
+          </a>
+        );
+      })}
+    </div>
+    <a class="help-inline-action" href={getHelpSearchPath(locale)}>{copy.search}<span aria-hidden="true">→</span></a>
+  </div>
+</section>
+
+<section class="help-support">
+  <div class="site-container help-support__inner">
+    <div>
+      <p class="eyebrow eyebrow--light"><span></span>{locale === "es" ? "Orientación humana" : "Human guidance"}</p>
+      <h2>{copy.support}</h2>
+      <p>{copy.supportBody}</p>
+    </div>
+    <ActionLink action="evaluation" locale={locale} />
+  </div>
+</section>

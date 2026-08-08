@@ -1,0 +1,28 @@
+---
+import type { Locale } from "../../domain/public-site";
+
+interface Item {
+  label: string;
+  href?: string;
+}
+
+interface Props {
+  locale: Locale;
+  items: Item[];
+}
+
+const { locale, items } = Astro.props;
+const home = locale === "es" ? { label: "Inicio", href: "/" } : { label: "Home", href: "/en/" };
+const label = locale === "es" ? "Migas de pan" : "Breadcrumbs";
+---
+
+<nav class="help-breadcrumbs site-container" aria-label={label}>
+  <ol>
+    {[home, ...items].map((item, index, all) => (
+      <li>
+        {item.href ? <a href={item.href}>{item.label}</a> : <span aria-current="page">{item.label}</span>}
+        {index < all.length - 1 && <span aria-hidden="true">/</span>}
+      </li>
+    ))}
+  </ol>
+</nav>

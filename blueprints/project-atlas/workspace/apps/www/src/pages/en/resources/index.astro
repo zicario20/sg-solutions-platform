@@ -1,0 +1,26 @@
+---
+import HelpHubPage from "../../../components/help/HelpHubPage.astro";
+import HelpLayout from "../../../layouts/HelpLayout.astro";
+import { createHelpPageShell } from "../../../lib/help-pages";
+
+const page = createHelpPageShell({
+  locale: "en",
+  path: "/en/resources/",
+  title: "Help Center | SG Solutions",
+  description: "General answers, guides and bilingual resources from SG Solutions.",
+  heading: "Clear answers to move forward",
+  summary: "Explore reviewed general information about our services, processes and next steps.",
+});
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: page.hero.heading,
+  description: page.description,
+  url: "https://www.sgsllc.com/en/resources/",
+  inLanguage: "en",
+};
+---
+
+<HelpLayout page={page} alternatePath="/recursos/" structuredData={structuredData}>
+  <HelpHubPage locale="en" />
+</HelpLayout>
