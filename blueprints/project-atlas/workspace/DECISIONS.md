@@ -138,3 +138,19 @@ Impact: M001 may create the Astro public routes, presentation components, biling
 SEO/accessibility behavior, tests and deployment-facing public configuration. It may not implement
 M002/M003/M006/M007/M013/M017/M043 behavior or invent contact facts, legal approval, testimonials,
 prices or provider integrations. Every other module remains gated.
+
+## 2026-08-08 — Decision 014
+
+Decision: authorize `GENERATE` and a bounded Build gate for M002 Help Center and Frequently Asked
+Questions. M002 extends the verified M001 Astro surface with governed bilingual public knowledge,
+search, discovery, freshness, SEO/accessibility, minimized feedback contracts, tests and a
+Sanity-compatible public-content boundary.
+
+Reason: the Product Owner explicitly instructed Codex to begin Module 2 and continue until it is
+complete, after confirming that the original M1–M21 requirements corpus remains the intended input.
+
+Impact: M002 may replace the duplicated M001 FAQ source with a canonical Help Center, create public
+content routes and progressive search/feedback behavior, and prepare allowlisted interfaces for
+Sanity and future consumers. It may not implement private knowledge, RAG, AI answers, chat,
+WhatsApp, telephony, portal/CRM lookup, live CMS credentials, individualized advice or unapproved
+analytics transport. M003–M110 remain gated unless separately authorized.

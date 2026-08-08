@@ -61,3 +61,8 @@
   desktop/mobile browser tests pass, Astro emits 40 static outputs, and independent review findings
   covering CSP navigation, portal fallback, localization, touch targets, structured data and Vercel
   routing were corrected. Cyber Neo follow-up found no exploitable vulnerability or exposed secret.
+- The Product Owner authorized `GENERATE` and a bounded Build gate for M002 Help Center, directing
+  Codex to continue until completion. The detailed source corpus was normalized against the current
+  M002/M061–M064 boundaries: M002 owns public bilingual discovery, search and governed public
+  content; private knowledge, RAG, AI/channel consumers and live provider activation remain in their
+  separately gated modules.

@@ -10,12 +10,13 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
 
 ## Active authorized delivery
 
-- **M001 Public Website:** `In Progress` under Decision 013.
-- Scope: Astro public routes, bilingual presentation, design system application, service discovery,
-  SEO, accessibility, tests and honest integration boundaries.
-- Excluded: behavior owned by M002/M003/M006/M007/M013/M017/M043 and all other modules without a
-  separate Build gate.
-- Exit: Quality gate, independent review, PCR and Product Owner acceptance.
+- **M001 Public Website:** `PO Acceptance`; implementation and local verification are complete.
+- **M002 Help Center:** `In Progress` under Decision 014.
+- Scope: integrated bilingual public Help Center, governed content projection, static search,
+  categories/types, freshness, SEO/accessibility, feedback event boundary and tests.
+- Excluded: private knowledge, RAG/AI answers, chat/channel behavior, authenticated portal context,
+  live CMS credentials and unapproved analytics transport.
+- Exit: M002 quality gate, independent review, Cyber Neo review, PCR and Product Owner acceptance.
 
 ## Phase 0 — Blueprint & Design
 
