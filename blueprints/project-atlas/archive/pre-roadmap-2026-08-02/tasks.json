@@ -1,0 +1,290 @@
+[
+{
+    "id": "E1-T1",
+    "title": "Formalizar el cierre documental de Phase 0",
+    "epic": "01-foundation-governance",
+    "dependencies": [],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN the Phase 0 contract runs THE SYSTEM SHALL find the same product model, tenancy model, architecture status, and current phase in all four governed documents.",
+      "WHEN the module authorization contract runs THE SYSTEM SHALL map every implementation task E1-T2 through E3-T6 to an existing `Approved baseline` PRD in `docs/modules/INDEX.md` and classify every missing or unapproved mapping as `module_not_authorized`.",
+      "WHEN the phase-completion fixture omits a required PCR section THE SYSTEM SHALL reject the fixture and identify every missing section."
+    ],
+    "verify": ["corepack pnpm exec vitest run tests/contract/phase-zero-governance.test.ts"],
+    "checkpoint": "step-01-phase-zero-governance",
+    "files": ["MASTER_PRD.md", "PROJECT_CONTEXT.md", "PROJECT_STATE.md", "DECISIONS.md", "tests/contract/phase-zero-governance.test.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T2",
+    "title": "Crear shells y endpoints de salud",
+    "epic": "01-foundation-governance",
+    "dependencies": ["E1-T1"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `corepack pnpm install --frozen-lockfile` runs THE SYSTEM SHALL exit 0 without changing `pnpm-lock.yaml`.",
+      "WHEN the shared import contract runs under TypeScript, Vitest, tsx, Next, and Astro THE SYSTEM SHALL resolve `@atlas/config` to `packages/config/src/index.ts` in every runner.",
+      "WHEN the production smoke runs after `corepack pnpm build` THE SYSTEM SHALL start Next production and Astro preview, receive 200 from `/api/health` and `/health`, and terminate both servers."
+    ],
+    "verify": ["corepack pnpm install --frozen-lockfile", "corepack pnpm exec vitest run tests/contract/module-resolution.test.ts", "corepack pnpm exec tsx --tsconfig tsconfig.json tests/contract/module-resolution.ts", "corepack pnpm typecheck", "corepack pnpm build", "corepack pnpm exec playwright test tests/e2e/health.spec.ts"],
+    "checkpoint": "step-02-production-shells",
+    "files": ["apps/www/src/pages/health.astro", "apps/app/app/layout.tsx", "apps/app/app/page.tsx", "apps/app/app/api/health/route.ts", "tests/e2e/health.spec.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T3",
+    "title": "Implementar tokens y primitiva UI",
+    "epic": "01-foundation-governance",
+    "dependencies": ["E1-T2"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN the token contract runs THE SYSTEM SHALL report zero component color literals outside `packages/design-tokens/src/index.css`.",
+      "WHEN contrast assertions run THE SYSTEM SHALL enforce 4.5:1 for normal text, 3:1 for large text and component boundaries, and reject cyan or gold as normal text on white or surface backgrounds.",
+      "WHEN reduced motion is requested THE SYSTEM SHALL reduce nonessential transitions to zero duration while preserving state changes."
+    ],
+    "verify": ["corepack pnpm exec vitest run tests/unit/tokens.test.ts", "corepack pnpm typecheck", "corepack pnpm lint"],
+    "checkpoint": "step-03-design-system",
+    "files": ["packages/design-tokens/src/index.css", "packages/ui/src/index.ts", "apps/app/app/globals.css", "apps/app/app/layout.tsx", "tests/unit/tokens.test.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T4",
+    "title": "Establecer esquema Drizzle y migración inicial",
+    "epic": "01-foundation-governance",
+    "dependencies": ["E1-T2"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN migrations run against an empty local Postgres database THE SYSTEM SHALL create every schema object defined by Drizzle and report zero schema drift.",
+      "WHEN the identical migration command runs a second time THE SYSTEM SHALL exit 0 without altering existing rows.",
+      "WHEN the destructive-change fixture is classified THE SYSTEM SHALL return `expand_migrate_contract_required` and execute zero migration statements."
+    ],
+    "verify": ["docker compose up -d --wait postgres", "DIRECT_DATABASE_URL=postgresql://atlas:atlas@127.0.0.1:55432/atlas_test TEST_DATABASE_URL=postgresql://atlas:atlas@127.0.0.1:55432/atlas_test corepack pnpm db:migrate", "corepack pnpm exec vitest run tests/integration/schema.test.ts"],
+    "checkpoint": "step-04-database-authority",
+    "files": ["packages/database/src/schema.ts", "packages/database/src/index.ts", "tests/integration/schema.test.ts", "DATABASE.md"],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T5",
+    "title": "Integrar identidad y roles internos",
+    "epic": "01-foundation-governance",
+    "dependencies": ["E1-T4"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN an anonymous request reaches a protected app route THE SYSTEM SHALL redirect to sign-in without exposing protected content.",
+      "WHEN an authenticated client attempts a staff-only action THE SYSTEM SHALL return 403 and write no domain rows.",
+      "WHEN the MFA recovery fixture is processed THE SYSTEM SHALL expose no recovery code in application logs or telemetry."
+    ],
+    "verify": ["corepack pnpm exec vitest run tests/integration/auth.test.ts", "corepack pnpm typecheck"],
+    "checkpoint": "step-05-identity-roles",
+    "files": ["packages/auth/src/index.ts", "apps/app/proxy.ts", "apps/app/app/login/page.tsx", "tests/integration/auth.test.ts", "SECURITY.md"],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T6",
+    "title": "Aplicar delegación explícita y RLS",
+    "epic": "01-foundation-governance",
+    "dependencies": ["E1-T5"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a client authenticates with an email matching a record THE SYSTEM SHALL receive zero access until an explicit resource grant exists.",
+      "WHEN a client has a case grant but no document grant THE SYSTEM SHALL read the case summary and receive 404 for the document.",
+      "WHEN a direct database request bypasses the UI THE SYSTEM SHALL still enforce identity, internal role, and explicit resource access through RLS and domain authorization."
+    ],
+    "verify": ["corepack pnpm exec vitest run tests/integration/rls-delegation.test.ts", "DIRECT_DATABASE_URL=postgresql://atlas:atlas@127.0.0.1:55432/atlas_test TEST_DATABASE_URL=postgresql://atlas:atlas@127.0.0.1:55432/atlas_test corepack pnpm db:migrate"],
+    "checkpoint": "step-06-delegated-authorization",
+    "files": ["packages/domain/src/authorization.ts", "packages/database/src/schema.ts", "packages/auth/src/index.ts", "tests/integration/rls-delegation.test.ts", "SECURITY.md"],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T1",
+    "title": "Proteger documentos privados",
+    "epic": "02-acquisition-operations",
+    "dependencies": ["E1-T6"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a client requests a delegated document THE SYSTEM SHALL return a signed URL with a short expiry and append one audit event.",
+      "WHEN a signed URL expires THE SYSTEM SHALL deny the object request without changing the underlying grant.",
+      "WHEN a user lacks the exact document grant THE SYSTEM SHALL return 404 even when the object path is known."
+    ],
+    "verify": ["corepack pnpm exec vitest run tests/integration/storage-access.test.ts"],
+    "checkpoint": "step-07-private-documents",
+    "files": ["packages/domain/src/documents.ts", "apps/app/app/api/v1/documents/route.ts", "packages/database/src/schema.ts", "tests/integration/storage-access.test.ts", "docs/modules/document-center.md"],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T2",
+    "title": "Construir sitio público bilingüe",
+    "epic": "02-acquisition-operations",
+    "dependencies": ["E1-T3"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a public route is requested in English or Spanish THE SYSTEM SHALL return localized HTML with a unique title, description, canonical URL, and language alternates.",
+      "WHEN the Sanity schema contract runs THE SYSTEM SHALL allow only public content fields and reject client, tax, credit, document, or financial record fields.",
+      "WHEN the public route contract runs THE SYSTEM SHALL find `Agenda una evaluación` as the primary CTA and `Solicita una cotización` as the secondary CTA on both localized landing pages."
+    ],
+    "verify": ["corepack pnpm exec vitest run tests/contract/public-content.test.ts", "corepack pnpm --filter @atlas/www build"],
+    "checkpoint": "step-08-public-content",
+    "files": ["apps/www/src/pages/index.astro", "apps/www/src/pages/es/index.astro", "apps/www/src/lib/sanity.ts", "packages/i18n/src/index.ts", "tests/contract/public-content.test.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T3",
+    "title": "Capturar leads y atribución minimizada",
+    "epic": "02-acquisition-operations",
+    "dependencies": ["E1-T4", "E2-T2"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a valid evaluation request includes UTM parameters THE SYSTEM SHALL create one lead, one consent event, and normalized first-touch and last-touch attribution.",
+      "WHEN the same idempotency key is submitted twice THE SYSTEM SHALL return the original response and create no duplicate lead.",
+      "WHEN analytics events are emitted THE SYSTEM SHALL exclude free text, identifiers, documents, tax data, credit data, and case details."
+    ],
+    "verify": ["corepack pnpm exec vitest run tests/integration/lead-capture.test.ts"],
+    "checkpoint": "step-09-lead-attribution",
+    "files": ["apps/www/src/components/EvaluationForm.astro", "apps/app/app/api/v1/leads/route.ts", "packages/domain/src/leads.ts", "packages/database/src/schema.ts", "tests/integration/lead-capture.test.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T4",
+    "title": "Implementar CRM y pipeline",
+    "epic": "02-acquisition-operations",
+    "dependencies": ["E1-T6", "E2-T3"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN staff advances a lead THE SYSTEM SHALL record the new stage, actor, timestamp, and prior stage in audit history.",
+      "WHEN a stage transition violates the configured pipeline THE SYSTEM SHALL return 409 and preserve the current stage.",
+      "WHEN CRM filters are encoded in the URL THE SYSTEM SHALL reproduce the same result ordering after reload."
+    ],
+    "verify": ["corepack pnpm exec vitest run tests/integration/crm-pipeline.test.ts", "corepack pnpm build", "corepack pnpm exec playwright test tests/e2e/crm.spec.ts"],
+    "checkpoint": "step-10-crm-pipeline",
+    "files": ["apps/app/app/staff/crm/page.tsx", "packages/domain/src/crm.ts", "packages/database/src/schema.ts", "tests/integration/crm-pipeline.test.ts", "tests/e2e/crm.spec.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T5",
+    "title": "Gestionar casos tareas y notas",
+    "epic": "02-acquisition-operations",
+    "dependencies": ["E2-T4"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN staff converts a qualified lead THE SYSTEM SHALL create one client and one case while preserving attribution and pipeline history.",
+      "WHEN a case note is marked internal THE SYSTEM SHALL expose it through neither client-portal queries nor analytics payloads.",
+      "WHEN a case status changes THE SYSTEM SHALL append an immutable audit event and expose the current stage only to explicitly granted clients."
+    ],
+    "verify": ["corepack pnpm exec vitest run tests/integration/cases.test.ts", "corepack pnpm build", "corepack pnpm exec playwright test tests/e2e/case-workspace.spec.ts"],
+    "checkpoint": "step-11-case-operations",
+    "files": ["apps/app/app/staff/cases/page.tsx", "packages/domain/src/cases.ts", "packages/database/src/schema.ts", "tests/integration/cases.test.ts", "tests/e2e/case-workspace.spec.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T6",
+    "title": "Implementar agenda transaccional",
+    "epic": "02-acquisition-operations",
+    "dependencies": ["E1-T6", "E2-T5"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN availability is requested THE SYSTEM SHALL derive slots from rules, blocks, appointments, buffers, notice, horizon, and `America/Chicago` without storing slot rows.",
+      "WHEN concurrent requests target one capacity-one slot THE SYSTEM SHALL confirm exactly one appointment and return 409 for every conflicting request.",
+      "WHEN an appointment is rescheduled THE SYSTEM SHALL cancel and replace it atomically while retaining `rescheduled_from_id` history."
+    ],
+    "verify": ["corepack pnpm exec vitest run tests/unit/availability.test.ts", "corepack pnpm exec vitest run tests/integration/booking-concurrency.test.ts"],
+    "checkpoint": "step-12-appointment-engine",
+    "files": ["packages/domain/src/appointments.ts", "apps/app/app/api/v1/appointments/route.ts", "packages/database/src/schema.ts", "tests/unit/availability.test.ts", "tests/integration/booking-concurrency.test.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T1",
+    "title": "Sincronizar Google Calendar",
+    "epic": "03-revenue-client-production",
+    "dependencies": ["E2-T6"],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN Google free-busy reports an overlap THE SYSTEM SHALL remove the affected slot before confirmation.",
+      "WHEN an external event is updated THE SYSTEM SHALL use stored mapping and `etag` with `If-Match` to prevent blind overwrites.",
+      "WHEN a sync token expires THE SYSTEM SHALL perform a bounded full resync, persist the replacement token, and mark conflicting deletions for manual review instead of cancelling appointments."
+    ],
+    "verify": ["corepack pnpm exec vitest run tests/integration/google-calendar.test.ts"],
+    "checkpoint": "step-13-calendar-sync",
+    "files": ["packages/domain/src/calendar.ts", "packages/database/src/schema.ts", "apps/app/app/api/v1/calendar/route.ts", "tests/integration/google-calendar.test.ts", ".env.example"],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T2",
+    "title": "Crear cotizaciones y facturas",
+    "epic": "03-revenue-client-production",
+    "dependencies": ["E2-T5"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN staff issues a quote THE SYSTEM SHALL persist immutable line amounts in integer minor units and a versioned acceptance snapshot.",
+      "WHEN a client accepts an expired or superseded quote THE SYSTEM SHALL return 409 and create no invoice.",
+      "WHEN an accepted quote is converted THE SYSTEM SHALL create one operational invoice linked to the client, case, and quote."
+    ],
+    "verify": ["corepack pnpm exec vitest run tests/integration/quotes-invoices.test.ts"],
+    "checkpoint": "step-14-quotes-invoices",
+    "files": ["packages/domain/src/billing.ts", "apps/app/app/staff/billing/page.tsx", "packages/database/src/schema.ts", "tests/integration/quotes-invoices.test.ts", "docs/modules/billing.md"],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T3",
+    "title": "Integrar Stripe y reconciliación",
+    "epic": "03-revenue-client-production",
+    "dependencies": ["E3-T2"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a valid Stripe event is replayed THE SYSTEM SHALL return 200, process the external event id once, and leave the operational invoice state converged with Stripe.",
+      "WHEN Stripe events arrive out of order THE SYSTEM SHALL refetch the authoritative external object before updating local financial status.",
+      "WHEN reconciliation detects a mismatch THE SYSTEM SHALL create a durable recovery item without silently overwriting the operational record."
+    ],
+    "verify": ["corepack pnpm exec vitest run tests/integration/stripe-webhooks.test.ts", "corepack pnpm exec vitest run tests/integration/stripe-reconciliation.test.ts"],
+    "checkpoint": "step-15-stripe-reliability",
+    "files": ["apps/app/app/api/webhooks/stripe/route.ts", "packages/domain/src/payments.ts", "packages/database/src/schema.ts", "tests/integration/stripe-webhooks.test.ts", "tests/integration/stripe-reconciliation.test.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T4",
+    "title": "Construir portal cliente delegado",
+    "epic": "03-revenue-client-production",
+    "dependencies": ["E2-T1", "E3-T1", "E3-T3"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a client opens the portal THE SYSTEM SHALL list only explicitly granted cases, documents, invoices, and appointments.",
+      "WHEN a resource grant is revoked THE SYSTEM SHALL remove access on the next server request and refuse every newly requested signed URL.",
+      "WHEN the portal is tested at 320 CSS pixels and 200 percent zoom THE SYSTEM SHALL expose no horizontal page scroll and retain a visible focus indicator."
+    ],
+    "verify": ["corepack pnpm exec vitest run tests/integration/portal-access.test.ts", "corepack pnpm build", "corepack pnpm exec playwright test tests/e2e/client-portal.spec.ts"],
+    "checkpoint": "step-16-client-portal",
+    "files": ["apps/app/app/client/portal/page.tsx", "packages/domain/src/portal.ts", "tests/integration/portal-access.test.ts", "tests/e2e/client-portal.spec.ts", "docs/modules/client-portal.md"],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T5",
+    "title": "Añadir jobs durables y observabilidad privada",
+    "epic": "03-revenue-client-production",
+    "dependencies": ["E2-T3", "E3-T1", "E3-T3"],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN an Inngest job is delivered twice THE SYSTEM SHALL execute one durable side effect under its idempotency key and retain Postgres as the source of status.",
+      "WHEN retries are exhausted THE SYSTEM SHALL create a dead-letter record with a manual recovery path and a redacted request id.",
+      "WHEN telemetry is emitted THE SYSTEM SHALL keep `sendDefaultPii` false and exclude documents, tax data, identifiers, case notes, credit reports, and portal free text from Sentry, PostHog, logs, and traces."
+    ],
+    "verify": ["corepack pnpm install --frozen-lockfile", "corepack pnpm exec vitest run tests/integration/jobs.test.ts", "corepack pnpm exec vitest run tests/unit/telemetry-redaction.test.ts"],
+    "checkpoint": "step-17-operations-observability",
+    "files": ["packages/domain/src/jobs.ts", "packages/observability/src/index.ts", "packages/database/src/schema.ts", "tests/integration/jobs.test.ts", "tests/unit/telemetry-redaction.test.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T6",
+    "title": "Cerrar CI despliegue y Phase Completion Report",
+    "epic": "03-revenue-client-production",
+    "dependencies": ["E3-T4", "E3-T5"],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN the CI policy fixture contains a failed lint, typecheck, test, accessibility, security, or build job THE SYSTEM SHALL classify the merge gate as `blocked`.",
+      "WHEN the Vercel configuration contract runs THE SYSTEM SHALL find separate reproducible build settings for `apps/www` and `apps/app` with no embedded secret values.",
+      "WHEN the release-document contract runs THE SYSTEM SHALL find a Phase Completion Report and current-state record containing verification evidence and rollback instructions."
+    ],
+    "verify": ["RELEASE_GATE=true corepack pnpm exec vitest run tests/contract/production-gate.test.ts", "corepack pnpm lint", "corepack pnpm typecheck", "corepack pnpm test", "corepack pnpm build", "corepack pnpm test:e2e", "corepack pnpm exec playwright test tests/e2e/health.spec.ts"],
+    "checkpoint": "step-18-production-gate",
+    "files": [".github/workflows/ci.yml", "apps/www/vercel.json", "apps/app/vercel.json", "docs/phases/PCR-001-production-foundation.md", "PROJECT_STATE.md"],
+    "status": "pending"
+  }
+]
