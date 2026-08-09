@@ -33,6 +33,15 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   approved BSP and every operational policy remain activation decisions. The final documentary
   candidate passed independent review and Cyber Neo at risk 0/100 and now awaits Product Owner
   approval of the PRD/design and proposed ADR 008.
+- **M005 Voice Agent:** Product/Architecture documentation is active under Decision 018. The target
+  is a provider-neutral bilingual receptionist whose durable policy/state stays in the modular
+  monolith and whose proposed M096 boundary handles only real-time media and scoped speech adapters.
+  Caller ID is never identity, recording/transcription remain disabled, and client-specific work
+  defaults to the secure portal. No Build gate, runtime/provider dependency, account, number,
+  credential, real call or deployment is authorized. The final candidate passed independent
+  architecture review with zero open findings and Cyber Neo at documentary risk 0/100 after all
+  security/consistency findings were remediated. It now awaits Product Owner approval or revision of
+  the PRD/design and proposed ADR 009.
 
 ## Architecture-first activation policy
 

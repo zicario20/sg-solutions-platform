@@ -5,69 +5,72 @@
 - Status: Current state only
 - Last updated: 2026-08-09
 
-Version: `0.1.0-alpha.6`
+Version: `0.1.0-alpha.7`
 
-Current phase: **M004 WhatsApp Business — Product Owner architecture decision**
+Current phase: **M005 Voice Agent — Product Owner architecture decision**
 
-Authorized work: M004 Product/Architecture documentation under Decision 017; no M004 `GENERATE`,
-Build gate, provider account, number, credentials, template submission, live messaging, merge or
-deployment is authorized
+Authorized work: M005 Product/Architecture documentation under Decision 018 is complete; no
+M005/M096 `GENERATE`, Build gate, provider account, institutional number, credentials, real call,
+recording, transcription, external model traffic, merge or deployment is authorized
 
-Product discovery: M001/M002 requirements are normalized; M003 is an independently reviewed
-architecture candidate awaiting Product Owner decisions; the complete Product Owner-supplied M004
-source is normalized into a 21-section PRD, UX/architecture design, proposed ADR 008 and external-
-activation checklist
+Product discovery: M001/M002 are locally implemented and await Product Owner acceptance decisions;
+M003/M004 are independently reviewed architecture candidates awaiting Product Owner decisions; the
+complete Product Owner-supplied M005 source is normalized into a 21-section PRD, architecture and
+experience design, proposed ADR 009 and deferred-activation checklist
 
 Repository/tooling scaffold: exists and remains reproducible; it is not proof of provider or product
 operation
 
-Architecture documentation: the M004 candidate passed independent architecture review with zero
-open findings and Cyber Neo documentary review at risk 0/100. It reuses the M003/M025 communication
-kernel, separates phone binding from identity/resource grants, assigns official provider ingress to
-`apps/app`, persists replayable events before acknowledgement, handles ambiguous dispatch and
-opt-out concurrency safely, and keeps Meta/BSP activation deferred
+Architecture documentation: the M005 candidate passed independent architecture review with zero
+open findings and final Cyber Neo review at documentary risk 0/100. It keeps durable policy, state,
+authorization, consent, tools, leads/scheduling/handoff behavior and audit in the TypeScript/Postgres
+modular monolith; M096 is limited to an ephemeral real-time media boundary without general database
+or business-state authority.
+
+Review remediation: Cyber CN-001–CN-004 closed durable pre-ACK replay, media-token handling, removal
+of an M096 recovery store and spontaneous-sensitive-speech suppression. Independent IA-001–IA-003
+closed atomic human-takeover fencing, uncertain-transfer reconciliation and exact activation-register
+scope. A final post-remediation Cyber pass and independent evidence pass found no open material issue.
 
 Production product behavior: M001 and M002 static public behavior is implemented and verified
-locally but is not deployed or Operational
+locally but is not deployed or Operational. No M003, M004, M005 or M096 behavior exists.
 
-Feature implementation: no active feature implementation gate; M003/M004 code remains unauthorized
-until each specification is approved and the Product Owner separately opens its Build gate
+Feature implementation: no active feature implementation gate; M003/M004/M005/M096 code remains
+unauthorized until each specification is approved and the Product Owner separately opens its Build
+gate
 
 Active executable product queue: none
 
-Module catalog: 110 conceptual modules registered; M001 and M002 are at PO Acceptance, M003 and M004
-remain Registered pending Product Owner approval of their normalized PRDs, and none are Operational
+Module catalog: 110 conceptual modules registered; M001 and M002 are at PO Acceptance; M003, M004
+and M005 remain Registered pending Product Owner approval of their normalized PRDs; none are
+Operational
 
 Release strategy: **Release 1A — Minimum Real-Client Operations**, then **Release 1B — Operational
 Maturity**, both within Release 1 — Production Foundation
 
 First complete vertical: Business Formation remains the Release 1 vertical goal
 
-Current priority: present the independently reviewed M004 PRD/design/proposed ADR 008 to the Product
-Owner for approval or revision
+Current priority: present the independently reviewed M005 PRD/design/proposed ADR 009 to the Product
+Owner for approval or revision, then continue the separately authorized M006 documentary work in its
+own worktree
 
-Next gate: Product Owner approval or revision of the M004 PRD/design and proposed ADR 008; an explicit,
-separately recorded `GENERATE`/Build decision is required before implementation
+Next gate: Product Owner approval or revision of the M005 PRD/design and proposed ADR 009; an
+explicit, separately recorded `GENERATE`/Build decision is required before implementation
 
-Quality evidence: clean isolated branch baseline; frozen install; lint/format; 11-package typecheck;
-131 tests with 3 deliberate skips; import contracts; M004 PRD section/placeholder/decision scan and
-`git diff --check` pass. The final PRD has 895 lines and all 21 required sections, the design has 377
-lines and ADR 008 has 122 lines. Cyber review found four Medium design risks covering replayable
-pre-ACK data, ambiguous dispatch, ingress resource limits and opt-out concurrency; all four were
-remediated and Cyber-confirmed closed. Independent review found intake classification/provider
-exposure, contact-binding freshness/reassigned numbers and Draft-index wording; all three were
-remediated. The final independent review reports zero open findings and the final Cyber review risk
-is 0/100 for the documentary scope; neither result is runtime or provider-activation evidence.
+Quality evidence: isolated M005 worktree; frozen installation with unchanged lockfile; full
+`scaffold:validate` passing Biome, 11-package typecheck, 20 passing test files with one deliberate
+skip, 131 passing tests with three deliberate skips and import contracts. The final documentary
+candidate has a 786-line PRD with 21 sections/14 decisions, 335-line design, 118-line ADR and 14
+activation rows. Independent and Cyber reviews report zero open findings; link, secrets/privacy,
+placeholder, local-path and `git diff --check` checks pass. This is not runtime/provider evidence.
 
 Known delivery control: no CI workflow is active yet; local verification and independent review are
 mandatory and no branch may merge until CI or an approved equivalent gate exists
 
-Blockers: there is no documentary defect blocking the M004 Product Owner decision. The Product Owner
-decisions listed in the M004 PRD and `EXTERNAL_ACTIVATION_REGISTER.md` block only their affected
-Build/live behaviors. Meta Business/WABA, provider selection, institutional number, template/legal
-copy, retention, inbox hours, media policy, campaigns and credentials remain external activation
-work and may not be invented. M003 architecture and M001/M002 merge/deployment decisions also remain
-pending.
+Blockers: there is no documentary defect blocking the M005 Product Owner decision. Fourteen Product
+Owner decisions block only their affected Build/live behavior and must not be invented. Provider,
+number, recording, retention, speech/model providers, verification, hours, SLOs and outbound policy
+remain deferred. Product Owner decisions for prior modules also remain pending.
 
 Role model: Product Owner decides; Codex Architecture Agent architects; a separately scoped Codex
 Implementation Agent implements only after authorization; ChatGPT audits independently.

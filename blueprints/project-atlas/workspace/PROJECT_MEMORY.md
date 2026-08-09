@@ -129,3 +129,20 @@
   provider exposure, stale/reassigned phone bindings and Draft-index wording. The final 14-path
   substantive candidate passed independent review with zero open findings and Cyber Neo at risk
   0/100; it remains pending Product Owner architecture approval and has no Build/activation gate.
+- The Product Owner directed Codex to document and independently audit M005, then repeat that process
+  for M006 in a separate worktree and stop. Decision 018 authorizes M005 Product/Architecture work
+  only; no feature Build or external activation is implied.
+- The complete M005 telephone-agent source was normalized away from obsolete `.NET`/Redis assumptions
+  into the approved TypeScript/Postgres modular monolith. Durable policy, tools, authorization and
+  state remain in the platform; proposed ADR 009 limits M096 to validated real-time media and scoped
+  speech adapters with no general database authority.
+- Recording/transcription remain disabled, caller ID is never identity, phone payment is excluded,
+  client-specific activity defaults to the secure portal and fourteen unresolved business/legal/
+  provider decisions are preserved explicitly for the Product Owner.
+- M005 review found and closed seven material documentary issues. Cyber CN-001–CN-004 established
+  canonical pre-ACK replay, safe single-use media credentials, removed the M096 recovery store and
+  defined spontaneous-sensitive-speech suppression. Independent IA-001–IA-003 added atomic human-
+  takeover fencing, durable uncertain-transfer reconciliation and exact activation-register scope.
+- Final Cyber revalidation covered the post-IA 15-path snapshot at risk 0/100; the final independent
+  evidence pass confirmed all review reports/authorities and zero open findings. M005 is ready only
+  for Product Owner architecture review; it has no Build or activation gate.

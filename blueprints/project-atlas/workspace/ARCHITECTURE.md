@@ -85,6 +85,14 @@ or a resource grant; the initial client-specific path is a secure portal link. P
 operational messaging state, while the activated provider owns external account/template/delivery
 state. ADR 008 records the proposed boundary; provider/number/template activation remains deferred.
 
+M005 proposes a bilingual reception capability that also reuses the shared conversation, lead,
+scheduling, handoff, consent and audit primitives. Durable call policy and state remain in the
+TypeScript/Postgres modular monolith. M096 is a proposed, separately deployable cloud boundary only
+for validated carrier media, ephemeral audio sessions and approved STT/model/TTS adapters. It has no
+general database credentials or business-state authority. Caller ID is not identity; recording and
+transcription are disabled until explicit policy approval. ADR 009 records this candidate boundary,
+while every provider, number, runtime and live-call decision remains deferred.
+
 ## Data protection
 
 Data follows `DATA_CLASSIFICATION.md`. Managed encryption at rest is necessary but insufficient for

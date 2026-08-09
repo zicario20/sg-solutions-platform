@@ -43,6 +43,10 @@ Measured scale, hybrid infrastructure and mobile expansion
     consentimiento, handoff y auditoría. Cada canal aporta transporte/adapters y estados externos;
     nunca crea clientes, leads, expedientes, pagos, citas o autorización paralelos. Un número o
     endpoint de canal no equivale a identidad autenticada ni acceso delegado.
+14. M005 owns voice reception policy, durable call state and domain-tool orchestration. M096 may own
+    only the specialized real-time provider/media runtime and ephemeral audio session. It depends on
+    M041 provider abstractions, M025 communications, M077 audit and M084 integration security; it
+    never owns leads, clients, appointments, payments, consent or authorization.
 
 ## Fronteras de extracción
 

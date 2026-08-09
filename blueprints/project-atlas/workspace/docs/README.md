@@ -29,6 +29,7 @@ Security and recovery authorities:
 - [Architecture-first External Activation ADR](adr/006-architecture-first-external-activation.md)
 - [M003 Public Chat Gateway Runtime ADR](adr/007-public-chat-gateway-runtime.md)
 - [M004 WhatsApp Channel Adapter ADR](adr/008-whatsapp-channel-adapter.md)
+- [M005 Voice Gateway Runtime Boundary ADR](adr/009-voice-gateway-runtime-boundary.md)
 
 M001 delivery evidence:
 
@@ -58,6 +59,14 @@ M004 architecture evidence:
 - [M004 WhatsApp Business PRD](modules/m004-whatsapp-business.md)
 - [M004 WhatsApp Business Design](superpowers/specs/2026-08-09-m004-whatsapp-business-design.md)
 - [M004 WhatsApp Channel Adapter ADR](adr/008-whatsapp-channel-adapter.md)
+
+M005 architecture evidence:
+
+- [M005 Independent Architecture Review](reviews/M005-ARCHITECTURE-REVIEW.md)
+- [M005 Voice Agent PRD](modules/m005-voice-agent.md)
+- [M005 Voice Agent Design](superpowers/specs/2026-08-09-m005-voice-agent-design.md)
+- [M005 Voice Gateway Runtime Boundary ADR](adr/009-voice-gateway-runtime-boundary.md)
+- [M005 Security Architecture Review](reviews/M005-SECURITY-REVIEW.md)
 
 Design specifications live under `superpowers/specs/`. The status in each specification header is
 authoritative: `Draft for Product Owner review` is not approved, while an approved specification

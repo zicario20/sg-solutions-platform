@@ -63,3 +63,9 @@
 - Added the M004 official provider-neutral WhatsApp architecture, proposed Next.js integration
   ingress, consent/template/durable-delivery boundaries and a detailed deferred activation checklist;
   no account, number, credentials, live message or product implementation was created.
+- Added the M005 provider-neutral bilingual Voice Agent PRD, proposed M096 specialized media-runtime
+  boundary and deferred activation decisions. No provider/runtime dependency, account, number,
+  recording, transcript, real call or product implementation was created.
+- Closed M005 independent/Cyber findings covering durable webhook replay, media credentials,
+  protected speech, gateway isolation, human-takeover races, uncertain transfers and activation-
+  register scope. Final documentary reviews have zero open findings; Build remains unauthorized.

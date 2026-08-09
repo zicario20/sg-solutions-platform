@@ -203,3 +203,19 @@ Impact: Codex may prepare the M004 PRD, UX/architecture design, proposed ADR, ac
 security boundaries and independent documentary reviews. This decision does not authorize
 `GENERATE`, product code, WhatsApp Web automation, a live Meta/BSP account, credentials, number
 registration, template submission, external messages, merge, deployment or Operational status.
+
+## 2026-08-09 — Decision 018
+
+Decision: authorize Product/Architecture documentation and independent documentary audit for M005
+Voice Agent, followed by M006 in its own worktree. M005 must normalize the complete Product
+Owner-supplied source to the approved TypeScript modular-monolith baseline, keep business policy and
+durable state in the platform, and treat M096 as a proposed narrow real-time media boundary.
+
+Reason: the Product Owner explicitly instructed Codex to continue through M005, audit it, then move
+to M006 in a separate worktree and stop after M006 is independently audited.
+
+Impact: Codex may prepare the M005 PRD, experience/architecture design, proposed ADR 009, activation
+checklist, consistency updates and read-only independent/security reviews. This decision does not
+approve ADR 009, resolve its business/legal/provider choices, authorize `GENERATE`, add a runtime or
+dependency, activate a telephony/speech/model provider, create an account or number, process real
+calls, enable recording/transcription, merge, deploy or declare the module Operational.
