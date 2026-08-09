@@ -62,6 +62,19 @@ mixed payload inherits the most restrictive class it contains.
 - **Retention/deletion:** shortest approved legal/business period, legal-hold support, scheduled
   deletion and verifiable object/metadata cleanup.
 
+### Authentication-secret browser boundary
+
+Provider access/refresh tokens, passwords, OTPs, MFA seeds, recovery/invitation proofs and decrypted
+server-vault material are never permitted in browser cookies, HTML, browser-readable storage or
+client telemetry. Under an accepted session ADR, a random opaque application-session bearer handle
+may exist only as an ephemeral `Secure`, `HttpOnly`, host-only cookie (`__Host-` where compatible),
+with no identity or provider credential encoded in it and no localStorage/sessionStorage copy.
+
+Any retained provider session material is Highly Sensitive and requires purpose-specific envelope
+encryption in a server-only credential vault under ADR 005: key custody outside Postgres/repository,
+explicit decrypt boundary, rotation/deletion behavior, backup implications, access audit and safe
+failure when KMS is unavailable. A ciphertext column or `_encrypted` suffix alone is not approval.
+
 ## Universal prohibitions
 
 - Never store full payment-card numbers, CVV or magnetic-stripe data.

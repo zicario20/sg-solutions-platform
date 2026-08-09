@@ -76,3 +76,16 @@
   prohibited-data zero persistence, scoped HMAC, accessible nonce renewal, atomic risk-review lead
   fencing and cross-channel M006/M078/M020 ownership. Final documentary reviews have zero open
   findings; Build remains unauthorized.
+- Added the M007 invitation-first Client Authentication and Account PRD, branded bilingual UX
+  design, proposed identity-linking/server-session ADR and detailed activation register. No auth
+  route, database table, RLS/Storage policy, Supabase/Google/email/MFA configuration, account,
+  session or product behavior was created.
+- Added a repository-root LF `.gitattributes` contract after a new Windows worktree reproduced
+  tracked files as CRLF and failed the otherwise unchanged Biome baseline; normalization restored a
+  clean full scaffold validation without changing product behavior or dependency versions.
+- Closed all M007 independent/Cyber findings covering provider auto-link containment, typed
+  invitation/OAuth/email/MFA/account contracts, scanner-safe proof ingress, opaque-cookie/encrypted-
+  vault boundaries, identity/session convergence, refresh and step-up replay fencing, canonical
+  origin/proxy trust, scoped HMAC, RLS/Storage context integrity, break-glass minimum controls and
+  shared state/acceptance consistency. Final documentary reviews have zero open findings and Cyber
+  Neo risk 0/100; Build remains unauthorized.

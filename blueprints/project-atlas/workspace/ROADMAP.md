@@ -51,6 +51,15 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   zero open findings and Cyber Neo closed at documentary risk 0/100 after origin/proxy, parser,
   prohibited-data, digest, nonce, risk-review and cross-channel authority remediation. The candidate
   now awaits Product Owner approval or revision of the PRD/design and proposed ADR 010.
+- **M007 Client Authentication and Account:** Product/Architecture documentation is active under
+  Decision 020. The candidate is invitation-first and separates Supabase identity, SG Solutions
+  account status, membership, role/permission, entitlement and case/resource grants. Email/password
+  and future-activated Google are methods of one identity; matching email/phone/payment/CRM state
+  grants nothing. Proposed ADR 011 uses a server-mediated PKCE/session boundary with a mandatory
+  pinned-version compatibility proof before Build. The independent review closed all 14
+  architecture/consistency findings and Cyber Neo closed CN-001–CN-010 at documentary risk 0/100.
+  The candidate awaits Product Owner approval or revision. No `GENERATE`, route, schema/RLS policy,
+  Supabase/Google/email/MFA configuration, real account/session, merge or deployment is authorized.
 
 ## Architecture-first activation policy
 

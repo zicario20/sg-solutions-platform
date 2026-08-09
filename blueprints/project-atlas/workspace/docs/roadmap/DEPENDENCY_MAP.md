@@ -51,6 +51,11 @@ Measured scale, hybrid infrastructure and mobile expansion
     M078 owns consent, M077 owns audit, and M013/M024, M042–M045, M011, M026 and M040 own their
     optional handoffs. `apps/www` public ingress has no direct database/provider authority and a
     public submission never becomes a client/case/service order by implication.
+16. M007 owns client invitation, authentication, recovery, account-security UX and identity-linking
+    orchestration. M080/M081 own IAM/RBAC policy, M091 owns staff user administration, M045 owns
+    entitlements and ADR 004 owns case/resource inheritance. Supabase identity, active account,
+    membership, role/permission, entitlement and resource grant remain separate checks; email,
+    phone, payment and CRM status never collapse them.
 
 ## Fronteras de extracción
 

@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Documentary capability index; M001/M002 are at PO Acceptance, and M003/M004/M005/M006 await Product Owner architecture decisions after independent review
+- Status: Documentary capability index; M001/M002 are at PO Acceptance, and M003–M007 await Product Owner architecture decisions after independent review
 - Update rule: every future implementation unit maps to an approved module PRD and ADRs
 
 The canonical catalog remains `../roadmap/MODULE_CATALOG.md`. The PRDs below specify bounded
@@ -18,6 +18,7 @@ requirements but do not by themselves authorize code or advance a module beyond 
 | [m004-whatsapp-business.md](m004-whatsapp-business.md) | M004 official provider-neutral WhatsApp channel, consent/templates, durable delivery, secure handoff and deferred activation. |
 | [m005-voice-agent.md](m005-voice-agent.md) | M005 bilingual telephone reception, provider-neutral call orchestration, safe tools, handoff and proposed M096 real-time boundary. |
 | [m006-public-forms.md](m006-public-forms.md) | M006 bilingual versioned public forms, same-origin ingress, durable consent/submission receipts and safe CRM handoff. |
+| [m007-client-authentication-account.md](m007-client-authentication-account.md) | M007 invitation-first client authentication/account, secure identity linking, recovery, sessions and portal authorization entry. |
 | [identity-access.md](identity-access.md) | Supabase identity, staff MFA, roles, resource grants, domain/RLS/Storage authorization. |
 | [crm-case-operations.md](crm-case-operations.md) | CRM, lead pipeline, assignment and conversion. |
 | [client-case-management.md](client-case-management.md) | Clients, businesses, service orders, cases, tasks and internal notes. |
@@ -43,4 +44,5 @@ requirements but do not by themselves authorize code or advance a module beyond 
 Every unresolved business policy uses `[NEEDS PRODUCT OWNER DECISION: ...]`. An executable plan may
 exist only after the relevant PRD is approved, dependencies/gates are satisfied and the Product
 Owner explicitly authorizes `GENERATE` and the Build gate. Decisions 013 and 014 authorized this
-sequence only for M001 and M002 respectively; every other module remains gated.
+sequence only for M001 and M002 respectively; Decisions 016–020 authorize architecture/documentation
+only for their named modules, and every other module remains gated.

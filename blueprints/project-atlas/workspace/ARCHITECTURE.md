@@ -101,6 +101,19 @@ idempotency and outbox before a generic receipt. M020 owns leads/deduplication, 
 M077 owns audit. Detailed private intake, public uploads, persistent drafts and every external
 handoff stay gated. ADR 010 records the proposed boundary.
 
+M007 proposes invitation-first client activation through the Next.js authenticated application.
+Supabase Auth remains identity/credential authority; Postgres owns SG Solutions account,
+membership, application-session revocation and audit state. Email/password and future-activated
+Google are methods of one identity, and no email, phone, payment or CRM match grants access. A
+same-origin server-mediated PKCE/session boundary puts only an opaque application handle in the
+HttpOnly browser cookie and keeps provider credentials in a server-only envelope-encrypted vault,
+prohibits shared caching and requires a pinned-version compatibility proof before Build. Provider
+automatic linkage grants nothing until the explicit local link/invitation transaction commits.
+User routes run through session-derived restricted RLS context and never `service_role`/owner/
+`BYPASSRLS`; private Storage uses server-derived keys and scoped signed capabilities. ADR 011 records
+the proposed linking/session boundary; ADR 004 still controls case/resource inheritance and
+M080/M081 own RBAC.
+
 ## Data protection
 
 Data follows `DATA_CLASSIFICATION.md`. Managed encryption at rest is necessary but insufficient for

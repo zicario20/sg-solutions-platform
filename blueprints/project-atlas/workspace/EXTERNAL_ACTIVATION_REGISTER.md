@@ -132,6 +132,25 @@ de readiness externa sin sustituirlo.
 
 ## Identidad, agenda y pagos
 
+### Decisiones y configuración pendientes de M007
+
+| ID | Dependencia o decisión | Estado | Bloquea | Evidencia de salida requerida |
+|---|---|---|---|---|
+| IAM-001 | Proyecto Supabase, regiones/entornos, dominios, redirect allowlists y Auth configuration | `External activation deferred` | Cualquier autenticación real | Cuenta aprobada, separación dev/staging/prod, configuración exportable, redirect/callback tests y rollback |
+| IAM-002 | Compatibilidad del adapter Supabase/Next con cookie opaca, vault server-side cifrado, PKCE, refresh fencing y no-store | `External activation deferred` | Implementación del boundary propuesto por ADR 011 | Spike con versiones fijadas, KMS/custody aprobado, threat review, pruebas de cookie/token/vault/cache/prefetch/replay y decisión ADR/PO si no cumple |
+| IAM-003 | Remitente, dominio y plantillas transaccionales bilingües | `External activation deferred` | Invitación, verificación, recovery y alertas reales | Dominio/remitente verificado, copy ES/EN aprobado, DKIM/SPF/DMARC según aplique, ingress GET/HEAD inerte con POST/OTP explícito, scanner/prefetch/clean-redirect tests, delivery/bounce/retry test y no-secret payload review |
+| IAM-004 | Google sign-in | `External activation deferred` | Mostrar/usar Google en producción | OAuth client por entorno, consent screen, exact redirect URIs, scopes mínimos, transacción browser-bound de un uso, contención de auto-link, convergencia link/conflict/revoke tests y Product Owner approval |
+| IAM-005 | Staff MFA, recovery factors y sole-owner break-glass | `External activation deferred` | Acceso privilegiado productivo | TOTP/factor config, recovery-code custody, custodian named, tabletop, revoke/lost-device tests and audited runbook |
+| IAM-006 | Client MFA/step-up policy | `External activation deferred` | Exigir u ofrecer MFA al cliente | Acción→assurance matrix, factor/recovery policy, copy ES/EN y positive/negative tests aprobados |
+| IAM-007 | Session, remembered-session, inactivity, absolute expiry, lock and risk thresholds | `External activation deferred` | Publicar tiempos o activar enforcement productivo | Durations/thresholds approved, rate/lock/recovery/load tests, monitoring and rollback |
+| IAM-008 | Account linking, duplicate/conflict and manual recovery policy | `External activation deferred` | Link/merge/recovery de identidad real | Exact evidence/actors/permissions, no-email-only tests, notification copy, audit and manual queue/runbook |
+| IAM-009 | Role/permission matrix M080/M081 and M091 admin actions | `External activation deferred` | User administration and privileged portal access | Product Owner-approved matrix, separation-of-duty review, RLS/domain parity and escalation tests |
+| IAM-010 | Retention/deletion of invitations, session/device/IP evidence, identity links and security events | `External activation deferred` | Persistencia productiva de metadata sensible | Periods, legal hold/deletion authority, minimization, backup impact and deletion/restore tests approved |
+| IAM-011 | Account closure, export, reactivation and regulated-record retention | `External activation deferred` | Mostrar closure/export controls | Policy/legal review, exact projection, step-up, async job, audit and safe-download/deletion tests |
+| IAM-012 | Phone verification/OTP and purpose-specific use | `External activation deferred` | Enviar OTP o usar teléfono en recovery/MFA | Provider, consent/purpose, E.164/VoIP policy, rate/abuse/reassigned-number tests and fallback approved |
+| IAM-013 | Risk/CAPTCHA provider and accessible alternative | `External activation deferred` | Adaptive challenge in production | Provider/data/DPA review, field allowlist, thresholds, accessibility alternative, outage and false-positive tests |
+| IAM-014 | Security telemetry, incident alerts and coarse device/location evidence | `External activation deferred` | Claims of detection/alerts and retained telemetry | Event schema, redaction tests, retention/view permissions, destinations, alert runbook and Product Owner approval |
+
 | Módulo(s) | Dependencia externa pendiente | Estado | Se completa ahora | Se difiere hasta activación | Fallback seguro |
 |---|---|---|---|---|---|
 | M007 y M080 IAM | Proyecto Supabase productivo, dominios, email y MFA configurados | `External activation deferred` | Arquitectura Auth/RLS, roles, grants, sesiones y pruebas locales autorizadas | Configuración productiva, remitente, proveedores sociales y pruebas de recuperación/MFA | Alta y soporte manual controlados; sin acceso si falla la verificación |

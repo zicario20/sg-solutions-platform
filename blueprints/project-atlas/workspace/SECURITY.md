@@ -20,6 +20,14 @@
 - Stripe webhooks are signature-verified, idempotent, repeatable and reconciled.
 - Logs, analytics, traces and error reports exclude sensitive documents, identifiers, tax/credit
   data, notes, portal free text, raw request bodies and secrets.
+- M007 client activation is invitation-first. Supabase Auth credentials remain provider-managed;
+  email, phone, payment and CRM status never create membership or grants. The proposed ADR 011
+  requires scanner-safe one-time email/OAuth ingress, server-mediated PKCE, private/no-store
+  authenticated responses, per-request provider clients, application revocation/refresh fencing,
+  local-link containment of provider automatic linking and a pre-Build proof that only an opaque
+  application handle reaches the browser while provider credentials remain in the envelope-
+  encrypted server vault. User routes cannot use `service_role`, owner or `BYPASSRLS`; RLS actor
+  context and Storage object keys are derived server-side from the validated application session.
 
 ## Data and cryptography
 

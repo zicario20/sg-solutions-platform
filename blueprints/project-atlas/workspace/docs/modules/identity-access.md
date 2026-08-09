@@ -2,8 +2,19 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Implementation-ready architecture draft; open Product Owner decisions remain; no Build gate
+- Status: Shared IAM architecture draft; M007 has a dedicated candidate; no Build gate
 - Catalog modules: M007, M080, M081, M091
+
+## Canonical module split
+
+- `m007-client-authentication-account.md` is the canonical PRD for the client-facing invitation,
+  sign-in, recovery, account-security and identity-linking experience.
+- This document remains the shared IAM umbrella and the primary PRD for M080 Identity and Access
+  Management, M081 RBAC/minimum privilege and M091 User Administration.
+- ADR 001 establishes Supabase Auth as identity authority, ADR 011 proposes the M007 browser/session
+  and linking boundary, and ADR 004 controls client resource inheritance.
+- If this umbrella and the dedicated M007 PRD conflict inside M007 scope, the dedicated PRD governs
+  after Product Owner approval; unresolved cross-module policy is escalated rather than inferred.
 
 ## 1. Purpose
 
@@ -17,9 +28,10 @@ specialized staff later without redesigning every module.
 
 ## 3. Scope
 
-Supabase Auth identities; email/password and Google sign-in; email verification; recovery; staff
-MFA; session management; client invitations/linkage; staff role assignments; case/resource grants;
-domain authorization; RLS/Storage policy contracts; user administration and audit.
+Supabase Auth identity integration; staff MFA; session-assurance policy; client membership and
+resource-grant primitives; staff role assignments; domain authorization; RLS/Storage policy
+contracts; user administration and audit. M007 owns the detailed client invitation, email/password,
+Google, verification, recovery and account-security journeys.
 
 ## 4. Explicit out of scope
 
@@ -45,7 +57,9 @@ Read Only staff, Codex-operated service identity, provider callback and independ
 - Identity: `invited → verification_pending → active → suspended → disabled`; expired invitations
   may return to `invited` through a new audited invitation.
 - Membership: `pending → active → revoked`; revocation is terminal for that membership record.
-- Session: `issued → refreshed → expired|revoked`.
+- Application session (canonical M007 graph): `establishing → active`, repeated
+  `active → rotating → active`, and `active|rotating → expired|revoked|risk_blocked` with
+  `risk_blocked → revoked`. A blocked/revoked family is never revived; recovery creates a new one.
 - Resource grant: `pending|active → revoked|expired`.
 - Failed verification, recovery or MFA attempts never activate identity/membership.
 
@@ -76,15 +90,23 @@ Read Only staff, Codex-operated service identity, provider callback and independ
 Identity reference, person/client link, membership status, internal role assignment, permission
 version, case/resource grant, inheritance block, session assurance, invitation/recovery metadata,
 MFA enrollment status, timestamps and audit correlation. Auth secrets/passwords remain in Supabase
-Auth. Do not duplicate provider tokens or plaintext secrets in domain tables.
+Auth. Under proposed ADR 011, only an opaque application-session handle reaches the browser;
+retained provider session material is envelope-encrypted in a server-only vault under ADR 005/KMS.
+Do not place raw provider tokens or plaintext secrets in ordinary domain tables, browser storage or
+telemetry.
 
 ## 11. API or service contracts
 
-- `IdentityService.resolveSession(token) → ActorContext | Unauthenticated`.
+- `IdentityService.resolveSession(opaqueApplicationSessionRef) → ActorContext | Unauthenticated`;
+  provider credentials are resolved and validated only in the server vault boundary.
 - `AuthorizationService.can(actor, action, resource) → Decision` with reason/policy version.
-- `InvitationService.issue(clientId, email, locale, idempotencyKey)`.
-- `MembershipService.activate(invitationProof)` and `revoke(membershipId, reason)`.
-- `GrantService.grantCase|revokeCase|grantResource` with expected version.
+- `InvitationService.issue(authorizedActor, intendedMembershipId, recipientRef, purpose, locale,
+  expectedVersion, idempotencyKey)`.
+- `MembershipService.activate(subjectBoundInvitationContext, authenticatedActor, recentAuth,
+  expectedVersions, idempotencyKey)` and `revoke(authorizedActor, membershipId, reason,
+  expectedVersion, idempotencyKey)`.
+- `GrantService.grantCase|revokeCase|grantResource` requires an authorized actor, exact purpose,
+  expected version and idempotency key; browser-supplied actor/client context is prohibited.
 - Admin HTTP boundaries use `/api/v1` and return stable 400/401/403/404/409/429 errors.
 
 These are provider-neutral contracts; exact route schemas require approval before Build.
@@ -105,9 +127,11 @@ open a manual verification task with audit evidence.
 
 ## 14. Security and privacy requirements
 
-Staff MFA; secure/HttpOnly/SameSite cookies; rotation and revocation; rate limits; generic recovery
-responses; CSRF protection; no auth tokens in URLs/logs; short session lifetimes proportionate to
-risk; audit of privileged actions; RLS positive/negative/cross-client tests; data minimization under
+Staff MFA; opaque secure/HttpOnly/SameSite application cookie; fenced refresh generations;
+rotation/revocation; scanner-safe email proofs; rate limits; generic recovery responses; CSRF;
+no auth tokens in URLs/logs; short session lifetimes proportionate to risk; audit of privileged
+actions; session-derived restricted-role RLS and private Storage positive/negative/cross-client
+tests; user-route denial of `service_role`/owner/`BYPASSRLS`; data minimization under
 `DATA_CLASSIFICATION.md`; enhanced independent review before release.
 
 ## 15. UX and accessibility requirements
@@ -139,8 +163,9 @@ approved English/Spanish parity. Security meaning and support paths cannot diver
 
 ## 19. Dependencies
 
-ADR 001, ADR 004, data classification/encryption, audit/activity history, Drizzle migration policy,
-Supabase project configuration, consent requirements and approved role/permission matrix.
+ADR 001, proposed ADR 011, ADR 004, the dedicated M007 PRD, data classification/encryption,
+audit/activity history, Drizzle migration policy, Supabase project configuration, consent
+requirements and approved role/permission matrix.
 
 ## 20. Risks
 

@@ -164,3 +164,26 @@
 - Final independent review approved the stable candidate with zero open findings; Cyber Neo
   revalidated the post-fence candidate at documentary risk 0/100. M006 remains Registered and is
   ready only for Product Owner architecture review; it has no Build or activation gate.
+- The Product Owner directed Codex to continue with M007 in its own worktree. Decision 020 authorizes
+  M007 Product/Architecture documentation and independent audit only; no `GENERATE`, Build or
+  provider activation was opened.
+- The complete M007 source was normalized into an invitation-first client-account architecture on
+  the approved Supabase Auth/Next.js/Postgres baseline. Supabase owns identity/credentials;
+  Postgres owns business account, membership, application revocation and audit state; ADR 004 and
+  M080/M081 remain resource/RBAC authorities.
+- Proposed ADR 011 defines explicit identity linking, one account with multiple methods, server-
+  mediated PKCE/session handling, private/no-store authenticated routes and a pinned-version
+  compatibility gate before any Build. Sixteen unresolved business/security/provider choices remain
+  Product Owner decisions and external activation is recorded without credentials.
+- Initial M007 review exposed provider automatic-link risk, incomplete lifecycle contracts,
+  scanner-prefetch proof consumption, browser-token ambiguity, provider/local convergence gaps,
+  origin/proxy and digest weaknesses, state drift, unresolved MFA wording and browser-progress
+  ambiguity. The remediated design uses scanner-safe one-time ingress, a closed external-initiator
+  matrix, opaque browser handle, envelope-encrypted server vault, fenced refresh/link/step-up
+  operations, restricted session-derived RLS and server-authorized private Storage.
+- A second independent pass found four specification inconsistencies: anonymous Google initiation,
+  overly absolute credential-storage criteria, a legacy shared session graph and MFA enrollment
+  start without one-time authorization. All were corrected and revalidated. Final independent
+  review returned PASS with zero material findings; Cyber Neo closed CN-001–CN-010 at 0/100.
+  M007 remains Registered and is ready only for Product Owner review; no ADR acceptance, Build,
+  activation, merge or deployment follows from the reviews.

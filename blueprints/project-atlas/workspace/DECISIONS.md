@@ -235,3 +235,20 @@ updates and read-only independent/security reviews. This decision does not appro
 form fields/copy/policy, `GENERATE`, code, tables, public routes, provider accounts, real submissions,
 email/CRM/calendar/payment/analytics/partner connections, cookies, merge, deployment or Operational
 status.
+
+## 2026-08-09 — Decision 020
+
+Decision: authorize Product/Architecture documentation and independent documentary audit for M007
+Client Authentication and Account in its own worktree after M006 closure. M007 must normalize the
+complete Product Owner source to the approved Supabase Auth, Next.js, Postgres domain/RLS/Storage
+architecture and preserve the separation of identity, account status, membership, role,
+entitlement and resource access.
+
+Reason: the Product Owner explicitly directed Codex to continue with Module 7 after approving the
+same isolated architecture/audit workflow for M004–M006.
+
+Impact: Codex may prepare the M007 PRD, account/authentication UX design, proposed ADR 011, external-
+activation checklist, authority updates and read-only independent/security reviews. This decision
+does not approve ADR 011, resolve session/MFA/retention/linking business policy, authorize
+`GENERATE`, create routes, tables, RLS/Storage policies, Supabase/Google/email/MFA configuration,
+credentials, real accounts or sessions, merge, deployment or Operational status.
