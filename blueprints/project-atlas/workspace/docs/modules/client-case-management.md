@@ -8,7 +8,8 @@
 ## 1. Purpose
 
 Create the durable operational record for clients, businesses, service orders, cases, tasks and
-internal notes across every service vertical.
+client/case operational notes across every service vertical. M012 separately owns conversation-local
+notes; neither authority mutates or copies the other.
 
 ## 2. Business value
 
@@ -82,7 +83,9 @@ minor units/currency; time uses UTC plus IANA zone where local meaning matters.
 - `ServiceOrderService.createFromQuote`, `transition`, `cancel`.
 - `CaseService.open`, `transition`, `setNextAction`, `assign`, `close`.
 - `TaskService.create`, `transition`, `completeWithEvidence`.
-- `NoteService.addInternal`; any future client-visible message uses Messaging, not a note flag.
+- `NoteService.addInternal` creates only M018 client/case operational notes. It cannot create, revise,
+  redact or delete M012 conversation notes; an opaque typed link/projection may connect them without
+  copying content. Any future client-visible message uses Messaging, not a note flag.
 - All mutations require actor, expected version and idempotency key where retryable.
 
 ## 12. Events and background jobs

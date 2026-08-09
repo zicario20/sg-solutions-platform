@@ -96,6 +96,32 @@
   Filenames, keys, bytes, OCR text, comments, scanner payloads and signed URLs are prohibited from
   logs, Sentry, OpenTelemetry, PostHog, DOM capture, AI history and shared/offline cache. Proposed
   ADR 015 and DOC-001–DOC-020 gate exact policies and all provider activation.
+- M012 requires a fresh authenticated account/service/case grant on every conversation/message
+  list, detail and command; participant, assignment, email, phone, CRM relation, payment or prior
+  access grants nothing. Client messages and internal/compliance notes have separate records,
+  commands, permissions, events and DTOs. Every Message is client-visible by type and carries only
+  `authorKind`, so no frontend audience/visibility toggle can publish a private note. Initial-start
+  idempotency binds actor/canonical root/reason/policy/digest before a conversation exists; reply
+  idempotency binds actor/conversation/digest and any quoted target must be an eligible current
+  client-visible revision in that same authorized conversation. Read advancement requires a current server-issued
+  actor/participant/page receipt and monotonic visible bounds. Cursors are opaque, authenticated and
+  actor/scope/query/snapshot/authorization-epoch/expiry bound. Posts use bounded plain text, escaped
+  rendering and no automatic URL unfurl. Gap-free client-message order plus client-writability/
+  visible-activity state is separate from private staff message/note activity order/version/time;
+  note-only activity cannot change Client order/cursor/ETag/error/timing. Close/block/revoke still
+  final-fences client writes. Every message/note/revision body and derived free-text handoff/translation summary is
+  application-envelope encrypted before durable persistence; KMS failure cannot leave plaintext
+  draft/rejection/summary/outbox/audit/backup state. Attachment bytes,
+  keys and access stay wholly in M011; typed task/appointment/billing/signature references grant no
+  owner-domain action. Future AI treats user text as untrusted data, receives no internal notes or
+  unrelated content and loses publish authority atomically on human takeover. Message/note bodies,
+  subjects, quotes, protected references, filenames, signed URLs and decrypted content are
+  prohibited from logs, audit payloads, traces, Sentry, PostHog, notification payloads, URLs,
+  browser persistence and shared/offline cache. Proposed ADR 016 and MSG-001–MSG-020 gate exact
+  message, search/encryption, retention, notification, channel and AI policies.
+  M012 conversation notes and M018 client/case notes are separate non-copying authorities. M092/M097
+  cannot receive transcript/protected identifiers/session replay, and M026 receives only purpose-
+  bound opaque recipient/event refs—not direct contact PII or protected content/resource IDs.
 
 ## Data and cryptography
 

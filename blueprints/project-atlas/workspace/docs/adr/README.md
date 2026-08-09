@@ -21,6 +21,7 @@
 | [013](013-client-service-projection-state-and-version-boundary.md) | Proposed M009 explicit service/case grant, accepted-definition version, state synthesis and client-service projection boundary. |
 | [014](014-client-process-status-and-public-timeline-boundary.md) | Proposed M010 canonical-state projection, closed source registry, public timeline provenance and final authorization fence. |
 | [015](015-document-authority-quarantine-version-and-delivery-boundary.md) | Proposed M011 single document authority, quarantine/promotion, immutable versions, resource access and byte-delivery boundary. |
+| [016](016-secure-messaging-content-visibility-ordering-and-handoff-boundary.md) | Proposed M012 authenticated secure-message authority, internal-note separation, durable ordering, typed references and handoff boundary. |
 
 ADRs are tool-neutral. Supersede a decision with a new numbered ADR; do not erase historical
 rationale.

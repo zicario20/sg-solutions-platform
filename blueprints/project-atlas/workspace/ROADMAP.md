@@ -100,8 +100,20 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   RLS/Storage policy, bucket, scanner/provider traffic, real file, merge or deployment is
   authorized. Independent architecture/accessibility review now has zero open findings and Cyber
   Neo is security-clear at documentary risk 0/100. Twenty Build/live policies remain explicit
-  `DOC-001`–`DOC-020` Product Owner decisions. M011 awaits Product Owner review, and the authorized
-  sequence stops here; M012 is not opened.
+  `DOC-001`–`DOC-020` Product Owner decisions. M011 awaits Product Owner review. Decision 025 now
+  permits the separate M012 worktree to proceed from the clean audited M011 commit.
+- **M012 Mensajería segura:** Product/Architecture documentation is complete and independently
+  audited under Decision 025. The
+  candidate defines one authenticated secure-portal messaging authority over the shared
+  conversation kernel, explicit account/service/case roots, separate client-message and internal-
+  note records/commands/DTOs/events, separate Client/staff order/version domains, atomic encrypted
+  revision/current-pointer/idempotency receipts, typed owner references and human/AI handoff. M011
+  owns attachment bytes/access; M025 owns a content-free unified-inbox projection; M026 owns
+  notifications; M047–M060 own AI behavior subordinate to M076 compliance/human decisions. No `GENERATE`, route, schema/RLS policy, provider, AI,
+  notification, real message, merge or deployment is authorized. Independent architecture review
+  has zero open findings and Cyber Neo is security-clear at documentary risk 0/100; twenty Build/live
+  policies remain explicit `MSG-001`–`MSG-020` Product Owner decisions. M013 may open only after the
+  final validated M012 commit.
 
 ## Architecture-first activation policy
 

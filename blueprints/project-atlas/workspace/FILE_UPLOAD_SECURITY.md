@@ -5,6 +5,12 @@
 - Status: Phase 0 design; no scanner vendor selected or implemented
 - Update rule: update before expanding file types, size limits, scanners or retention behavior
 
+M012 messaging attachments are only purpose-bound entry points into this same M011 lifecycle.
+M012 stores an opaque document/version reference and client-safe projected state; it never stores
+authoritative bytes, trusts browser MIME/filename, exposes quarantine objects or receives signed
+URLs. A message may remain accepted while its attachment is processing or rejected, and attachment
+availability requires a fresh M011 authorization check.
+
 ## Allow and deny policy
 
 Release 1A uses an allowlist: PDF, JPEG and PNG identified by validated content, not filename or

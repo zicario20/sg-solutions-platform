@@ -16,8 +16,11 @@
   process-local next action, version-bound milestones, blockers and governed public timeline.
 - `m011-document-portal.md` is the canonical PRD for document requests, quarantine upload,
   immutable versions, review/correction, client-visible delivery and retention hooks.
+- `m012-secure-messaging.md` is the canonical PRD for authenticated secure conversations,
+  client/staff messages, conversation-local internal notes, handoff, attachments-as-M011 references
+  and message retention hooks.
 - This document remains the umbrella for M008–M015 and the shared portal navigation/projection
-  principles. M012–M015 retain their owning PRDs or future dedicated specifications.
+  principles. M013–M015 retain their owning PRDs or future dedicated specifications.
 - Proposed ADR 012 governs the M008 aggregation, priority, freshness and no-store boundary.
 - Proposed ADR 013 governs M009 service/case grants, accepted-definition versions, state synthesis
   and the request-scoped service projection boundary.
@@ -25,7 +28,9 @@
   provenance/corrections and final authorization fencing.
 - Proposed ADR 015 governs M011 document authority, quarantine/promotion, immutable versions,
   authorized byte delivery and recovery.
-- If this umbrella and a dedicated M008–M011 PRD conflict inside that module's scope, the dedicated
+- Proposed ADR 016 governs M012 secure-message content/visibility separation, durable ordering,
+  typed owner references and human/AI handoff.
+- If this umbrella and a dedicated M008–M012 PRD conflict inside that module's scope, the dedicated
   PRD governs after Product Owner approval; unresolved cross-module policy is escalated rather than
   inferred.
 
@@ -128,6 +133,10 @@ staff notes, hidden fields and raw provider payloads.
   commands and typed `ClientDocumentSummaryPort`. Every M008–M010 handoff supplies only an opaque
   route key and summary; M011 reauthorizes against current context/grants/classification and never
   trusts the referring projection.
+- M012 owns separate Client/Staff conversation queries, secure reply, internal-note, lifecycle,
+  assignment/handoff, read-state, revision/redaction and typed-reference commands. Client/Internal
+  serializers and events are structurally separate; M025 owns the unified inbox projection and
+  M026 owns notification delivery. Every attachment/read action reauthorizes in M011.
 - `PortalPreferenceService.update(locale, timeZone, notifications, expectedVersion)`.
 - Responses are field-allowlisted portal DTOs with stable 401/404/409/429 and generic 5xx recovery.
 
@@ -139,6 +148,10 @@ Portal consumes `case.client_projection_changed`, `document_request.published|sa
 Projection refresh/notification jobs are idempotent and may be replayed from Postgres operational
 state. A document appears only when the exact M011 review/visibility/version binding and current
 grant authorize it; no single event is sufficient. The portal is not a separate source of truth.
+
+For M012, canonical events are `secure_conversation.*`, `secure_message.*` and
+`secure_internal_note.*`. Client notification/projection consumers receive only opaque transition
+facts and re-read Postgres; internal-note events never enter client or channel consumers.
 
 ## 13. Error states and recovery
 

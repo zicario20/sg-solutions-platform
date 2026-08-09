@@ -103,5 +103,18 @@ Only opaque IDs and stable minimized result/policy codes may enter authorized au
   allow `Highly Sensitive` content in public chat and does not authorize production retention before
   its Product Owner/legal decision.
 
+M012 secure-portal message bodies and conversation-local internal notes are at least Confidential.
+Tax, credit, banking, identity, security and legal content may be Highly Sensitive and must follow
+exact purpose/grants/assurance and M085 retention policy. Because free text may contain unexpected
+Highly Sensitive data, every accepted M012 message, note, revision body and derived free-text
+handoff/translation summary uses ADR 005 application-level envelope encryption before durable
+persistence. Encryption/KMS failure rejects the write; plaintext cannot be durably staged in
+drafts, rejected-input records, outbox, audit, logs or backups. Subjects, snippets and search
+metadata cannot copy protected body content.
+Message bodies, quotes, translations, typed protected references and decrypted content are
+prohibited from notification payloads, analytics, logs, traces, error reports, session replay,
+browser persistence and external-channel copies. A participant or channel address never changes
+classification or authorization.
+
 [NEEDS PRODUCT OWNER DECISION: approve service-specific retention periods and legal-hold authority
 after Illinois/legal counsel review.]

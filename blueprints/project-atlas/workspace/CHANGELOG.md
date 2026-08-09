@@ -130,3 +130,22 @@
   review has zero findings and Cyber Neo documentary risk is 0/100.
 - Registered twenty unresolved M011 Build/live policies one-to-one as `DOC-001`–`DOC-020` and
   stopped the authorized module sequence after M011; no M012 worktree or gate was opened.
+- Recorded Decision 025 and opened only the isolated M012 documentary worktree from the clean
+  audited M011 commit; M013/M014 remain sequentially gated and no product Build was opened.
+- Added the M012 Mensajería segura PRD, responsive branded Client/Staff design and proposed ADR 016.
+  The candidate defines authenticated account/service/case conversations, structurally separate
+  public messages and internal notes, separate Client/staff order/version domains, atomic encrypted
+  immutable revisions/current pointers/idempotency receipts, typed owner
+  references and human/AI handoff without creating a route, table/RLS policy, provider, AI,
+  notification or real message.
+- Registered twenty unresolved M012 Build/live policies one-to-one as `MSG-001`–`MSG-020`; M011
+  retains attachment bytes/access, M025 content-free unified-inbox projection, M026 notifications,
+  M047–M060 AI behavior and M076 compliance/human decisions.
+- Closed M012 independent architecture findings covering attachment/note gates, priority/tags,
+  quoted targets, dual Client/staff order and CAS/time domains, immutable note revisions, M018 note
+  ownership, M025 content-free projection, M076/M090/M091 authority, M092/M097 separation, opaque
+  notification references and atomic encrypted initial revisions. Final independent review has zero
+  open findings and Cyber Neo is `SECURITY-CLEAR` at documentary risk `0/100`.
+- Final M012 validation passed two frozen offline installs, lint, format, 11-package typecheck,
+  20 test files/131 tests, import contracts, a 226-page Astro build, 125 local links and
+  `git diff --check`; the lockfile remained unchanged and candidate secret/PII scans were clear.

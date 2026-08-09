@@ -282,3 +282,31 @@
 - Twenty unresolved M011 policies remain explicit one-to-one `DOC-001`–`DOC-020` Product Owner
   decisions. The candidate awaits Product Owner documentary review. The authorized sequence stops
   after M011; no M012 worktree, Build, merge, deployment or provider activation was opened.
+- The Product Owner subsequently authorized M012, M013 and M014 documentary architecture one at a
+  time in separate worktrees, with independent/security audit and commit before opening the next,
+  then stop after M014. Decision 025 records that sequence; it opens no `GENERATE`, Build, provider,
+  merge or deployment authority.
+- M012 began from independently audited M011 commit `f58dcfd`. The complete supplied M012 source was
+  normalized into one authenticated secure-portal messaging authority over the shared conversation
+  kernel. Every conversation has one account/service/case root, and participation/assignment never
+  grants resource access.
+- Proposed ADR 016 separates client messages from conversation-local internal/compliance notes at
+  record, command, permission, event, DTO and UI boundaries. Posts atomically preserve fresh
+  authorization, separate gap-free Client/private staff sequences and CAS/time domains, encrypted
+  immutable initial revision/current pointer, idempotency receipt and outbox/audit evidence. M011
+  retains attachment bytes/access, M025 a content-free unified-inbox projection, M026 notification
+  delivery, M047–M060 AI/tool behavior and M076 compliance/human authority.
+- M012 Release 1A is human, bounded plain-text messaging with metadata-only authorized search and no
+  external provider. Cross-channel continuity, AI responses, translation, richer routing, read/
+  typing indicators, analytics and body indexing remain separately gated. Twenty unresolved
+  policies are explicit one-to-one `MSG-001`–`MSG-020` Product Owner decisions.
+- M012 independent review closed all architecture/authorization/UX ownership findings, including
+  MSG-005/007/009 gates, quoted-target authorization, separate Client/staff order/CAS/time domains,
+  atomic encrypted initial revisions, M012/M018 note authority, M025 content-free projection,
+  M076/M090/M091 governance, M092 product analytics versus M097 operational telemetry and honest
+  opaque-reference privacy wording. The final independent pass has zero findings; Cyber Neo is
+  `SECURITY-CLEAR` at documentary risk 0/100. No product behavior or provider was activated.
+- Final M012 evidence passed two frozen offline installs, lint/format, 11-package typecheck, 20 test
+  files/131 tests, import contracts and a 226-page Astro build. The stable candidate had 125 local
+  links with zero broken, no introduced secrets/PII/local paths, unchanged lockfile and clean
+  whitespace. The authenticated Next.js app remains intentionally empty and no route was invented.

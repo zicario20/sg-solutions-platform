@@ -36,6 +36,7 @@ Security and recovery authorities:
 - [M009 Client Service Projection, State and Version ADR](adr/013-client-service-projection-state-and-version-boundary.md)
 - [M010 Client Process Status and Public Timeline ADR](adr/014-client-process-status-and-public-timeline-boundary.md)
 - [M011 Document Authority, Quarantine, Version and Delivery ADR](adr/015-document-authority-quarantine-version-and-delivery-boundary.md)
+- [M012 Secure Messaging Content, Visibility, Ordering and Handoff ADR](adr/016-secure-messaging-content-visibility-ordering-and-handoff-boundary.md)
 
 M001 delivery evidence:
 
@@ -142,6 +143,18 @@ M011 architecture candidate:
   is `SECURITY-CLEAR` at documentary risk `0/100`. The candidate is ready only for Product Owner
   architecture review; no Build, route, schema/RLS/Storage policy, bucket, provider traffic, real
   file or production behavior is authorized.
+
+M012 architecture candidate:
+
+- [M012 Independent Architecture Review](reviews/M012-ARCHITECTURE-REVIEW.md)
+- [M012 Security Architecture Review](reviews/M012-SECURITY-REVIEW.md)
+- [M012 Mensajería segura PRD](modules/m012-secure-messaging.md)
+- [M012 Mensajería segura Design](superpowers/specs/2026-08-09-m012-secure-messaging-design.md)
+- [M012 Secure Messaging Boundary ADR](adr/016-secure-messaging-content-visibility-ordering-and-handoff-boundary.md)
+- Independent architecture/accessibility review is approved with zero open findings and Cyber Neo
+  is `SECURITY-CLEAR` at documentary risk `0/100`. The candidate is ready only for Product Owner
+  architecture review; no Build, route, schema/RLS policy, provider, AI, notification, real message
+  or production behavior is authorized.
 
 Design specifications live under `superpowers/specs/`. The status in each specification header is
 authoritative: `Draft for Product Owner review` is not approved, while an approved specification

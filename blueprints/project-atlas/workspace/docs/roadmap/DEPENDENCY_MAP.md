@@ -85,6 +85,20 @@ Measured scale, hybrid infrastructure and mobile expansion
     generation, M067 signature, M077 audit or M085 retention policy. M008–M010 consume only typed
     client-safe M011 summaries/routes and cannot obtain bytes, keys, filenames, signed URLs,
     comments or provider payloads.
+22. M012 consumes M007 identity/context/grants, M009/M010 authorized roots and the shared M003–M005
+    conversation vocabulary. It owns authenticated portal messages, conversation-local internal
+    notes, participation, durable ordering and handoff; M011 owns attachments, M013/M014/M023/M067
+    own typed actions, M025 owns the unified inbox, M026 owns notifications and M047–M060 own AI.
+    Participant/contact/message references never grant resource access, and Client/Internal DTOs and
+    event namespaces remain structurally separate. M018 owns client/case operational notes; neither
+    note authority mutates or copies the other, and only opaque typed links/projections cross the
+    boundary. M092 owns analytics/report consumption and MSG-018 gates its minimized M012 facts.
+    M097 separately owns required content-free, identifier-free operational/security observability
+    under its own readiness/activation policy; neither receives transcript/session replay. M076 owns
+    compliance policy/human decisions, M090 system configuration and M091 staff role administration;
+    M012 cannot replace or self-grant through any of them.
+    M025 receives a content-free list/assignment projection only; protected detail is a fresh
+    request-scoped M012 read and is never persisted or cached by M025.
 
 ## Fronteras de extracción
 

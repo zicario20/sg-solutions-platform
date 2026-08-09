@@ -180,6 +180,21 @@ coordinates idempotent jobs while Postgres/outbox state remains durable truth. M
 extraction, M066 generation, M067 signature, M023 task state, M077 audit and M085 retention. Proposed
 ADR 015 records this boundary; no document route, table, bucket or provider is authorized by it.
 
+M012 proposes one authenticated secure-portal messaging authority over the shared conversation
+kernel. Every conversation has one account-support, ServiceOrder or CaseFile root; participant and
+assignment records never grant access. Client messages and conversation-local internal notes use
+separate records, commands, DTOs, events and UI controls. Gap-free client-message sequence/client-
+writability/visible-time is distinct from private staff message/note activity sequence/version/time,
+so notes cannot alter Client order, cursor, ETag or errors. Posts atomically commit authorization,
+applicable counters, encrypted initial immutable revision/current pointer, aggregate, idempotency
+receipt and outbox/audit; any failure rolls back every row/counter/reservation. M011 owns all attachment bytes and safe delivery;
+M013/M014/M023/M067 own their typed actions; M026 owns notifications; M025 owns a content-free unified
+cross-channel inbox projection; M047–M060 own AI/model/tool behavior subordinate to M076 compliance
+policy and human decisions. M018 retains client/case note authority. A final M007/ADR 004 resource
+fence governs body, counts, cursors, read evidence and writes. Protected transcript content never
+enters logs, telemetry, notification payloads or browser persistence. Proposed ADR 016 records this
+boundary; no route, table/RLS policy, provider, AI, notification or real message is authorized.
+
 ## Data protection
 
 Data follows `DATA_CLASSIFICATION.md`. Managed encryption at rest is necessary but insufficient for

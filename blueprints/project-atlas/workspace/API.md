@@ -88,3 +88,45 @@ Link/unlink, replacement and reclassification atomically recompute the document 
 classification ceiling from retained governed versions and active linked purposes. Logical-
 document visibility, selected client-visible version and context-link/version visibility use
 distinct post-commit events; consumers re-read canonical Postgres because events grant no access.
+
+M012 proposes separate `ClientConversationQueryService` and `StaffConversationQueryService`
+boundaries plus `SecureConversationService`, `ConversationInternalNoteService`,
+`ConversationLifecycleService`, `ConversationAssignmentService`, `ConversationHandoffService`,
+`ConversationReadService`, `MessageRevisionService` and `MessageReferenceService`. Every list,
+detail, count, cursor, post, note, assignment, handoff, read-state, revision, redaction or typed-
+reference action freezes the complete M007 context/grant/assurance policy and final-fences the
+governing account/service/case root, participant, visibility/sensitivity, lifecycle/block and
+resource epochs. Client and Staff DTOs are structurally separate; internal notes cannot enter Client
+serialization or notification events. Every `Message` is client-visible by invariant and carries
+only `authorKind`; private staff content exists solely in the internal-note type/contract/event.
+Starts bind actor/canonical root/reason/policy/idempotency and digest before a conversation reference
+exists; replies bind actor/conversation/idempotency and any quoted target must resolve to an eligible
+current client-visible revision in the same authorized conversation before it enters the digest.
+Public replies use a client-writability CAS; internal notes use a private staff-activity CAS. Client
+ordering/read/cursors use gap-free client-message sequence and client-last-visible activity only;
+staff message/note interleaving uses a separate sequence/version/time that never reaches Client DTO,
+ETag, order, error or timing. One Postgres transaction reserves the key, allocates applicable
+sequences, encrypts/inserts the initial immutable revision, commits its aggregate/current pointer,
+idempotency receipt and outbox/audit. Any encryption/revision/pointer/outbox failure rolls back all
+counters/rows/reservation. Same-key/same-digest retries return the original complete receipt;
+changed digest conflicts. Read advancement requires a current actor/
+participant/page-bound server receipt and a monotonic upper-bounded visible sequence. Cursors are
+opaque, authenticated and bound to actor/scope/filter/order/snapshot/auth epochs/expiry. Every
+accepted message/note/revision body or derived free-text handoff/translation summary is application-
+envelope encrypted before persistence; KMS failure is atomic and leaves no plaintext draft,
+rejection, summary, outbox or audit payload.
+M011 handles every attachment intent/byte/read, and M013/M014/M023/M067 independently authorize
+typed actions. M025 consumes a bounded content-free list projection whose schema cannot represent
+body/note/quote/translation/attachment title; staff detail re-reads M012 request-scoped and creates
+no M025 content cache. M026 receives only content-free template
+requests and future M047–M060 AI remains separately gated. Exact routes and payload limits await a
+Build gate; personalized responses are private/no-store and normal operation requires no Redis,
+Kafka, WebSocket cluster or external provider.
+M018 owns client/case notes; M012 owns only conversation-local notes, with opaque links/projections
+and no cross-mutation/copy. M092 future analytics/report consumption remains off until MSG-018; M097
+separately owns required content-free, identifier-free operational/security telemetry under its own
+readiness/activation policy. Neither receives transcript/session replay. M076 owns compliance policy
+and human-required decisions; M047–M060 AI cannot replace it. M090/M091/M080/M081 retain system
+configuration, staff user and role authority; M012 cannot self-grant. M026 may receive only
+purpose-bound opaque recipient/event references inside its first-party boundary, never direct
+contact PII or protected content/resource IDs.

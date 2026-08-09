@@ -40,6 +40,20 @@ exist. An operational-review-rejected but safety-clean version retains its appro
 retention and evidence rules; it does not become client-visible. Recovery cannot infer a clean scan,
 business acceptance or client visibility from bucket placement.
 
+For M012, restoration reconciles every conversation's governing root, grant/authorization epochs,
+participants, lifecycle/responsibility, immutable message revisions, internal-note separation,
+gap-free client-message counter/client-writability/visible-time, private staff-activity counter/
+version/time, read evidence, assignments/handoffs, classification, key references, retention/legal
+hold and outbox/audit facts before serving content. Every accepted aggregate must resolve exactly one
+current encrypted immutable revision consistent with its pointers, receipt and both applicable
+counter domains. Missing key, revision, pointer, root-link or grant
+evidence fails closed and creates a restricted recovery task; it never falls back to plaintext,
+broad staff access or a reconstructed transcript from notifications/external channels. Replayed
+outbox events must not resend or duplicate messages, notifications or owner-domain actions.
+Restore tests prove a note never creates a Client-visible sequence/timestamp gap and a partial
+aggregate/counter/reservation/receipt without its revision/pointer remains unavailable and is
+reconciled or rolled back through the restricted recovery path.
+
 ## Sanity and Stripe
 
 Export public Sanity datasets on a schedule and verify that exports contain no operational/private

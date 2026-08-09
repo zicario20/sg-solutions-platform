@@ -322,3 +322,22 @@ does not approve ADR 015 or unresolved business/legal/provider policy, authorize
 a route, schema/RLS/Storage policy, bucket, scanner/OCR/signature provider, real file or document
 record, merge, deployment or Operational status. Work stops after M011 documentary closure unless
 the Product Owner gives a new instruction.
+
+## 2026-08-09 — Decision 025
+
+Decision: authorize Product/Architecture documentation and independent documentary audit for M012
+Mensajería segura, then M013 Citas del cliente and M014 Pagos y facturación del cliente, strictly
+one at a time in separate worktrees. M012 begins from the clean independently audited M011 commit;
+each later worktree may open only after the preceding module is audited, validated and committed.
+
+Reason: the Product Owner explicitly instructed Codex to complete M012, then M013 and M014 in that
+order, using an isolated worktree and independent audit for each, and to stop after M014.
+
+Impact: for M012, Codex may normalize the complete supplied source into its PRD, responsive branded
+UX/UI design, proposed ADR 016, MSG-001–MSG-020 decision register, authority updates and read-only
+independent/security reviews. Equivalent documentary scope is authorized later for M013 and M014
+only after their predecessor gates close. This decision does not approve any ADR or unresolved
+business/legal/provider policy, authorize `GENERATE`, product code, routes, schema/RLS/Storage
+policies, real messages/appointments/payments, AI, Google/Stripe/notification/channel activation,
+merge, deployment or Operational status. Work stops after the clean audited M014 commit unless the
+Product Owner gives a new instruction.
