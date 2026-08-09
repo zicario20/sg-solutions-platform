@@ -66,6 +66,17 @@ operational truth; Stripe is external financial transaction truth; Sanity is pub
 Inngest coordinates but owns no durable business state. Provider callbacks are authenticated,
 idempotent and order-independent, and reconciliation repairs missed or delayed events.
 
+Architecture, local implementation and external activation are separate gates under ADR 006.
+`EXTERNAL_ACTIVATION_REGISTER.md` records provider accounts, contracts, business prerequisites and
+non-sensitive activation evidence. An interface, disabled adapter, mock or local contract test never
+proves a provider is active or a module is `Operational`.
+
+M003 proposes a same-origin Public Chat Gateway as Astro on-demand server routes inside `apps/www`,
+while existing marketing/content pages remain prerendered. Shared conversation/domain services stay
+in workspace packages; later authenticated client/admin adapters enter through `apps/app` and never
+turn a claimed public identity into authorization. ADR 007 records the proposed runtime decision for
+Product Owner approval before Build.
+
 ## Data protection
 
 Data follows `DATA_CLASSIFICATION.md`. Managed encryption at rest is necessary but insufficient for

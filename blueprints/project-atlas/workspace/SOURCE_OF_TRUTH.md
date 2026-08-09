@@ -21,6 +21,7 @@ authority but may not silently replace it.
 | Technical decisions and rationale | Numbered ADRs under `docs/adr/` | Preserve decision context; supersede instead of rewriting history. |
 | Roadmap and release slicing | `ROADMAP.md` and `docs/roadmap/RELEASE_HORIZONS.md` | Defines sequencing, not implementation authorization. |
 | Module inventory and maturity | `docs/roadmap/MODULE_CATALOG.md` | Registration is not completion or authorization. |
+| External provider and business readiness | `EXTERNAL_ACTIVATION_REGISTER.md` | Tracks deferred accounts, contracts, credentials and activation evidence; it does not authorize Build or store secrets. |
 | Schema after implementation begins | Checked-in Drizzle schema and migrations | Drizzle is the only schema/migration authority; the Supabase dashboard is observational. |
 | Identity | Supabase Auth | Proves identity only; it does not confer business authorization. |
 | Authorization | Domain services plus Postgres RLS and Storage policies | Enforces role and resource access; UI visibility is not a control. |

@@ -13,6 +13,7 @@ Roadmap authorities:
 - [Release Horizons](roadmap/RELEASE_HORIZONS.md)
 - [Dependency Map](roadmap/DEPENDENCY_MAP.md)
 - [Status Model and Gates](roadmap/STATUS_MODEL.md)
+- [External Activation Register](../EXTERNAL_ACTIVATION_REGISTER.md)
 
 Research inputs and compatibility analyses are indexed in [Research](research/README.md). Research
 is informative until the Product Owner approves its conclusions into the applicable authority.
@@ -25,6 +26,8 @@ Security and recovery authorities:
 - [Private Storage ADR](adr/003-storage.md)
 - [Authorization Inheritance ADR](adr/004-authorization-inheritance.md)
 - [Encryption ADR](adr/005-encryption.md)
+- [Architecture-first External Activation ADR](adr/006-architecture-first-external-activation.md)
+- [M003 Public Chat Gateway Runtime ADR](adr/007-public-chat-gateway-runtime.md)
 
 M001 delivery evidence:
 
@@ -39,6 +42,13 @@ M002 delivery evidence:
 - [M002 Security Review](reviews/M002-SECURITY-REVIEW.md)
 - [M002 Help Center Runbook](runbooks/M002-help-center.md)
 - [M002 Phase Completion Report](phases/M002_PHASE_COMPLETION_REPORT.md)
+
+M003 architecture evidence:
+
+- [M003 Independent Architecture Review](reviews/M003-ARCHITECTURE-REVIEW.md)
+- [M003 Security Architecture Review](reviews/M003-SECURITY-REVIEW.md)
+- [M003 Public Chat PRD](modules/m003-public-chat.md)
+- [M003 Public Chat Design](superpowers/specs/2026-08-09-m003-public-chat-design.md)
 
 Approved design specifications live under `superpowers/specs/`. A specification documents an approved design; it is not implementation authorization.
 

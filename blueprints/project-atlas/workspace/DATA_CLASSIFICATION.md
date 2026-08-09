@@ -67,8 +67,13 @@ mixed payload inherits the most restrictive class it contains.
 - Never store full payment-card numbers, CVV or magnetic-stripe data.
 - Never infer protection from a field suffix such as `_encrypted`.
 - Never downgrade a classification to improve analytics, search or developer convenience.
-- Never copy Confidential or Highly Sensitive content into tickets, chat transcripts, test fixtures
-  or error reports.
+- Never copy Confidential or Highly Sensitive content into tickets, developer/agent chat histories,
+  test fixtures, error reports or an unapproved external messaging system.
+- A purpose-specific first-party production conversation store may retain `Confidential` content
+  only when its approved module PRD defines purpose, consent/identity conditions, least-privilege
+  access, provider-sharing limits, retention, legal hold, deletion and audit. This exception does not
+  allow `Highly Sensitive` content in public chat and does not authorize production retention before
+  its Product Owner/legal decision.
 
 [NEEDS PRODUCT OWNER DECISION: approve service-specific retention periods and legal-hold authority
 after Illinois/legal counsel review.]

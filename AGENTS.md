@@ -86,10 +86,17 @@ authority boundaries. The minimum reading order is:
    [PROJECT_STATE.md](blueprints/project-atlas/workspace/PROJECT_STATE.md).
 3. [ARCHITECTURE.md](blueprints/project-atlas/workspace/ARCHITECTURE.md), the relevant module PRD
    and applicable ADRs.
-4. [ROADMAP.md](blueprints/project-atlas/workspace/ROADMAP.md), security documentation and the
-   current approved change scope.
+4. [ROADMAP.md](blueprints/project-atlas/workspace/ROADMAP.md),
+   [EXTERNAL_ACTIVATION_REGISTER.md](blueprints/project-atlas/workspace/EXTERNAL_ACTIVATION_REGISTER.md),
+   security documentation and the current approved change scope.
 
 `PROJECT_MEMORY.md` is chronological history; it never overrides current approved state.
+
+Architecture approval, local implementation and external activation are separate evidence gates.
+Provider accounts, contracts, credentials, business prerequisites and activation tests are tracked
+in `EXTERNAL_ACTIVATION_REGISTER.md` under ADR 006. The register contains no secrets, does not
+authorize Build and cannot make a provider or module `Operational` without the applicable review and
+Product Owner approval.
 
 ## Authorization and implementation workflow
 

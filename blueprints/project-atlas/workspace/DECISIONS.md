@@ -170,3 +170,20 @@ citation does not imply an SG Solutions partnership, endorsement or guarantee. N
 ordering process, refund term, contact fact, affiliate claim or universal outcome is adopted. These
 records are medium-risk, expire from public projection after 2026-11-08 unless reviewed, and do not
 authorize the M029 Tradelines service, a provider integration or a commercial relationship.
+
+## 2026-08-09 — Decision 016
+
+Decision: adopt an architecture-first, external-activation-later strategy for M003 and every future
+module affected by missing SG Solutions business readiness, provider accounts or partner agreements.
+Architecture, definitive domain/provider contracts, security controls, fallbacks and authorized local
+tests may be completed now; live connections are activated only when their prerequisites exist and
+the Product Owner approves them.
+
+Reason: SG Solutions does not yet have its final LLC structure, Stripe account, WhatsApp Business
+setup or partner agreements. Those facts should not force disposable implementations or prevent a
+coherent final architecture, but neither may the repository pretend those integrations are working.
+
+Impact: `EXTERNAL_ACTIVATION_REGISTER.md` becomes the living authority for deferred connections and
+activation evidence. M003 architecture work is authorized; its live model/provider, CRM, scheduling
+and channel connections remain deferred. Architecture approval and local verification never imply
+`Operational` status, and no Build gate or production activation is implied by this decision.

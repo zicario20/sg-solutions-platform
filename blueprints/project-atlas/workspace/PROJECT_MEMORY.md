@@ -96,3 +96,22 @@
   finding. Cyber Neo reported risk 0, 86/86 candidate paths reviewed, no secret/PII/private URL or
   tracked artifact, and a zero-finding 229-file workspace scan. M002 advanced to PO Acceptance;
   merge and deployment remain Product Owner decisions.
+
+## 2026-08-09
+
+- The Product Owner established architecture-first delivery for modules whose live activation
+  depends on the future LLC structure, Stripe, WhatsApp Business, partner agreements or other
+  external accounts. Architecture and definitive contracts proceed now; real connections remain
+  deferred until prerequisites, controlled verification and explicit approval exist.
+- `EXTERNAL_ACTIVATION_REGISTER.md` was created as the durable, secret-free list of business and
+  provider activations still pending. ADR 006 separates architecture, local construction and
+  external operational readiness so mocks or adapters can never be misreported as live behavior.
+- M003 Public Chat entered architecture/design work only. No live provider connection or product
+  Build gate was authorized by the deferral decision.
+- The M003 PRD and UX/architecture design were normalized against the full Product Owner source,
+  including preliminary intake, secure payment-link handoff, authenticated-safe future tools,
+  Marketplace, admin/evaluation controls, analytics, performance and provider-disabled fallbacks.
+- Independent and Cyber Neo review surfaced and closed gateway/CSRF, classification, transcript,
+  provider-readiness, payment-link and evaluation-corpus findings. The final 16-path candidate is
+  approved by the independent reviewer and security-clear at risk 0/100 for Product Owner review;
+  it remains unapproved for Build or external activation.

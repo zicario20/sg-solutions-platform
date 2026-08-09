@@ -11,6 +11,8 @@
 | [003](003-storage.md) | Private Storage, quarantine and upload isolation. |
 | [004](004-authorization-inheritance.md) | Secure case-based client authorization inheritance. |
 | [005](005-encryption.md) | Application-level envelope encryption boundaries and key custody. |
+| [006](006-architecture-first-external-activation.md) | Complete durable architecture first and track external activation separately. |
+| [007](007-public-chat-gateway-runtime.md) | Proposed same-origin Astro runtime and hardened session boundary for M003. |
 
 ADRs are tool-neutral. Supersede a decision with a new numbered ADR; do not erase historical
 rationale.

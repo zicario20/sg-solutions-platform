@@ -19,6 +19,24 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   live CMS credentials and unapproved analytics transport.
 - Exit: Product Owner acceptance and merge/deployment decision. No next module is authorized by this
   completion.
+- **M003 Public Chat:** Product/Architecture documentation is active under Decision 016. The target
+  is an implementation-ready, provider-neutral design with human handoff, consent, moderation,
+  security, M002 knowledge reuse and explicit fallbacks. No M003 Build gate or live connection is
+  authorized by this architecture work. The final documentary candidate passed independent and
+  Cyber Neo review and now awaits Product Owner approval of the PRD/design, ADR 007 and transcript
+  boundary.
+
+## Architecture-first activation policy
+
+Modules may complete their durable architecture and later authorized local implementation before SG
+Solutions has every external account or commercial agreement. Live activation remains a separate
+gate governed by `EXTERNAL_ACTIVATION_REGISTER.md` and ADR 006.
+
+- Do not create disposable provider-specific logic merely to demonstrate a flow.
+- Do not block architecture on credentials that are not needed to define a safe contract.
+- Do not report adapters, mocks or local tests as operational external connections.
+- Preserve a secure manual fallback and fail closed when a provider is unavailable.
+- Require Product Owner approval and non-sensitive activation evidence before `Operational`.
 
 ## Phase 0 — Blueprint & Design
 
