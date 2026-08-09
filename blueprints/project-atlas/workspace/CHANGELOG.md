@@ -110,3 +110,13 @@
   decision synchronization and per-resource authorization epochs. Final reviews have zero open
   findings, Cyber Neo documentary risk is 0/100 and full scaffold/build/hygiene validation passes;
   Build remains unauthorized.
+- Added the M010 Estado de mi proceso PRD, responsive branded process-status design and proposed
+  ADR 014. The candidate is a request-scoped read-only projection over explicitly granted M009
+  services, one consistent Postgres snapshot, accepted workflow versions, deterministic public
+  status and allowlisted real source events; it creates no route, schema, event materializer,
+  provider traffic or product behavior.
+- Closed M010 independent/Cyber findings covering nonrecursive service selection, bounded cursor
+  pagination, safe service disambiguation, direct-detail eligibility, MVCC consistency, public-event
+  identity/corrections, Release 1A non-materialization, exact owning-module handoffs and financial
+  minimization. Final reviews have zero open findings and Cyber Neo documentary risk is 0/100;
+  sixteen Build/live policies remain explicit Product Owner decisions.

@@ -47,6 +47,32 @@
   with current catalog data. Typed child summaries expose no provider
   payload, signed URL, internal note or hidden count, and personalized responses remain
   private/no-store under proposed ADR 013.
+- M010 landing/detail reads require the same explicit ServiceOrder/governing CaseFile grant and complete
+  M007–M009 authorization snapshot. Every root, milestone, blocker, child summary and public event
+  carries a resource authorization epoch; the final fence discards all body/count/cursor/route
+  metadata after any session/grant/parent/visibility/classification/assurance/tombstone/accepted-
+  workflow change. A closed source registry fails critical absence to `unconfirmed`. Raw audit
+  events, internal notes/statuses, provider webhooks and user free text never become a client
+  timeline directly: a public event requires authenticated durable provenance, an allowlisted
+  source/version, deterministic mapping version, idempotency and append-only correction semantics.
+  Personalized process responses are private/no-store, normal rendering performs no provider fan-
+  out and protected process content is prohibited from logs, traces, Sentry, PostHog and AI context
+  under proposed ADR 014. The top-level selector consumes only M009's nonrecursive authorized-root
+  choice port, persists no last/default service and cannot reveal hidden names/counts/timing or
+  recurse through full M009/M010 aggregators. Its opaque pagination has no total/silent truncation,
+  and duplicate service/context labels require approved safe bilingual disambiguation or fail
+  closed without IDs. An approved eligibility policy filters accepted definition/workflow versions
+  before ordering/pagination and binds its version into the cursor; ineligible roots leak no label,
+  count or timing. Direct detail validates and final-fences the same policy before any process read
+  or metadata. Every registered priority/status/milestone/blocker-affecting Postgres source,
+  including ServiceOrder/Case/Task/Document/Billing, shares one MVCC request snapshot/restricted RLS
+  actor or yields `unconfirmed`. Exact command ownership is
+  Task→M023, Document/deliverable→M011, Message→M012, Appointment→M013, Billing→M014 and
+  Signature→M067; every destination reauthorizes in that owning module. Release 1A derives timeline
+  pages request-scoped and permits no M010 projection table/writer/job without a separate approved
+  ADR and Build gate. Until PROC-010 approval, Billing output is limited to semantic obligation/
+  payment state, freshness and M014 route; references, amounts, balances, deposits, due dates,
+  methods, receipts and refund details are prohibited.
 
 ## Data and cryptography
 

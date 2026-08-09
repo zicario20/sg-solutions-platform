@@ -286,3 +286,21 @@ does not approve ADR 013 or unresolved business policy, authorize `GENERATE`, cr
 schema/RLS/Storage policy, service record, provider connection, real portal behavior, merge,
 deployment or Operational status. M010 and M011 remain unopened until M009 is independently audited,
 validated and committed.
+
+## 2026-08-09 — Decision 023
+
+Decision: authorize Product/Architecture documentation and independent documentary audit for M010
+Estado de mi proceso in its own worktree based on the independently audited M009 commit. M010 must
+remain a read-only projection of canonically owned ServiceOrder, Billing and CaseFile/workflow facts,
+reuse the M007–M009 authorization boundary and expose only governed client-safe milestones, next
+actions, blockers and public timeline events.
+
+Reason: the Product Owner explicitly instructed Codex to complete M009, then M010 and M011 one at a
+time in separate worktrees, with an audit before opening the next module.
+
+Impact: Codex may prepare the M010 PRD, responsive branded UX/UI design, proposed ADR 014, deferred
+decision checklist, authority updates and read-only independent/security reviews. This decision
+does not approve ADR 014 or unresolved business policy, authorize `GENERATE`, create a route,
+schema/RLS policy, public-event projection, provider connection, real process data, merge,
+deployment or Operational status. M011 remains unopened until M010 is independently audited,
+validated and committed.

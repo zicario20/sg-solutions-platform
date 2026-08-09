@@ -79,6 +79,17 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   RLS/Storage policy, real service record, merge or deployment is authorized. Independent
   architecture review has zero open findings and Cyber Neo is security-clear at documentary risk
   0/100; the candidate now awaits Product Owner approval or revision.
+- **M010 Estado de mi proceso:** Product/Architecture documentation is active under Decision 023.
+  The candidate defines one read-only process projection beneath an explicitly granted service,
+  preserves ServiceOrder/Billing/Case/workflow state ownership, binds milestones to the accepted
+  workflow version and derives its client timeline only from allowlisted real source events. A
+  closed source registry and M008-compatible priority policy fail incomplete critical facts to
+  `unconfirmed`; a complete M007–M009 snapshot plus per-resource final fence prevents revoked or
+  mixed state from reaching body, counts, cursors or routes. No `GENERATE`, route, schema/RLS
+  policy, public-event materialization, provider traffic, real process view, merge or deployment is
+  authorized. Independent architecture review has zero open findings and Cyber Neo is
+  security-clear at documentary risk 0/100; the candidate now awaits Product Owner approval or
+  revision. M011 may open only from the clean committed M010 worktree.
 
 ## Architecture-first activation policy
 

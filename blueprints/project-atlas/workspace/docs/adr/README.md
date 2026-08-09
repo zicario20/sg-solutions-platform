@@ -19,6 +19,7 @@
 | [011](011-client-authentication-linking-and-session-boundary.md) | Proposed invitation-first client authentication, explicit identity linking and server-mediated session boundary for M007. |
 | [012](012-client-dashboard-aggregation-priority-and-freshness.md) | Proposed request-scoped M008 aggregation, deterministic next-action policy, freshness and private/no-store boundary. |
 | [013](013-client-service-projection-state-and-version-boundary.md) | Proposed M009 explicit service/case grant, accepted-definition version, state synthesis and client-service projection boundary. |
+| [014](014-client-process-status-and-public-timeline-boundary.md) | Proposed M010 canonical-state projection, closed source registry, public timeline provenance and final authorization fence. |
 
 ADRs are tool-neutral. Supersede a decision with a new numbered ADR; do not erase historical
 rationale.

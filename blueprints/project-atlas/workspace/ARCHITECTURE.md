@@ -138,6 +138,33 @@ definition binding—before any body, count, cursor or route metadata leaves the
 no mutations, live provider fan-out or personalized shared cache. Proposed ADR 013 records this
 candidate boundary.
 
+M010 proposes one request-scoped Client Process query boundary. Its top-level landing server-side
+consumes only M009's nonrecursive `AuthorizedServiceChoicePort` for zero/one/many opaque choices,
+without a parallel directory, recursive full-list/detail dependency or persisted default; detail
+remains beneath an explicitly granted M009 service. The port uses M009's paginated no-total cursor
+contract and approved safe instance labels; ambiguous labels fail closed without IDs. Every
+authorized-root page applies a closed accepted service-definition/workflow eligibility policy
+before ordering/pagination and binds its version into the cursor; ineligible roots leak nothing.
+Detail validates that same policy before any process read or metadata and revalidates it at the
+final fence.
+Every registered Postgres source that can change status, milestone, action or blocker—including
+ServiceOrder, Case, Task, Document and Billing—shares one MVCC request snapshot/restricted RLS
+actor, or the outcome is `unconfirmed`. It projects,
+but never owns, the canonical ServiceOrder commercial/activation,
+Billing/Stripe financial and CaseFile/accepted-workflow fulfillment facts. A closed, versioned
+status/source policy produces the public state, real named milestones, blockers and process-local
+next action; missing critical input yields `unconfirmed`. The client timeline is a governed
+derivative of allowlisted real source events, not raw audit history, and retains immutable
+provenance, mapping version and correction/supersession links. M010 reuses the complete M007–M009
+authorization snapshot, consistent core cut, per-resource authorization epochs and final fence.
+Personalized output is private/no-store, normal render is provider-free and exact command ownership
+remains Task→M023, Document/deliverable→M011, Message→M012, Appointment→M013, Billing→M014 and
+Signature→M067. M010 hands off only to those reauthorizing owners. Proposed ADR 014 records this
+candidate boundary. Release 1A derives timeline pages request-scoped from durable owner events/state
+and has no M010 projection table, writer or background job; any materializer needs a separate ADR
+and Build gate. Until PROC-010 approval, M010 Billing output is only semantic obligation/payment
+state, freshness and M014 route, without invoice or transaction detail.
+
 ## Data protection
 
 Data follows `DATA_CLASSIFICATION.md`. Managed encryption at rest is necessary but insufficient for

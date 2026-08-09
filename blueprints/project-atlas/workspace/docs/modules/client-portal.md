@@ -12,13 +12,18 @@
 - `m009-my-services.md` is the canonical PRD for the contracted-service directory, service-detail
   shell, canonically owned commercial/financial/activation/fulfillment presentation and
   owning-module handoffs.
+- `m010-process-status.md` is the canonical PRD for the read-only detailed process projection,
+  process-local next action, version-bound milestones, blockers and governed public timeline.
 - This document remains the umbrella for M008–M015 and the shared portal navigation/projection
-  principles. M010–M015 retain their owning PRDs or future dedicated specifications.
+  principles. M011–M015 retain their owning PRDs or future dedicated specifications.
 - Proposed ADR 012 governs the M008 aggregation, priority, freshness and no-store boundary.
 - Proposed ADR 013 governs M009 service/case grants, accepted-definition versions, state synthesis
   and the request-scoped service projection boundary.
-- If this umbrella and the dedicated M008 PRD conflict inside M008 scope, the dedicated PRD governs
-  after Product Owner approval; unresolved cross-module policy is escalated rather than inferred.
+- Proposed ADR 014 governs M010 canonical-state projection, closed source completeness, public-event
+  provenance/corrections and final authorization fencing.
+- If this umbrella and a dedicated M008–M010 PRD conflict inside that module's scope, the dedicated
+  PRD governs after Product Owner approval; unresolved cross-module policy is escalated rather than
+  inferred.
 
 ## 1. Purpose
 
@@ -75,6 +80,8 @@ display never changes underlying state except through an authorized owning-modul
 - M008 selects the most urgent authorized action through the versioned deterministic policy in its
   dedicated PRD and proposed ADR 012. Missing priority-critical data yields `unconfirmed`, not a
   guessed lower action or false no-action state.
+- M010's process-local action uses the same priority semantics; its public timeline is not raw
+  audit history and every entry requires a real source event plus an approved mapping version.
 - “Payment confirmed” and “authorized to begin” remain separate.
 - Help/AI content is educational/supportive and never executes professional services.
 - Profile edits cannot change identity/resource linkage without the identity workflow.
@@ -99,11 +106,20 @@ staff notes, hidden fields and raw provider payloads.
 - M008 owns `ClientDashboardQueryService.getHome(actor, requestedContextRef?, locale) →
   ClientDashboardProjection`; trusted time and authorization versions are server-derived. This
   umbrella does not create a competing Home contract.
-- `PortalQueryService.listServices|getServiceStatus` scoped by grants.
 - M009 owns `ClientServicesQueryService.list|getDetail`; core ServiceOrder/Case facts and bounded
   owning-domain summaries share one complete authorization snapshot. This umbrella does not create
   a competing service directory/detail contract.
-- Module commands delegate to Document, Scheduling, Messaging and Billing services.
+- M010 owns `ClientProcessQueryService.getLanding|getProcess`; the landing server-side consumes
+  M009's nonrecursive `AuthorizedServiceChoicePort` for zero/one/many choices without a parallel
+  directory, recursive full-list/detail call or default. Its opaque no-total pagination keeps every
+  authorized eligible choice reachable; an approved accepted-definition/workflow policy filters
+  before ordering/pagination, and repeated service/context labels require an approved safe
+  bilingual disambiguator or fail closed; detail reuses the M009 root grant, reads canonical
+  ServiceOrder/Billing/Case/workflow facts,
+  applies a closed deterministic mapping/source registry and returns only a governed public
+  timeline. This umbrella does not create a competing process status or timeline contract.
+- Module commands remain with their exact owners: Task M023, Document/deliverable M011, Messaging
+  M012, Scheduling M013, Billing M014 and Signature M067.
 - `PortalPreferenceService.update(locale, timeZone, notifications, expectedVersion)`.
 - Responses are field-allowlisted portal DTOs with stable 401/404/409/429 and generic 5xx recovery.
 

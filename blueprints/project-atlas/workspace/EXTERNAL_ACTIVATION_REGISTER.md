@@ -198,11 +198,37 @@ no prueban operación ni autorizan `GENERATE`.
 | MYSVC-014 | Analytics M009, retención y acceso | `External activation deferred` | Emitir telemetría de directory/detail | Event allowlist, redaction/no-identifiers, retention/view policy y payload tests aprobados |
 | MYSVC-015 | Freshness/staleness y copy partial/unconfirmed por sección | `External activation deferred` | Accionar sobre o presentar datos stale | Budgets por owner, final-fence/reconciliation tests, disabled-action rules y copy ES/EN aprobados |
 
+### Decisiones y configuración pendientes de M010
+
+M010 no activa un proveedor directo. Estas filas controlan la política de presentación del proceso
+y deben resolverse antes de mostrar hechos reales; los defaults documentales fallan cerrados y no
+inventan fechas, estados, actores ni garantías.
+
+| ID | Dependencia o decisión | Estado | Bloquea | Evidencia de salida requerida |
+|---|---|---|---|---|
+| PROC-001 | Vocabulario público, matriz de cuatro dimensiones y copy ES/EN | `External activation deferred` | Publicar el estado actual | Matriz versionada aprobada, revisión semántica bilingüe y pruebas de combinaciones/unknown que preserven pago ≠ aprobación ≠ fulfillment |
+| PROC-002 | Servicios Release 1A, eligibility policy y milestone sets aceptados | `External activation deferred` | Activar proceso por vertical | Inventario, accepted definition/workflow criteria, policy version, pre-pagination eligibility tests y pruebas de historia/no porcentaje falso aprobados |
+| PROC-003 | Allowlist de eventos/reasons públicos, correcciones y retención | `External activation deferred` | Publicar timeline | Event/mapping versions, privacy review, correction/retraction tests y retención aprobadas |
+| PROC-004 | Categorías de responsable y nombres staff/partner visibles | `External activation deferred` | Mostrar quién tiene el próximo paso | Field/copy allowlist, privacidad, reassignment/freshness tests aprobados |
+| PROC-005 | Prioridad/ties/conflictos del próximo paso local | `External activation deferred` | Mostrar acción definitiva | Política alineada con M008, source registry y pruebas de missing/outranking source aprobadas |
+| PROC-006 | Categorías, prioridad y detalle público de blockers | `External activation deferred` | Mostrar bloqueos | Taxonomía/copy/visibility y negative tests de notas/reasons internos aprobados |
+| PROC-007 | Deadlines/estimates, provenance, expiry y disclaimers | `External activation deferred` | Mostrar fechas no factuales | Source/jurisdiction/range policy, freshness y no-guarantee copy ES/EN aprobados |
+| PROC-008 | Lenguaje de delay/on-hold, escalamiento y expectativas de respuesta | `External activation deferred` | Publicar promesa o ruta de escalamiento | Capacidad/canal/SLA policy y semantic review aprobados; default sin SLA |
+| PROC-009 | Historia de completed/cancelled/reopened/restarted | `External activation deferred` | Mostrar estados terminales/reapertura | Reglas de owner, timeline/correction y pruebas de no-overwrite aprobadas |
+| PROC-010 | Campos de payment/invoice/refund permitidos en M010 versus solo M014 | `External activation deferred` | Mostrar referencia, monto, saldo, depósito, due date, método, recibo o refund detail | Field allowlist, grants, reconciliation/freshness, unavailable≠paid y minimización aprobadas; default solo semantic state + freshness + M014 route |
+| PROC-011 | Nombres, estados y provenance de partners/terceros | `External activation deferred` | Mostrar dependencia externa | Partner activo, consent/disclosure, source/freshness y no-guarantee tests aprobados |
+| PROC-012 | Tareas: prioridad, due/overdue e historial completado | `External activation deferred` | Mostrar resumen de tareas | M023 mapping, route/authorization y copy ES/EN aprobados |
+| PROC-013 | Campos públicos de documentos, entregables, conversación segura, firmas y citas | `External activation deferred` | Mostrar summaries/handoffs | Allowlists M011–M013/M067, grants, minimization, stale/failure and route tests approved |
+| PROC-014 | Alcance Help Center/IA y fallback humano | `External activation deferred` | Activar explicación contextual | Knowledge scope, permissions, evals/redaction y soporte operativo aprobados |
+| PROC-015 | Analytics M010, viewers, retention y freshness budgets | `External activation deferred` | Emitir telemetría o usar stale facts | Event/source allowlists, no-identifiers, retention/view/freshness policies y payload tests aprobados |
+| PROC-016 | Disambiguador seguro bilingüe para instancias repetidas del mismo servicio/contexto | `External activation deferred` | Mostrar selector inequívoco cuando existen órdenes repetidas | Field/copy key allowlist, privacy/semantic/a11y review y tests same-label EN/ES sin IDs internos aprobados |
+
 | Módulo(s) | Dependencia externa pendiente | Estado | Se completa ahora | Se difiere hasta activación | Fallback seguro |
 |---|---|---|---|---|---|
 | M007 y M080 IAM | Proyecto Supabase productivo, dominios, email y MFA configurados | `External activation deferred` | Arquitectura Auth/RLS, roles, grants, sesiones y pruebas locales autorizadas | Configuración productiva, remitente, proveedores sociales y pruebas de recuperación/MFA | Alta y soporte manual controlados; sin acceso si falla la verificación |
 | M008 Dashboard | M007 activo y proyecciones autorizadas de M009–M014/M018/M021–M026/M042–M045/M067/M080–M081 | `External activation deferred` | PRD, UX, contratos de agregación/prioridad/freshness y pruebas locales autorizadas | Activar solo fuentes registradas con proyección real, política aprobada y evidencia cross-client/partial-failure | Omitir o mostrar `unconfirmed|unavailable`; nunca simular zero/no-action/paid/completed |
 | M009 Mis servicios | M007/M008 y proyecciones reales autorizadas de ServiceOrder/Case/M010–M014/M021–M026/M042–M045/M067 | `External activation deferred` | PRD, UX, contratos de grant/state/version/projection y pruebas sintéticas autorizadas | Activar únicamente servicios reales con grant explícito, definition/workflow version, status policy y owners probados | Omitir o mostrar `unconfirmed|unavailable`; nunca convertir interés/pago en servicio/inicio |
+| M010 Estado de mi proceso | M007–M009 activos y proyecciones autorizadas de ServiceOrder/Billing/Case/workflow/M011–M014/M023/M067 | `External activation deferred` | PRD, UX, contratos de status/source registry/public timeline/final fence y pruebas sintéticas autorizadas | Activar solo con mappings/event allowlist/milestones/freshness aprobados y owners/projections reales probados | Mostrar `unconfirmed|unavailable` y soporte; nunca inventar estado, timeline, fecha, porcentaje o ausencia de blocker |
 | M013 y M024 Agenda | Cuenta Google Workspace/Calendar y OAuth | `External activation deferred` | Motor interno definitivo, zonas IANA, concurrencia, buffers y adapter | OAuth, calendario real, webhooks/sync y reconciliación productiva | Agenda interna y bloqueo manual |
 | M014 y M043–M045 Pagos | LLC/banco, cuenta Stripe verificada, productos/precios y webhooks | `External activation deferred` | Contratos de Checkout/Invoices, ledger operacional, idempotencia, reconciliación y tests | Onboarding Stripe, credenciales, endpoints, eventos reales, métodos y conciliación controlada | Cotización/registro pendiente; nunca marcar un pago manualmente como confirmado por Stripe |
 

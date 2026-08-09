@@ -34,6 +34,7 @@ Security and recovery authorities:
 - [M007 Client Authentication, Linking and Session Boundary ADR](adr/011-client-authentication-linking-and-session-boundary.md)
 - [M008 Client Dashboard Aggregation, Priority and Freshness ADR](adr/012-client-dashboard-aggregation-priority-and-freshness.md)
 - [M009 Client Service Projection, State and Version ADR](adr/013-client-service-projection-state-and-version-boundary.md)
+- [M010 Client Process Status and Public Timeline ADR](adr/014-client-process-status-and-public-timeline-boundary.md)
 
 M001 delivery evidence:
 
@@ -114,6 +115,18 @@ M009 architecture candidate:
 - [M009 Client Service Projection, State and Version ADR](adr/013-client-service-projection-state-and-version-boundary.md)
 - Independent architecture review is approved with zero open findings and Cyber Neo is
   `SECURITY-CLEAR` at documentary risk `0/100`. The candidate is ready only for Product Owner
+  architecture review; no Build, route, schema, provider traffic or production behavior is
+  authorized.
+
+M010 architecture candidate:
+
+- [M010 Independent Architecture Review](reviews/M010-ARCHITECTURE-REVIEW.md)
+- [M010 Security Architecture Review](reviews/M010-SECURITY-REVIEW.md)
+- [M010 Estado de mi proceso PRD](modules/m010-process-status.md)
+- [M010 Estado de mi proceso Design](superpowers/specs/2026-08-09-m010-process-status-design.md)
+- [M010 Client Process Status and Public Timeline ADR](adr/014-client-process-status-and-public-timeline-boundary.md)
+- Independent architecture/accessibility review is approved with zero open findings and Cyber Neo
+  is `SECURITY-CLEAR` at documentary risk `0/100`. The candidate is ready only for Product Owner
   architecture review; no Build, route, schema, provider traffic or production behavior is
   authorized.
 

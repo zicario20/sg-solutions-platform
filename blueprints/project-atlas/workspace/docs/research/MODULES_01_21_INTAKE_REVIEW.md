@@ -90,7 +90,7 @@ The following concepts are compatible and should inform later normalization:
 | M7 Authentication | `identity-access.md` | Core identity, staff MFA, roles and access enforcement in 1A. |
 | M8 Client dashboard | `m008-client-dashboard.md` plus `client-portal.md` | Minimal deterministic next-action Home in 1A; richer projections/preferences in 1B. |
 | M9 Services | `m009-my-services.md` plus `client-portal.md` | Authorized real-service directory/detail shell and minimum summaries in 1A; richer recurring/cancellation/partner presentation in 1B. |
-| M10 Process status | `client-portal.md` and future dedicated PRD | Minimal client-safe process projection in 1A; richer timeline/workflows in 1B. |
+| M10 Process status | `m010-process-status.md` plus `client-portal.md` | Dedicated explicitly granted projection, deterministic status/action and governed real-event timeline in 1A; richer approved timelines/estimates in 1B. |
 | M11 Documents | `document-center.md` | Secure essential lifecycle in 1A; OCR, signing and advanced processing later. |
 | M12 Secure Messaging | Future communications specification | A narrow client/staff communication path may follow 1A foundations. |
 | M13 Appointments | `scheduling-calendar.md` | Basic safe scheduling in 1A; advanced Google synchronization in 1B. |

@@ -69,6 +69,16 @@ Measured scale, hybrid infrastructure and mobile expansion
     order binds accepted service-definition/workflow/pricing versions, and a versioned policy maps
     canonically owned commercial, financial, human-activation and fulfillment subfacts without making M009 a source of
     truth or mutation authority.
+19. M010 owns only the detailed client-safe process projection. It consumes the same canonical
+    ServiceOrder/Billing/Case/workflow facts and M008 priority semantics, binds milestones to the
+    accepted workflow version and maps only allowlisted real events into a governed public timeline.
+    M011–M014/M023/M067 retain commands and state. A closed source registry and the complete
+    M007–M009 authorization/resource-epoch fence prevent missing or revoked state from becoming a
+    definitive status, action, count, cursor or route.
+20. M010 landing consumes an M009-owned nonrecursive `AuthorizedServiceChoicePort`, not the full
+    M009 list/detail that may decorate from M010. Dependency contracts prohibit M009↔M010 recursive
+    composition. Release 1A derives timeline events request-scoped from durable owner state; any
+    M010 materialized projection or background writer requires a separate ADR and Build gate.
 
 ## Fronteras de extracción
 

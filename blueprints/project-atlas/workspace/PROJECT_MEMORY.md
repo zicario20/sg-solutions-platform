@@ -232,3 +232,31 @@
   build, 263-file zero-finding secret scan, zero-finding lock check and 126 local links with no
   breakage. M009 awaits Product Owner architecture review; no ADR acceptance, Build, merge or
   deployment follows.
+- The Product Owner's sequential M009–M011 instruction advanced to M010 only after the clean audited
+  M009 commit `e86724e`. Decision 023 authorizes M010 Product/Architecture documentation and
+  read-only independent/security review in its own worktree; no route, schema, provider traffic,
+  public-event materializer or product Build was opened.
+- The complete M010 source was normalized into one read-only process projection beneath an
+  explicitly granted M009 service. Canonical ServiceOrder commercial/activation, Billing/Stripe
+  financial and CaseFile/accepted-workflow fulfillment facts are mapped through a deterministic
+  versioned policy and closed source registry; incomplete critical state fails to `unconfirmed`.
+- Proposed ADR 014 defines a nonrecursive authorized service-choice contract, bounded cursor
+  pagination, safe bilingual service-instance disambiguation, direct-detail eligibility, one
+  request-scoped MVCC snapshot, complete M007–M009 authorization/final fences and a public timeline
+  derived only from verified allowlisted source events. Release 1A creates no M010 table, writer,
+  materializer, reconciliation job or Inngest workflow.
+- M010 review found and closed evidence-index placement, selector ownership, pagination/reachability,
+  disambiguation, direct-detail bypass, mixed-read-cut, materialization, event-key/correction,
+  owner-handoff and financial-minimization gaps. Independent review returned zero Critical,
+  Important or Minor findings; Cyber Neo closed its source-event collision finding and returned
+  documentary risk 0/100 with zero open findings.
+- Sixteen unresolved M010 policies remain explicit one-to-one `PROC-001`–`PROC-016` Product Owner
+  decisions. Until approval, financial output is limited to semantic state, freshness and the M014
+  route, and all task/document/message/appointment/billing/signature actions remain with M023,
+  M011–M014 and M067 respectively.
+- Final M010 validation passed two offline frozen installs with unchanged lock hash, lint/format,
+  11-package typecheck, 131 tests with three deliberate skips, import contracts, a 226-page Astro
+  build, a 268-file zero-finding secret scan, zero-finding lock check, 134 local Markdown links,
+  21 PRD sections, 16/16 decision-register synchronization, Markdown-only scope and
+  `git diff --check`. M010 awaits Product Owner architecture review; no ADR acceptance, Build,
+  merge or deployment follows.

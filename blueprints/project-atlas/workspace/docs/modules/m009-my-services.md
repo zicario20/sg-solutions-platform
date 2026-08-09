@@ -373,6 +373,19 @@ Provider-neutral application contracts:
   ClientServiceListProjection`.
 - `ClientServicesQueryService.getDetail(actor, publicServiceRef, requestedContextRef?, locale) →
   ClientServiceDetailProjection | NotFound`.
+- `AuthorizedServiceChoicePort.listProcessChoices(actor, authorizationSnapshot, context, locale,
+  processEligibilityPolicySnapshot, opaqueCursor?) → AuthorizedServiceChoicePage` is the M009-owned
+  nonrecursive root-selection port for M010. The immutable, server-derived policy snapshot contains
+  a closed approved version and accepted service-definition/workflow eligibility criteria. The port
+  applies authorization and eligibility before ordering/pagination without calling M010. It returns
+  only opaque authorized eligible service references, approved display/context labels,
+  an optional Product Owner-approved safe instance-disambiguator copy key, each root authorization
+  epoch, accepted definition/workflow version binding retained server-side and opaque
+  `nextCursor`/`hasMore` without a total. Every page/cursor uses
+  the same authorized snapshot/context contract and all authorized choices remain reachable. Page
+  limits reuse MYSVC-004 and the cursor binds the eligibility-policy version; limits are not
+  invented by M010. The port never calls
+  `ClientServicesQueryService.list|getDetail`, M010 or any child-summary/status/timeline aggregator.
 - `ServiceOrderClientProjectionPort.getList|getHeader` returns field-allowlisted results bound to the
   same authorization snapshot, per-resource authorization epoch and consistent read cut.
 - `CaseClientProjectionPort.getStatus|getMilestones|getNextAction` owns operational state.
