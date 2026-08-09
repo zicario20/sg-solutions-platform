@@ -69,3 +69,10 @@
 - Closed M005 independent/Cyber findings covering durable webhook replay, media credentials,
   protected speech, gateway isolation, human-takeover races, uncertain transfers and activation-
   register scope. Final documentary reviews have zero open findings; Build remains unauthorized.
+- Added the M006 bilingual Public Forms PRD, proposed immutable form registry/same-origin Astro
+  gateway boundary, consent/lead separation and deferred activation decisions. No form route, table,
+  cookie, provider, submission traffic or product behavior was created.
+- Closed all M006 independent/Cyber findings covering canonical origin/proxy trust, bounded parsing,
+  prohibited-data zero persistence, scoped HMAC, accessible nonce renewal, atomic risk-review lead
+  fencing and cross-channel M006/M078/M020 ownership. Final documentary reviews have zero open
+  findings; Build remains unauthorized.

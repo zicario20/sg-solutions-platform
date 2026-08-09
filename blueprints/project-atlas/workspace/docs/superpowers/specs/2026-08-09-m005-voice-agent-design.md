@@ -66,7 +66,7 @@ M096 Voice Gateway (specialized cloud boundary)
          ↕ narrow typed commands and projections
 apps/app integration facade + shared domain packages
   ├─ ReceptionPolicy and tool allowlist
-  ├─ M006/M020 lead capture
+  ├─ M006 capture / M078 consent / M020 lead-deduplication
   ├─ M013/M024 scheduling
   ├─ M025 unified conversation/handoff
   ├─ M026 notification/link delivery

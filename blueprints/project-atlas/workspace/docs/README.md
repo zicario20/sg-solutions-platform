@@ -30,6 +30,7 @@ Security and recovery authorities:
 - [M003 Public Chat Gateway Runtime ADR](adr/007-public-chat-gateway-runtime.md)
 - [M004 WhatsApp Channel Adapter ADR](adr/008-whatsapp-channel-adapter.md)
 - [M005 Voice Gateway Runtime Boundary ADR](adr/009-voice-gateway-runtime-boundary.md)
+- [M006 Public Form Schema and Submission Boundary ADR](adr/010-public-form-schema-and-submission-boundary.md)
 
 M001 delivery evidence:
 
@@ -67,6 +68,16 @@ M005 architecture evidence:
 - [M005 Voice Agent Design](superpowers/specs/2026-08-09-m005-voice-agent-design.md)
 - [M005 Voice Gateway Runtime Boundary ADR](adr/009-voice-gateway-runtime-boundary.md)
 - [M005 Security Architecture Review](reviews/M005-SECURITY-REVIEW.md)
+
+M006 architecture evidence:
+
+- [M006 Independent Architecture Review](reviews/M006-ARCHITECTURE-REVIEW.md)
+- [M006 Public Forms PRD](modules/m006-public-forms.md)
+- [M006 Public Forms Design](superpowers/specs/2026-08-09-m006-public-forms-design.md)
+- [M006 Public Form Boundary ADR](adr/010-public-form-schema-and-submission-boundary.md)
+- [M006 Security Architecture Review](reviews/M006-SECURITY-REVIEW.md)
+- Independent architecture review is approved with zero open findings and Cyber Neo is
+  `SECURITY-CLEAR` at documentary risk `0/100`. Neither result authorizes Build or activation.
 
 Design specifications live under `superpowers/specs/`. The status in each specification header is
 authoritative: `Draft for Product Owner review` is not approved, while an approved specification

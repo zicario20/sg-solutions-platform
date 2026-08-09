@@ -50,8 +50,8 @@ communications without duplicating people, leads, clients, cases, consent, messa
 - Spanish and English locale detection, explicit preference and approved copy.
 - Public orientation grounded only in current M002 public content.
 - Optional preliminary structured intake using the exact M003 allowlist, classified Confidential as
-  a complete draft and disabled until its separate WhatsApp/provider activation decision; M006/M020
-  remains the only durable lead-promotion authority.
+  a complete draft and disabled until its separate WhatsApp/provider activation decision; M006 owns
+  form/evidence capture, M078 owns consent and M020 remains the only lead/deduplication authority.
 - Appointment availability, booking, cancellation and rescheduling only through M013/M024 receipts.
 - Domain-issued secure links to the portal, payment, document-upload, appointment or approved public
   resource destinations.
@@ -120,7 +120,8 @@ communications without duplicating people, leads, clients, cases, consent, messa
    public knowledge.
 5. A concise response identifies automation, preserves material disclosures and offers an
    evaluation, quote, Help Center source or person.
-6. Lead creation occurs only when the prospect confirms canonical M006/M020 capture and consent.
+6. Lead creation occurs only after the prospect confirms canonical M006 capture, M078 consent and
+   M020 accepts the lead candidate.
 
 ### Optional preliminary structured intake — gated
 
@@ -149,8 +150,9 @@ communications without duplicating people, leads, clients, cases, consent, messa
    reference, never a duplicate answer value. Free-text answers are not promoted as intake.
 5. The first-party draft has an explicit TTL/abandonment deletion job and never asks for SSN/ITIN,
    exact account/card/bank/tax values, credentials, documents or free-form Highly Sensitive data.
-6. Durable promotion requires the prospect to review/confirm the structured summary and M006/M020
-   to return a consent-bound idempotent receipt. Without that receipt the conversation store does
+6. Durable promotion requires the prospect to review/confirm the structured summary, M006 to return
+   an evidence-bound submission receipt, M078 to record consent and M020 to return an idempotent lead
+   receipt. Without those receipts the conversation store does
    not become a second lead/intake database.
 7. Until this gate is approved, M004 offers only the secure portal/form route for preliminary intake.
 
@@ -342,8 +344,8 @@ wrong-person or reassignment signals suspend protected outbound use until revali
   material. It does not browse freely or use private knowledge.
 - Preliminary intake is disabled by default. When separately approved, it uses only the M003 field
   allowlist as structured `Confidential` data, remains outside every AI/moderation/translation/
-  analytics path, avoids duplicate values in the ordinary transcript and promotes only through an
-  M006/M020 durable receipt.
+  analytics path, avoids duplicate values in the ordinary transcript and promotes only through M006
+  evidence capture, M078 consent and an M020 durable lead receipt.
 - Template variables use typed allowlists; no free-form substitution may introduce Highly
   Sensitive content or unapproved URLs.
 - Opt-out is processed before other automation and cannot be overridden by AI.
@@ -466,7 +468,8 @@ reason. No public URL, original filename in storage key or automatic case associ
 
 Conversation ID, contact/channel binding when authorized, service key, M003 schema version, locale,
 allowlisted answer keys/enum values, consent evidence, completion state, created/updated/expiry time
-and optional M006/M020 promotion receipt. The whole draft is `Confidential`, not a collection of
+and optional M006 submission/M020 promotion receipt references linked to M078 consent evidence. The
+whole draft is `Confidential`, not a collection of
 independently Public values. It is first-party, purpose-limited, excluded from model/moderation/
 translation/RAG/telemetry/evaluation and deleted on abandonment/expiry unless a confirmed promotion
 receipt transfers ownership to the lead domain.
@@ -592,8 +595,9 @@ details, prompts, raw provider payloads, case/payment/document content and secre
 - Process delayed/out-of-order delivery events without state regression.
 - Reconcile provider template/message projections and identify gaps.
 - Expire commands, conversation windows, session drafts and media envelopes under approved policy.
-- Expire/erase abandoned preliminary-intake drafts under the approved short TTL; a promotion receipt
-  transfers only the confirmed allowlisted projection to M006/M020.
+- Expire/erase abandoned preliminary-intake drafts under the approved short TTL; an M006 submission
+  receipt transfers only the confirmed allowlisted projection, M078 records consent and M020 alone
+  performs lead promotion.
 - Retry approved media fetch/scan only while quarantine authorization remains valid.
 - Deliver handoff/operator notifications after M025/M026 activation.
 - Monitor credential/channel health using minimized status only.
@@ -657,7 +661,8 @@ tables from a dashboard or marking provider/payment/document state manually as v
   use. Do not echo rejected content.
 - Keep an enabled preliminary-intake draft structured and first-party, classify the complete draft
   Confidential, exclude it from AI/model/RAG/moderation/translation/telemetry/evaluation and enforce
-  consent, field allowlist, TTL/deletion and M006/M020 receipt promotion. Provider transport remains
+  consent, field allowlist, TTL/deletion, M006 evidence capture, M078 consent and M020 lead receipt.
+  Provider transport remains
   an explicit activation/privacy decision, not an assertion that the fields are non-sensitive.
   Map approved interactive values into the draft and retain only a bounded marker/reference in the
   ordinary transcript; free text cannot silently become structured intake.
@@ -774,7 +779,7 @@ honest automation/handoff states.
 - When optional intake is disabled, no intake field is requested in WhatsApp. When separately
   enabled, positive/negative tests prove exact M003 field allowlist, structured UX, consent/provider
   notice, single-copy draft storage, marker-only transcript, no AI/telemetry/evaluation exposure,
-  TTL deletion and receipt-only M006/M020 promotion.
+  TTL deletion, M006 evidence capture, M078 consent and receipt-only M020 lead promotion.
 - Test doubles are test-only and impossible to select in a production configuration.
 
 ### External activation acceptance
@@ -817,8 +822,9 @@ honest automation/handoff states.
 
 ### Required for architecture
 
-M002 public Help Center, M003 shared conversation/handoff design, M006/M020 lead capture, M011 secure
-documents, M013/M024 scheduling, M017 CRM, M025 unified communications, M026 notifications, M041
+M002 public Help Center, M003 shared conversation/handoff design, M006 form/evidence capture, M078
+consent, M020 lead/deduplication, M011 secure documents, M013/M024 scheduling, M017 CRM, M025 unified
+communications, M026 notifications, M041
 provider abstraction, M043–M045 payments/entitlements, M060 compliance review, M075 human-in-the-
 loop, M077 audit, M078 consent, M080/M081 IAM/RBAC, M082 PII, M084 integration security, M085
 retention, M092 analytics and M097 observability.

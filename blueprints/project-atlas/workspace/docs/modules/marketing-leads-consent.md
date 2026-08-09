@@ -5,6 +5,10 @@
 - Status: Implementation-ready architecture draft; open Product Owner decisions remain; no Build gate
 - Catalog modules: M006, M020, M078
 
+This is the cross-module umbrella. `m006-public-forms.md` is the detailed authority for the public
+form projection/session/submission boundary; M020 and M078 remain the authorities for lead and
+consent behavior. Where this summary is less specific, the owning detailed PRD applies.
+
 ## 1. Purpose
 
 Capture prospects from Google/Meta/organic channels with provable, purpose-specific consent and pass
@@ -35,7 +39,8 @@ Owner/authorized staff, CRM service and consent administrator.
 
 1. Visitor chooses service/language and sees concise purpose/contact disclosures.
 2. Visitor submits minimum contact information and explicit channel consent.
-3. System validates, bot-checks and idempotently creates/matches a lead candidate.
+3. System validates and durably accepts the submission, then queues idempotent creation/matching of a
+   lead candidate without exposing that result publicly.
 4. Visitor receives a neutral confirmation and optionally schedules an evaluation.
 5. Staff reviews lead/consent provenance in CRM.
 6. Person withdraws or changes future communication consent without deleting required service history.
@@ -43,7 +48,7 @@ Owner/authorized staff, CRM service and consent administrator.
 ## 7. States and transitions
 
 - Submission: `started → submitted → validated → accepted|rejected|manual_review`.
-- Consent per purpose/channel: `not_requested → granted → withdrawn|expired|superseded`.
+- Consent per purpose/channel: `not_requested → granted|declined → withdrawn|expired|superseded`.
 - Contactability is derived at send time from active consent and legal/operational exceptions; it is
   never a permanent boolean.
 
@@ -76,7 +81,7 @@ idempotency/spam outcome; CRM conversion. No SSN, tax document, credit report or
 - `ConsentService.recordGrant(subject, purpose, channel, disclosureVersion)`.
 - `ConsentService.withdraw(verifiedSubject, purpose, channel)`.
 - `ContactPolicyService.canContact(subject, purpose, channel, at) → Decision`.
-- `LeadCaptureService.accept(submissionId) → LeadRef`.
+- `LeadCaptureService.accept(submissionId, idempotencyKey) → GenericLeadCandidateReceipt`.
 - Stable 400/429 responses; duplicate/match status is never disclosed publicly.
 
 ## 12. Events and background jobs
@@ -101,8 +106,9 @@ Release 1A.
 ## 15. UX and accessibility requirements
 
 Short progressive forms, clear required/optional fields, accessible inline/error summary, explicit
-unchecked consent where legally required, no dark patterns, keyboard/mobile completion, autosave
-only with clear privacy notice and an obvious scheduling/quote next step.
+unchecked consent where legally required, no dark patterns, keyboard/mobile completion and an
+obvious scheduling/quote next step. Release 1A retains answers only in current-page memory; browser
+or server persistent autosave/draft resume requires the explicit M006 Product Owner decision.
 
 ## 16. Bilingual requirements
 

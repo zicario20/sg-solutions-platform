@@ -2,8 +2,8 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Approved capability map; M001 and M002 are at PO Acceptance, and M006/M020 remain gated
-- Catalog modules: M001, M002, M006, M020
+- Status: Approved capability map; M001 and M002 are at PO Acceptance, and M006/M078/M020 remain gated
+- Catalog modules: M001, M002, M006, M078, M020
 
 The public surface acquires qualified Illinois prospects through a bilingual, trustworthy and
 measurable experience. It uses “Agenda una evaluación” as the primary CTA and “Solicita una

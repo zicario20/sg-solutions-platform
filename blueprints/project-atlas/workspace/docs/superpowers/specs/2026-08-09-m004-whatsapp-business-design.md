@@ -66,7 +66,7 @@ Shared communications application/domain
   ├─ Consent + ContactPolicy
   ├─ template/purpose policy
   ├─ M002 PublicKnowledgeProvider
-  ├─ M006/M020 LeadIntakePort
+  ├─ LeadIntakePort → M006 capture / M078 consent / M020 lead
   ├─ M013/M024 SchedulingPort
   ├─ M043–M045 Payment/secure-link ports
   ├─ M011 DocumentIntakePort (later)
@@ -133,8 +133,8 @@ M004 owns channel transport and provider projections. It does not create `WhatsA
   keeps only a bounded response marker/opaque reference; free-text replies are not promoted.
 - The activated WhatsApp provider necessarily transports each selection; approved terms/DPA,
   bilingual purpose/provider notice, consent, TTL/deletion and secure alternative are prerequisites.
-- The prospect reviews the summary; only an M006/M020 idempotent promotion receipt creates durable
-  lead intake. Abandonment/expiry deletes the draft.
+- The prospect reviews the summary; only M006 evidence capture plus M078 consent and an M020
+  idempotent promotion receipt create durable lead intake. Abandonment/expiry deletes the draft.
 
 ### Appointment flow
 

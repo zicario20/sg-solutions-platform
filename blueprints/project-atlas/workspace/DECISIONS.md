@@ -219,3 +219,19 @@ checklist, consistency updates and read-only independent/security reviews. This 
 approve ADR 009, resolve its business/legal/provider choices, authorize `GENERATE`, add a runtime or
 dependency, activate a telephony/speech/model provider, create an account or number, process real
 calls, enable recording/transcription, merge, deploy or declare the module Operational.
+
+## 2026-08-09 — Decision 019
+
+Decision: authorize Product/Architecture documentation and independent documentary audit for M006
+Public Forms in its own worktree after M005 closure. M006 must normalize the full Product Owner
+source to the approved Astro/Next/TypeScript modular-monolith baseline and remain the public capture
+boundary, not a second CRM or private specialist-intake system.
+
+Reason: the Product Owner instructed Codex to continue from the independently audited M005 snapshot,
+complete and audit M006 in a separate worktree, then stop.
+
+Impact: Codex may prepare the M006 PRD, design, proposed ADR 010, activation decisions, authority
+updates and read-only independent/security reviews. This decision does not approve ADR 010, exact
+form fields/copy/policy, `GENERATE`, code, tables, public routes, provider accounts, real submissions,
+email/CRM/calendar/payment/analytics/partner connections, cookies, merge, deployment or Operational
+status.

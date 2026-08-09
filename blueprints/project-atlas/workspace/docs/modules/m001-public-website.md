@@ -49,7 +49,8 @@ M001 includes:
 
 M001 does not implement:
 
-- lead persistence, consent records, spam scoring or CRM handoff (M006/M020/M017);
+- form/evidence persistence (M006), consent records (M078), lead/deduplication (M020), spam scoring
+  or CRM handoff (M017);
 - a scheduling engine or Google Calendar synchronization (M013/M024);
 - public chat, WhatsApp or voice agents (M003–M005);
 - authentication, account creation or the client portal (M007/M008 and related modules);
@@ -270,8 +271,9 @@ M001 is not acceptable if it:
 Ready dependencies: approved product definition, Astro scaffold, design baseline, content guidelines,
 SEO baseline, architecture baseline and M001 Build authorization.
 
-Future integrations: M002 Help Center, M006 forms, M013 scheduling, M017 CRM, M020 consent, M037–M041
-Marketplace, M043 Stripe, M062 Knowledge Base and Sanity editorial workflow.
+Future integrations: M002 Help Center, M006 form/evidence capture, M013 scheduling, M017 CRM, M020
+lead/deduplication, M078 consent, M037–M041 Marketplace, M043 Stripe, M062 Knowledge Base and Sanity
+editorial workflow.
 
 ## 20. Risks
 

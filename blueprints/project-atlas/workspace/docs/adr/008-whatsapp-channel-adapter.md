@@ -56,7 +56,7 @@ M004 will be an **official provider-neutral channel adapter** inside the modular
 12. Preliminary intake over WhatsApp is disabled by default. A future Product Owner gate may enable
    only the M003 structured field allowlist as a first-party, TTL-bound `Confidential` draft with
    explicit provider-exposure consent, no AI/moderation/translation/telemetry/evaluation use and
-   receipt-only promotion through M006/M020.
+   evidence capture through M006, consent through M078 and receipt-only lead promotion through M020.
 13. A contact-channel binding is time-bounded evidence, not permanent endpoint ownership. Protected
    transactional sends re-evaluate approved verification evidence/freshness and provider/wrong-
    person/reassignment signals. Stale or suspicious bindings are suspended and may be revalidated

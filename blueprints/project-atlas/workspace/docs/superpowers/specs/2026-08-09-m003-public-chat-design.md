@@ -53,7 +53,7 @@ Astro public page
             ├─ M002 PublicKnowledgeProvider (read only)
             ├─ ModerationProvider (disabled/local/live adapter)
             ├─ ChatModelProvider (disabled/live adapter)
-            ├─ LeadIntakePort → M006/M020
+            ├─ LeadIntakePort → M006 capture / M078 consent / M020 lead
             ├─ PublicSchedulingPort → M013/M024
             ├─ HumanHandoffPort → M025
             ├─ SafeStatus/Payment query ports → portal domains (later)

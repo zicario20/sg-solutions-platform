@@ -47,12 +47,13 @@ records.
 - Deterministic guided-assistant mode when no live model is enabled; it must be labeled accurately
   and may only search/rank approved public content and show predefined next actions.
 - Human handoff request and durable handoff state prepared for M025 unified communications.
-- Optional conversion to lead/contact through M006/M020 contracts after separate contact and
-  marketing-consent capture; anonymous chat use alone does not imply marketing consent.
+- Optional conversion to lead/contact through M006 capture, M078 consent and M020 lead contracts
+  after separate contact and marketing-consent capture; anonymous chat use alone does not imply
+  marketing consent.
 - Optional appointment handoff through the M013/M024 scheduling contract when activated.
 - Bounded preliminary intake schemas for Credit, Taxes, Business Formation, Business Funding and
-  Home Buying. Session answers remain drafts until the visitor confirms a structured M006/M020
-  submission and its applicable consent.
+  Home Buying. Session answers remain drafts until the visitor confirms a structured M006 capture
+  submission and its applicable M078 consent actions.
 - Future read-only authenticated tools for safe case progress, pending client tasks, missing-
   document counts, next appointment and payment projection; each remains owned and authorized by
   its source domain.
@@ -127,8 +128,8 @@ records.
 1. The visitor chooses to be contacted.
 2. Chat opens the canonical M006 structured capture step, separate from message text.
 3. Required contact-use notice and optional marketing consent are presented distinctly.
-4. After validated submission, M006/M020 returns a receipt; M003 displays that receipt without
-   claiming assignment or response time that is not confirmed.
+4. After validated submission, M006 returns a generic receipt while M020 handles the lead candidate;
+   M003 displays that receipt without claiming assignment or response time that is not confirmed.
 
 ### Appointment handoff
 
@@ -171,8 +172,8 @@ records.
 2. It asks only the approved, non-secret fields for that vertical and allows “prefer not to answer.”
 3. Answers stay in the current session until the visitor requests contact and confirms the
    structured summary.
-4. M006/M020 owns validation, duplicate handling, consent and durable lead creation. M003 displays
-   success only from its receipt.
+4. M006 owns form validation/evidence capture, M078 owns consent, and M020 owns duplicate handling
+   and durable lead creation. M003 displays success only from its receipt.
 
 Approved preliminary fields are:
 
@@ -329,8 +330,8 @@ next-action key. Derived metadata does not contain raw message content.
 
 Conversation ID, service key, schema version, locale, allowlisted answer keys, completion state and
 updated timestamp. It is session-scoped by default. Promotion to durable lead/intake data requires
-the confirmed M006/M020 command and consent evidence; the conversation repository does not become a
-second CRM.
+the confirmed M006 capture command, M078 consent evidence and M020 lead handoff; the conversation
+repository does not become a second CRM.
 
 ### Operational linkage projection
 
@@ -615,7 +616,8 @@ Manual recovery must never require editing production tables from the Supabase d
 - Provider-disabled mode works honestly without pretending that a live AI is connected.
 - Existing M001/M002 routes, search, SEO, build and browser tests remain green.
 - Preliminary intake asks only the approved service-specific fields, remains optional and creates no
-  durable lead until the visitor confirms the M006/M020 submission.
+  durable lead until the visitor confirms the M006 submission and its M078 consent actions; M020
+  then owns lead creation/deduplication.
 - Once their separately gated adapters exist, lead creation, booking, authenticated safe status,
   read-only payment status and approved Marketplace discovery pass contract tests and preserve the
   owning module's authorization and receipts.
@@ -657,8 +659,9 @@ Manual recovery must never require editing production tables from the Supabase d
 
 ### Required for architecture
 
-M001 public website/design foundation, M002 public Help Center, M006 lead/consent contract, M025
-communications boundary, M041 provider abstraction, M060 compliance-review boundary, M064 source
+M001 public website/design foundation, M002 public Help Center, M006 form/evidence-capture contract,
+M020 lead/deduplication, M025 communications boundary, M041 provider abstraction, M060 compliance-
+review boundary, M064 source
 governance, M075 human-in-the-loop, M077 audit, M078 consent, M080/M081 IAM/RBAC, M082 PII
 protection, M084 integration security, M085 retention, M037–M041 Marketplace, M043–M045 payment
 projection and M097 observability.

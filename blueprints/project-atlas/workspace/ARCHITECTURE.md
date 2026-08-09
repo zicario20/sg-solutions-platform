@@ -93,6 +93,14 @@ general database credentials or business-state authority. Caller ID is not ident
 transcription are disabled until explicit policy approval. ADR 009 records this candidate boundary,
 while every provider, number, runtime and live-call decision remains deferred.
 
+M006 proposes immutable server-authoritative public form definitions and a narrow same-origin
+gateway in `apps/www`; the rest of Astro remains static-first. The gateway validates anonymous
+transport/session/abuse boundaries and calls a least-privilege `apps/app` facade without database or
+provider credentials. Domain services atomically accept the submission, consent evidence,
+idempotency and outbox before a generic receipt. M020 owns leads/deduplication, M078 owns consent and
+M077 owns audit. Detailed private intake, public uploads, persistent drafts and every external
+handoff stay gated. ADR 010 records the proposed boundary.
+
 ## Data protection
 
 Data follows `DATA_CLASSIFICATION.md`. Managed encryption at rest is necessary but insufficient for

@@ -42,6 +42,15 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   architecture review with zero open findings and Cyber Neo at documentary risk 0/100 after all
   security/consistency findings were remediated. It now awaits Product Owner approval or revision of
   the PRD/design and proposed ADR 009.
+- **M006 Public Forms:** Product/Architecture documentation is active under Decision 019. The target
+  is a bilingual, versioned, accessible public capture capability using a narrow same-origin Astro
+  gateway and durable domain acceptance before generic success. It delegates leads/deduplication to
+  M020 and consent to M078, keeps detailed intake in the portal, and rejects public uploads/
+  persistent Confidential drafts in Release 1A. No Build, fields/copy approval, route, provider,
+  cookie, real submission or deployment is authorized. Independent architecture review closed with
+  zero open findings and Cyber Neo closed at documentary risk 0/100 after origin/proxy, parser,
+  prohibited-data, digest, nonce, risk-review and cross-channel authority remediation. The candidate
+  now awaits Product Owner approval or revision of the PRD/design and proposed ADR 010.
 
 ## Architecture-first activation policy
 

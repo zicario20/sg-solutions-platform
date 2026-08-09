@@ -117,7 +117,7 @@ media gateway/runtime. M003, M004 and M025 own shared conversation and inbox con
 - M096 Voice Gateway and provider adapters.
 - Reception Agent policy/orchestration runtime.
 - M002 public knowledge adapter.
-- M006/M020 lead and preliminary-intake services.
+- M006 form/evidence capture, M078 consent and M020 lead/deduplication services.
 - M013/M024 scheduling services.
 - M017/M018 contact/client and M025 inbox services.
 - M026 follow-up notification service.
@@ -140,8 +140,8 @@ media gateway/runtime. M003, M004 and M025 own shared conversation and inbox con
    content.
 6. If the caller wants follow-up, the agent captures only the M006 public allowlist, confirms each
    contact value and records purpose-specific contact consent.
-7. M006/M020 returns a generic idempotent lead or callback receipt; the voice agent never writes a
-   lead directly.
+7. M006 records the confirmed capture, M078 records applicable consent and M020 returns the generic
+   idempotent lead or callback receipt; the voice agent never writes a lead directly.
 8. The agent offers a real appointment only through the scheduling port or records preferred times
    when scheduling is unavailable.
 9. It summarizes the next step and stores a minimized call outcome. Recording/transcript behavior
@@ -286,7 +286,8 @@ Terminal alternatives: `rejected`, `missed`, `busy`, `failed`, `abandoned`, `can
 - Public answers come only from active M002 sources; no source means no invented answer.
 - The model receives only tools allowed for the current call state and purpose. Prohibited tools are
   absent from the runtime registry, not merely discouraged in a prompt.
-- M006/M020 owns lead creation/deduplication. M005 owns the voice receipt and call outcome.
+- M006 owns form/evidence capture, M078 owns consent and M020 alone owns lead creation/
+  deduplication. M005 owns the voice receipt and call outcome.
 - M013/M024 owns availability and appointments. M005 never invents slots or booking success.
 - M043–M045 owns payment state. M005 may receive a coarse read-only projection only after the
   applicable authorization policy; it cannot alter money or service authorization.
@@ -694,8 +695,9 @@ Build gate. External activation additionally requires the evidence in the activa
 
 ### Required for architecture
 
-M002 public Help Center; M003/M004 conversation/channel patterns; M006/M020 preliminary intake and
-lead capture; M013/M024 scheduling; M017/M018 contacts/clients; M025 unified communications; M026
+M002 public Help Center; M003/M004 conversation/channel patterns; M006 preliminary form/evidence
+capture; M078 consent; M020 lead/deduplication; M013/M024 scheduling; M017/M018 contacts/clients;
+M025 unified communications; M026
 notifications; M041 provider abstraction; M043–M045 payment projections; M048/M049 Reception Agent;
 M060 compliance review; M075 human-in-the-loop; M077 audit; M078 consent; M080/M081 IAM/RBAC; M082
 PII; M084 integration security; M085 retention; M092 analytics; M096 Voice Gateway; M097

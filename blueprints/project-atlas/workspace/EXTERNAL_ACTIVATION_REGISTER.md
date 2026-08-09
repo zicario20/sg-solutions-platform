@@ -111,6 +111,25 @@ de readiness externa sin sustituirlo.
 | VOICE-013 | Campos mínimos del intake M006 permitidos por voz | `External activation deferred` | Preguntar, transmitir a STT/modelo, procesar o persistir preliminary intake de una llamada | Allowlist, purpose/consent/TTL/confirmación, provider/DPA/no-training y pruebas de rechazo/zero-propagation de campos sensibles |
 | VOICE-014 | Alcance de pago por teléfono | `External activation deferred` | Cualquier captura/procesamiento financiero por voz | Decisión futura separada, PRD/ADR/compliance/gate; baseline M005 lo excluye y solo entrega enlaces escritos seguros |
 
+### Decisiones y configuración pendientes de M006
+
+| ID | Prerrequisito | Estado | Bloquea | Evidencia para cerrar |
+|---|---|---|---|---|
+| FORM-001 | Inventario Release 1A, propietarios/routing, horarios y expectativa bilingüe de respuesta | `External activation deferred` | Publicar un formulario o prometer seguimiento | Lista/copy/destinos ES/EN aprobados, owner/cola probados y fallback manual; no SLA por defecto |
+| FORM-002 | Allowlist exacto de fields/options/free text y clasificación por form/purpose | `External activation deferred` | Preguntar, procesar o persistir answers públicos | Schema/version aprobados, data minimization y pruebas de rechazo de campos desconocidos/sensibles |
+| FORM-003 | Modelo de publicación: configuración code-reviewed o admin publisher | `External activation deferred` | Cambiar/publicar definiciones productivas | Decisión, permisos/separation of duties, parity/hash/version audit y rollback probados; nunca arbitrary executable rules |
+| FORM-004 | Copy ES/EN de privacidad, procesamiento, contacto, marketing y partner consent/withdrawal | `External activation deferred` | Captar datos/consentimiento o contactar | Versiones/purposes/hashes aprobados tras revisión aplicable y pruebas de decline/withdrawal/evidence |
+| FORM-005 | Retención, eliminación y legal hold de sessions, submissions, metadata de rechazo/risk-review, respuestas Confidential aprobadas, motivo content-free de incidentes, consent, attribution, risk, scoped HMAC, idempotency y dedupe; la cuarentena raw de Highly Sensitive queda prohibida en Release 1A | `External activation deferred` | Persistencia productiva más allá del receipt técnico mínimo | Plazos/TTL por clase, jobs, permisos, backup implications y restore/delete/hold tests aprobados |
+| FORM-006 | Anti-spam/rate policy, network-evidence TTL, challenge provider/cookies/fingerprinting y alternativa accesible | `External activation deferred` | Activar challenge externo o evidence ampliado | Thresholds/privacy/vendor terms/consent/fallback aprobados y pruebas de bypass, outage y accesibilidad |
+| FORM-007 | Draft/resume anónimo en browser/server | `External activation deferred` | Persistir/reanudar answers antes de final submit | Fields, encryption/token, TTL, shared-device warning, revocation/deletion y pruebas aprobadas; default no persistence |
+| FORM-008 | Recuperación de formularios abandonados | `External activation deferred` | Email/SMS/WhatsApp reminder o lead parcial | Consent qualifying, delay/cadence/suppression/fields/deletion y provider destinations aprobados; default disabled |
+| FORM-009 | Upload público y handoff a M011 | `External activation deferred` | Mostrar/aceptar archivo o upload token público | File allowlist/size/purpose/consent, M011 quarantine/scan, expiry/deletion and incident tests; default reject-all |
+| FORM-010 | Scheduling posterior al submit versus callback/redirect | `External activation deferred` | Mostrar slots o afirmar booking | Form/version allowlist, M013/M024 activo, timezone/concurrency/fallback y receipts probados |
+| FORM-011 | Quote/payment handoff posterior al submit | `External activation deferred` | Crear link/cobro o mostrar monto/producto | Form/service allowlist, M042–M045 activos, catalog/price/copy/idempotency/reconciliation probados |
+| FORM-012 | Partner/Marketplace sharing or application | `External activation deferred` | Transmitir cualquier answer a partner | Agreement, exact fields/purpose/disclosure/consent/revocation/evidence y adapter tests; default no sharing |
+| FORM-013 | Attribution, cookies/consent mode, ad click IDs y conversion destinations | `External activation deferred` | External analytics/pixels/Conversion API o identifiers | Field allowlist, retention, privacy review, consent mode, payload/redaction tests; default first-party minimal only |
+| FORM-014 | AI classification/summary of accepted submissions | `External activation deferred` | Enviar answers a model o usar AI output | Field allowlist, provider/DPA/region/no-training/retention, evals/human review and kill switch; default deterministic/manual |
+
 ## Identidad, agenda y pagos
 
 | Módulo(s) | Dependencia externa pendiente | Estado | Se completa ahora | Se difiere hasta activación | Fallback seguro |

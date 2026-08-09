@@ -146,3 +146,21 @@
 - Final Cyber revalidation covered the post-IA 15-path snapshot at risk 0/100; the final independent
   evidence pass confirmed all review reports/authorities and zero open findings. M005 is ready only
   for Product Owner architecture review; it has no Build or activation gate.
+- The Product Owner directed Codex to continue with M006 in a separate worktree and stop after its
+  independent audit. Decision 019 authorizes M006 Product/Architecture work only.
+- The complete M006 source was normalized away from `.NET`/FluentValidation assumptions into the
+  approved Astro/Next/TypeScript modular monolith. The candidate uses immutable form versions, a
+  narrow same-origin `apps/www` gateway and domain-owned atomic submission/consent/idempotency before
+  generic success. M020 remains lead authority and M078 remains consent authority.
+- Release 1A defaults to minimal public data, no public files and no persistent anonymous
+  Confidential drafts. Fourteen business/privacy/provider choices remain explicit Product Owner
+  decisions; no route, provider or real submission is authorized.
+- M006 review found and closed eight material documentary/consistency issues. Cyber CN-001/CN-002
+  established exact canonical-origin/trusted-proxy controls and bounded raw parsing before object
+  materialization. Independent IA-001–IA-006 separated prohibited-data handling, replaced unkeyed
+  checksums with scoped HMAC, added accessible nonce renewal, fenced `risk_review` from M020 and
+  synchronized M006/M078/M020 ownership across public channels. GOV-001/GOV-002 aligned nonce
+  consumption and the evidence index.
+- Final independent review approved the stable candidate with zero open findings; Cyber Neo
+  revalidated the post-fence candidate at documentary risk 0/100. M006 remains Registered and is
+  ready only for Product Owner architecture review; it has no Build or activation gate.

@@ -47,6 +47,10 @@ Measured scale, hybrid infrastructure and mobile expansion
     only the specialized real-time provider/media runtime and ephemeral audio session. It depends on
     M041 provider abstractions, M025 communications, M077 audit and M084 integration security; it
     never owns leads, clients, appointments, payments, consent or authorization.
+15. M006 owns public form projection/session/submission UX and receipt. M020 owns leads/deduplication,
+    M078 owns consent, M077 owns audit, and M013/M024, M042–M045, M011, M026 and M040 own their
+    optional handoffs. `apps/www` public ingress has no direct database/provider authority and a
+    public submission never becomes a client/case/service order by implication.
 
 ## Fronteras de extracción
 
