@@ -115,3 +115,17 @@
   provider-readiness, payment-link and evaluation-corpus findings. The final 16-path candidate is
   approved by the independent reviewer and security-clear at risk 0/100 for Product Owner review;
   it remains unapproved for Build or external activation.
+- The Product Owner directed Codex to continue with M004 WhatsApp Business. Decision 017 authorizes
+  Product/Architecture documentation only; no Build or real provider activation was opened.
+- The complete M004 source was normalized away from its obsolete `.NET/Redis` diagram and into the
+  approved Next.js/Postgres modular monolith. The candidate reuses M003/M025 conversations,
+  separates phone association from identity/resource authorization, uses a durable provider
+  inbox/outbox and keeps direct Meta versus approved BSP selection deferred.
+- Proposed ADR 008 assigns official provider webhooks to a narrowly scoped `apps/app` integration
+  ingress, forbids WhatsApp Web/personal-account automation and preserves the secure portal as the
+  initial path for case, payment, document and other client-specific details.
+- M004 review closed seven design findings: replayable pre-ACK event data, ambiguous outbound
+  acceptance, ingress resource exhaustion, opt-out/outbox concurrency, intake classification and
+  provider exposure, stale/reassigned phone bindings and Draft-index wording. The final 14-path
+  substantive candidate passed independent review with zero open findings and Cyber Neo at risk
+  0/100; it remains pending Product Owner architecture approval and has no Build/activation gate.

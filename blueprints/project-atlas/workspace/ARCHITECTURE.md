@@ -77,6 +77,14 @@ in workspace packages; later authenticated client/admin adapters enter through `
 turn a claimed public identity into authorization. ADR 007 records the proposed runtime decision for
 Product Owner approval before Build.
 
+M004 proposes an official provider-neutral WhatsApp adapter over the same conversation/handoff
+kernel. Provider-to-server callbacks enter through a narrowly scoped Next.js integration ingress in
+`apps/app`, are authenticated and durably persisted before normalized domain processing, and use a
+transactional inbox/outbox plus reconciliation. A phone/contact binding is never Supabase identity
+or a resource grant; the initial client-specific path is a secure portal link. Postgres owns
+operational messaging state, while the activated provider owns external account/template/delivery
+state. ADR 008 records the proposed boundary; provider/number/template activation remains deferred.
+
 ## Data protection
 
 Data follows `DATA_CLASSIFICATION.md`. Managed encryption at rest is necessary but insufficient for

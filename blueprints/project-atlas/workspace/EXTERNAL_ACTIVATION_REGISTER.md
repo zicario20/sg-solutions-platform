@@ -73,6 +73,25 @@ de readiness externa sin sustituirlo.
 | CHAT-006 | Preguntas de estado permitidas en chat autenticado | `External activation deferred` | Adaptador portal-safe de estado/tareas/documentos/citas/pago | Alcance aprobado, M007/grants y pruebas negativas de autorización |
 | CHAT-007 | Enlaces seguros de pago y recibos autenticados | `External activation deferred` | Payment-link/receipt adapter | M043–M045 activos, quote/service order/precio autorizado, expiración e idempotencia probadas |
 
+### Decisiones y configuración pendientes de M004
+
+| ID | Prerrequisito | Estado | Bloquea | Evidencia para cerrar |
+|---|---|---|---|---|
+| WA-001 | Selección entre Meta Cloud API directa o Business Solution Provider autorizado | `External activation deferred` | Adapter productivo y contrato/soporte operativo | Comparación de costo, soporte, portabilidad, términos/datos y decisión del Product Owner |
+| WA-002 | Meta Business/WABA, identidad institucional, propietarios y recuperación | `External activation deferred` | Alta productiva del canal | Cuenta verificada, custodios/recuperación institucional y evidencia no sensible aprobada |
+| WA-003 | Número, display name y coexistencia con voz/SMS/M005/M096 | `External activation deferred` | Registro/migración del número | Propiedad, carrier/capacidad, coexistencia/portabilidad y prueba controlada aprobadas |
+| WA-004 | Copy ES/EN de identidad automatizada, privacidad, contacto, servicio, marketing, opt-out y re-consent | `External activation deferred` | Publicar conversación o iniciar mensajes | Versiones legales/operativas aprobadas, hashes/versiones y pruebas de evidencia/withdrawal |
+| WA-005 | Plantillas iniciales, categorías, variables, destinos y versiones bilingües | `External activation deferred` | Mensajes iniciados fuera de la ruta conversacional permitida | Aprobación interna, aprobación del provider y prueba de locale/variables/links |
+| WA-006 | Retención, eliminación y legal hold para mensajes, receipts, bindings y payload temporal | `External activation deferred` | Persistencia productiva del canal | Política aprobada después de revisión aplicable y pruebas de eliminación/hold |
+| WA-007 | Destino del inbox, horarios, escalaciones y lenguaje de expectativa/SLA | `External activation deferred` | Confirmar handoff o disponibilidad humana | Configuración aprobada, destino probado y fallback manual documentado |
+| WA-008 | Política de media entrante y activación del M011 quarantine/scan handoff | `External activation deferred` | Descargar o promover adjuntos del provider | Decisión reject-all versus PDF/JPEG/PNG, M011 activo, scanner y pruebas de cuarentena |
+| WA-009 | Cadencia, quiet hours, recordatorios y límites de frecuencia | `External activation deferred` | Automatizar recordatorios/outbound programado | Configuración aprobada por propósito/zona y pruebas de retry/opt-out/no-duplicate |
+| WA-010 | Alcance de status autenticado directo por WhatsApp | `External activation deferred` | Exponer estado de caso/pago/documento en mensaje | Proyección aprobada, binding de alta confianza, M007/grants y pruebas negativas; default es portal link |
+| WA-011 | Campañas promocionales | `External activation deferred` | Cualquier marketing iniciado por SG Solutions | Gate separado del Product Owner, audiencia/consentimiento/copy/cadencia/disclosures aprobados |
+| WA-012 | Credenciales, challenge/signature, webhook, reconciliación, costos y runbooks | `External activation deferred` | Tráfico sandbox/producción | Secret store, pruebas oficiales, monitoreo, suspensión/rotación/recovery y revisión independiente |
+| WA-013 | Intake preliminar estructurado por WhatsApp | `External activation deferred` | Pedir o persistir campos M003 dentro del canal | Decisión del Product Owner, provider/DPA, aviso/consentimiento ES/EN, allowlist, TTL/eliminación, alternativa segura y pruebas negativas |
+| WA-014 | Frescura y revalidación del número/contact binding | `External activation deferred` | Mensajes transaccionales o client-associated | Método/evidencia, TTL, cadencia, wrong-person/reassigned-number policy y pruebas de suspensión/revalidación aprobadas |
+
 ## Identidad, agenda y pagos
 
 | Módulo(s) | Dependencia externa pendiente | Estado | Se completa ahora | Se difiere hasta activación | Fallback seguro |

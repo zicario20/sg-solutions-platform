@@ -57,3 +57,9 @@
   after desktop/mobile browser validation.
 - Preserved the Decision 015 external-provider boundary on every aggregate surface that displays
   Tradelines answers and aligned FAQ structured data with the same visible bilingual disclosure.
+- Added the M003 provider-neutral Public Chat architecture, same-origin Astro gateway proposal,
+  deferred-activation register and independent/security review evidence without opening a Build
+  gate.
+- Added the M004 official provider-neutral WhatsApp architecture, proposed Next.js integration
+  ingress, consent/template/durable-delivery boundaries and a detailed deferred activation checklist;
+  no account, number, credentials, live message or product implementation was created.

@@ -39,6 +39,10 @@ Measured scale, hybrid infrastructure and mobile expansion
 10. Portal de documentos, mensajería segura y firma electrónica se apoyan en IAM, auditoría, consentimiento y Storage; el procesamiento documental R6 los amplía posteriormente.
 11. Las recomendaciones de marketplace usan metadata de oferta para fuente/vigencia hasta que R6 aporte gestión de fuentes ampliada.
 12. Voice Gateway pertenece a R7 junto con comunicaciones; homelab, nodos locales/GPU y operación híbrida dependen de métricas, ADR y controles cloud ya operativos.
+13. M003, M004, M005 y futuros canales reutilizan una sola frontera de conversación, `Message`,
+    consentimiento, handoff y auditoría. Cada canal aporta transporte/adapters y estados externos;
+    nunca crea clientes, leads, expedientes, pagos, citas o autorización paralelos. Un número o
+    endpoint de canal no equivale a identidad autenticada ni acceso delegado.
 
 ## Fronteras de extracción
 

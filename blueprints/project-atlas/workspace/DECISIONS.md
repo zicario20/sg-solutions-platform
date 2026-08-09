@@ -187,3 +187,19 @@ Impact: `EXTERNAL_ACTIVATION_REGISTER.md` becomes the living authority for defer
 activation evidence. M003 architecture work is authorized; its live model/provider, CRM, scheduling
 and channel connections remain deferred. Architecture approval and local verification never imply
 `Operational` status, and no Build gate or production activation is implied by this decision.
+
+## 2026-08-09 — Decision 017
+
+Decision: authorize Product/Architecture documentation for M004 WhatsApp Business using the complete
+Product Owner-supplied M004 source, normalized to the approved TypeScript modular-monolith baseline
+and ADR 006. M004 will use only an official provider through a provider-neutral channel adapter,
+reuse the M003/M025 conversation kernel and keep real account/number/template activation deferred.
+
+Reason: the Product Owner explicitly instructed Codex to continue with Module 4 after establishing
+that architecture and definitive contracts should be completed before unavailable external accounts
+and business connections are activated.
+
+Impact: Codex may prepare the M004 PRD, UX/architecture design, proposed ADR, activation checklist,
+security boundaries and independent documentary reviews. This decision does not authorize
+`GENERATE`, product code, WhatsApp Web automation, a live Meta/BSP account, credentials, number
+registration, template submission, external messages, merge, deployment or Operational status.

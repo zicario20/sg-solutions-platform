@@ -25,6 +25,14 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   authorized by this architecture work. The final documentary candidate passed independent and
   Cyber Neo review and now awaits Product Owner approval of the PRD/design, ADR 007 and transcript
   boundary.
+- **M004 WhatsApp Business:** Product/Architecture documentation is active under Decision 017. The
+  target is an official provider-neutral channel adapter over the shared M003/M025 communication
+  kernel, with verified durable webhooks, consent/opt-out, bilingual templates, idempotent
+  inbox/outbox, secure portal handoffs and manual recovery. No M004 Build gate, account, number,
+  credential, template submission, live message or campaign is authorized. Direct Meta versus an
+  approved BSP and every operational policy remain activation decisions. The final documentary
+  candidate passed independent review and Cyber Neo at risk 0/100 and now awaits Product Owner
+  approval of the PRD/design and proposed ADR 008.
 
 ## Architecture-first activation policy
 
