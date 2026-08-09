@@ -2,8 +2,22 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Implementation-ready architecture draft; open Product Owner decisions remain; no Build gate
-- Catalog modules: M011, M065, M066, M067 (Release 1A implements only secure core/upload behavior)
+- Status: Umbrella architecture; dedicated M011 PRD is canonical; no Build gate
+- Catalog modules: M011, M065, M066, M067 (Release 1A candidate scope is limited to the secure
+  core/upload architecture; no behavior is implemented)
+
+## Canonical module split
+
+- `m011-document-portal.md` is the canonical PRD for requests, upload intents, quarantine/safety/
+  promotion, logical documents, immutable versions, operational review, visibility, authorized
+  preview/download and disposition hooks.
+- M065 owns OCR, extraction, classification/quality suggestions and redaction processing.
+- M066 owns generated-document templates, drafts and approval evidence.
+- M067 owns electronic-signature workflow and signed artifacts.
+- Proposed ADR 015 governs M011 document authority, state separation, Storage boundary, final fences
+  and recovery.
+- If this umbrella conflicts with the dedicated M011 PRD inside M011 scope, the dedicated PRD
+  governs after Product Owner approval; unresolved policy is escalated rather than inferred.
 
 ## 1. Purpose
 
@@ -37,23 +51,31 @@ where permitted, quarantine/scanner worker, storage adapter and cleanup/reconcil
 
 1. Staff requests a named document for a case with instructions and due date.
 2. An authorized client requests an upload slot bound to that case/request.
-3. The file enters quarantine, is validated/checksummed/scanned and becomes accepted or rejected.
-4. Staff reviews an accepted version and records receipt/status.
+3. The file enters quarantine, is validated/checksummed/scanned and becomes safety-clean/promoted or
+   remains safety-rejected/quarantined under the canonical M011 axes.
+4. Staff reviews a safety-clean promoted version and separately records operational acceptance,
+   correction or rejection; promotion never implies business acceptance.
 5. Authorized users preview/download through short-lived signed access.
 6. A replacement creates a new version while preserving history.
 7. Retention/deletion removes eligible bytes and preserves the required audit tombstone.
 
 ## 7. States and transitions
 
-- Request: `requested → upload_pending → received → accepted|rejected → satisfied|cancelled`.
-- Document version: `upload_authorized → quarantined → validating → scanning → accepted|rejected|
-  scan_failed → deleted`.
-- Only `accepted` may be promoted to normal private storage or viewed.
+- Request: `draft → requested → upload_pending → received → under_review → satisfied|
+  needs_correction|waived|expired|cancelled`.
+- Safety: `pending → validating → scanning → clean|malicious|unsupported|encrypted|corrupt|
+  scan_failed|timed_out`.
+- Promotion: `quarantine_only → promoting → promoted|promotion_uncertain|promotion_failed`.
+- Operational review: `received → under_review → accepted|needs_correction|rejected`.
+- Visibility, immutable version lineage, lifecycle and legal hold remain separate axes under M011.
+- Only safety-clean, checksum/inventory-reconciled bytes may promote; promotion is not operational
+  acceptance, request/task satisfaction or client visibility.
 - A `scan_failed`/timeout remains quarantined until retry or authorized deletion; it never fails open.
 
 ## 8. Business rules
 
-- Release 1A accepts content-validated PDF/JPEG/PNG up to 25 MiB; expansions require review.
+- Release 1A candidate default is content-validated PDF/JPEG/PNG up to 25 MiB, subject to DOC-001;
+  no format/limit is approved for Build until that Product Owner decision.
 - Storage keys are opaque and never contain client identifiers or original filenames.
 - SHA-256 supports integrity and scoped duplicate detection; cross-client matches are never exposed.
 - Replacements create immutable versions; no in-place overwrite.
@@ -77,26 +99,30 @@ deletion/tombstone; audit/correlation. Document bytes never enter Postgres, logs
 
 ## 11. API or service contracts
 
-- `DocumentRequestService.create|cancel|markSatisfied`.
-- `UploadService.authorize(actor, caseId, requestId?, declaredMetadata) → QuarantineGrant`.
-- `UploadProcessingService.validateAndScan(uploadId, idempotencyKey) → Verdict`.
-- `DocumentService.promote`, `reject`, `createVersion`, `setVisibility`, `acknowledgeReceipt`.
-- `DownloadService.authorize(actor, versionId) → short-lived signed URL`.
-- `RetentionService.evaluate|deleteEligible`; `ReconciliationService.findOrphans`.
+The exact M011 contracts are owned only by `m011-document-portal.md`: separate Client/Staff query
+services plus DocumentRequest, UploadIntent, UploadProcessing, Promotion, Review, Governance,
+Visibility, Context, Version, Access, Disposition and Reconciliation services. This umbrella defines
+no competing `UploadService`, `DocumentService`, `DownloadService` or retention-policy owner. M085
+owns retention policy; M011 owns document disposition commands/state and references that policy.
 
 ## 12. Events and background jobs
 
-`document.requested`, `upload.quarantined`, `upload.scan_completed`, `document.accepted`,
-`document.rejected`, `document.receipt_confirmed`, `document.version_created`,
-`document.downloaded`, `document.deletion_scheduled` and `document.deleted`. Scan, orphan,
-retention and reconciliation jobs are idempotent, retry-bounded and manually recoverable.
+Canonical M011 namespaces distinguish `document_request.published|satisfied`,
+`document_upload.finalized`, `document_version.quarantined|scan_completed|promoted|rejected`,
+`document_review.accepted|correction_requested|rejected`,
+`document.visibility_changed|client_visible_version_changed`,
+`document_version.visibility_changed`, `document_context.visibility_changed`,
+`document_access.authorized|provider_delivery_observed`
+and `document_disposition.deletion_scheduled|purged`. Scan, orphan, disposition and reconciliation
+jobs are idempotent, retry-bounded and manually recoverable; M085 remains retention-policy owner.
 
 ## 13. Error states and recovery
 
 Expired grant, revoked case access, size/type mismatch, integrity mismatch, malicious content,
 encrypted/password-protected input, scanner unavailable/timeout, promotion failure, missing object,
 metadata/object mismatch and retention blocked by legal hold. Recovery uses a new upload, scanner
-retry, staff review or deletion; no manual “clean” override without separately audited exception.
+retry over the exact hash under an approved scanner/policy, replacement or deletion; no human
+toggle or staff review may convert non-clean safety evidence to `clean` or authorize promotion.
 
 ## 14. Security and privacy requirements
 
@@ -110,7 +136,8 @@ tests.
 
 Upload UI explains allowed types/size before selection, exposes progress and resumable next action,
 announces errors, supports keyboard/file picker, never relies on color, provides accessible preview
-fallback/download and distinguishes received, scanning, accepted and rejected. Mobile camera files
+fallback/download and distinguishes received, scanning, safety rejection/promotion, staff
+acceptance/correction/rejection and client visibility. Mobile camera files
 must still satisfy the allowlist.
 
 ## 16. Bilingual requirements
@@ -148,9 +175,5 @@ quarantine, fail-closed state, reconciliation, policy tests and audit.
 
 ## 21. Open questions
 
-- [NEEDS PRODUCT OWNER DECISION: confirm 25 MiB and the Release 1A PDF/JPEG/PNG allowlist.]
-- [NEEDS PRODUCT OWNER DECISION: approve retention, quarantine cleanup and legal-hold authority.]
-- [NEEDS PRODUCT OWNER DECISION: decide whether Highly Sensitive documents always require an
-  explicit extra grant or only designated categories.]
-- [NEEDS PRODUCT OWNER DECISION: approve the future scanner/provider after security and data-
-  processing review.]
+The dedicated M011 PRD consolidates all unresolved choices as `DOC-001`–`DOC-020` and synchronizes
+them with `EXTERNAL_ACTIVATION_REGISTER.md`. This umbrella creates no additional policy decision.

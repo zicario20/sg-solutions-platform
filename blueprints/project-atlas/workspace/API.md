@@ -58,3 +58,33 @@ request-scoped from a stable authorized owner-event cut and has no M010 projecti
 materialization requires a separate ADR and Build gate. Until PROC-010 approval, Billing projection
 is only owner-qualified semantic obligation/payment state, freshness and M014 route—no invoice/
 transaction reference, amount, balance, deposit, due date, method, receipt or refund detail.
+
+M011 proposes `ClientDocumentQueryService.list|get`, `StaffDocumentQueryService.list|get`,
+`DocumentRequestService`, `UploadIntentService`, `UploadProcessingService`,
+`DocumentPromotionService`, `DocumentReviewService`, `DocumentGovernanceService`,
+`DocumentVisibilityService`, `DocumentContextService`, `DocumentVersionService`,
+`DocumentAccessService`, `DocumentDispositionService` and `DocumentReconciliationService` as one
+document-domain boundary. Client and Staff queries use separate allowlisted DTOs; internal or
+compliance fields never enter a Client DTO, and Staff fields require exact scope/classification/
+assurance before counts/cursors. M011/Postgres owns request, logical document, immutable version,
+safety/promotion/review, visibility, document disposition/hold state and an M085 retention-policy
+reference; it emits M077 audit evidence rather than owning parallel retention or audit authorities.
+Approved Supabase private Storage owns only quarantined/promoted bytes. Every list/detail/cursor,
+upload authorization/finalize, replacement, preview, download, review, classify/reclassify,
+visibility/client-visible-version, context-link/unlink/share or disposition call freezes the M007 context/
+grant/assurance policy and final-fences parent links, visibility, classification, lifecycle/hold
+and resource/version epochs before returning metadata or a capability. Exposure-changing commands
+use CAS, advance authorization epochs and emit minimized audit/outbox facts. One bounded
+upload intent targets one opaque quarantine object, declares policy limits and is consumed
+idempotently; browser filename/MIME are advisory. Only content/parser-valid, checksum-verified,
+scanner-clean bytes may promote, and promotion never means staff acceptance, request/task
+satisfaction or client visibility. Replacement creates an immutable version and advances pointers
+by compare-and-set. Signed access is one-object/read-only/short-lived but is not represented as
+single-use or instantly revocable without implementation evidence. M011 emits typed client-safe
+summaries to M008–M010; every command reauthorizes in M011. M065 OCR/extraction, M066 generation and
+M067 signature remain separate gated owners.
+
+Link/unlink, replacement and reclassification atomically recompute the document effective
+classification ceiling from retained governed versions and active linked purposes. Logical-
+document visibility, selected client-visible version and context-link/version visibility use
+distinct post-commit events; consumers re-read canonical Postgres because events grant no access.

@@ -73,6 +73,29 @@
   ADR and Build gate. Until PROC-010 approval, Billing output is limited to semantic obligation/
   payment state, freshness and M014 route; references, amounts, balances, deposits, due dates,
   methods, receipts and refund details are prohibited.
+- M011 requires explicit case/document scope before any metadata or object I/O. Membership, email,
+  CRM/client relation, payment, route reference, object key, checksum or signed URL grants nothing.
+  Ordinary case inheritance reaches only client-visible linked documents; internal/compliance/
+  draft, inheritance-blocked and designated Highly Sensitive resources fail closed. Every
+  list/detail/cursor/upload-finalize/replacement/preview/download/review/classify/reclassify/
+  visibility/client-visible-version/context-link/share/disposition action reauthorizes and
+  final-fences session/context/grant, parent links, visibility, classification/assurance,
+  lifecycle/hold and resource/version epochs. Exposure-changing commands use expected-version CAS,
+  epoch invalidation and minimized audit/outbox; link/unlink authorizes both resource sides.
+  Link/unlink, replacement and reclassification recompute the effective classification ceiling in
+  the same transaction; unlink cannot create a lower-class window, and post-commit events never
+  grant access or replace a canonical Postgres reread.
+  Untrusted bytes land only in private quarantine and
+  cannot reach normal staff/client preview, OCR, AI or accepted storage until content/parser limits,
+  checksum and malware policy yield a clean verdict and promotion reconciles. Safety clean is not
+  business acceptance, request/task completion or client visibility. Versions are immutable;
+  signed URLs are one-object/read-only/short-lived but may remain reusable until provider expiry.
+  Preview uses a credentialless dedicated origin and opaque sandbox, not the authenticated app
+  origin; transformed/generated/signed-return bytes repeat independent validation, scan and
+  promotion before use.
+  Filenames, keys, bytes, OCR text, comments, scanner payloads and signed URLs are prohibited from
+  logs, Sentry, OpenTelemetry, PostHog, DOM capture, AI history and shared/offline cache. Proposed
+  ADR 015 and DOC-001–DOC-020 gate exact policies and all provider activation.
 
 ## Data and cryptography
 

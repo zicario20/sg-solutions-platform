@@ -79,6 +79,12 @@ Measured scale, hybrid infrastructure and mobile expansion
     M009 list/detail that may decorate from M010. Dependency contracts prohibit M009↔M010 recursive
     composition. Release 1A derives timeline events request-scoped from durable owner state; any
     M010 materialized projection or background writer requires a separate ADR and Build gate.
+21. M011 consumes M007 identity/context/grants, M009 ServiceOrder/Case scope, M021/M022 canonical
+    records, ADRs 003–005 and approved Supabase private Storage. It owns request/upload/safety/
+    promotion/version/review/visibility/delivery state but not M023 tasks, M065 OCR/extraction, M066
+    generation, M067 signature, M077 audit or M085 retention policy. M008–M010 consume only typed
+    client-safe M011 summaries/routes and cannot obtain bytes, keys, filenames, signed URLs,
+    comments or provider payloads.
 
 ## Fronteras de extracción
 

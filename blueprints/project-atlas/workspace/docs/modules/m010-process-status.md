@@ -534,7 +534,11 @@ never invokes a command through the summary port.
 - `service_activation.reviewed|approved|held|declined`
 - `case.created|state_changed|milestone_changed|completed|reopened|cancelled`
 - `task.client_requirement_changed`
-- `document.requested|accepted|rejected|expired`
+- `document_request.published|satisfied|expired|cancelled`
+- `document_review.accepted|correction_requested|rejected`
+- `document.visibility_changed|client_visible_version_changed`
+- `document_version.visibility_changed`
+- `document_context.visibility_changed`
 - `invoice.updated`, `payment.updated`, `refund.updated`, `dispute.updated`
 - `appointment.confirmed|changed|cancelled|completed|no_show`
 - `signature.requested|completed|declined|expired`
@@ -817,6 +821,9 @@ unpublished in Release 1A. Motion is subtle and functional.
 - M009 ServiceOrder/CaseFile/version boundary and proposed ADR 013.
 - M011 Documents/deliverables, M012 Secure Messaging, M013 Scheduling, M014 Billing, M067 Signatures
   and their typed client projections.
+- The M011 document projection supplies only authorized semantic request/review/deliverable state,
+  freshness and route keys. It never supplies filenames, bytes, storage keys, signed URLs, internal
+  comments, scanner/OCR payloads or download capabilities to M010; M011 reauthorizes every action.
 - M021 Service Orders, M022 Cases, M023 Tasks and M068 Workflow Engine as owning state domains.
 - M077 audit provenance, M078 consent where communications/analytics apply, M080/M081 IAM/RBAC.
 - Approved service catalog/workflow/milestone versions and bilingual content governance.

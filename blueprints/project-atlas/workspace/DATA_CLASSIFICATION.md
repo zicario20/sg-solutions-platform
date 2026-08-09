@@ -75,6 +75,21 @@ encryption in a server-only credential vault under ADR 005: key custody outside 
 explicit decrypt boundary, rotation/deletion behavior, backup implications, access audit and safe
 failure when KMS is unavailable. A ciphertext column or `_encrypted` suffix alone is not approval.
 
+### Document-specific boundary
+
+M011 assigns every logical document/version the highest classification of its bytes, extracted
+content, protected filename/metadata and linked purpose. Government IDs, tax returns, credit
+reports, bank/income/debt evidence and identity artifacts are Highly Sensitive. Quarantine never
+downgrades classification. A derivative, redaction, OCR result, preview or generated document is a
+separate governed artifact and cannot inherit a lower class merely because fields were hidden.
+A derivative, redaction, OCR result, preview or generated document containing new bytes also
+receives its own immutable provenance/checksum, content/parser validation, scan under a versioned
+policy and promotion before use; provider evidence or a prior artifact's verdict cannot substitute
+for that lifecycle.
+Document bytes, filenames, comments, extraction text, storage keys and signed URLs are prohibited
+from Sanity, analytics, logs, traces, error reports, agent chat history and client-side persistence.
+Only opaque IDs and stable minimized result/policy codes may enter authorized audit evidence.
+
 ## Universal prohibitions
 
 - Never store full payment-card numbers, CVV or magnetic-stripe data.

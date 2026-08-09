@@ -165,6 +165,21 @@ and has no M010 projection table, writer or background job; any materializer nee
 and Build gate. Until PROC-010 approval, M010 Billing output is only semantic obligation/payment
 state, freshness and M014 route, without invoice or transaction detail.
 
+M011 proposes one document domain inside the modular monolith. `DocumentRequest`, logical
+`Document`, immutable `DocumentVersion`, explicit context links, review and disposition evidence
+live in Postgres; approved Supabase private Storage holds only bytes. The source corpus's MinIO
+prescription is normalized to the approved stack and retained only as a future provider possibility
+behind `StorageProvider`, never as a parallel Release 1 store. Upload receipt, content safety,
+quarantine promotion, operational review, visibility, immutable version lineage and retention/legal
+hold are separate axes. Every inbound object follows authorize → quarantine → content/parser
+validation → checksum → scan → proven promotion → separately authorized review/delivery. Scanner or
+promotion uncertainty fails closed. One M007/ADR 004 resource snapshot plus final parent/
+visibility/classification/assurance/lifecycle/version fence governs list, upload, preview, download,
+review and disposition. Signed URLs are bounded byte handoffs rather than authority. Inngest
+coordinates idempotent jobs while Postgres/outbox state remains durable truth. M065 owns OCR and
+extraction, M066 generation, M067 signature, M023 task state, M077 audit and M085 retention. Proposed
+ADR 015 records this boundary; no document route, table, bucket or provider is authorized by it.
+
 ## Data protection
 
 Data follows `DATA_CLASSIFICATION.md`. Managed encryption at rest is necessary but insufficient for

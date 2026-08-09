@@ -429,7 +429,8 @@ M008 consumes, but does not own, events including:
 
 - `account.security_action_required`, `membership.revoked`, `grant.revoked`;
 - `service_order.updated`, `case.client_projection_changed`, `case.next_action_changed`;
-- `task.client_action_changed`, `document.requested`, `document.status_changed`;
+- `task.client_action_changed`, `document_request.published|satisfied|expired`,
+  `document_review.correction_requested|accepted`, `document.client_visible_version_changed`;
 - `signature.requested`, `signature.completed`, `signature.expired`;
 - `appointment.confirmed`, `appointment.changed`, `calendar.reconciled`;
 - `payment.updated`, `payment.reconciled`, `invoice.updated`;

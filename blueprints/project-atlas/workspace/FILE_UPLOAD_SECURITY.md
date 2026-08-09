@@ -17,8 +17,8 @@ Maximum accepted upload is **25 MiB per file** before any decompression or proce
 also enforces request and account/case quotas. Filenames are display metadata only; storage keys use
 opaque generated identifiers and normalized extensions derived after validation.
 
-[NEEDS PRODUCT OWNER DECISION: confirm the 25 MiB Release 1A limit and whether business operations
-require Office, HEIC or another format before the Document Center Build gate.]
+The canonical unresolved allowlist/limit policy is M011 decision `DOC-001`; no format expansion or
+real upload is authorized before that decision and its threat tests.
 
 ## Lifecycle
 
@@ -26,17 +26,26 @@ require Office, HEIC or another format before the Document Center Build gate.]
 request upload
 → authorize actor and target case
 → issue bounded quarantine upload
+→ finalize durable receipt and reserve immutable quarantined version/audit evidence
 → validate declared size, actual size and content-based type
 → calculate cryptographic checksum
 → scan for malware
-→ accept or reject with stable reason
+→ record safety verdict (`clean` or stable fail-closed reason)
 → promote/copy to private accepted storage
-→ commit metadata and emit audit event
+→ reconcile object/checksum and compare-and-set approved pointers/audit evidence
 ```
 
-An upload request binds actor, case/resource, maximum bytes, allowed content class, expiration and a
-single-use correlation identifier. Direct uploads land only in quarantine. Objects cannot be
-downloaded by clients or normal staff until accepted.
+An upload request binds actor, session/context, case/resource/request, exact opaque object, maximum
+bytes, allowed content class, expiration, policy version and a single-use correlation identifier.
+Direct uploads land only in quarantine. Browser filename/MIME are advisory. Finalization verifies
+the exact provider receipt/object and consumes the intent atomically. Objects cannot be downloaded
+by clients or normal staff until safety-clean promotion is proven; promotion does not mean staff
+acceptance, request/task satisfaction or client visibility.
+
+Every upload capability targets a unique no-overwrite object and cannot list/read/delete. The
+provider/gateway must prove streaming byte limits and that replay cannot mutate finalized or
+scanned bytes. If it cannot, finalization seals/copies the exact received bytes to a new immutable
+quarantine locator before validation/scanning; unsupported behavior fails the provider gate.
 
 ## Validation and scanning
 
@@ -52,6 +61,13 @@ downloaded by clients or normal staff until accepted.
   Release 1A.
 - Malware detections isolate the object, deny all normal downloads, preserve bounded forensic
   metadata and trigger the incident path. Content is never copied into logs.
+- Parsers, scanners and metadata converters run as resource-bounded, nonprivileged isolated workers
+  with no default network egress or access to unrelated buckets/objects. Their output is untrusted,
+  bounded input.
+- Every artifact with new bytes—including conversion/OCR/redaction output, generated documents and
+  signed-provider returns—receives a new immutable version/locator, provenance, checksum,
+  content-based MIME/parser validation, scan under a versioned policy and its own promotion before
+  preview/delivery/downstream use. Provider metadata/evidence and predecessor scans are insufficient.
 
 No scanner vendor is selected by this document. A provider decision, data-processing review and
 failure-mode test are required before implementation.
@@ -63,13 +79,17 @@ policies. Keys contain no email, client name, SSN, case title or original filena
 checksum, validated type, bytes, scanner/version, verdict, classification, case/resource binding,
 uploader, timestamps and version lineage.
 
-Replacing a document creates a new immutable version; it does not overwrite history. A current
-pointer may change transactionally after the new version is accepted. Failed uploads and abandoned
-quarantine objects are removed by an idempotent orphan-cleanup job after the approved quarantine
-window.
+Replacing a document creates a new immutable version; it does not overwrite history. Safety,
+promotion, operational review, visibility, current-version pointers and retention/legal hold are
+separate facts. A current pointer may change by compare-and-set only after the applicable criteria.
+Failed uploads and abandoned quarantine objects are removed by an idempotent orphan-cleanup job
+after the approved window. Canonical unresolved policies are `DOC-006`, `DOC-007`, `DOC-010` and
+`DOC-012` in the M011 PRD/activation register.
 
-[NEEDS PRODUCT OWNER DECISION: approve quarantine/orphan retention and client document retention
-periods after legal review.]
+Compatibility and regression tests cover capability replay/no-overwrite, post-finalize mutation,
+provider size-limit bypass, parser/scanner egress and privilege isolation, MIME/polyglot output from
+converters, active signed PDFs, changed bytes across retries and apparently valid provider metadata
+paired with unsafe content.
 
 ## Downloads and signed URLs
 
@@ -79,8 +99,10 @@ documents; Highly Sensitive documents can require an additional explicit grant. 
 Confidential or Highly Sensitive objects emit audit events.
 
 Signed URLs are single-object, read-only and short-lived: five minutes by default and never more
-than fifteen minutes in Release 1. Revocation changes authorization immediately; previously issued
-URLs expire at their bounded lifetime and may be invalidated earlier if the provider supports it.
+than fifteen minutes in Release 1, subject to `DOC-008`. Revocation blocks all new authorization
+immediately; a previously issued provider URL may remain reusable until its bounded expiry unless
+the selected provider/control proves earlier invalidation. The product and audit must not claim
+single use or completed download from authorization issuance alone.
 
 ## Rejection and recovery
 
@@ -88,7 +110,11 @@ Stable rejection reasons include `size_exceeded`, `type_not_allowed`, `content_t
 `malware_detected`, `encrypted_or_password_protected`, `scan_failed`, `upload_expired`,
 `authorization_revoked` and `integrity_mismatch`. Client copy explains the next safe action without
 revealing scanner internals. Staff recovery can retry a scanner, request a new upload or securely
-delete quarantine data; it cannot mark a failed scan clean without a separately audited exception.
+delete quarantine data. No human toggle may convert `scan_failed`, `timed_out`, unknown or other
+non-clean evidence to `clean` or promote it. Recovery may only rescan the exact hash with an
+approved scanner/policy, use a separately controlled scanner that produces valid evidence, replace
+the bytes or delete them. Future risk acceptance cannot falsify the verdict and requires its own
+ADR, Product Owner gate and enhanced security review.
 
 ## Deletion and incidents
 

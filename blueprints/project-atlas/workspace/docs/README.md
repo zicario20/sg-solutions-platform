@@ -35,6 +35,7 @@ Security and recovery authorities:
 - [M008 Client Dashboard Aggregation, Priority and Freshness ADR](adr/012-client-dashboard-aggregation-priority-and-freshness.md)
 - [M009 Client Service Projection, State and Version ADR](adr/013-client-service-projection-state-and-version-boundary.md)
 - [M010 Client Process Status and Public Timeline ADR](adr/014-client-process-status-and-public-timeline-boundary.md)
+- [M011 Document Authority, Quarantine, Version and Delivery ADR](adr/015-document-authority-quarantine-version-and-delivery-boundary.md)
 
 M001 delivery evidence:
 
@@ -129,6 +130,18 @@ M010 architecture candidate:
   is `SECURITY-CLEAR` at documentary risk `0/100`. The candidate is ready only for Product Owner
   architecture review; no Build, route, schema, provider traffic or production behavior is
   authorized.
+
+M011 architecture candidate:
+
+- [M011 Independent Architecture Review](reviews/M011-ARCHITECTURE-REVIEW.md)
+- [M011 Security Architecture Review](reviews/M011-SECURITY-REVIEW.md)
+- [M011 Portal de documentos PRD](modules/m011-document-portal.md)
+- [M011 Portal de documentos Design](superpowers/specs/2026-08-09-m011-document-portal-design.md)
+- [M011 Document Authority, Quarantine, Version and Delivery ADR](adr/015-document-authority-quarantine-version-and-delivery-boundary.md)
+- Independent architecture/accessibility review is approved with zero open findings and Cyber Neo
+  is `SECURITY-CLEAR` at documentary risk `0/100`. The candidate is ready only for Product Owner
+  architecture review; no Build, route, schema/RLS/Storage policy, bucket, provider traffic, real
+  file or production behavior is authorized.
 
 Design specifications live under `superpowers/specs/`. The status in each specification header is
 authoritative: `Draft for Product Owner review` is not approved, while an approved specification

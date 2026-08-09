@@ -90,6 +90,18 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   authorized. Independent architecture review has zero open findings and Cyber Neo is
   security-clear at documentary risk 0/100; the candidate now awaits Product Owner approval or
   revision. M011 may open only from the clean committed M010 worktree.
+- **M011 Portal de documentos:** Product/Architecture documentation is active under Decision 024.
+  The candidate defines one document authority over Postgres metadata/state and approved Supabase
+  private Storage bytes, with bounded upload intents, quarantine, content/parser validation,
+  checksum, malware scan, proven promotion, immutable versions, explicit review/visibility and
+  authorized preview/download. Safety, business review, request satisfaction, visibility and
+  retention/legal hold remain separate. M065 OCR/extraction, M066 generation, M067 signature,
+  channel ingestion and partner sharing stay separately gated. No `GENERATE`, route, schema,
+  RLS/Storage policy, bucket, scanner/provider traffic, real file, merge or deployment is
+  authorized. Independent architecture/accessibility review now has zero open findings and Cyber
+  Neo is security-clear at documentary risk 0/100. Twenty Build/live policies remain explicit
+  `DOC-001`–`DOC-020` Product Owner decisions. M011 awaits Product Owner review, and the authorized
+  sequence stops here; M012 is not opened.
 
 ## Architecture-first activation policy
 

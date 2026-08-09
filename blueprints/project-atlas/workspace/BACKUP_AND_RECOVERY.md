@@ -32,6 +32,14 @@ version IDs/checksums and use provider-supported versioning or an encrypted seco
 approved. A restore reconciles metadata to objects, verifies checksums and never makes quarantined
 or unscanned objects client-visible.
 
+For M011, restoration also reconciles logical document/version lineage, quarantine versus accepted
+tier, safety/scanner evidence, promotion state, client visibility, context links, grants,
+retention/legal hold and tombstone/purge evidence before cutover. An unknown, mismatched,
+quarantined, safety-rejected, malicious or unsupported object remains unavailable even if its bytes
+exist. An operational-review-rejected but safety-clean version retains its approved staff-access,
+retention and evidence rules; it does not become client-visible. Recovery cannot infer a clean scan,
+business acceptance or client visibility from bucket placement.
+
 ## Sanity and Stripe
 
 Export public Sanity datasets on a schedule and verify that exports contain no operational/private

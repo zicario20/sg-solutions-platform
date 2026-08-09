@@ -260,3 +260,25 @@
   21 PRD sections, 16/16 decision-register synchronization, Markdown-only scope and
   `git diff --check`. M010 awaits Product Owner architecture review; no ADR acceptance, Build,
   merge or deployment follows.
+- The Product Owner's sequential M009–M011 instruction advanced to M011 only after the clean audited
+  M010 commit `3439a3c`. Decision 024 authorizes M011 Product/Architecture documentation and
+  read-only independent/security review in its own worktree; no route, schema, RLS/Storage policy,
+  bucket, scanner/OCR/signature provider, real file or product Build was opened.
+- The complete M011 source was normalized into one secure document domain. Bounded upload intents,
+  durable quarantine receipts, immutable versions, content/parser validation, checksum, versioned
+  malware evidence and reconciled promotion precede any separately authorized review or delivery.
+  Safety, promotion, quarantine disposition, operational review, request satisfaction, visibility,
+  lifecycle and legal hold remain independent facts.
+- Proposed ADR 015 preserves approved Supabase private Storage, M007/ADR 004 grants, Postgres/RLS
+  authority and provider abstractions. Context links authorize both sides; Client/Staff DTOs are
+  separate; classification/visibility changes use CAS, atomic effective-ceiling recomputation,
+  authorization epochs and post-commit outbox/audit. Every transformed/generated/provider-returned
+  byte artifact repeats the safety pipeline, and preview never uses the authenticated app origin.
+- M011 review found and closed Admin query/mutation gaps, state/event ambiguity, cross-audience
+  serialization risk, upload/recovery ordering, classification/version derivation, mobile Admin
+  reflow, preview-origin ambiguity, processor-output bypass and transversal ownership drift. Final
+  independent architecture/accessibility review returned zero open findings and Cyber Neo returned
+  documentary risk 0/100.
+- Twenty unresolved M011 policies remain explicit one-to-one `DOC-001`–`DOC-020` Product Owner
+  decisions. The candidate awaits Product Owner documentary review. The authorized sequence stops
+  after M011; no M012 worktree, Build, merge, deployment or provider activation was opened.

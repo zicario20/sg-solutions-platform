@@ -120,3 +120,13 @@
   identity/corrections, Release 1A non-materialization, exact owning-module handoffs and financial
   minimization. Final reviews have zero open findings and Cyber Neo documentary risk is 0/100;
   sixteen Build/live policies remain explicit Product Owner decisions.
+- Added the M011 Portal de documentos PRD, responsive branded Client/Admin design and proposed ADR
+  015. The candidate defines one document authority over Postgres state and approved Supabase
+  private Storage bytes; it adds no route, table, RLS/Storage policy, bucket, provider or real file.
+- Closed M011 architecture/security findings for durable upload ordering, independent safety/
+  review/visibility/disposition axes, immutable versions, audience-specific DTOs, atomic
+  classification/visibility/context transitions, credentialless preview, new-byte revalidation,
+  Admin mobile accessibility, M077/M085 ownership and fail-closed recovery. Final independent
+  review has zero findings and Cyber Neo documentary risk is 0/100.
+- Registered twenty unresolved M011 Build/live policies one-to-one as `DOC-001`–`DOC-020` and
+  stopped the authorized module sequence after M011; no M012 worktree or gate was opened.

@@ -304,3 +304,21 @@ does not approve ADR 014 or unresolved business policy, authorize `GENERATE`, cr
 schema/RLS policy, public-event projection, provider connection, real process data, merge,
 deployment or Operational status. M011 remains unopened until M010 is independently audited,
 validated and committed.
+
+## 2026-08-09 — Decision 024
+
+Decision: authorize Product/Architecture documentation and independent documentary audit for M011
+Portal de documentos in its own worktree based on the independently audited M010 commit. M011 must
+be the single document-domain owner, use approved Supabase private Storage, preserve explicit
+case/document authorization and separate upload safety, operational review, visibility, version
+and retention/hold facts.
+
+Reason: the Product Owner explicitly instructed Codex to complete M009, then M010 and M011 one at a
+time in separate worktrees, audit each module and stop after M011.
+
+Impact: Codex may prepare the M011 PRD, responsive branded UX/UI design, proposed ADR 015, deferred
+decision checklist, authority updates and read-only independent/security reviews. This decision
+does not approve ADR 015 or unresolved business/legal/provider policy, authorize `GENERATE`, create
+a route, schema/RLS/Storage policy, bucket, scanner/OCR/signature provider, real file or document
+record, merge, deployment or Operational status. Work stops after M011 documentary closure unless
+the Product Owner gives a new instruction.

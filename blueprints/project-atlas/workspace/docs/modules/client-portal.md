@@ -14,14 +14,18 @@
   owning-module handoffs.
 - `m010-process-status.md` is the canonical PRD for the read-only detailed process projection,
   process-local next action, version-bound milestones, blockers and governed public timeline.
+- `m011-document-portal.md` is the canonical PRD for document requests, quarantine upload,
+  immutable versions, review/correction, client-visible delivery and retention hooks.
 - This document remains the umbrella for M008–M015 and the shared portal navigation/projection
-  principles. M011–M015 retain their owning PRDs or future dedicated specifications.
+  principles. M012–M015 retain their owning PRDs or future dedicated specifications.
 - Proposed ADR 012 governs the M008 aggregation, priority, freshness and no-store boundary.
 - Proposed ADR 013 governs M009 service/case grants, accepted-definition versions, state synthesis
   and the request-scoped service projection boundary.
 - Proposed ADR 014 governs M010 canonical-state projection, closed source completeness, public-event
   provenance/corrections and final authorization fencing.
-- If this umbrella and a dedicated M008–M010 PRD conflict inside that module's scope, the dedicated
+- Proposed ADR 015 governs M011 document authority, quarantine/promotion, immutable versions,
+  authorized byte delivery and recovery.
+- If this umbrella and a dedicated M008–M011 PRD conflict inside that module's scope, the dedicated
   PRD governs after Product Owner approval; unresolved cross-module policy is escalated rather than
   inferred.
 
@@ -120,15 +124,21 @@ staff notes, hidden fields and raw provider payloads.
   timeline. This umbrella does not create a competing process status or timeline contract.
 - Module commands remain with their exact owners: Task M023, Document/deliverable M011, Messaging
   M012, Scheduling M013, Billing M014 and Signature M067.
+- M011 owns `ClientDocumentQueryService.list|get`, upload/replacement/review/access/disposition
+  commands and typed `ClientDocumentSummaryPort`. Every M008–M010 handoff supplies only an opaque
+  route key and summary; M011 reauthorizes against current context/grants/classification and never
+  trusts the referring projection.
 - `PortalPreferenceService.update(locale, timeZone, notifications, expectedVersion)`.
 - Responses are field-allowlisted portal DTOs with stable 401/404/409/429 and generic 5xx recovery.
 
 ## 12. Events and background jobs
 
-Portal consumes `case.client_projection_changed`, `document.requested|accepted`,
+Portal consumes `case.client_projection_changed`, `document_request.published|satisfied`,
+`document_review.accepted` and `document.client_visible_version_changed`,
 `appointment.confirmed|changed`, `message.created`, `invoice.updated` and `payment.updated`.
 Projection refresh/notification jobs are idempotent and may be replayed from Postgres operational
-state. The portal is not a separate source of truth.
+state. A document appears only when the exact M011 review/visibility/version binding and current
+grant authorize it; no single event is sufficient. The portal is not a separate source of truth.
 
 ## 13. Error states and recovery
 
