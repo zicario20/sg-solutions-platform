@@ -16,6 +16,7 @@ describe("M002 minimized search index", () => {
       "locale",
       "path",
       "reviewedAt",
+      "sourceKind",
       "summary",
       "title",
       "type",

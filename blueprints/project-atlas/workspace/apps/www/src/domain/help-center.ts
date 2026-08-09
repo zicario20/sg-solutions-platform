@@ -41,6 +41,8 @@ export type HelpCategoryId =
   | "contact-support";
 
 export type ContentRisk = "low" | "medium" | "high";
+export type KnowledgeNextAction = "evaluation" | "quote";
+export type KnowledgeSourceKind = "government" | "provider";
 
 export type KnowledgeBlock =
   | { type: "paragraph"; text: string }
@@ -51,6 +53,7 @@ export type KnowledgeBlock =
 export interface KnowledgeSourceReference {
   title: string;
   authority: string;
+  sourceKind: KnowledgeSourceKind;
   url: string;
   retrievedAt: string;
   effectiveDate?: string;
@@ -84,6 +87,8 @@ export interface KnowledgeRecord {
   authorId?: string;
   reviewerId?: string;
   approverId?: string;
+  nextAction: KnowledgeNextAction;
+  requiredForLaunch?: boolean;
 }
 
 export type PublicKnowledgeRecord = Pick<
@@ -110,6 +115,7 @@ export type PublicKnowledgeRecord = Pick<
   | "jurisdiction"
   | "readingMinutes"
   | "publishedAt"
+  | "nextAction"
 >;
 
 export interface HelpContentFilters {

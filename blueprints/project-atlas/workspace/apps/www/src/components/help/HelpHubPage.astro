@@ -2,7 +2,11 @@
 import { HELP_CATEGORIES, HELP_COLLECTIONS, HELP_CONTENT } from "../../content/help-center";
 import type { Locale } from "../../domain/public-site";
 import { listPublishedKnowledge } from "../../lib/help-content";
-import { getHelpCollectionPath, getHelpSearchPath } from "../../lib/help-routes";
+import {
+  getHelpCategoryPath,
+  getHelpCollectionPath,
+  getHelpSearchPath,
+} from "../../lib/help-routes";
 import ActionLink from "../ActionLink.astro";
 import HelpBreadcrumbs from "./HelpBreadcrumbs.astro";
 import HelpHero from "./HelpHero.astro";
@@ -13,6 +17,12 @@ interface Props {
 
 const { locale } = Astro.props;
 const publicRecords = listPublishedKnowledge(HELP_CONTENT, locale, {}, new Date());
+const activeCollections = HELP_COLLECTIONS.filter((entry) =>
+  publicRecords.some((record) => record.type === entry.type),
+);
+const activeCategories = HELP_CATEGORIES.filter((entry) =>
+  publicRecords.some((record) => record.category === entry.id),
+);
 const copy =
   locale === "es"
     ? {
@@ -49,7 +59,7 @@ const copy =
       <h2>{copy.popular}</h2>
     </div>
     <div class="help-collection-grid">
-      {HELP_COLLECTIONS.map((entry) => {
+      {activeCollections.map((entry) => {
         const item = entry[locale];
         return (
           <a class="help-collection-tile" href={getHelpCollectionPath(locale, entry.type)}>
@@ -73,11 +83,11 @@ const copy =
       <h2>{copy.categories}</h2>
     </div>
     <div class="help-category-grid">
-      {HELP_CATEGORIES.map((entry) => {
+      {activeCategories.map((entry) => {
         const item = entry[locale];
         const count = publicRecords.filter((record) => record.category === entry.id).length;
         return (
-          <a href={`${getHelpSearchPath(locale)}?category=${entry.id}`}>
+          <a href={getHelpCategoryPath(locale, entry.id)}>
             <span class="help-category-grid__top"><strong>{item.title}</strong><small>{count}</small></span>
             <span>{item.description}</span>
           </a>

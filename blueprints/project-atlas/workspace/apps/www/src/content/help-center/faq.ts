@@ -1,4 +1,5 @@
 import type { HelpCategoryId, KnowledgeRecord } from "../../domain/help-center";
+import { getStableHelpSlug } from "./route-manifest";
 
 interface FaqSeed {
   key: string;
@@ -164,10 +165,10 @@ const FAQ_SEEDS: FaqSeed[] = [
     "protect-information",
     "documents",
     "¿Cómo protegen mi información?",
-    "SG Solutions aplica acceso por función y expediente, almacenamiento privado y registros de auditoría. La información sensible no debe enviarse por canales públicos o enlaces no verificados.",
+    "Cuando el portal privado esté operativo, aplicará controles aprobados de acceso, almacenamiento y auditoría. Hoy, el sitio público no acepta información sensible; no la envíes por canales públicos o enlaces no verificados.",
     ["seguridad", "privacidad"],
     "How do you protect my information?",
-    "SG Solutions applies role- and case-based access, private storage and audit records. Sensitive information should not be sent through public channels or unverified links.",
+    "When the private portal is operational, it will apply approved access, storage and audit controls. Today, the public website does not accept sensitive information; do not send it through public channels or unverified links.",
     ["security", "privacy"],
   ),
   faq(
@@ -253,13 +254,113 @@ const FAQ_SEEDS: FaqSeed[] = [
   ),
   faq(
     "what-is-tradeline",
-    "credit",
+    "tradelines",
     "¿Qué es una tradeline?",
-    "Es el registro de una cuenta de crédito en un reporte. Los productos de terceros relacionados con tradelines no garantizan un resultado, aprobación o cambio específico.",
+    "Es el registro de una cuenta de crédito en un reporte. Puede corresponder a una cuenta propia o a una relación de usuario autorizado; su presencia no garantiza un resultado, aprobación o cambio específico.",
     ["tradeline", "reporte"],
     "What is a tradeline?",
-    "It is the record of a credit account on a report. Third-party products related to tradelines do not guarantee a particular outcome, approval or change.",
+    "It is the record of a credit account on a report. It may reflect your own account or an authorized-user relationship; its presence does not guarantee a particular outcome, approval or change.",
     ["tradeline", "report"],
+  ),
+  faq(
+    "tradeline-how-work",
+    "tradelines",
+    "¿Cómo funcionan las tradelines de usuario autorizado?",
+    "Cuando el emisor agrega a una persona como usuario autorizado, la cuenta puede aparecer en su reporte de crédito. La forma, el momento y el efecto del reporte dependen del emisor, los burós, el modelo de evaluación y el perfil completo.",
+    ["usuario autorizado", "reporte"],
+    "How do authorized-user tradelines work?",
+    "When an issuer adds someone as an authorized user, the account may appear on that person's credit report. How, when and whether it affects an evaluation depends on the issuer, bureaus, scoring model and complete profile.",
+    ["authorized user", "reporting"],
+  ),
+  faq(
+    "tradeline-authorized-user",
+    "tradelines",
+    "¿Qué significa ser usuario autorizado?",
+    "Un usuario autorizado es una persona añadida a una cuenta por su titular principal. Sus facultades, acceso a una tarjeta, responsabilidad y reporte pueden variar según el emisor; no equivale automáticamente a ser titular o codeudor.",
+    ["usuario autorizado", "titular"],
+    "What does authorized user mean?",
+    "An authorized user is someone added to an account by its primary holder. Card access, authority, liability and reporting can vary by issuer; it does not automatically make the person a primary holder or co-borrower.",
+    ["authorized user", "primary holder"],
+  ),
+  faq(
+    "seasoned-tradeline",
+    "tradelines",
+    "¿Qué es una tradeline con antigüedad?",
+    "Es una cuenta que lleva abierta cierto tiempo. La antigüedad es solo una característica del historial: por sí sola no demuestra que una cuenta sea adecuada ni predice un cambio de score o una aprobación.",
+    ["antigüedad", "historial"],
+    "What is a seasoned tradeline?",
+    "It is an account that has been open for a period of time. Age is only one feature of the history; by itself it does not establish suitability or predict a score change or approval.",
+    ["seasoned", "account age"],
+  ),
+  faq(
+    "tradeline-risk",
+    "tradelines",
+    "¿Una tradeline puede perjudicar mi crédito?",
+    "Puede afectar un perfil de forma distinta a la esperada. Historial de pagos, utilización, antigüedad, estado de la cuenta y datos incorrectos pueden influir; incluso una cuenta positiva no garantiza una mejora.",
+    ["riesgo", "utilización"],
+    "Can a tradeline hurt my credit?",
+    "It can affect a profile differently than expected. Payment history, utilization, account age, status and inaccurate data may matter; even a positive account does not guarantee improvement.",
+    ["risk", "utilization"],
+  ),
+  faq(
+    "tradeline-age-limit",
+    "tradelines",
+    "¿Qué importa más: la antigüedad o el límite?",
+    "No existe una respuesta universal. Antigüedad, límite, utilización, pagos y composición del reporte se evalúan en conjunto, y el peso de cada dato cambia según el perfil y el modelo utilizado.",
+    ["antigüedad", "límite"],
+    "What matters more: account age or credit limit?",
+    "There is no universal answer. Age, limit, utilization, payments and the rest of the report work together, and the weight of each item varies by profile and evaluation model.",
+    ["account age", "credit limit"],
+  ),
+  faq(
+    "tradeline-quantity",
+    "tradelines",
+    "¿Cuántas tradelines necesito?",
+    "No hay una cantidad correcta para todas las personas. Añadir cuentas puede aumentar costo, complejidad y riesgo sin resolver información negativa o inexacta; primero debe revisarse el perfil completo y el objetivo.",
+    ["cantidad", "perfil"],
+    "How many tradelines do I need?",
+    "There is no correct number for everyone. Adding accounts can increase cost, complexity and risk without resolving negative or inaccurate information; the complete profile and goal should be reviewed first.",
+    ["quantity", "profile"],
+  ),
+  faq(
+    "tradeline-bureaus",
+    "tradelines",
+    "¿Una tradeline aparece en los tres burós?",
+    "No debe asumirse. El reporte puede variar por emisor, buró, proveedor y calidad de la transmisión. Antes de cualquier compra deben revisarse por escrito el alcance del proveedor, sus límites y el proceso si una cuenta no aparece.",
+    ["burós", "reporte"],
+    "Will a tradeline appear at all three bureaus?",
+    "Do not assume that it will. Reporting can vary by issuer, bureau, provider and transmission quality. Before any purchase, review the provider's written scope, limits and non-posting process.",
+    ["bureaus", "reporting"],
+  ),
+  faq(
+    "tradeline-freeze-alert",
+    "tradelines",
+    "¿Una alerta de fraude o congelamiento puede afectar el reporte?",
+    "Esos controles pueden impedir o retrasar información nueva. Confirma el estado directamente con cada buró y revisa los términos del proveedor; no retires una protección de seguridad sin comprender el riesgo y la razón.",
+    ["congelamiento", "alerta de fraude"],
+    "Can a fraud alert or credit freeze affect reporting?",
+    "Those controls may block or delay new information. Confirm status directly with each bureau and review provider terms; do not remove a security protection without understanding the reason and risk.",
+    ["credit freeze", "fraud alert"],
+  ),
+  faq(
+    "tradeline-duration",
+    "tradelines",
+    "¿Cuánto tiempo permanece una tradeline en el reporte?",
+    "Depende de la relación de usuario autorizado, el emisor, el proveedor y el buró. Los ciclos o extensiones anunciados por un proveedor son condiciones de ese proveedor, no una regla universal; verifica siempre los términos vigentes.",
+    ["duración", "ciclos"],
+    "How long does a tradeline stay on a credit report?",
+    "It depends on the authorized-user relationship, issuer, provider and bureau. Reporting cycles or extensions advertised by one provider are that provider's terms, not a universal rule; always verify current terms.",
+    ["duration", "reporting cycles"],
+  ),
+  faq(
+    "tradeline-guarantee",
+    "tradelines",
+    "¿Una tradeline garantiza un score o una aprobación?",
+    "No. Una tradeline no permite prometer puntos, tarjetas, préstamos, hipotecas ni otras aprobaciones. Los modelos y proveedores de crédito analizan el reporte completo y aplican sus propios criterios.",
+    ["garantía", "aprobación"],
+    "Does a tradeline guarantee a score or approval?",
+    "No. A tradeline cannot promise points, credit cards, loans, mortgages or other approvals. Scoring models and credit providers evaluate the full report under their own criteria.",
+    ["guarantee", "approval"],
   ),
 
   faq(
@@ -614,23 +715,26 @@ function faq(
 function makeFaqRecord(seed: FaqSeed, locale: "es" | "en"): KnowledgeRecord {
   const copy = seed[locale];
   const isSpanish = locale === "es";
+  const governance = getTimeSensitiveFaqGovernance(seed.key);
+  const tradelineSource = getTradelineFaqSource(seed.key);
+  const providerReviewed = Boolean(tradelineSource);
   return {
     id: `faq-${seed.key}-${locale}`,
     translationGroupId: `faq-${seed.key}`,
     locale,
     type: "faq",
     category: seed.category,
-    slug: seed.key,
+    slug: getStableHelpSlug(`faq-${seed.key}`, locale),
     title: copy.question,
     summary: copy.answer,
     blocks: [{ type: "paragraph", text: copy.answer }],
     keywords: [...copy.keywords, isSpanish ? "SG Solutions" : "SG Solutions"],
-    audiences: ["public", "ai_public"],
-    status: "published",
+    audiences: governance ? ["internal_staff"] : ["public", "ai_public"],
+    status: governance ? "approved" : "published",
     version: 1,
-    riskLevel: "low",
+    riskLevel: governance || providerReviewed ? "medium" : "low",
     reviewedAt: "2026-08-08",
-    nextReviewAt: "2027-02-08",
+    nextReviewAt: governance ? "2026-09-08" : tradelineSource ? "2026-11-08" : "2027-02-08",
     relatedIds: [],
     disclosure: isSpanish
       ? "Información general; una evaluación individual puede cambiar el alcance y los próximos pasos."
@@ -641,5 +745,140 @@ function makeFaqRecord(seed: FaqSeed, locale: "es" | "en"): KnowledgeRecord {
       : `General guidance from SG Solutions: ${copy.answer}`,
     readingMinutes: 1,
     publishedAt: "2026-08-08",
+    sources: governance?.sources ?? tradelineSource,
+    jurisdiction: governance?.jurisdiction ?? (tradelineSource ? "United States" : undefined),
+    authorId: providerReviewed ? "codex-content-author" : undefined,
+    reviewerId: providerReviewed ? "codex-architecture-review" : undefined,
+    approverId: providerReviewed ? "product-owner-decision-015" : undefined,
+    nextAction: "evaluation",
   };
+}
+
+function getTimeSensitiveFaqGovernance(
+  key: string,
+): { jurisdiction: string; sources: KnowledgeRecord["sources"] } | undefined {
+  const governance: Record<string, { jurisdiction: string; sources: KnowledgeRecord["sources"] }> =
+    {
+      "what-is-sba": {
+        jurisdiction: "United States",
+        sources: [
+          {
+            title: "About SBA",
+            authority: "U.S. Small Business Administration",
+            sourceKind: "government",
+            url: "https://www.sba.gov/about-sba",
+            retrievedAt: "2026-08-08",
+          },
+        ],
+      },
+      "usda-direct": {
+        jurisdiction: "United States",
+        sources: [
+          {
+            title: "Single Family Housing Direct Home Loans",
+            authority: "USDA Rural Development",
+            sourceKind: "government",
+            url: "https://www.rd.usda.gov/programs-services/single-family-housing-programs/direct-home-loans",
+            retrievedAt: "2026-08-08",
+          },
+        ],
+      },
+      "usda-guaranteed": {
+        jurisdiction: "United States",
+        sources: [
+          {
+            title: "Single Family Housing Programs",
+            authority: "USDA Rural Development",
+            sourceKind: "government",
+            url: "https://www.rd.usda.gov/programs-services/single-family-housing-programs",
+            retrievedAt: "2026-08-08",
+          },
+        ],
+      },
+      "fha-difference": {
+        jurisdiction: "United States",
+        sources: [
+          {
+            title: "FHA Single Family Housing",
+            authority: "U.S. Department of Housing and Urban Development",
+            sourceKind: "government",
+            url: "https://www.hud.gov/helping-americans/Single-Family-Housing",
+            retrievedAt: "2026-08-08",
+          },
+        ],
+      },
+      "rural-eligibility": {
+        jurisdiction: "United States",
+        sources: [
+          {
+            title: "Single Family Housing Programs",
+            authority: "USDA Rural Development",
+            sourceKind: "government",
+            url: "https://www.rd.usda.gov/programs-services/single-family-housing-programs",
+            retrievedAt: "2026-08-08",
+          },
+        ],
+      },
+    };
+  return governance[key];
+}
+
+function getTradelineFaqSource(key: string): KnowledgeRecord["sources"] | undefined {
+  const paths: Record<string, { title: string; path: string }> = {
+    "what-is-tradeline": {
+      title: "Tradeline frequently asked questions",
+      path: "/faq/",
+    },
+    "tradeline-how-work": {
+      title: "How do tradelines work?",
+      path: "/how-do-tradelines-work/",
+    },
+    "tradeline-authorized-user": {
+      title: "How do tradelines work?",
+      path: "/how-do-tradelines-work/",
+    },
+    "seasoned-tradeline": {
+      title: "What is a seasoned tradeline?",
+      path: "/faq-2/seasoned-tradelines-faq/",
+    },
+    "tradeline-risk": {
+      title: "Can tradelines hurt my credit?",
+      path: "/faq-2/can-tradelines-hurt-my-credit/",
+    },
+    "tradeline-age-limit": {
+      title: "How do tradelines work?",
+      path: "/how-do-tradelines-work/",
+    },
+    "tradeline-quantity": {
+      title: "Buying tradelines: how many do I need?",
+      path: "/how-many-tradelines/",
+    },
+    "tradeline-bureaus": {
+      title: "How many bureaus do tradelines report to?",
+      path: "/how-many-bureaus-do-you-guarantee-it-will-report-to/",
+    },
+    "tradeline-freeze-alert": {
+      title: "Fraud alerts, credit freezes and tradeline reporting",
+      path: "/can-i-still-add-tradelines-if-I-have-fraud-alerts-or-credit-freezes-on-my-credit-file/",
+    },
+    "tradeline-duration": {
+      title: "How long do tradelines stay on a credit report?",
+      path: "/how-long-do-tradelines-stay-on-your-credit/",
+    },
+    "tradeline-guarantee": {
+      title: "Tradeline frequently asked questions",
+      path: "/faq/",
+    },
+  };
+  const source = paths[key];
+  if (!source) return undefined;
+  return [
+    {
+      title: source.title,
+      authority: "Tradeline Supply Company, LLC",
+      sourceKind: "provider",
+      url: `https://tradelinesupply.com${source.path}`,
+      retrievedAt: "2026-08-08",
+    },
+  ];
 }

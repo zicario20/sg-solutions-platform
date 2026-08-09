@@ -4,13 +4,16 @@ import { HELP_COLLECTIONS, HELP_CONTENT } from "../../../../content/help-center"
 import type { KnowledgeType, PublicKnowledgeRecord } from "../../../../domain/help-center";
 import HelpLayout from "../../../../layouts/HelpLayout.astro";
 import { listPublishedKnowledge } from "../../../../lib/help-content";
-import { createHelpPageShell } from "../../../../lib/help-pages";
+import { createHelpPageShell, getHelpCollectionEntries } from "../../../../lib/help-pages";
 import { getHelpCollectionPath } from "../../../../lib/help-routes";
-import { createFaqPageStructuredData } from "../../../../lib/help-seo";
+import {
+  createFaqPageStructuredData,
+  createHelpCollectionStructuredData,
+} from "../../../../lib/help-seo";
 
 export function getStaticPaths() {
-  return HELP_COLLECTIONS.map((entry) => ({
-    params: { collection: entry.en.pathSegment },
+  return getHelpCollectionEntries(HELP_CONTENT, "en", new Date()).map((entry) => ({
+    params: { collection: entry.path.split("/").filter(Boolean).at(-1) },
     props: { type: entry.type },
   }));
 }
@@ -39,14 +42,14 @@ const page = createHelpPageShell({
 const structuredData =
   type === "faq"
     ? createFaqPageStructuredData(records, "https://www.sgsllc.com", path)
-    : {
-        "@context": "https://schema.org",
-        "@type": "CollectionPage",
+    : createHelpCollectionStructuredData({
+        locale: "en",
         name: definition.en.title,
         description: definition.en.description,
-        url: new URL(path, "https://www.sgsllc.com").toString(),
-        inLanguage: "en",
-      };
+        origin: "https://www.sgsllc.com",
+        path,
+        parent: { name: "Help Center", path: "/en/resources/" },
+      });
 ---
 
 <HelpLayout page={page} alternatePath={getHelpCollectionPath("es", type)} structuredData={structuredData}>

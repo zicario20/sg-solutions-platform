@@ -1,5 +1,7 @@
+import { getCategoryCopy } from "../content/help-center/categories";
 import type { HelpCategoryId, HelpContentFilters, KnowledgeType } from "../domain/help-center";
 import type { Locale } from "../domain/public-site";
+import { getProviderDisclosureCopy } from "../lib/help-provider";
 import {
   type PublicSearchDocument,
   type RankedSearchDocument,
@@ -126,7 +128,8 @@ function isSearchDocument(value: unknown): value is PublicSearchDocument {
     isSafeHelpPath(candidate.path, candidate.locale) &&
     Array.isArray(candidate.keywords) &&
     candidate.keywords.every((keyword) => typeof keyword === "string") &&
-    typeof candidate.reviewedAt === "string"
+    typeof candidate.reviewedAt === "string" &&
+    (candidate.sourceKind === null || candidate.sourceKind === "provider")
   );
 }
 
@@ -146,15 +149,28 @@ function renderResults(target: HTMLElement, matches: RankedSearchDocument[], loc
     article.className = "help-search-result";
     const meta = document.createElement("p");
     meta.className = "help-card__meta";
-    meta.textContent = `${typeLabel(match.type, locale)} · ${match.category.replaceAll("-", " ")}`;
+    meta.textContent = `${typeLabel(match.type, locale)} · ${getCategoryCopy(locale, match.category).title}`;
     const heading = document.createElement("h2");
     const link = document.createElement("a");
     link.href = match.path;
     link.textContent = match.title;
     heading.append(link);
     const summary = document.createElement("p");
+    summary.className = "help-search-result__summary";
     summary.textContent = match.summary;
     article.append(meta, heading, summary);
+    if (match.sourceKind === "provider") {
+      const disclosureCopy = getProviderDisclosureCopy(locale);
+      const disclosure = document.createElement("aside");
+      disclosure.className = "help-provider-disclosure";
+      disclosure.dataset.providerDisclosure = "";
+      const label = document.createElement("strong");
+      label.textContent = disclosureCopy.label;
+      const notice = document.createElement("p");
+      notice.textContent = disclosureCopy.notice;
+      disclosure.append(label, notice);
+      article.append(disclosure);
+    }
     fragment.append(article);
   }
   target.append(fragment);

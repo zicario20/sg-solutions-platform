@@ -1,0 +1,55 @@
+---
+import HelpCategoryPage from "../../../../components/help/HelpCategoryPage.astro";
+import { HELP_CATEGORIES, HELP_CONTENT } from "../../../../content/help-center";
+import type { HelpCategoryId, PublicKnowledgeRecord } from "../../../../domain/help-center";
+import HelpLayout from "../../../../layouts/HelpLayout.astro";
+import { listPublishedKnowledge } from "../../../../lib/help-content";
+import { createHelpPageShell, getHelpCategoryEntries } from "../../../../lib/help-pages";
+import { getHelpCategoryPath } from "../../../../lib/help-routes";
+import { createHelpCollectionStructuredData } from "../../../../lib/help-seo";
+
+export function getStaticPaths() {
+  return getHelpCategoryEntries(HELP_CONTENT, "en", new Date()).map((entry) => ({
+    params: { category: entry.path.split("/").filter(Boolean).at(-1) },
+    props: { category: entry.category },
+  }));
+}
+
+interface Props {
+  category: HelpCategoryId;
+}
+const { category } = Astro.props;
+const definition = HELP_CATEGORIES.find((entry) => entry.id === category);
+if (!definition) throw new Error(`Unknown help category: ${category}`);
+const records: PublicKnowledgeRecord[] = listPublishedKnowledge(
+  HELP_CONTENT,
+  "en",
+  { category },
+  new Date(),
+);
+const path = getHelpCategoryPath("en", category);
+const page = createHelpPageShell({
+  locale: "en",
+  path,
+  title: `${definition.en.title} | SG Solutions`,
+  description: definition.en.description,
+  heading: definition.en.title,
+  summary: definition.en.description,
+});
+const structuredData = createHelpCollectionStructuredData({
+  locale: "en",
+  name: definition.en.title,
+  description: definition.en.description,
+  origin: "https://www.sgsllc.com",
+  path,
+  parent: { name: "Help Center", path: "/en/resources/" },
+});
+---
+
+<HelpLayout
+  page={page}
+  alternatePath={getHelpCategoryPath("es", category)}
+  structuredData={structuredData}
+>
+  <HelpCategoryPage locale="en" category={category} records={records} />
+</HelpLayout>

@@ -42,3 +42,18 @@
   typed bilingual chrome, localized 404 handling, 44-by-44 interaction targets and factual Schema.
 - Kept Vercel configuration on its high-level routing properties; the SSG `404.html` uses a small
   same-origin progressive enhancement to display English recovery copy on unknown `/en/` paths.
+- Implemented the bounded M002 bilingual Help Center with 77 public records per locale, static
+  search, five populated collection types, ten populated categories, 154 detail pages, stable route
+  manifests, bilingual alternates, SEO data, accessible feedback states and a constrained future
+  Sanity boundary.
+- Added eleven neutral Tradelines FAQ pairs from the Product Owner-selected Tradeline Supply source.
+  References are exact-host, category-scoped external-provider sources with no implied partnership,
+  endorsement or guarantee; medium-risk records fail closed after their review date.
+- Added M002 unit/contract/browser regression coverage, UX/accessibility and security reviews,
+  activation/rollback runbook and completion report. Local validation passes; M002 is not deployed
+  or Operational and no later module was authorized.
+- Replaced Playwright's nested Windows preview-process lifecycle with a bounded repository runner
+  that owns one Astro process, disables telemetry, verifies readiness and closes that exact process
+  after desktop/mobile browser validation.
+- Preserved the Decision 015 external-provider boundary on every aggregate surface that displays
+  Tradelines answers and aligned FAQ structured data with the same visible bilingual disclosure.

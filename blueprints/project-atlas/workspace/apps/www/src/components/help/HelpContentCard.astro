@@ -2,6 +2,7 @@
 import { getCategoryCopy, getCollectionCopy } from "../../content/help-center/categories";
 import type { PublicKnowledgeRecord } from "../../domain/help-center";
 import { getHelpCollectionPath, getHelpDetailPath } from "../../lib/help-routes";
+import ProviderDisclosure from "./ProviderDisclosure.astro";
 
 interface Props {
   record: PublicKnowledgeRecord;
@@ -24,6 +25,7 @@ const reviewed = new Intl.DateTimeFormat(record.locale === "es" ? "es-US" : "en-
   </p>
   <h2><a href={getHelpDetailPath(record.locale, record.type, record.slug)}>{record.title}</a></h2>
   <p>{record.summary}</p>
+  <ProviderDisclosure record={record} />
   <p class="help-card__review">
     {record.locale === "es" ? `Revisado ${reviewed}` : `Reviewed ${reviewed}`}
     {record.readingMinutes ? ` · ${record.readingMinutes} min` : ""}

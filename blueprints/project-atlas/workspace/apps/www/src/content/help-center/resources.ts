@@ -6,6 +6,7 @@ import type {
   KnowledgeSourceReference,
   KnowledgeType,
 } from "../../domain/help-center";
+import { getStableHelpSlug } from "./route-manifest";
 
 interface ResourceCopy {
   title: string;
@@ -332,12 +333,14 @@ const RESOURCE_SEEDS: ResourceSeed[] = [
       {
         title: "Single Family Housing Direct Home Loans",
         authority: "USDA Rural Development",
+        sourceKind: "government",
         url: "https://www.rd.usda.gov/programs-services/single-family-housing-programs/single-family-housing-direct-home-loans",
         retrievedAt: "2026-08-08",
       },
       {
         title: "Single Family Housing Guaranteed Loan Program",
         authority: "USDA Rural Development",
+        sourceKind: "government",
         url: "https://www.rd.usda.gov/programs-services/single-family-housing-programs/single-family-housing-guaranteed-loan-program",
         retrievedAt: "2026-08-08",
       },
@@ -418,13 +421,13 @@ function makeResourceRecord(seed: ResourceSeed, locale: "es" | "en"): KnowledgeR
     locale,
     type: seed.type,
     category: seed.category,
-    slug: seed.key,
+    slug: getStableHelpSlug(`resource-${seed.key}`, locale),
     title: copy.title,
     summary: copy.summary,
     blocks: copy.blocks,
     keywords: copy.keywords,
-    audiences: ["public", "ai_public"],
-    status: "published",
+    audiences: seed.riskLevel === "medium" ? ["internal_staff"] : ["public", "ai_public"],
+    status: seed.riskLevel === "medium" ? "approved" : "published",
     version: 1,
     riskLevel: seed.riskLevel ?? "low",
     reviewedAt: "2026-08-08",
@@ -437,6 +440,7 @@ function makeResourceRecord(seed: ResourceSeed, locale: "es" | "en"): KnowledgeR
     jurisdiction: seed.jurisdiction,
     readingMinutes: estimateReadingMinutes(copy.blocks),
     publishedAt: "2026-08-08",
+    nextAction: "evaluation",
   };
 }
 

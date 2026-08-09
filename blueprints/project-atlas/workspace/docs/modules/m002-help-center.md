@@ -5,7 +5,7 @@
 - Surface: Public
 - Domain: Growth / Public Knowledge
 - Release: R1.2 / Release 1A
-- Status: Build authorized under Decision 014
+- Status: PO Acceptance — implementation, verification and independent review complete
 - Last updated: 2026-08-08
 
 ## 1. Purpose
@@ -33,6 +33,7 @@ between education and individualized professional advice explicit.
 - SEO metadata, canonical/hreflang, Breadcrumb/Article/FAQ structured data where valid.
 - Accessible helpful/not-helpful interface and minimized event contract.
 - Sanity-compatible public projection and activation boundary.
+- Server-rendered category routes that remain complete without JavaScript.
 - Tests, security review, documentation and Phase Completion Report.
 
 ## 4. Explicit out of scope
@@ -137,6 +138,14 @@ verified static artifact.
 
 - Sanitize/escape all content and render only allowlisted blocks; no arbitrary HTML.
 - Validate outbound URLs and use safe link relationships.
+- Accept citations only from an explicit HTTPS source policy. Government roots may allow their
+  official subdomains; commercial providers require an approved category and exact host. Reject
+  credentials, custom ports, lookalikes, unapproved subdomains and unbounded source lists.
+- Classify every source as `government` or `provider`; provider-derived answers carry the localized
+  third-party disclosure on detail, FAQ, category/card and search surfaces, remain aligned with FAQ
+  structured data and never render under “official sources.”
+- Reject malformed/oversized Sanity documents with strict enums, natural-slug syntax, bounded
+  strings/arrays/blocks, maximum nesting depth and maximum node count.
 - Never expose drafts, internal audiences, tokens, preview parameters or Sanity write credentials.
 - Static search indexes include only minimal public projection fields.
 - Search query text stays client-side and is excluded from URL-independent telemetry payloads.
@@ -212,3 +221,30 @@ states and human publication authority.
 
 These decisions block specific production content/provider activation, not implementation and local
 verification of the bounded M002 public module.
+
+## Implementation record
+
+The repository source contains 83 records per locale: 67 FAQ records and 16 resources. The public
+projection currently emits 77 per locale: 62 FAQ records and 15 resources. Five time-sensitive FAQ
+pairs (`what-is-sba`, `usda-direct`, `usda-guaranteed`, `fha-difference` and
+`rural-eligibility`) plus the USDA program-navigation resource pair remain `approved` for internal
+review and are absent from routes, search indexes, alternates and the sitemap until the Product
+Owner decision above is recorded.
+
+Published detail and category slugs live in an explicit route manifest; editing visible copy cannot
+rename a URL implicitly. Ten populated categories and five populated collection types have
+server-rendered route families; empty definitions are not linked, generated or indexed. The public
+search remains an optional client-side enhancement. Every public detail carries an explicit
+evaluation/quote next-action value, and the build registry fails on duplicate routes, invalid
+relationships, incomplete bilingual pairs, invalid dates/sources and any required launch record
+that is stale or non-public.
+
+The Tradelines category contains eleven neutral FAQ records per locale. Their links point to the
+Product Owner-selected Tradeline Supply FAQ/source pages for provenance, but the copy does not claim
+an active partnership, adopt provider terms as universal rules or promise reporting, score changes,
+funding or approvals. The exact host is permitted only for the Tradelines category; references are
+labeled as external-provider sources and carry a no-partnership/no-endorsement/no-guarantee
+disclosure everywhere their answer or summary is presented. The minimized search projection exposes
+only `provider` or `null`, not source names, URLs or editorial metadata. FAQ structured answers append
+the same visible disclosure. All eleven pairs are medium-risk and leave the public projection after
+2026-11-08 unless reviewed.

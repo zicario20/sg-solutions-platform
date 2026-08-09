@@ -1,0 +1,33 @@
+---
+import { getCategoryCopy } from "../../content/help-center/categories";
+import type { HelpCategoryId, PublicKnowledgeRecord } from "../../domain/help-center";
+import type { Locale } from "../../domain/public-site";
+import { getHelpHubPath } from "../../lib/help-routes";
+import HelpBreadcrumbs from "./HelpBreadcrumbs.astro";
+import HelpContentCard from "./HelpContentCard.astro";
+import HelpHero from "./HelpHero.astro";
+
+interface Props {
+  locale: Locale;
+  category: HelpCategoryId;
+  records: PublicKnowledgeRecord[];
+}
+
+const { locale, category, records } = Astro.props;
+const copy = getCategoryCopy(locale, category);
+const centerLabel = locale === "es" ? "Centro de ayuda" : "Help Center";
+---
+
+<HelpBreadcrumbs
+  locale={locale}
+  items={[{ label: centerLabel, href: getHelpHubPath(locale) }, { label: copy.title }]}
+/>
+<HelpHero locale={locale} heading={copy.title} summary={copy.description} compact />
+
+<section class="help-section help-section--listing">
+  <div class="site-container">
+    <div class="help-card-grid">
+      {records.map((record) => <HelpContentCard record={record} />)}
+    </div>
+  </div>
+</section>

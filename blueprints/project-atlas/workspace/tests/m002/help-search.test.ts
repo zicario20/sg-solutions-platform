@@ -22,12 +22,12 @@ describe("M002 public search", () => {
     expect(withoutAccent[0]?.id).toBe("faq-what-is-utilization-es");
   });
 
-  it("expands the approved rural zero-down phrase without claiming eligibility", () => {
+  it("routes a rural zero-down query to safe guidance while gated program copy stays private", () => {
     const index = buildSearchIndex(HELP_CONTENT, "es", at);
     const results = searchHelp(index, "préstamo rural cero inicial", {});
 
     expect(results.slice(0, 3).map((result) => result.category)).toContain("home-buying");
-    expect(results.some((result) => result.title.includes("USDA"))).toBe(true);
+    expect(results.some((result) => result.title.includes("USDA"))).toBe(false);
   });
 
   it("uses deterministic title-first ranking and filters", () => {
@@ -43,5 +43,16 @@ describe("M002 public search", () => {
     const index = buildSearchIndex(HELP_CONTENT, "en", at);
     expect(searchHelp(index, "", {})).toEqual([]);
     expect(searchHelp(index, "quantum banana telescope", {})).toEqual([]);
+  });
+
+  it("marks only external-provider records in the minimized public index", () => {
+    const index = buildSearchIndex(HELP_CONTENT, "en", at);
+
+    expect(index.find((document) => document.id === "faq-what-is-tradeline-en")).toMatchObject({
+      sourceKind: "provider",
+    });
+    expect(index.find((document) => document.id === "faq-what-is-dti-en")).toMatchObject({
+      sourceKind: null,
+    });
   });
 });

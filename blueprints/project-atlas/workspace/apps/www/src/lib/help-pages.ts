@@ -1,8 +1,18 @@
-import { HELP_COLLECTIONS } from "../content/help-center";
-import type { KnowledgeRecord, KnowledgeType, PublicKnowledgeRecord } from "../domain/help-center";
+import { HELP_CATEGORIES, HELP_COLLECTIONS } from "../content/help-center";
+import type {
+  HelpCategoryId,
+  KnowledgeRecord,
+  KnowledgeType,
+  PublicKnowledgeRecord,
+} from "../domain/help-center";
 import type { Locale, PublicPage } from "../domain/public-site";
 import { listPublishedKnowledge } from "./help-content";
-import { getHelpCollectionPath, getHelpDetailPath, getHelpHubPath } from "./help-routes";
+import {
+  getHelpCategoryPath,
+  getHelpCollectionPath,
+  getHelpDetailPath,
+  getHelpHubPath,
+} from "./help-routes";
 
 export interface HelpPageShellInput {
   locale: Locale;
@@ -20,6 +30,12 @@ export interface HelpDetailEntry {
 
 export interface HelpCollectionEntry {
   type: KnowledgeType;
+  path: string;
+  records: PublicKnowledgeRecord[];
+}
+
+export interface HelpCategoryEntry {
+  category: HelpCategoryId;
   path: string;
   records: PublicKnowledgeRecord[];
 }
@@ -62,7 +78,19 @@ export function getHelpCollectionEntries(
     type,
     path: getHelpCollectionPath(locale, type),
     records: listPublishedKnowledge(records, locale, { type }, at),
-  }));
+  })).filter((entry) => entry.records.length > 0);
+}
+
+export function getHelpCategoryEntries(
+  records: KnowledgeRecord[],
+  locale: Locale,
+  at: Date,
+): HelpCategoryEntry[] {
+  return HELP_CATEGORIES.map(({ id }) => ({
+    category: id,
+    path: getHelpCategoryPath(locale, id),
+    records: listPublishedKnowledge(records, locale, { category: id }, at),
+  })).filter((entry) => entry.records.length > 0);
 }
 
 export function getHelpSitemapPaths(records: KnowledgeRecord[], at: Date): string[] {
@@ -71,6 +99,9 @@ export function getHelpSitemapPaths(records: KnowledgeRecord[], at: Date): strin
     paths.add(getHelpHubPath(locale));
     for (const collection of getHelpCollectionEntries(records, locale, at)) {
       paths.add(collection.path);
+    }
+    for (const category of getHelpCategoryEntries(records, locale, at)) {
+      paths.add(category.path);
     }
     for (const detail of getHelpDetailEntries(records, locale, at)) {
       paths.add(detail.path);

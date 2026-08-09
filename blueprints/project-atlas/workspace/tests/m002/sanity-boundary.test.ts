@@ -28,6 +28,7 @@ const document = {
   seoDescription: "Public summary from SG Solutions.",
   readingMinutes: 1,
   publishedAt: "2026-08-08",
+  nextAction: "evaluation",
 };
 
 describe("M002 Sanity public-content boundary", () => {

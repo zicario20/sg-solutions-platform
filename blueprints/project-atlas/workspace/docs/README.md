@@ -33,6 +33,13 @@ M001 delivery evidence:
 - [Public Website Runbook](runbooks/M001-public-website.md)
 - [M001 Phase Completion Report](phases/PCR-M001-public-website.md)
 
+M002 delivery evidence:
+
+- [M002 UX and Accessibility Review](reviews/M002-UX-ACCESSIBILITY-REVIEW.md)
+- [M002 Security Review](reviews/M002-SECURITY-REVIEW.md)
+- [M002 Help Center Runbook](runbooks/M002-help-center.md)
+- [M002 Phase Completion Report](phases/M002_PHASE_COMPLETION_REPORT.md)
+
 Approved design specifications live under `superpowers/specs/`. A specification documents an approved design; it is not implementation authorization.
 
 The active bundle entry point is [blueprint.md](../../blueprint.md). Superseded E1–E3 planning lives under `../../archive/pre-roadmap-2026-08-02/` and is non-executable. There is no active task queue during Phase 0 documentary review.

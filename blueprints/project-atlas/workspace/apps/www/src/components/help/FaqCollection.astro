@@ -1,6 +1,7 @@
 ---
 import type { PublicKnowledgeRecord } from "../../domain/help-center";
 import KnowledgeBlocks from "./KnowledgeBlocks.astro";
+import ProviderDisclosure from "./ProviderDisclosure.astro";
 
 interface Props {
   records: PublicKnowledgeRecord[];
@@ -17,6 +18,7 @@ const { records } = Astro.props;
         <span aria-hidden="true">+</span>
       </summary>
       <KnowledgeBlocks blocks={record.blocks} />
+      <ProviderDisclosure record={record} />
     </details>
   ))}
 </div>

@@ -12,12 +12,6 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  webServer: {
-    command: "corepack pnpm --filter @atlas/www preview --host 127.0.0.1 --port 4321",
-    env: { ASTRO_TELEMETRY_DISABLED: "1" },
-    reuseExistingServer: !process.env.CI,
-    url: "http://127.0.0.1:4321/health/",
-  },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
     { name: "mobile", use: { ...devices["Pixel 7"] } },

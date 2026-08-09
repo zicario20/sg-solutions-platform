@@ -11,12 +11,14 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
 ## Active authorized delivery
 
 - **M001 Public Website:** `PO Acceptance`; implementation and local verification are complete.
-- **M002 Help Center:** `In Progress` under Decision 014.
+- **M002 Help Center:** `PO Acceptance`; implementation, full local verification and independent
+  review are complete under Decisions 014–015; merge/deployment remain Product Owner decisions.
 - Scope: integrated bilingual public Help Center, governed content projection, static search,
   categories/types, freshness, SEO/accessibility, feedback event boundary and tests.
 - Excluded: private knowledge, RAG/AI answers, chat/channel behavior, authenticated portal context,
   live CMS credentials and unapproved analytics transport.
-- Exit: M002 quality gate, independent review, Cyber Neo review, PCR and Product Owner acceptance.
+- Exit: Product Owner acceptance and merge/deployment decision. No next module is authorized by this
+  completion.
 
 ## Phase 0 — Blueprint & Design
 

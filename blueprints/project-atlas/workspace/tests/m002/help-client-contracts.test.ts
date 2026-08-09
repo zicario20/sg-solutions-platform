@@ -14,16 +14,17 @@ const index: PublicSearchDocument[] = [
     category: "home-buying",
     title: "¿Qué es DTI?",
     summary: "Una explicación general.",
-    path: "/recursos/preguntas-frecuentes/what-is-dti/",
+    path: "/recursos/preguntas-frecuentes/que-es-dti/",
     keywords: ["deuda", "vivienda"],
     reviewedAt: "2026-08-08",
+    sourceKind: null,
   },
 ];
 
 describe("M002 browser contracts", () => {
   it("searches the already-downloaded public index without creating a network request", () => {
     expect(searchPublicHelpDocuments(index, "dti", {})).toMatchObject([
-      { id: "faq-dti-es", path: "/recursos/preguntas-frecuentes/what-is-dti/" },
+      { id: "faq-dti-es", path: "/recursos/preguntas-frecuentes/que-es-dti/" },
     ]);
   });
 

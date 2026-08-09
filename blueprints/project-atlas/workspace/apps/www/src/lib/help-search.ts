@@ -7,6 +7,7 @@ import type {
 } from "../domain/help-center";
 import type { Locale } from "../domain/public-site";
 import { listPublishedKnowledge } from "./help-content";
+import { hasExternalProviderSource } from "./help-provider";
 
 export interface PublicSearchDocument {
   id: string;
@@ -18,6 +19,7 @@ export interface PublicSearchDocument {
   path: string;
   keywords: string[];
   reviewedAt: string;
+  sourceKind: "provider" | null;
 }
 
 export interface RankedSearchDocument extends PublicSearchDocument {
@@ -26,7 +28,14 @@ export interface RankedSearchDocument extends PublicSearchDocument {
 
 const QUERY_EXPANSIONS: Record<Locale, Record<string, string[]>> = {
   es: {
-    "prestamo rural cero inicial": ["usda", "direct", "guaranteed", "rural", "vivienda"],
+    "prestamo rural cero inicial": [
+      "usda",
+      "direct",
+      "guaranteed",
+      "rural",
+      "vivienda",
+      "home buying",
+    ],
     "comprar casa": ["vivienda", "hipoteca", "home buying"],
     impuestos: ["taxes", "w-2", "1099"],
   },
@@ -62,6 +71,7 @@ export function buildSearchIndex(
     path: createSearchDocumentPath(record.locale, record.type, record.slug),
     keywords: record.keywords,
     reviewedAt: record.reviewedAt,
+    sourceKind: hasExternalProviderSource(record) ? "provider" : null,
   }));
 }
 

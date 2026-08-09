@@ -4,12 +4,14 @@ import {
   HELP_COLLECTIONS,
   HELP_CONTENT,
 } from "../../apps/www/src/content/help-center";
+import { listPublishedKnowledge } from "../../apps/www/src/lib/help-content";
 
 const requiredFaqCounts = {
   "getting-started": 7,
   payments: 6,
   documents: 5,
-  credit: 7,
+  credit: 6,
+  tradelines: 11,
   taxes: 6,
   "business-formation": 7,
   "business-funding": 6,
@@ -18,10 +20,10 @@ const requiredFaqCounts = {
 } as const;
 
 describe("M002 bilingual launch inventory", () => {
-  it("publishes the complete 57-question FAQ inventory in each locale", () => {
+  it("publishes the complete 67-question FAQ inventory in each locale", () => {
     for (const locale of ["es", "en"] as const) {
       const faqs = HELP_CONTENT.filter((item) => item.locale === locale && item.type === "faq");
-      expect(faqs).toHaveLength(57);
+      expect(faqs).toHaveLength(67);
       for (const [category, count] of Object.entries(requiredFaqCounts)) {
         expect(faqs.filter((item) => item.category === category)).toHaveLength(count);
       }
@@ -30,7 +32,7 @@ describe("M002 bilingual launch inventory", () => {
 
   it("pairs every launch record with exactly one natural-language translation", () => {
     const groups = Map.groupBy(HELP_CONTENT, (item) => item.translationGroupId);
-    expect(groups.size).toBeGreaterThanOrEqual(73);
+    expect(groups.size).toBeGreaterThanOrEqual(83);
 
     for (const records of groups.values()) {
       expect(records).toHaveLength(2);
@@ -38,6 +40,18 @@ describe("M002 bilingual launch inventory", () => {
       expect(new Set(records.map((item) => item.type)).size).toBe(1);
       expect(new Set(records.map((item) => item.category)).size).toBe(1);
     }
+  });
+
+  it("uses distinct natural localized slugs instead of implementation keys", () => {
+    const spanishGuide = HELP_CONTENT.find((item) => item.id === "resource-prepare-evaluation-es");
+    const englishGuide = HELP_CONTENT.find((item) => item.id === "resource-prepare-evaluation-en");
+    const spanishFaq = HELP_CONTENT.find((item) => item.id === "faq-what-is-dti-es");
+    const englishFaq = HELP_CONTENT.find((item) => item.id === "faq-what-is-dti-en");
+
+    expect(spanishGuide?.slug).toBe("como-prepararte-para-una-evaluacion");
+    expect(englishGuide?.slug).toBe("how-to-prepare-for-an-evaluation");
+    expect(spanishFaq?.slug).toBe("que-es-dti");
+    expect(englishFaq?.slug).toBe("what-is-dti");
   });
 
   it("covers every approved public category and content type in both languages", () => {
@@ -82,6 +96,75 @@ describe("M002 bilingual launch inventory", () => {
       expect(item.nextReviewAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(item.sources?.length).toBeGreaterThan(0);
       expect(item.sources?.every((source) => source.url.startsWith("https://"))).toBe(true);
+    }
+  });
+
+  it("keeps unresolved time-sensitive program FAQ outside the public projection", () => {
+    const gatedKeys = [
+      "what-is-sba",
+      "usda-direct",
+      "usda-guaranteed",
+      "fha-difference",
+      "rural-eligibility",
+    ];
+    const gated = HELP_CONTENT.filter((item) =>
+      gatedKeys.some((key) => item.id === `faq-${key}-${item.locale}`),
+    );
+    expect(gated).toHaveLength(gatedKeys.length * 2);
+    expect(gated.every((item) => item.status === "approved")).toBe(true);
+    expect(gated.every((item) => !item.audiences.includes("public"))).toBe(true);
+
+    const published = listPublishedKnowledge(HELP_CONTENT, "es", {}, new Date("2026-08-08"));
+    expect(published.some((item) => gatedKeys.some((key) => item.id === `faq-${key}-es`))).toBe(
+      false,
+    );
+  });
+
+  it("does not claim future private-platform controls are already operational", () => {
+    const records = HELP_CONTENT.filter(
+      (item) => item.translationGroupId === "faq-protect-information",
+    );
+    expect(records).toHaveLength(2);
+    for (const item of records) {
+      expect(item.summary).toMatch(/cuando|when/i);
+      expect(item.summary).not.toMatch(/SG Solutions aplica|SG Solutions applies/i);
+    }
+  });
+
+  it("publishes a sourced bilingual Tradelines topic set without guarantees", () => {
+    for (const locale of ["es", "en"] as const) {
+      const records = listPublishedKnowledge(
+        HELP_CONTENT,
+        locale,
+        { category: "tradelines" },
+        new Date("2026-08-08"),
+      );
+      expect(records).toHaveLength(11);
+      expect(records.every((item) => item.sources?.length)).toBe(true);
+      expect(
+        records.every((item) => item.sources?.every((source) => source.sourceKind === "provider")),
+      ).toBe(true);
+      expect(
+        records.every((item) =>
+          item.sources?.every((source) => new URL(source.url).hostname === "tradelinesupply.com"),
+        ),
+      ).toBe(true);
+      expect(records.map((item) => item.summary).join(" ")).not.toMatch(
+        /garantizamos|we guarantee|subir[aá] .* puntos|increase .* points/i,
+      );
+    }
+  });
+
+  it("removes provider-dependent Tradelines content when its review expires", () => {
+    for (const locale of ["es", "en"] as const) {
+      expect(
+        listPublishedKnowledge(
+          HELP_CONTENT,
+          locale,
+          { category: "tradelines" },
+          new Date("2026-11-09"),
+        ),
+      ).toHaveLength(0);
     }
   });
 

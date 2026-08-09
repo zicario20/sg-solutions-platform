@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { KnowledgeRecord } from "../../apps/www/src/domain/help-center";
 import {
+  assertKnowledgeRegistryValid,
   evaluateFreshness,
   getPublishedKnowledgeBySlug,
   listPublishedKnowledge,
@@ -31,6 +32,7 @@ function record(overrides: Partial<KnowledgeRecord> = {}): KnowledgeRecord {
     disclosure: "La evaluación no garantiza un resultado específico.",
     seoTitle: "Cómo comenzar | SG Solutions",
     seoDescription: "Conoce cómo comenzar con SG Solutions y qué esperar del primer paso.",
+    nextAction: "evaluation",
     ...overrides,
   };
 }
@@ -70,6 +72,19 @@ describe("M002 public content gate", () => {
       id: "medium",
       riskLevel: "medium",
       nextReviewAt: "2026-07-01",
+      sources: [
+        {
+          title: "Official program",
+          authority: "USDA Rural Development",
+          sourceKind: "government",
+          url: "https://www.rd.usda.gov/programs-services/single-family-housing-programs",
+          retrievedAt: "2026-06-01",
+        },
+      ],
+      jurisdiction: "United States",
+      authorId: "editorial-author",
+      reviewerId: "domain-reviewer",
+      approverId: "product-owner-decision",
     });
     const staleLow = record({ id: "low", riskLevel: "low", nextReviewAt: "2026-07-01" });
 
@@ -77,6 +92,65 @@ describe("M002 public content gate", () => {
     expect(toPublicKnowledge(staleMedium, at)).toBeNull();
     expect(evaluateFreshness(staleLow, at)).toBe("review_due");
     expect(toPublicKnowledge(staleLow, at)?.id).toBe("low");
+  });
+
+  it("fails closed when a published medium-risk record lacks provenance", () => {
+    expect(() =>
+      toPublicKnowledge(
+        record({
+          id: "program-without-provenance",
+          type: "program",
+          riskLevel: "medium",
+          sources: undefined,
+          jurisdiction: undefined,
+          authorId: undefined,
+          reviewerId: undefined,
+          approverId: undefined,
+        }),
+        at,
+      ),
+    ).toThrow("Published medium/high-risk content requires");
+  });
+
+  it("fails a build registry when required launch content is stale", () => {
+    const required = record({
+      id: "required-program-es",
+      translationGroupId: "required-program",
+      type: "program",
+      riskLevel: "medium",
+      requiredForLaunch: true,
+      nextReviewAt: "2026-07-01",
+      sources: [
+        {
+          title: "Official program",
+          authority: "USDA Rural Development",
+          sourceKind: "government",
+          url: "https://www.rd.usda.gov/programs-services/single-family-housing-programs",
+          retrievedAt: "2026-06-01",
+        },
+      ],
+      jurisdiction: "United States",
+      authorId: "editorial-author",
+      reviewerId: "domain-reviewer",
+      approverId: "product-owner-decision",
+    });
+
+    expect(() => assertKnowledgeRegistryValid([required], at)).toThrow(
+      "Required launch content is stale: required-program-es",
+    );
+  });
+
+  it("requires exactly one Spanish and one English record for every translation group", () => {
+    const spanishOnly = [record({ id: "solo-es", translationGroupId: "solo", locale: "es" })];
+    expect(() => assertKnowledgeRegistryValid(spanishOnly, new Date("2026-08-08"))).toThrow(
+      "Invalid translation pair",
+    );
+  });
+
+  it("rejects impossible calendar dates instead of allowing Date normalization", () => {
+    expect(() => evaluateFreshness(record({ nextReviewAt: "2026-02-31" }), at)).toThrow(
+      "Invalid nextReviewAt",
+    );
   });
 
   it("filters published records by locale, category and type", () => {

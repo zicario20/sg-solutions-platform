@@ -3,7 +3,9 @@ import { HELP_CONTENT } from "../../content/help-center";
 import { getCategoryCopy, getCollectionCopy } from "../../content/help-center/categories";
 import type { PublicKnowledgeRecord } from "../../domain/help-center";
 import { listPublishedKnowledge } from "../../lib/help-content";
-import { getHelpCollectionPath, getHelpDetailPath, getHelpHubPath } from "../../lib/help-routes";
+import { getProviderDisclosureCopy } from "../../lib/help-provider";
+import { getHelpCollectionPath, getHelpHubPath } from "../../lib/help-routes";
+import ActionLink from "../ActionLink.astro";
 import HelpBreadcrumbs from "./HelpBreadcrumbs.astro";
 import HelpContentCard from "./HelpContentCard.astro";
 import HelpFeedback from "./HelpFeedback.astro";
@@ -29,6 +31,10 @@ const reviewed = new Intl.DateTimeFormat(record.locale === "es" ? "es-US" : "en-
   timeZone: "UTC",
 }).format(new Date(`${record.reviewedAt}T12:00:00.000Z`));
 const reviewedLabel = record.locale === "es" ? `Revisado el ${reviewed}` : `Reviewed ${reviewed}`;
+const governmentSources =
+  record.sources?.filter((source) => source.sourceKind === "government") ?? [];
+const providerSources = record.sources?.filter((source) => source.sourceKind === "provider") ?? [];
+const providerDisclosure = getProviderDisclosureCopy(record.locale);
 ---
 
 <HelpBreadcrumbs
@@ -54,11 +60,35 @@ const reviewedLabel = record.locale === "es" ? `Revisado el ${reviewed}` : `Revi
         <h2>{record.locale === "es" ? "Importante" : "Important"}</h2>
         <p>{record.disclosure}</p>
       </aside>
-      {record.sources?.length ? (
+      <section class="help-next-action" aria-labelledby={`help-next-action-${record.id}`}>
+        <div>
+          <h2 id={`help-next-action-${record.id}`}>
+            {record.locale === "es" ? "¿Cuál es el próximo paso?" : "What is the next step?"}
+          </h2>
+          <p>
+            {record.locale === "es"
+              ? "Revisa tu situación con SG Solutions para confirmar el alcance aplicable sin asumir un resultado."
+              : "Review your situation with SG Solutions to confirm the applicable scope without assuming an outcome."}
+          </p>
+        </div>
+        <ActionLink action={record.nextAction} locale={record.locale} />
+      </section>
+      {governmentSources.length ? (
         <section class="help-sources">
           <h2>{record.locale === "es" ? "Fuentes oficiales" : "Official sources"}</h2>
           <ul>
-            {record.sources.map((source) => (
+            {governmentSources.map((source) => (
+              <li><a href={source.url} rel="external noopener noreferrer">{source.title}</a><span>{source.authority}</span></li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {providerSources.length ? (
+        <section class="help-sources help-sources--provider">
+          <h2>{providerDisclosure.label}</h2>
+          <p>{providerDisclosure.notice}</p>
+          <ul>
+            {providerSources.map((source) => (
               <li><a href={source.url} rel="external noopener noreferrer">{source.title}</a><span>{source.authority}</span></li>
             ))}
           </ul>
@@ -81,6 +111,5 @@ const reviewedLabel = record.locale === "es" ? `Revisado el ${reviewed}` : `Revi
 <nav class="help-back-nav" aria-label={record.locale === "es" ? "Volver a la colección" : "Back to collection"}>
   <div class="site-container">
     <a href={getHelpCollectionPath(record.locale, record.type)}>← {collection.title}</a>
-    <a href={getHelpDetailPath(record.locale, record.type, record.slug)} aria-current="page" class="sr-only">{record.title}</a>
   </div>
 </nav>

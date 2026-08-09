@@ -2,6 +2,7 @@
 import HelpHubPage from "../../components/help/HelpHubPage.astro";
 import HelpLayout from "../../layouts/HelpLayout.astro";
 import { createHelpPageShell } from "../../lib/help-pages";
+import { createHelpCollectionStructuredData } from "../../lib/help-seo";
 
 const page = createHelpPageShell({
   locale: "es",
@@ -12,14 +13,13 @@ const page = createHelpPageShell({
   summary:
     "Explora información general y revisada sobre nuestros servicios, procesos y próximos pasos.",
 });
-const structuredData = {
-  "@context": "https://schema.org",
-  "@type": "CollectionPage",
+const structuredData = createHelpCollectionStructuredData({
+  locale: "es",
   name: page.hero.heading,
   description: page.description,
-  url: "https://www.sgsllc.com/recursos/",
-  inLanguage: "es",
-};
+  origin: "https://www.sgsllc.com",
+  path: "/recursos/",
+});
 ---
 
 <HelpLayout page={page} alternatePath="/en/resources/" structuredData={structuredData}>

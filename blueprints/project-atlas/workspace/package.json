@@ -19,7 +19,7 @@
     "scaffold:validate": "corepack pnpm lint && corepack pnpm format:check && corepack pnpm typecheck && corepack pnpm test && corepack pnpm contract:imports",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:e2e:www": "playwright test --config=playwright.www.config.ts",
+    "test:e2e:www": "node tests/support/run-www-e2e.mjs",
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {

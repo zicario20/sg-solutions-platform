@@ -15,8 +15,10 @@
 
 .help-breadcrumbs a {
   min-height: var(--control-min-size);
+  min-width: var(--control-min-size);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   color: var(--color-brand-cobalt);
 }
 
@@ -353,7 +355,21 @@
 
 .help-card h2 a,
 .help-search-result h2 a {
+  min-height: var(--control-min-size);
+  min-width: var(--control-min-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   text-decoration: none;
+}
+
+.help-card__meta a,
+.help-search-panel noscript a {
+  min-height: var(--control-min-size);
+  min-width: var(--control-min-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .help-card h2 a:hover,
@@ -363,9 +379,27 @@
 }
 
 .help-card > p:not(.help-card__meta, .help-card__review),
-.help-search-result > p:last-child {
+.help-search-result__summary {
   margin-top: 13px;
   color: #526d82;
+}
+
+.help-provider-disclosure {
+  display: grid;
+  gap: 5px;
+  margin-top: 16px;
+  padding: 13px 15px;
+  border-left: 3px solid var(--color-brand-gold);
+  border-radius: 0 10px 10px 0;
+  color: #526d82;
+  background: #fff9eb;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.help-provider-disclosure strong {
+  color: var(--color-brand-navy);
+  font-family: var(--font-heading);
 }
 
 .help-card__review {
@@ -374,6 +408,7 @@
 
 .help-card__link {
   min-height: var(--control-min-size);
+  min-width: var(--control-min-size);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -429,6 +464,10 @@
 
 .help-faq-list details > .help-prose {
   padding: 0 54px 26px 0;
+}
+
+.help-faq-list details > .help-provider-disclosure {
+  margin: -10px 54px 26px 0;
 }
 
 .help-article {
@@ -550,6 +589,27 @@
 .help-sources,
 .help-feedback {
   margin-top: 42px;
+}
+
+.help-next-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  margin-top: 32px;
+  padding: 26px;
+  border: 1px solid #c8dceb;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f4f9ff, #f4fbf5);
+}
+
+.help-next-action h2 {
+  font-size: 1.25rem;
+}
+
+.help-next-action p {
+  margin-top: 8px;
+  color: #526d82;
 }
 
 .help-sources {
@@ -773,8 +833,13 @@
   }
 
   .help-support__inner,
-  .help-article__layout {
+  .help-article__layout,
+  .help-next-action {
     grid-template-columns: 1fr;
+  }
+
+  .help-next-action .action-link {
+    justify-self: start;
   }
 
   .help-support .action-link {

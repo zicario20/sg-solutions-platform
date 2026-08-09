@@ -46,6 +46,7 @@ test("keeps every visible interactive target at least 44 by 44 CSS pixels", asyn
   for (const target of ["/", "/servicios/credito/", "/preguntas-frecuentes/", "/en/"]) {
     const response = await page.goto(target);
     expect(response?.ok(), `${target} must be a real representative page`).toBe(true);
+    await page.waitForLoadState("networkidle");
     const controls = await page.locator("a[href], button, summary").evaluateAll((elements) =>
       elements.flatMap((element) => {
         const style = getComputedStyle(element);

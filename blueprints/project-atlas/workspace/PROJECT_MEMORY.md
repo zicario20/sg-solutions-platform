@@ -66,3 +66,33 @@
   M002/M061–M064 boundaries: M002 owns public bilingual discovery, search and governed public
   content; private knowledge, RAG, AI/channel consumers and live provider activation remain in their
   separately gated modules.
+- M002 was implemented as a static-first bilingual Help Center with a governed 83-record source
+  inventory per locale and 77 public records per locale. The public surface exposes 154 detail
+  pages, five populated collection types, ten populated categories, minimized local search indexes,
+  exact bilingual alternates, stable route manifests and no private/operational data.
+- The Product Owner selected the Tradeline Supply FAQ as an editorial source for Tradelines. Decision
+  015 records an exact-host/category-scoped provider boundary, third-party disclosure and no
+  partnership/endorsement/guarantee interpretation. Eleven bilingual pairs are medium-risk and fail
+  closed from public projection after 2026-11-08 unless reviewed; M029/provider integration remains
+  unauthorized.
+- M002 local quality evidence passed two frozen installs with an unchanged lock hash, a zero-finding
+  audit across 901 dependencies, lint, format, 11-package typecheck, 129 tests with 3 deliberate
+  skips, import contracts, a 226-page Astro build and 68 desktop/mobile browser tests. Final
+  independent/Cyber snapshot review precedes Product Owner acceptance; nothing was deployed.
+- The M002 browser gate exposed a Windows teardown defect after all browser actions had completed:
+  Playwright could not reliably close the nested `corepack`/pnpm/Astro preview process. A bounded
+  Node runner now owns the Astro PID directly, disables telemetry, waits for the health endpoint,
+  runs the unchanged Playwright projects and closes the preview with a bounded fallback. The
+  previously hanging focused command now exits successfully, and the full 68-test gate completes.
+- The frozen-snapshot independent review found that Decision 015 provider disclosure was present on
+  Tradelines detail pages but lost when the same provider-derived answer appeared in FAQ, category
+  cards and search. The public index now carries only a bounded `provider|null` marker; all aggregate
+  surfaces render the same bilingual no-partnership/no-endorsement/no-guarantee boundary, FAQ
+  structured data remains aligned and non-provider records are not labeled. Red/green regression
+  evidence and the final gate now cover 131 tests plus 74 desktop/mobile browser scenarios.
+- The final remediation explicitly names Tradeline Supply on detail, FAQ, card, search and FAQ
+  structured-data disclosures while retaining the minimized `provider|null` public-index marker.
+  The frozen independent reviewer approved the resulting 86-path candidate with no material
+  finding. Cyber Neo reported risk 0, 86/86 candidate paths reviewed, no secret/PII/private URL or
+  tracked artifact, and a zero-finding 229-file workspace scan. M002 advanced to PO Acceptance;
+  merge and deployment remain Product Owner decisions.

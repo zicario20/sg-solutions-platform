@@ -2,6 +2,7 @@
 import HelpHubPage from "../../../components/help/HelpHubPage.astro";
 import HelpLayout from "../../../layouts/HelpLayout.astro";
 import { createHelpPageShell } from "../../../lib/help-pages";
+import { createHelpCollectionStructuredData } from "../../../lib/help-seo";
 
 const page = createHelpPageShell({
   locale: "en",
@@ -11,14 +12,13 @@ const page = createHelpPageShell({
   heading: "Clear answers to move forward",
   summary: "Explore reviewed general information about our services, processes and next steps.",
 });
-const structuredData = {
-  "@context": "https://schema.org",
-  "@type": "CollectionPage",
+const structuredData = createHelpCollectionStructuredData({
+  locale: "en",
   name: page.hero.heading,
   description: page.description,
-  url: "https://www.sgsllc.com/en/resources/",
-  inLanguage: "en",
-};
+  origin: "https://www.sgsllc.com",
+  path: "/en/resources/",
+});
 ---
 
 <HelpLayout page={page} alternatePath="/recursos/" structuredData={structuredData}>

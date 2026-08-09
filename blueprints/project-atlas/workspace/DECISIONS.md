@@ -154,3 +154,19 @@ content routes and progressive search/feedback behavior, and prepare allowlisted
 Sanity and future consumers. It may not implement private knowledge, RAG, AI answers, chat,
 WhatsApp, telephony, portal/CRM lookup, live CMS credentials, individualized advice or unapproved
 analytics transport. M003–M110 remain gated unless separately authorized.
+
+## 2026-08-08 — Decision 015
+
+Decision: authorize the Tradeline Supply public FAQ and linked explanatory pages as a category-
+scoped editorial source for eleven neutral bilingual Tradelines topics in M002. The source is
+classified as `provider`, is permitted only on `tradelines` records and must use the exact
+`tradelinesupply.com` host. It is not an official government source.
+
+Reason: the Product Owner explicitly requested that the empty Tradelines category be populated from
+that FAQ while M002 was still inside its approved Build gate.
+
+Impact: the pages must identify Tradeline Supply as an external provider source and state that the
+citation does not imply an SG Solutions partnership, endorsement or guarantee. No provider price,
+ordering process, refund term, contact fact, affiliate claim or universal outcome is adopted. These
+records are medium-risk, expire from public projection after 2026-11-08 unless reviewed, and do not
+authorize the M029 Tradelines service, a provider integration or a commercial relationship.

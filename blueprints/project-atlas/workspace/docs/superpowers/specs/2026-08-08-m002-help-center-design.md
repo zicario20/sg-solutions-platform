@@ -47,9 +47,16 @@ Canonical Spanish routes live under `/recursos/`; English routes live under `/en
 - Articles: `/recursos/articulos/` and `/en/resources/articles/`
 - Checklists: `/recursos/listas/` and `/en/resources/checklists/`
 - Glossary: `/recursos/glosario/` and `/en/resources/glossary/`
-- Programs: `/recursos/programas/` and `/en/resources/programs/`
+- Programs (reserved until public content exists): `/recursos/programas/` and
+  `/en/resources/programs/`
 - Search: `/recursos/buscar/` and `/en/resources/search/`
+- Categories: `/recursos/categorias/{categoria}/` and
+  `/en/resources/categories/{category}/`
 - Detail pages remain nested under the localized content-type collection.
+
+Published category and detail segments are stored in an explicit route manifest. Visible editorial
+copy may change without silently renaming public URLs. Empty categories or collection types are not
+linked, generated or indexed until they contain approved public content.
 
 The existing `/preguntas-frecuentes/` and `/en/faq/` URLs remain compatibility aliases that point to
 the new canonical FAQ pages. Existing approved FAQ copy is migrated into the knowledge records; it
@@ -71,9 +78,22 @@ The initial adapter is repository-backed approved content. `ContentQueryService`
 The Sanity projection is allowlisted and excludes client, case, tax-return, credit-report, document,
 payment and internal-procedure fields.
 
+Time-sensitive program records remain in the editorial inventory but do not enter public routes,
+search, language alternates or the sitemap until Product Owner/domain approval. Repository and
+Sanity content use the same provenance, approved-source, date, risk and freshness gate.
+
+Commercial-provider references are category-scoped and distinct from government sources. Tradeline
+Supply is permitted only as an exact-host `provider` source for Tradelines records; the UI includes
+a no-partnership/no-endorsement/no-guarantee disclosure anywhere provider-derived answer text is
+shown, FAQ JSON-LD matches that visible disclosure, and expired provider-dependent records fail
+closed from public projection.
+
 ## Search and discovery
 
 Astro emits one minimized JSON search index per locale containing only public projection fields.
+Its tenth field is a bounded `sourceKind` value (`provider` or `null`) used solely to render the
+required external-provider disclosure; names, source URLs and editorial provenance stay out of the
+browser index.
 The browser uses a small first-party script to normalize case and diacritics, expand a bounded
 bilingual synonym map, rank title/category/keyword/body matches and filter by category or type.
 Core category and content navigation works without JavaScript. A no-results state offers categories,

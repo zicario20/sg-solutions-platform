@@ -1,0 +1,18 @@
+---
+import type { PublicKnowledgeRecord } from "../../domain/help-center";
+import { getProviderDisclosureCopy, hasExternalProviderSource } from "../../lib/help-provider";
+
+interface Props {
+  record: PublicKnowledgeRecord;
+}
+
+const { record } = Astro.props;
+const copy = getProviderDisclosureCopy(record.locale);
+---
+
+{hasExternalProviderSource(record) ? (
+  <aside class="help-provider-disclosure" data-provider-disclosure>
+    <strong>{copy.label}</strong>
+    <p>{copy.notice}</p>
+  </aside>
+) : null}
