@@ -89,3 +89,15 @@
   origin/proxy trust, scoped HMAC, RLS/Storage context integrity, break-glass minimum controls and
   shared state/acceptance consistency. Final documentary reviews have zero open findings and Cyber
   Neo risk 0/100; Build remains unauthorized.
+- Added the M008 Client Dashboard PRD, responsive branded Client Home design and proposed ADR 012.
+  The independently reviewed candidate uses one complete authorization snapshot, a consistent read
+  cut, typed owning-domain projections, a closed priority-source registry, deterministic priority,
+  per-section freshness and private/no-store responses. Final review has zero open findings and
+  Cyber Neo documentary risk 0/100; it creates no route, schema, provider traffic, personalized
+  cache or product behavior.
+- Registered fourteen M008 Product Owner/activation decisions so public status copy, priority
+  thresholds, financial/staff details, freshness, contexts, preferences, recommendations, support
+  projection, analytics and support claims cannot be silently invented during a future Build.
+- Recorded the M008 independent architecture and security reports. Initial grant/entitlement fence,
+  read-consistency, source-completeness, security/signature-port and trusted-clock gaps were closed;
+  repository hygiene and lockfile checks passed without product or dependency changes.

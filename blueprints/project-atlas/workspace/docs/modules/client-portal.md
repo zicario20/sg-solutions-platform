@@ -5,6 +5,16 @@
 - Status: Implementation-ready architecture draft; open Product Owner decisions remain; no Build gate
 - Catalog modules: M008–M015
 
+## Canonical module split
+
+- `m008-client-dashboard.md` is the canonical PRD for the Client Portal Home aggregation, one
+  deterministic priority action, partial-failure behavior and responsive dashboard experience.
+- This document remains the umbrella for M008–M015 and the shared portal navigation/projection
+  principles. M009–M015 retain their owning PRDs or future dedicated specifications.
+- Proposed ADR 012 governs the M008 aggregation, priority, freshness and no-store boundary.
+- If this umbrella and the dedicated M008 PRD conflict inside M008 scope, the dedicated PRD governs
+  after Product Owner approval; unresolved cross-module policy is escalated rather than inferred.
+
 ## 1. Purpose
 
 Give each authenticated client a simple, secure view of services, process status, missing items,
@@ -44,18 +54,22 @@ client-visible information, support staff and assistive technology user.
 
 ## 7. States and transitions
 
-Portal projections map operational states to client-approved labels. The baseline process states are
-`intake_started`, `information_incomplete`, `payment_pending`, `payment_confirmed`,
-`pending_review`, `authorized_to_begin`, `in_progress`, `waiting_documents`,
-`waiting_external`, `completed` and `cancelled`. Portal cards also expose loading, empty, stale,
-temporarily unavailable and action-required states. Portal display never changes underlying case
-state directly except through an authorized module command.
+Portal projections map operational states to Product Owner-approved client labels. The M008
+candidate vocabulary is `intake_started`, `information_incomplete`, `payment_pending`,
+`payment_processing`, `payment_confirmed`, `pending_internal_review`, `approved_to_start`,
+`in_progress`, `waiting_for_client`, `waiting_for_external_response`, `documents_required`,
+`document_under_review`, `appointment_required`, `signature_required`, `completed`, `cancelled`,
+`refunded` and `on_hold`. These codes do not automatically replace each owning domain graph. Portal
+cards also expose loading, empty, stale, temporarily unavailable and action-required states. Portal
+display never changes underlying state except through an authorized owning-module command.
 
 ## 8. Business rules
 
 - Every page answers: what service, current stage, what is missing and what happens next.
 - Client-visible copy is a deliberate projection, not a dump of internal records.
-- The most urgent authorized action is prioritized; ties use deterministic due/created order.
+- M008 selects the most urgent authorized action through the versioned deterministic policy in its
+  dedicated PRD and proposed ADR 012. Missing priority-critical data yields `unconfirmed`, not a
+  guessed lower action or false no-action state.
 - “Payment confirmed” and “authorized to begin” remain separate.
 - Help/AI content is educational/supportive and never executes professional services.
 - Profile edits cannot change identity/resource linkage without the identity workflow.
@@ -77,7 +91,9 @@ staff notes, hidden fields and raw provider payloads.
 
 ## 11. API or service contracts
 
-- `PortalQueryService.home(actor) → PortalHomeProjection`.
+- M008 owns `ClientDashboardQueryService.getHome(actor, requestedContextRef?, locale) →
+  ClientDashboardProjection`; trusted time and authorization versions are server-derived. This
+  umbrella does not create a competing Home contract.
 - `PortalQueryService.listServices|getServiceStatus` scoped by grants.
 - Module commands delegate to Document, Scheduling, Messaging and Billing services.
 - `PortalPreferenceService.update(locale, timeZone, notifications, expectedVersion)`.

@@ -28,6 +28,13 @@
   application handle reaches the browser while provider credentials remain in the envelope-
   encrypted server vault. User routes cannot use `service_role`, owner or `BYPASSRLS`; RLS actor
   context and Storage object keys are derived server-side from the validated application session.
+- M008 dashboard reads freeze one session-derived account/session/membership/context/grant-set/
+  entitlement-set/policy authorization snapshot across every domain fragment and revalidate every
+  revocation fence before serialization. Unauthorized resources are omitted before
+  aggregation; counts cannot reveal them. Personalized responses are private/no-store, no critical
+  registered source failure becomes zero/no-action/paid/completed, no live provider is called by the
+  browser, and portal DOM/session replay or protected dashboard telemetry is prohibited. A closed
+  source registry makes missing/unknown security, signature or other priority producers fail closed.
 
 ## Data and cryptography
 

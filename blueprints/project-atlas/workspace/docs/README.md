@@ -32,6 +32,7 @@ Security and recovery authorities:
 - [M005 Voice Gateway Runtime Boundary ADR](adr/009-voice-gateway-runtime-boundary.md)
 - [M006 Public Form Schema and Submission Boundary ADR](adr/010-public-form-schema-and-submission-boundary.md)
 - [M007 Client Authentication, Linking and Session Boundary ADR](adr/011-client-authentication-linking-and-session-boundary.md)
+- [M008 Client Dashboard Aggregation, Priority and Freshness ADR](adr/012-client-dashboard-aggregation-priority-and-freshness.md)
 
 M001 delivery evidence:
 
@@ -90,6 +91,18 @@ M007 architecture candidate:
 - Independent architecture review is approved with zero open findings and Cyber Neo is
   `SECURITY-CLEAR` at documentary risk `0/100`. The candidate is ready only for Product Owner
   architecture review; no Build or provider activation is authorized.
+
+M008 architecture candidate:
+
+- [M008 Independent Architecture Review](reviews/M008-ARCHITECTURE-REVIEW.md)
+- [M008 Security Architecture Review](reviews/M008-SECURITY-REVIEW.md)
+- [M008 Client Dashboard PRD](modules/m008-client-dashboard.md)
+- [M008 Client Dashboard Design](superpowers/specs/2026-08-09-m008-client-dashboard-design.md)
+- [M008 Dashboard Aggregation, Priority and Freshness ADR](adr/012-client-dashboard-aggregation-priority-and-freshness.md)
+- Independent architecture review is approved with zero open findings and Cyber Neo is
+  `SECURITY-CLEAR` at documentary risk `0/100`. The candidate is ready only for Product Owner
+  architecture review; no Build, route, schema, provider traffic or production behavior is
+  authorized.
 
 Design specifications live under `superpowers/specs/`. The status in each specification header is
 authoritative: `Draft for Product Owner review` is not approved, while an approved specification

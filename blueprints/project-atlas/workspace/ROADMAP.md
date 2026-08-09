@@ -60,6 +60,16 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   architecture/consistency findings and Cyber Neo closed CN-001–CN-010 at documentary risk 0/100.
   The candidate awaits Product Owner approval or revision. No `GENERATE`, route, schema/RLS policy,
   Supabase/Google/email/MFA configuration, real account/session, merge or deployment is authorized.
+- **M008 Client Dashboard:** Product/Architecture documentation is active under Decision 021. The
+  candidate defines `/client` Home as one request-scoped, client-safe read model over typed owning-
+  domain projections. One complete M007 authorization snapshot and a consistent read cut govern the
+  response; proposed ADR 012 uses a closed source registry to select one deterministic priority
+  action, and any missing registered source that could tie or outrank the result yields
+  `unconfirmed`, not a false zero/no-action state. Release 1A has no monolithic dashboard snapshot,
+  live provider fan-out or personalized shared cache. No `GENERATE`, route, schema/RLS policy,
+  provider traffic, real dashboard, merge or deployment is authorized. Independent architecture
+  review has zero open findings and Cyber Neo is security-clear at documentary risk 0/100; the
+  candidate now awaits Product Owner approval or revision.
 
 ## Architecture-first activation policy
 

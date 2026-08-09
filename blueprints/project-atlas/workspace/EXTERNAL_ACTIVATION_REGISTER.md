@@ -151,9 +151,33 @@ de readiness externa sin sustituirlo.
 | IAM-013 | Risk/CAPTCHA provider and accessible alternative | `External activation deferred` | Adaptive challenge in production | Provider/data/DPA review, field allowlist, thresholds, accessibility alternative, outage and false-positive tests |
 | IAM-014 | Security telemetry, incident alerts and coarse device/location evidence | `External activation deferred` | Claims of detection/alerts and retained telemetry | Event schema, redaction tests, retention/view permissions, destinations, alert runbook and Product Owner approval |
 
+### Decisiones y configuración pendientes de M008
+
+M008 no necesita un proveedor propio, pero depende de políticas y proyecciones de módulos todavía
+no activados. Estas filas conservan cada decisión para que una arquitectura aprobada no se confunda
+con un dashboard operativo ni se complete con supuestos.
+
+| ID | Dependencia o decisión | Estado | Bloquea | Evidencia de salida requerida |
+|---|---|---|---|---|
+| DASH-001 | Vocabulario público de estados, mapping interno y copy ES/EN | `External activation deferred` | Mostrar estados de servicio/caso | Matriz versionada aprobada por Product Owner, revisión de significado y parity tests |
+| DASH-002 | Ventanas `due soon`/`imminent`, prioridades de workflow y política final de desempate | `External activation deferred` | Activar el motor de `PriorityAction` | Política versionada aprobada y matriz determinista/edge-case tests |
+| DASH-003 | Montos, saldos y detalles de factura permitidos en el resumen | `External activation deferred` | Mostrar datos financieros en Home | Campos M014 aprobados, autorización, reconciliación/freshness y pruebas de minimización |
+| DASH-004 | Nombre/contacto del responsable visible al cliente | `External activation deferred` | Mostrar asesor o disponibilidad | Política de asignación/contacto, copy y pruebas de privacidad/cambio de responsable |
+| DASH-005 | Defaults, dismissal y canales de notificaciones | `External activation deferred` | Avisos o promesas de entrega | Política M026 y consentimiento aprobados, plantillas ES/EN, retries/fallbacks probados |
+| DASH-006 | Freshness/staleness por sección y copy `partial/unconfirmed` | `External activation deferred` | Mostrar o accionar sobre información stale | Presupuestos aprobados, clock/reconciliation tests, acciones deshabilitadas y copy ES/EN |
+| DASH-007 | Experiencia de prospecto autenticado sin relación activa | `External activation deferred` | Cualquier dashboard para registered prospect | Alcance y autorización aprobados; default R1A es no crear dashboard/caso/acceso |
+| DASH-008 | Contextos de representante/household y delegación | `External activation deferred` | Activar context switch adicional | Policy M007/IAM, evidencia de relación, grants/revocation y pruebas cross-context |
+| DASH-009 | Preferencias de widgets/orden | `External activation deferred` | Persistir personalización | Campos/ownership/TTL aprobados, migración compatible y accesibilidad probada |
+| DASH-010 | Recomendaciones o cross-sell contextual | `External activation deferred` | Mostrar ofertas en Home | Consent/disclosures/relevancia/suppression y tracking minimizado aprobados; ausente en R1A |
+| DASH-011 | Staff `view as client` | `External activation deferred` | Proyección de soporte | Roles, reason, TTL, banner, read-only deny matrix y auditoría aprobados |
+| DASH-012 | Eventos de analytics, retención y acceso a métricas | `External activation deferred` | Emitir telemetría del dashboard | Allowlist/redaction/retention/view policy y tests sin PII/contenido |
+| DASH-013 | Canales, horario y promesa de respuesta de soporte | `External activation deferred` | Publicar disponibilidad o SLA | Canales operativos y copy ES/EN aprobados; default sin promesa temporal |
+| DASH-014 | Máximo/orden de cards y previews en Release 1A | `External activation deferred` | Congelar densidad/layout final | Pruebas UX con datos sintéticos, decisión Product Owner y contratos de límites |
+
 | Módulo(s) | Dependencia externa pendiente | Estado | Se completa ahora | Se difiere hasta activación | Fallback seguro |
 |---|---|---|---|---|---|
 | M007 y M080 IAM | Proyecto Supabase productivo, dominios, email y MFA configurados | `External activation deferred` | Arquitectura Auth/RLS, roles, grants, sesiones y pruebas locales autorizadas | Configuración productiva, remitente, proveedores sociales y pruebas de recuperación/MFA | Alta y soporte manual controlados; sin acceso si falla la verificación |
+| M008 Dashboard | M007 activo y proyecciones autorizadas de M009–M014/M018/M021–M026/M042–M045/M067/M080–M081 | `External activation deferred` | PRD, UX, contratos de agregación/prioridad/freshness y pruebas locales autorizadas | Activar solo fuentes registradas con proyección real, política aprobada y evidencia cross-client/partial-failure | Omitir o mostrar `unconfirmed|unavailable`; nunca simular zero/no-action/paid/completed |
 | M013 y M024 Agenda | Cuenta Google Workspace/Calendar y OAuth | `External activation deferred` | Motor interno definitivo, zonas IANA, concurrencia, buffers y adapter | OAuth, calendario real, webhooks/sync y reconciliación productiva | Agenda interna y bloqueo manual |
 | M014 y M043–M045 Pagos | LLC/banco, cuenta Stripe verificada, productos/precios y webhooks | `External activation deferred` | Contratos de Checkout/Invoices, ledger operacional, idempotencia, reconciliación y tests | Onboarding Stripe, credenciales, endpoints, eventos reales, métodos y conciliación controlada | Cotización/registro pendiente; nunca marcar un pago manualmente como confirmado por Stripe |
 

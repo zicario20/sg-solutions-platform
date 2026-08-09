@@ -56,6 +56,13 @@ Measured scale, hybrid infrastructure and mobile expansion
     entitlements and ADR 004 owns case/resource inheritance. Supabase identity, active account,
     membership, role/permission, entitlement and resource grant remain separate checks; email,
     phone, payment and CRM status never collapse them.
+17. M008 owns only the Client Portal Home aggregation, deterministic priority and partial-failure
+    experience. M009/M010 own detailed service/process views; M011–M014 and their internal domains
+    own documents, messages, appointments and payments; M067 owns signature state. M008 consumes
+    typed client projections under one complete M007 authorization snapshot and proposed ADR 012.
+    Its closed priority-source registry explicitly covers security, signatures and every other
+    active action producer; M008 does not duplicate state, mutate an owning domain, query providers
+    from the browser or treat a missing/unavailable source as zero/no action.
 
 ## Fronteras de extracción
 

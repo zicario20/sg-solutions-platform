@@ -187,3 +187,25 @@
   review returned PASS with zero material findings; Cyber Neo closed CN-001–CN-010 at 0/100.
   M007 remains Registered and is ready only for Product Owner review; no ADR acceptance, Build,
   activation, merge or deployment follows from the reviews.
+- The Product Owner directed Codex to continue with M008 in its own worktree based on the audited
+  M007 commit. Decision 021 authorizes M008 Product/Architecture documentation and independent audit
+  only; no `GENERATE`, Build, route, schema, provider traffic or real dashboard was opened.
+- The complete M008 source was normalized into a request-scoped Client Portal Home read model. One
+  account/session/membership/context/grant/entitlement/policy authorization snapshot and consistent
+  read cut govern typed security/service/case/task/document/signature/appointment/payment/message/
+  notification projections, and proposed ADR 012 requires every revocation fence before
+  serialization.
+- M008 selects one next action with a deterministic, versioned policy and closed source registry.
+  An unavailable/missing source that could tie or outrank the tentative result yields `unconfirmed`;
+  it can never become a false zero,
+  no-action, paid or completed state. Release 1A uses private/no-store personalized responses, no
+  monolithic dashboard snapshot and no live provider fan-out.
+- Fourteen unresolved M008 business/UX/activation choices remain explicit Product Owner decisions.
+  First-round review found incomplete grant/entitlement fencing, inconsistent critical read-cut
+  risk, an implicit priority-source set, missing security/signature ports and caller-time ambiguity.
+  The candidate now closes those gaps with a complete authorization snapshot, consistent read cut,
+  closed source registry, explicit ports and trusted server clock.
+- Final independent architecture review returned zero open findings and Cyber Neo returned
+  `0/100 — Secure` documentarily. Repository hygiene found only two in-progress report links, closed
+  by recording the M008 architecture and security reports. M008 remains Registered with no Build or
+  activation authority and awaits Product Owner approval or revision.

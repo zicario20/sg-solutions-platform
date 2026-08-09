@@ -17,6 +17,7 @@
 | [009](009-voice-gateway-runtime-boundary.md) | Proposed specialized real-time Voice Gateway with business state and authorization retained in the modular monolith. |
 | [010](010-public-form-schema-and-submission-boundary.md) | Proposed immutable form registry and narrow same-origin Astro submission gateway with domain-owned durable acceptance. |
 | [011](011-client-authentication-linking-and-session-boundary.md) | Proposed invitation-first client authentication, explicit identity linking and server-mediated session boundary for M007. |
+| [012](012-client-dashboard-aggregation-priority-and-freshness.md) | Proposed request-scoped M008 aggregation, deterministic next-action policy, freshness and private/no-store boundary. |
 
 ADRs are tool-neutral. Supersede a decision with a new numbered ADR; do not erase historical
 rationale.

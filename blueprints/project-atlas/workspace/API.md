@@ -12,3 +12,11 @@ Stripe and Google callbacks verify provider authenticity before mutation. Public
 Every private handler resolves identity, builds an actor, authorizes the action/resource, validates
 an allowlisted schema and only then performs I/O. Portal DTOs are explicit projections that exclude
 internal fields. Provider-neutral service contracts live in the relevant module PRD.
+
+M008 proposes one bounded authenticated dashboard query rather than browser fan-out. It freezes the
+complete M007 account/session/membership/context/grant/entitlement/policy authorization snapshot,
+loads the policy-versioned priority-source registry, calls allowlisted client-projection ports,
+selects one deterministic priority action and revalidates every fence before returning an explicit complete or
+partial DTO. Hidden resources and internal/provider errors are never serialized. An unavailable
+registered source that could tie or outrank the result returns `unconfirmed`; it cannot become a zero count or `no action`.
+Release 1A personalized dashboard responses are private/no-store.

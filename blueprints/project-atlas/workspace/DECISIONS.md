@@ -252,3 +252,20 @@ activation checklist, authority updates and read-only independent/security revie
 does not approve ADR 011, resolve session/MFA/retention/linking business policy, authorize
 `GENERATE`, create routes, tables, RLS/Storage policies, Supabase/Google/email/MFA configuration,
 credentials, real accounts or sessions, merge, deployment or Operational status.
+
+## 2026-08-09 — Decision 021
+
+Decision: authorize Product/Architecture documentation and independent documentary audit for M008
+Client Dashboard in its own worktree based on the independently audited M007 snapshot. M008 must be
+the Client Portal Home, reuse M007/ADR 004 authorization and owning-domain projections, select one
+deterministic next action and remain a read model rather than a new source of truth.
+
+Reason: the Product Owner explicitly directed Codex to continue with Module 8 after establishing the
+same isolated architecture/design/audit workflow for M004–M007.
+
+Impact: Codex may prepare the M008 PRD, responsive branded UX/UI design, proposed ADR 012, deferred
+decision checklist, authority updates and read-only independent/security reviews. This decision
+does not approve ADR 012 or any unresolved business policy, authorize `GENERATE`, create the
+`/client` route, schemas/RLS policies, cache, provider connection, real client dashboard, merge,
+deployment or Operational status. M008 must not duplicate M009–M014 behavior or infer unavailable
+payment, appointment, document, task or case state.

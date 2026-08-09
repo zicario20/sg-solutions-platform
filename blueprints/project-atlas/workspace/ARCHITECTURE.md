@@ -114,6 +114,16 @@ User routes run through session-derived restricted RLS context and never `servic
 the proposed linking/session boundary; ADR 004 still controls case/resource inheritance and
 M080/M081 own RBAC.
 
+M008 proposes one request-scoped Client Dashboard aggregation service inside the modular monolith.
+It reads typed, minimized projections from the domains that own security, services, cases, tasks,
+documents, signatures, appointments, payments, messages, notifications and content; it owns no
+business state and performs no provider fan-out. One complete account/session/membership/context/
+grant/entitlement/policy authorization snapshot governs every fragment, and a final authorization
+fence discards mixed or revoked results. A closed priority-source registry plus deterministic,
+versioned policy selects the sole client priority action; a missing registered source yields `unconfirmed`, never a
+false lower action or no-action state. Release 1A persists no monolithic dashboard snapshot and uses
+private/no-store personalized responses. Proposed ADR 012 records this candidate boundary.
+
 ## Data protection
 
 Data follows `DATA_CLASSIFICATION.md`. Managed encryption at rest is necessary but insufficient for
