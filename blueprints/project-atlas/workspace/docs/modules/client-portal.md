@@ -9,9 +9,14 @@
 
 - `m008-client-dashboard.md` is the canonical PRD for the Client Portal Home aggregation, one
   deterministic priority action, partial-failure behavior and responsive dashboard experience.
+- `m009-my-services.md` is the canonical PRD for the contracted-service directory, service-detail
+  shell, canonically owned commercial/financial/activation/fulfillment presentation and
+  owning-module handoffs.
 - This document remains the umbrella for M008–M015 and the shared portal navigation/projection
-  principles. M009–M015 retain their owning PRDs or future dedicated specifications.
+  principles. M010–M015 retain their owning PRDs or future dedicated specifications.
 - Proposed ADR 012 governs the M008 aggregation, priority, freshness and no-store boundary.
+- Proposed ADR 013 governs M009 service/case grants, accepted-definition versions, state synthesis
+  and the request-scoped service projection boundary.
 - If this umbrella and the dedicated M008 PRD conflict inside M008 scope, the dedicated PRD governs
   after Product Owner approval; unresolved cross-module policy is escalated rather than inferred.
 
@@ -95,6 +100,9 @@ staff notes, hidden fields and raw provider payloads.
   ClientDashboardProjection`; trusted time and authorization versions are server-derived. This
   umbrella does not create a competing Home contract.
 - `PortalQueryService.listServices|getServiceStatus` scoped by grants.
+- M009 owns `ClientServicesQueryService.list|getDetail`; core ServiceOrder/Case facts and bounded
+  owning-domain summaries share one complete authorization snapshot. This umbrella does not create
+  a competing service directory/detail contract.
 - Module commands delegate to Document, Scheduling, Messaging and Billing services.
 - `PortalPreferenceService.update(locale, timeZone, notifications, expectedVersion)`.
 - Responses are field-allowlisted portal DTOs with stable 401/404/409/429 and generic 5xx recovery.

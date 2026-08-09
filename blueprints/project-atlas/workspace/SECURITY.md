@@ -35,6 +35,18 @@
   registered source failure becomes zero/no-action/paid/completed, no live provider is called by the
   browser, and portal DOM/session replay or protected dashboard telemetry is prohibited. A closed
   source registry makes missing/unknown security, signature or other priority producers fail closed.
+- M009 service directory/detail reads require an explicit active ServiceOrder or governing CaseFile
+  grant; client, participant, email, phone, payment, CRM or route relationships grant nothing.
+  Directory counts/filters/cursors are post-authorization, and every detail uses one complete M007
+  authorization snapshot plus final account/session/membership/context/grant/entitlement/assurance/
+  policy fence. Every serialized root/child also carries a resource authorization epoch for parent
+  linkage, visibility/inheritance, classification, tombstone and accepted-definition binding; any
+  concurrent change discards the whole response before body, counts, cursors or route metadata.
+  ServiceOrder commercial/activation, Billing/Stripe financial and CaseFile/workflow fulfillment
+  subfacts retain canonical ownership; accepted definition/workflow versions cannot be replaced
+  with current catalog data. Typed child summaries expose no provider
+  payload, signed URL, internal note or hidden count, and personalized responses remain
+  private/no-store under proposed ADR 013.
 
 ## Data and cryptography
 

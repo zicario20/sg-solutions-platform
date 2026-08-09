@@ -63,6 +63,12 @@ Measured scale, hybrid infrastructure and mobile expansion
     Its closed priority-source registry explicitly covers security, signatures and every other
     active action producer; M008 does not duplicate state, mutate an owning domain, query providers
     from the browser or treat a missing/unavailable source as zero/no action.
+18. M009 owns the authorized contracted-service directory and detail shell. `ServiceOrder` remains
+    commercial root, `CaseFile` operational root and M010–M014 owning workflow surfaces. Explicit
+    service/case grants—not client/participant/email/payment relationships—control visibility. The
+    order binds accepted service-definition/workflow/pricing versions, and a versioned policy maps
+    canonically owned commercial, financial, human-activation and fulfillment subfacts without making M009 a source of
+    truth or mutation authority.
 
 ## Fronteras de extracción
 

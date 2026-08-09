@@ -268,4 +268,21 @@ decision checklist, authority updates and read-only independent/security reviews
 does not approve ADR 012 or any unresolved business policy, authorize `GENERATE`, create the
 `/client` route, schemas/RLS policies, cache, provider connection, real client dashboard, merge,
 deployment or Operational status. M008 must not duplicate M009–M014 behavior or infer unavailable
-payment, appointment, document, task or case state.
+  payment, appointment, document, task or case state.
+
+## 2026-08-09 — Decision 022
+
+Decision: authorize Product/Architecture documentation and independent documentary audit for M009
+Mis servicios in its own worktree based on the independently audited M008 snapshot. M009 must be the
+authorized contracted-service directory and detail shell, reuse real `ServiceOrder`/`CaseFile`
+records and M007/M008 authorization, and keep M010–M014 behavior in their owning modules.
+
+Reason: the Product Owner explicitly instructed Codex to complete M009, then only after its audited
+commit continue to M010 and M011 in separate sequential worktrees.
+
+Impact: Codex may prepare the M009 PRD, responsive branded UX/UI design, proposed ADR 013, deferred
+decision checklist, authority updates and read-only independent/security reviews. This decision
+does not approve ADR 013 or unresolved business policy, authorize `GENERATE`, create a route,
+schema/RLS/Storage policy, service record, provider connection, real portal behavior, merge,
+deployment or Operational status. M010 and M011 remain unopened until M009 is independently audited,
+validated and committed.

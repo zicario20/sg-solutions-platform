@@ -209,3 +209,26 @@
   `0/100 — Secure` documentarily. Repository hygiene found only two in-progress report links, closed
   by recording the M008 architecture and security reports. M008 remains Registered with no Build or
   activation authority and awaits Product Owner approval or revision.
+- The Product Owner directed Codex to complete M009, then M010 and M011 sequentially in separate
+  worktrees, stopping after M011. Decision 022 opens only M009 Product/Architecture documentation
+  and read-only independent review from the audited M008 snapshot; no Build or provider activation
+  is implied.
+- The complete M009 source was normalized into an explicitly granted contracted-service directory
+  and detail shell. Every visible item is a real `ServiceOrder`; active operation uses its
+  `CaseFile`, accepted service/workflow/pricing versions are preserved and M009 owns no parallel
+  service record.
+- Proposed ADR 013 maps canonically owned ServiceOrder commercial/activation, Billing/Stripe
+  financial and CaseFile/workflow fulfillment subfacts through a deterministic client policy and
+  keeps M010–M014 commands/data in typed owning-domain projections under the complete M007/M008
+  authorization snapshot. M009 remains documentary and has no route, schema, provider traffic or
+  real service data.
+- M009 review found and closed canonical state-ownership duplication, a three-to-four-axis
+  Product Owner register mismatch and a resource-revocation race. The final candidate uses
+  owner-qualified cancellation facts and per-root/child authorization epochs for parent linkage,
+  visibility/inheritance, classification, deletion and accepted-version binding. Independent
+  review returned zero open findings and Cyber Neo returned documentary risk 0/100.
+- Final M009 validation passed two frozen installs with unchanged lock hash, lint/format,
+  11-package typecheck, 131 tests with three deliberate skips, import contracts, a 226-page Astro
+  build, 263-file zero-finding secret scan, zero-finding lock check and 126 local links with no
+  breakage. M009 awaits Product Owner architecture review; no ADR acceptance, Build, merge or
+  deployment follows.

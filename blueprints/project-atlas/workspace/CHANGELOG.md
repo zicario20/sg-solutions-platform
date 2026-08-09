@@ -101,3 +101,12 @@
 - Recorded the M008 independent architecture and security reports. Initial grant/entitlement fence,
   read-consistency, source-completeness, security/signature-port and trusted-clock gaps were closed;
   repository hygiene and lockfile checks passed without product or dependency changes.
+- Added the M009 Mis servicios PRD, responsive branded service-directory/detail design and proposed
+  ADR 013. The candidate uses explicit service/case grants, accepted definition/workflow versions,
+  canonically owned commercial/financial/activation/fulfillment subfacts, typed owning-module
+  summaries and private/no-store responses; it creates no route, schema, provider traffic or
+  product behavior.
+- Closed M009 independent/Cyber findings for canonical state ownership, four-axis Product Owner
+  decision synchronization and per-resource authorization epochs. Final reviews have zero open
+  findings, Cyber Neo documentary risk is 0/100 and full scaffold/build/hygiene validation passes;
+  Build remains unauthorized.

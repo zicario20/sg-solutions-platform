@@ -124,6 +124,20 @@ versioned policy selects the sole client priority action; a missing registered s
 false lower action or no-action state. Release 1A persists no monolithic dashboard snapshot and uses
 private/no-store personalized responses. Proposed ADR 012 records this candidate boundary.
 
+M009 proposes one request-scoped Client Services query boundary for the contracted-service
+directory and service-detail shell. Every visible item is a real `ServiceOrder`; operational work
+uses its governing `CaseFile`, and neither becomes a portal-owned duplicate. An explicit service or
+case grant is required—client/participant/email/payment relationships grant nothing. The accepted
+service-definition, scope, workflow/milestone and pricing versions remain bound to the order, while
+a deterministic versioned policy synthesizes client presentation from canonically owned
+ServiceOrder commercial/activation, Billing/Stripe financial and CaseFile/workflow fulfillment
+subfacts. Typed owning-domain summaries reuse the complete M007/M008
+authorization snapshot and final fence. That fence also revalidates each serialized resource's
+authorization epoch—parent linkage, visibility/inheritance, classification, tombstone and accepted-
+definition binding—before any body, count, cursor or route metadata leaves the boundary. M009 owns
+no mutations, live provider fan-out or personalized shared cache. Proposed ADR 013 records this
+candidate boundary.
+
 ## Data protection
 
 Data follows `DATA_CLASSIFICATION.md`. Managed encryption at rest is necessary but insufficient for

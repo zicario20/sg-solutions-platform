@@ -20,3 +20,15 @@ selects one deterministic priority action and revalidates every fence before ret
 partial DTO. Hidden resources and internal/provider errors are never serialized. An unavailable
 registered source that could tie or outrank the result returns `unconfirmed`; it cannot become a zero count or `no action`.
 Release 1A personalized dashboard responses are private/no-store.
+
+M009 proposes `ClientServicesQueryService.list|getDetail` as one authenticated, request-scoped
+boundary. It returns only explicitly granted real `ServiceOrder` projections, combines core
+ServiceOrder/Case/milestone facts under one consistent read cut and consumes bounded typed child
+summaries under the complete M007 authorization snapshot. ServiceOrder commercial/activation,
+Billing/Stripe financial and CaseFile/workflow fulfillment subfacts retain canonical ownership and
+are mapped through a versioned client-status policy. Exact
+routes/payload limits await a Build gate; personalized responses are private/no-store and M009
+performs no mutation or browser/provider fan-out. Every serialized root/child carries an
+authorization epoch covering its parent linkage, visibility/inheritance, classification,
+tombstone and accepted-definition binding; a changed epoch fails the final fence before any body,
+count, cursor or route metadata is returned.

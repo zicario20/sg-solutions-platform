@@ -174,10 +174,35 @@ con un dashboard operativo ni se complete con supuestos.
 | DASH-013 | Canales, horario y promesa de respuesta de soporte | `External activation deferred` | Publicar disponibilidad o SLA | Canales operativos y copy ES/EN aprobados; default sin promesa temporal |
 | DASH-014 | Máximo/orden de cards y previews en Release 1A | `External activation deferred` | Congelar densidad/layout final | Pruebas UX con datos sintéticos, decisión Product Owner y contratos de límites |
 
+### Decisiones y configuración pendientes de M009
+
+M009 no activa un proveedor directo. Estas filas controlan la política comercial, de acceso y
+presentación que debe existir antes de mostrar servicios reales; arquitectura y pruebas sintéticas
+no prueban operación ni autorizan `GENERATE`.
+
+| ID | Dependencia o decisión | Estado | Bloquea | Evidencia de salida requerida |
+|---|---|---|---|---|
+| MYSVC-001 | Mapping público de combinaciones comercial, financiera, aprobación humana y fulfillment, con copy ES/EN coordinado con M008/M010 | `External activation deferred` | Mostrar estado de servicio real | Matriz versionada aprobada, parity/semantic review y pruebas cartesianas que preserven pago ≠ aprobación ≠ inicio y la coexistencia de cancelación de orden/pago/caso, refund y dispute |
+| MYSVC-002 | Estados preliminares visibles antes de existir `CaseFile` | `External activation deferred` | Mostrar quote/payment/review preliminar en Mis servicios | Estados y grant path aprobados; pruebas que interés/form/chat/recommendation no crean servicio |
+| MYSVC-003 | Inventario Release 1A y milestones públicos versionados por tipo de servicio | `External activation deferred` | Publicar progreso o detalle por vertical | ServiceDefinition/workflow versions, milestones/copy ES/EN y pruebas de historia/no porcentaje falso |
+| MYSVC-004 | Orden, filtros, search fields, page size y límites de previews | `External activation deferred` | Congelar directory query/layout | UX tests con datos sintéticos, límites/paginación aprobados y hidden-count/cursor tests |
+| MYSVC-005 | Campos financieros permitidos en M009 versus M014 | `External activation deferred` | Mostrar precio, depósito, saldo, factura o refund | Field allowlist, autorización, reconciliación/freshness y pruebas de minimización aprobadas |
+| MYSVC-006 | Equipo o persona responsable visible y política de contacto/reasignación | `External activation deferred` | Mostrar responsable/disponibilidad | Roles/copy/privacy/availability aprobados y pruebas de reassignment/stale contact |
+| MYSVC-007 | Solicitud de cancelación o cambio de servicio | `External activation deferred` | Mostrar un control de cancel/change | Elegibilidad, reviewer, reasons, consecuencias, audit y copy/resultados ES/EN aprobados; default support-only |
+| MYSVC-008 | Servicios recurrentes, renovación, auto-renewal y cancelación | `External activation deferred` | Mostrar renewal/subscription controls | Billing/catalog/consent policy, reminder/suppression, Stripe readiness y pruebas de failure/cancel aprobadas |
+| MYSVC-009 | Entregables/acuerdos, revocación y retención | `External activation deferred` | Mostrar disponibilidad o enlace de documento/firma | M011/M067 activos, grants/assurance, retention/revocation/download audit y copy aprobados |
+| MYSVC-010 | Eventos y reason codes client-safe para preview/timeline | `External activation deferred` | Mostrar historial de servicio | Allowlist/public mapping M010, privacy review y negative tests de notas/risk/technical events |
+| MYSVC-011 | Participantes, spouse/household/business member/representative y delegación | `External activation deferred` | Mostrar/switch context o compartir servicio | Relationship evidence, explicit grants, expiry/revocation, notification and cross-context tests approved |
+| MYSVC-012 | Partner/referral status visible en related products | `External activation deferred` | Mostrar partner/referral en M009 | Partner activo, source/freshness, consent/disclosure/no-guarantee copy y unknown/fallback tests |
+| MYSVC-013 | Soporte, horarios y cualquier promesa de respuesta | `External activation deferred` | Publicar disponibilidad o SLA | Canal operativo, horario/capacidad y copy ES/EN aprobados; default sin promesa temporal |
+| MYSVC-014 | Analytics M009, retención y acceso | `External activation deferred` | Emitir telemetría de directory/detail | Event allowlist, redaction/no-identifiers, retention/view policy y payload tests aprobados |
+| MYSVC-015 | Freshness/staleness y copy partial/unconfirmed por sección | `External activation deferred` | Accionar sobre o presentar datos stale | Budgets por owner, final-fence/reconciliation tests, disabled-action rules y copy ES/EN aprobados |
+
 | Módulo(s) | Dependencia externa pendiente | Estado | Se completa ahora | Se difiere hasta activación | Fallback seguro |
 |---|---|---|---|---|---|
 | M007 y M080 IAM | Proyecto Supabase productivo, dominios, email y MFA configurados | `External activation deferred` | Arquitectura Auth/RLS, roles, grants, sesiones y pruebas locales autorizadas | Configuración productiva, remitente, proveedores sociales y pruebas de recuperación/MFA | Alta y soporte manual controlados; sin acceso si falla la verificación |
 | M008 Dashboard | M007 activo y proyecciones autorizadas de M009–M014/M018/M021–M026/M042–M045/M067/M080–M081 | `External activation deferred` | PRD, UX, contratos de agregación/prioridad/freshness y pruebas locales autorizadas | Activar solo fuentes registradas con proyección real, política aprobada y evidencia cross-client/partial-failure | Omitir o mostrar `unconfirmed|unavailable`; nunca simular zero/no-action/paid/completed |
+| M009 Mis servicios | M007/M008 y proyecciones reales autorizadas de ServiceOrder/Case/M010–M014/M021–M026/M042–M045/M067 | `External activation deferred` | PRD, UX, contratos de grant/state/version/projection y pruebas sintéticas autorizadas | Activar únicamente servicios reales con grant explícito, definition/workflow version, status policy y owners probados | Omitir o mostrar `unconfirmed|unavailable`; nunca convertir interés/pago en servicio/inicio |
 | M013 y M024 Agenda | Cuenta Google Workspace/Calendar y OAuth | `External activation deferred` | Motor interno definitivo, zonas IANA, concurrencia, buffers y adapter | OAuth, calendario real, webhooks/sync y reconciliación productiva | Agenda interna y bloqueo manual |
 | M014 y M043–M045 Pagos | LLC/banco, cuenta Stripe verificada, productos/precios y webhooks | `External activation deferred` | Contratos de Checkout/Invoices, ledger operacional, idempotencia, reconciliación y tests | Onboarding Stripe, credenciales, endpoints, eventos reales, métodos y conciliación controlada | Cotización/registro pendiente; nunca marcar un pago manualmente como confirmado por Stripe |
 

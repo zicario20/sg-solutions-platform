@@ -70,6 +70,15 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   provider traffic, real dashboard, merge or deployment is authorized. Independent architecture
   review has zero open findings and Cyber Neo is security-clear at documentary risk 0/100; the
   candidate now awaits Product Owner approval or revision.
+- **M009 Mis servicios:** Product/Architecture documentation is active under Decision 022. The
+  candidate defines the authorized contracted-service directory and detail shell over real
+  `ServiceOrder`/`CaseFile` records, explicit resource grants and accepted definition/workflow
+  versions. It keeps canonically owned commercial, financial, human-activation and fulfillment
+  subfacts separate, uses typed bounded
+  M010–M014 projections and performs no mutation or provider fan-out. No `GENERATE`, route, schema,
+  RLS/Storage policy, real service record, merge or deployment is authorized. Independent
+  architecture review has zero open findings and Cyber Neo is security-clear at documentary risk
+  0/100; the candidate now awaits Product Owner approval or revision.
 
 ## Architecture-first activation policy
 
