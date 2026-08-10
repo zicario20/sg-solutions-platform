@@ -542,7 +542,10 @@ never invokes a command through the summary port.
 - `document.visibility_changed|client_visible_version_changed`
 - `document_version.visibility_changed`
 - `document_context.visibility_changed`
-- `invoice.updated`, `payment.updated`, `refund.updated`, `dispute.updated`
+- `billing.invoice_status_observed`, `billing.payment_processing_observed`,
+  `billing.payment_succeeded_observed`, `billing.payment_failed_observed`,
+  `billing.payment_allocation_posted`, `billing.refund_status_observed`,
+  `billing.dispute_opened`, `billing.dispute_status_observed`
 - `appointment.client_projection_changed` (opaque refs/versions only; reauthorize and reread M013)
 - `signature.requested|completed|declined|expired`
 - approved external-dependency and client-visibility events

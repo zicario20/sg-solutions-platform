@@ -165,3 +165,20 @@
 - Final M013 candidate validation passed lint/format, 11-package typecheck, 20 test files/131 tests,
   import contracts, a 226-page Astro build, 55 candidate-local links and `git diff --check`; the
   lockfile remained unchanged and post-contrast secret/PII/supply-chain scans were clear.
+- Added the M014 Client Payments and Billing PRD, branded responsive Client/Public/Admin design and
+  proposed ADR 018. The candidate defines one shared Billing context, immutable money/obligation
+  snapshots, atomic quote/order/obligation acceptance, separate external/internal authorities,
+  recoverable provider idempotency/correlation, generation-bound webhook invalidations and safe
+  browser capability/handoff boundaries without creating product behavior or Stripe traffic.
+- Registered twenty unresolved M014 Build/live policies one-to-one as `PAY-001`–`PAY-020`. Price
+  presentation uses the approved `public|from|quote|consultation` vocabulary with independent off-by-
+  default publication, while currency/geography remains fail-closed until PAY-009.
+- Closed independent architecture/security findings covering price/currency authority, orthogonal
+  commercial/financial/approval/fulfillment axes, atomic M021 orchestration, exact provider-token
+  recovery, correlation lookup and quarantine, webhook replay/cutover, capability transport, browser
+  destination validation, canonical `billing.*` events and catalog dependency IDs. Final independent
+  review has zero open material findings and Cyber Neo risk is `0/100`.
+- Final M014 validation passed lint/format over 143 files, 11-package typecheck, 20 test files/131
+  tests, import contracts, a 226-page direct Astro build, local-link and `git diff --check` validation;
+  the lockfile remained unchanged and secrets/PII/supply-chain scans were clear. Build and all live
+  payment activation remain unauthorized.

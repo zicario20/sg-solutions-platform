@@ -408,7 +408,9 @@ M009 owns no business-state event and no independent workflow. It consumes durab
 - `case.opened|status_changed|next_action_changed|closed`;
 - `task.created|completed`, `document_request.published|satisfied`,
   `document_review.accepted|correction_requested|rejected`,
-  `document.client_visible_version_changed`, `payment.updated`,
+  `document.client_visible_version_changed`, `billing.payment_processing_observed`,
+  `billing.payment_succeeded_observed`, `billing.payment_failed_observed`,
+  `billing.payment_allocation_posted`,
   `appointment.client_projection_changed`, `message.created`, `deliverable.ready|revoked`;
 - `grant.created|revoked`, `entitlement.changed` and `policy.updated`.
 
@@ -629,8 +631,10 @@ unimplemented owning capability.
   authorization snapshot, deterministic next-action and fail-closed freshness semantics.
 - [Client and Case Management](client-case-management.md) owns `ServiceOrder`, `CaseFile`, tasks and
   operational transitions.
-- [Billing](billing.md) preserves Stripe/Postgres authority and payment-versus-human-approval
-  separation.
+- [M014 Client Payments](m014-client-payments.md), [Billing](billing.md) and proposed
+  [ADR 018](../adr/018-financial-authority-obligation-snapshot-idempotency-and-reconciliation.md)
+  preserve immutable obligations, Stripe/Postgres authority, reconciliation and payment-versus-
+  human-approval separation.
 - [Authorization inheritance ADR](../adr/004-authorization-inheritance.md) governs case/resource
   visibility and revocation.
 - [Data Classification](../../DATA_CLASSIFICATION.md) governs portal data, telemetry and retention.

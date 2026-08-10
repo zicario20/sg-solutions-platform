@@ -333,3 +333,31 @@
   55 local links with zero broken, unchanged lockfile, clean whitespace and zero introduced secrets,
   PII, private URLs, local paths, media, binaries or dependency changes. M014 may open only from the
   resulting clean M013 commit under Decision 025.
+- M014 began from the clean independently audited M013 commit `f50b71b`. The complete supplied M014
+  source was normalized into a 21-section Client Payments and Billing PRD, responsive branded
+  experience and proposed ADR 018 without creating product code, routes, schema/RLS, provider
+  configuration, real price, payment or Stripe traffic.
+- M014 is a Client/Public/Admin projection/action boundary over one shared Billing bounded context.
+  M021 owns ServiceOrder/human approval, M042 catalog, M043 provider integration, M044 verification/
+  reconciliation, M045 entitlements and M046 pricing. Quote acceptance, M021 order create-or-bind,
+  exactly one obligation and one composite receipt commit atomically.
+- The candidate uses immutable integer-minor-unit plus currency snapshots and the already approved
+  `public|from|quote|consultation` price vocabulary with independent off-by-default publication.
+  Currency/geography remains a PAY-009 decision. Payment, human approval and Case fulfillment remain
+  orthogonal and payment/contact/provider relationships grant no identity or access.
+- Provider operations retain or deterministically reproduce the exact provider idempotency token and
+  bind opaque non-PII correlation. Lost response, restart, restore and provider-key expiry recover by
+  bound evidence/bounded lookup; ambiguity quarantines without automatic reissue. Webhooks are signed
+  generation-bound invalidation signals followed by canonical provider reads and object/fact dedupe.
+- Public entry capability and provider return handle are separate, GET/HEAD-inert and exchanged by
+  explicit POST/OTP into a clean host-only session. Every provider destination is validated against
+  exact activated HTTPS scheme/host/path/bound-object policy before navigation.
+- Independent audit closed price, currency, state-axis, orchestration, idempotency, capability,
+  webhook/cutover, canonical-event and catalog-ID findings. The final pass reports zero material
+  findings; Cyber Neo's post-remediation/final passes report zero Critical/High/Medium/Low and risk
+  0/100. Twenty unresolved policies remain `PAY-001`–`PAY-020` and no Build was opened.
+- M014 validation passed lint/format over 143 files, 11-package typecheck, 20 test files/131 tests with
+  three deliberate skips, import contracts, direct Astro build of 226 pages, local-link and
+  `git diff --check` validation. The lockfile remains unchanged and candidate hygiene scans found no
+  introduced secrets, PII, private URLs, local paths, media, binaries or dependency changes.
+  Decision 025 authorizes no M015 work after the clean M014 commit.

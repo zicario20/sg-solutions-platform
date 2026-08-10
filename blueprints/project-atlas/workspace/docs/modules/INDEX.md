@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Documentary capability index; M001/M002 are at PO Acceptance, M003–M012 await Product Owner architecture decisions after independent review, and M013 is the active documentary candidate
+- Status: Documentary capability index; M001/M002 are at PO Acceptance and M003–M014 await Product Owner architecture decisions after independent review
 - Update rule: every future implementation unit maps to an approved module PRD and ADRs
 
 The canonical catalog remains `../roadmap/MODULE_CATALOG.md`. The PRDs below specify bounded
@@ -25,12 +25,13 @@ requirements but do not by themselves authorize code or advance a module beyond 
 | [m011-document-portal.md](m011-document-portal.md) | M011 secure requests/uploads, quarantine and safety promotion, immutable versions, review, authorized delivery and disposition hooks. |
 | [m012-secure-messaging.md](m012-secure-messaging.md) | M012 authenticated client/staff messaging, internal-note separation, durable ordering, safe attachment references and handoff. |
 | [m013-client-appointments.md](m013-client-appointments.md) | M013 single appointment authority, versioned availability, conflict-safe booking, client management and minimized calendar projection. |
+| [m014-client-payments.md](m014-client-payments.md) | M014 client billing projection/actions, immutable obligations, secure Checkout handoff, signed provider inbox and reconciliation. |
 | [identity-access.md](identity-access.md) | Supabase identity, staff MFA, roles, resource grants, domain/RLS/Storage authorization. |
 | [crm-case-operations.md](crm-case-operations.md) | CRM, lead pipeline, assignment and conversion. |
 | [client-case-management.md](client-case-management.md) | Clients, businesses, service orders, cases, tasks and internal notes. |
 | [document-center.md](document-center.md) | Quarantine, scan, private storage, versions, grants, retention and downloads. |
 | [scheduling-calendar.md](scheduling-calendar.md) | M013/M024 ownership umbrella; the dedicated M013 PRD owns appointment behavior. |
-| [billing.md](billing.md) | Quotes, invoices, Stripe, idempotency and reconciliation. |
+| [billing.md](billing.md) | Cross-module M014/M021/M042–M046 billing ownership, Stripe authority, idempotency and reconciliation. |
 | [client-portal.md](client-portal.md) | Portal-safe projections, simple navigation and delegated access. |
 | [audit-activity-history.md](audit-activity-history.md) | Immutable minimized audit evidence and activity projections. |
 | [marketing-leads-consent.md](marketing-leads-consent.md) | Public capture, attribution, consent and CRM handoff. |

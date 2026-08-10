@@ -214,9 +214,38 @@ provider sync and reminder axes stay separate. Google OAuth and push use one-tim
 provider credentials/secrets stay in vault boundaries, per-source cursors/coverage fail closed,
 calendar projections default to zero attendees/no provider mail and meetings launch through an exact
 HTTPS allowlist. M003–M006/M012/M051 use M013 contracts, not channel calendars or direct AI authority.
-M014/M043–M045 retain money, M026 delivery, M077 audit, M085 retention and M092 reporting. Proposed
+M014/M042–M046 retain catalog/pricing/money/verification/entitlement authority, M026 delivery, M077
+audit, M085 retention and M092 reporting. Proposed
 ADR 017 records this boundary; no route, schema/RLS policy, calendar, credential, provider traffic or
 real appointment is authorized.
+
+M014 proposes the client billing projection/action boundary over one shared Billing bounded context;
+it is not a portal-owned payment model. M021 retains `ServiceOrder` and human approval-to-start,
+M042 catalog, M043 Stripe/provider objects and mutations, M044 verified-payment qualification and
+reconciliation, M045 entitlements, and M046 versioned prices/discounts/waivers. Accepted quotes and
+payment obligations bind immutable line-item, terms and policy versions using integer minor-unit
+money plus currency. `QuoteAcceptanceOrchestrator` commits acceptance, M021 order create-or-bind, one
+obligation and one composite receipt atomically. Every Checkout/refund/provider mutation reserves a
+semantic Postgres operation with a canonical digest, exact protected/reproducible provider token and
+opaque non-PII SG correlation before the adapter call; bound object evidence or bounded correlation
+lookup resolves uncertainty, while provider-key expiry/ambiguity quarantines rather than reissuing.
+Stripe is external
+financial authority, while Postgres owns operational facts, allocations, approvals, access and
+recovery. Signed raw-body webhooks enter a generation-bound composite account/environment/event
+inbox; every event triggers canonical provider-object retrieval and object/fact dedupe before provider
+fact, operational journal/allocation, obligation projection, audit and outbox commit atomically.
+Duplicate/out-of-order or ambiguous state reconciles instead of using last-event-wins. Browser return,
+payer email, provider
+customer and payment never prove payment identity, membership, grant or service approval.
+Client/Public/Staff DTOs are structurally separate and every read/handoff/mutation final-fences one
+explicit service-order/case root. Checkout/receipt/invoice/Customer Portal destinations are transient
+bearer-like handoffs validated against exact activated HTTPS provider scheme/host/path/object policy,
+not stored authorization. Public entry/return secrets are distinct, inert on GET/HEAD and exchanged
+through controlled POST/OTP into a clean host-only session. Restore fences old-generation webhook
+acknowledgement, advances a protected generation, opens new ingress before mutation egress and
+requires bounded Stripe reconciliation before newly satisfying a financial prerequisite. Proposed
+ADR 018 records this boundary; BIZ-001–003 and PAY-001–PAY-020 gate prices, policy, Build and all
+Stripe traffic.
 
 ## Data protection
 

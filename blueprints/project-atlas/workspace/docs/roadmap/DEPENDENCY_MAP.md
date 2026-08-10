@@ -106,12 +106,23 @@ Measured scale, hybrid infrastructure and mobile expansion
     dependency on the later R1.5 M013 appointment capability: the M013 projection/commands are an
     optional gated contribution only after M013 approval/activation. M003–M006/M012 are channel clients. M020/
     M078 own scheduling-purpose prospect/consent reservation and finalization; M007/ADR 004 identity/
-    resource access; M014/M043–M045 payment prerequisites; M017/M020 CRM activity; M021/M022 service/
+    resource access; M014/M042–M046 payment prerequisites; M017/M020 CRM activity; M021/M022 service/
     case; M023 tasks; M026 reminder and APT-007 code delivery; M077 audit; M085 retention; M092
     reporting; M097 telemetry. M041 supplies adapter conventions, while M013 owns domain ports.
     After APT-019 only, M051 under M047 may call receipt-bound M013 tools; M076 owns compliance/human
     decisions and AI never acquires availability, payment, attendance, note or authorization authority.
     Provider, payment, requirement, attendance, structured outcome and reminder axes never collapse.
+24. M014 owns the Client Billing query/action projection over one shared Billing bounded context.
+    M021 retains `ServiceOrder` and human approval-to-start; M042 catalog; M043 Stripe/provider
+    objects and mutations; M044 verified-payment/reconciliation; M045 entitlements; M046 prices,
+    discounts and waivers. Accepted quotes/obligations are immutable version-bound integer-money
+    snapshots. Provider mutations reserve semantic idempotent operations; signed events enter a
+    unique inbox and apply monotonic provider facts/journal/allocations/outbox atomically, with
+    reconciliation for ambiguity and restore. M007/ADR 004 grants one service-order/case root;
+    payment/email/provider customer grants nothing. M008–M010/M013 consume only typed client-safe
+    summaries/prerequisite evidence and never call Stripe or infer paid/approval/start. M026 owns
+    delivery, M077 audit, M085 retention and M092 reporting. BIZ-001–003/PAY-001–PAY-020 gate all
+    business policy, Build, Stripe traffic and Operational status.
 
 ## Fronteras de extracción
 

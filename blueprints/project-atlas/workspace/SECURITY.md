@@ -186,6 +186,62 @@
   Notifications remain off before APT-010; afterward only a recipient-specific generic label, instant
   and display zone may enter M026. Proposed ADR 017 and APT-001–APT-020 gate all live activation.
 
+- M014 client billing uses one explicit M007/ADR 004 service-order/case access root. Payment,
+  provider customer, payer email, receipt possession or CRM relationship never establishes identity,
+  delegation, membership or a grant. Client/Public/Staff services and DTOs are structurally separate;
+  every quote/payment/invoice list/detail, Checkout, return, document handoff and finance mutation
+  final-fences parent linkage, classification, visibility/block, resource/financial/access/recovery
+  epochs before response or side effect. Public billing capability remains off until PAY-016 and then
+  is one-resource, purpose/audience/version/use/expiry/environment/recovery-bound with no portal or
+  history access.
+
+- Stripe-hosted Checkout is the preferred Release 1A card collection boundary. SG application code,
+  chat, WhatsApp, voice, email, forms, support notes, logs and analytics may never receive/store PAN,
+  CVV, magnetic-stripe data or full payment-method detail. Test/staging/production Stripe accounts,
+  endpoint secrets, idempotency namespaces and records are isolated. Secret/restricted keys and
+  webhook secrets stay in approved secret management with least privilege, custody, rotation,
+  recovery and revocation; no secret or raw provider payload enters repository, browser, Sanity,
+  documentation or ordinary Postgres state.
+
+- Provider mutations reserve a server-owned semantic operation and canonical digest in Postgres
+  before egress, then use one exact Stripe idempotency token that is protected/retrievable or
+  deterministically reproducible through domain separation and a retained key version; a hash alone
+  is insufficient. Every mutation also binds a non-PII opaque SG operation correlation. Uncertain
+  results use bound object/request evidence or type/account/environment/time-bounded paginated lookup;
+  provider key expiry never permits blind reissue and ambiguity is quarantined. Webhook ingress bounds
+  exact raw bytes, validates the account/environment-specific Stripe signature before trusted
+  persistence, inserts one recovery-generation-bound receipt under composite account/environment/
+  event identity and acknowledges only after durable acceptance. Every event is an invalidation
+  signal: projection retrieves canonical provider objects, uses leases and deduplicates both Event ID
+  and provider-object/fact version. Provider fact, operational journal/allocation, obligation
+  projection, audit and outbox commit atomically.
+
+- Checkout, receipt, hosted-invoice and Customer Portal URLs and payment client secrets are bearer-
+  like secrets. The app stores opaque provider object references and creates/recovers a transient
+  private/no-store/no-referrer/non-prefetched handoff only after exact authorization. Raw URLs,
+  provider IDs/payloads, quote/invoice detail, amount tied to identity, dispute evidence and payment
+  failure details are prohibited from analytics, traces, errors, session replay, browser persistence,
+  notifications and ordinary logs. PAY-013 governs any exceptional encrypted short-TTL raw webhook
+  incident material; default domain state is normalized/minimized.
+
+- Every browser handoff is server-validated against the activated HTTPS provider scheme, exact host/
+  path policy and bound provider object; arbitrary/user/database-supplied destinations fail closed.
+  Public entry capabilities and provider return handles are distinct. GET/HEAD is inert and an
+  explicit POST/OTP exchange with exact Origin, Fetch Metadata and CSRF/bootstrap controls establishes
+  only a host-only SameSite session. Before personalized rendering or third-party subresources, a
+  clean redirect/history replacement removes token transport under `Referrer-Policy: no-referrer`;
+  edge/app logs, analytics, errors, caches and service workers exclude it. Link scanners, prefetch,
+  forwarding, replay, concurrency and unavoidable provider exposure are in PAY-016's threat model.
+
+- Financial incident controls disable new Checkout/refund/public-capability operations. At restore
+  cutover, old-generation webhook handlers return retryable non-2xx unless a durable insert and final
+  external-generation fence both succeed; receipts bind the generation. New-generation ingress opens
+  before mutation egress, provider retries drain and checkpointed reconciliation covers the recovery
+  interval. Prior application billing capabilities/return handles are invalidated and no newly
+  satisfied financial prerequisite or provider mutation resumes until PAY-020 approval. Proposed ADR
+  018 and BIZ-001–003/PAY-001–PAY-020 gate Build and all real prices, policies, credentials, events
+  and money movement.
+
 ## Data and cryptography
 
 `DATA_CLASSIFICATION.md` controls storage, access, telemetry, retention and deletion. ADR 005 defines

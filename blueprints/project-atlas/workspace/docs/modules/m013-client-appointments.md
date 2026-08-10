@@ -68,7 +68,7 @@ transaction. Its transit DTO is never persisted, logged, traced, analyzed or emi
 
 - Advanced incremental Google synchronization, webhook renewal and broader reconciliation.
 - Additional calendars, staff capacity rules and eligible-team assignment.
-- Approved payment-required appointment flows through M014/M043–M045.
+- Approved payment-required appointment flows through M014/M042–M046.
 - More reminder channels, waitlist, round-robin and richer follow-up automation.
 - Approved video providers and enhanced operational reporting.
 
@@ -82,7 +82,8 @@ No disposable scheduler or provider-specific domain model is permitted.
   equipment/resource scheduling or calendar subscriptions.
 - M024 internal calendar navigation, task/deadline aggregation or staff workload UI.
 - M026 notification delivery, contact preference authority or provider templates.
-- M014/M043–M045 quote, price, invoice, payment, refund or Stripe authority.
+- M014/M042–M046 quote, catalog/price, invoice, payment, verification, entitlement, refund or Stripe
+  authority.
 - M017/M020 CRM/lead creation, deduplication or conversion authority.
 - M021 ServiceOrder creation/activation; an appointment never starts a service.
 - M023 task ownership, M011 document ownership or M012 message ownership.
@@ -1007,7 +1008,8 @@ not collapsed.
 - Separately after APT-007, an opaque management-code delivery request carries only M020 contact ref,
   short-TTL vault ref and delivery idempotency ref. Only the scoped M026 worker retrieves plaintext;
   this narrow verification transport is not an APT-010 appointment reminder or management link.
-- M014/M043–M045 own payment requirements and return signed/authoritative prerequisite evidence.
+- M014/M042–M046 own payment requirements and return versioned authoritative prerequisite evidence;
+  an application signature alone never substitutes for reconciled provider/internal authority.
 - M011/M014/intake/approval owners deliver typed requirement evidence only through
   `AppointmentRequirementService`; duplicate/out-of-order/stale/revoked evidence cannot confirm an
   appointment, and M013 never reads owner payloads directly.

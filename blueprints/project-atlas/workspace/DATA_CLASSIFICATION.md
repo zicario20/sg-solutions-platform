@@ -170,5 +170,52 @@ ordinary telemetry. Access is limited to scheduling/security enforcement and app
 expiry or epoch cutover deletes/rebuilds it under APT-017; restored prior-epoch evidence cannot make
 an allow, denial or challenge decision.
 
+M014 quote terms, accepted line items, obligations, invoices, client-visible amounts, refunds,
+disputes, external-payment evidence and payer/resource relationships are at least Confidential.
+Provider object IDs, webhook/inbox facts, idempotency/operation data, reconciliation issues and masked
+payment-method summaries are Internal or Confidential according to whether they can link to a client
+or transaction; they remain server-only except for the exact approved client projection. Stripe/API/
+webhook secrets, raw capability values, payment client secrets and full card/authentication data are
+Highly Sensitive or prohibited: SG stores no PAN, CVV or magnetic-stripe data at all.
+
+The exact provider idempotency token is Highly Sensitive operational integrity material. It is
+either envelope-protected and retrievable or deterministically reproducible from immutable operation
+identity through a domain-separated secret and retained key version; a comparison hash cannot be the
+recovery mechanism. Opaque SG operation correlation and provider request/object references are
+Internal or Confidential and exclude PII. Key versions/recovery material follow PAY-013 retention,
+rotation, backup and incident controls; ambiguity never permits a replacement financial mutation.
+
+Accepted quote/obligation/provider facts and allocations are immutable operational evidence. Amounts
+use integer minor units plus currency and never enter product analytics when tied to identity. Quote/
+invoice text, line items, provider IDs/payloads, dispute evidence, failure details, Checkout/receipt/
+hosted-invoice/Customer Portal URLs and client-sensitive service descriptions are prohibited from
+Sanity, ordinary logs, traces, error reports, PostHog, session replay, notification payloads and
+browser-readable persistence. M026 notifications remain generic and link back to the authorized
+portal. Provider destinations exist only as transient private/no-store handoffs after exact resource
+authorization and exact activated HTTPS provider scheme/host/path/object validation; arbitrary or
+tampered destinations are prohibited.
+
+The default durable webhook record is a signed/verified normalized minimal inbox fact plus payload
+hash, provider-account/environment/event composite identity, processing lease and recovery generation.
+It is an invalidation signal: each asynchronous projection retrieves canonical provider object(s),
+and a provider-object/fact-version application key prevents different event IDs from duplicating an
+effect. Raw webhook bytes may be retained only if PAY-013 expressly approves a purpose-specific,
+envelope-encrypted, least-privilege, short-TTL incident/reprocessing store excluded from ordinary
+telemetry and exports. Stripe/provider secrets remain in approved secret management by environment,
+outside Postgres/repository/backups unless the secret platform's separately approved recovery process
+applies. Billing entry capabilities and provider return handles are distinct and store only high-
+entropy digests in ordinary state; any raw value is one-time/short-lived, excluded from logs/
+analytics/backups and invalidated by use, expiry, revocation or recovery-generation change. GET/HEAD
+is inert; an interactive POST/OTP exchange establishes an opaque host-only session. Token transport
+is removed by clean redirect/history replacement before personalized render/subresources, uses no-
+referrer and is redacted/excluded at edge/app logs, analytics, errors, caches and service workers.
+
+PAY-013 defines retention, deletion and legal hold for quotes, invoices, financial facts, inbox,
+idempotency, reconciliation, refund/dispute and audit evidence after applicable review. Deletion of
+ordinary client projections does not rewrite legally/operationally retained immutable financial
+facts; access suppression, retention and final disposal remain separately audited. Post-restore
+financial state is untrusted for new prerequisite promotion until Stripe reconciliation completes
+under ADR 018.
+
 [NEEDS PRODUCT OWNER DECISION: approve service-specific retention periods and legal-hold authority
 after Illinois/legal counsel review.]

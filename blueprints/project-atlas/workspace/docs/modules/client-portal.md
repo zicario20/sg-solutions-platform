@@ -21,8 +21,10 @@
   and message retention hooks.
 - `m013-client-appointments.md` is the canonical PRD for client/public appointment queries,
   availability, holds, conflict-safe booking, appointment management and calendar reconciliation.
+- `m014-client-payments.md` is the canonical PRD for client quote/payment/invoice projection,
+  secure Checkout/document handoff, immutable obligation snapshots and financial reconciliation.
 - This document remains the umbrella for M008–M015 and the shared portal navigation/projection
-  principles. M014–M015 retain their owning PRDs or future dedicated specifications.
+  principles. M015 retains its future dedicated specification.
 - Proposed ADR 012 governs the M008 aggregation, priority, freshness and no-store boundary.
 - Proposed ADR 013 governs M009 service/case grants, accepted-definition versions, state synthesis
   and the request-scoped service projection boundary.
@@ -34,7 +36,9 @@
   typed owner references and human/AI handoff.
 - Proposed ADR 017 governs M013 appointment authority, versioned availability, concurrency,
   time-zone evidence and minimized Google Calendar projection.
-- If this umbrella and a dedicated M008–M013 PRD conflict inside that module's scope, the dedicated
+- Proposed ADR 018 governs M014 external/internal financial authority, immutable obligations,
+  provider idempotency, signed inbox and reconciliation.
+- If this umbrella and a dedicated M008–M014 PRD conflict inside that module's scope, the dedicated
   PRD governs after Product Owner approval; unresolved cross-module policy is escalated rather than
   inferred.
 
@@ -141,6 +145,10 @@ staff notes, hidden fields and raw provider payloads.
   assignment/handoff, read-state, revision/redaction and typed-reference commands. Client/Internal
   serializers and events are structurally separate; M025 owns the unified inbox projection and
   M026 owns notification delivery. Every attachment/read action reauthorizes in M011.
+- M014 owns separate Client/Public/Staff billing queries and authorized quote/Checkout/receipt/
+  invoice handoffs over shared M021/M042–M046 facts. It accepts no browser amount, performs no live
+  provider fan-out in reads, treats return pages as non-authoritative and final-fences every body,
+  count, cursor and destination. Payment/email/provider-customer relationships grant nothing.
 - `PortalPreferenceService.update(locale, timeZone, notifications, expectedVersion)`.
 - Responses are field-allowlisted portal DTOs with stable 401/404/409/429 and generic 5xx recovery.
 
@@ -148,12 +156,20 @@ staff notes, hidden fields and raw provider payloads.
 
 Portal consumes `case.client_projection_changed`, `document_request.published|satisfied`,
 `document_review.accepted` and `document.client_visible_version_changed`,
-`appointment.client_projection_changed`, `message.created`, `invoice.updated` and `payment.updated`.
+`appointment.client_projection_changed`, `message.created`, `billing.invoice_status_observed`,
+`billing.payment_processing_observed`, `billing.payment_succeeded_observed`,
+`billing.payment_failed_observed` and `billing.payment_allocation_posted`.
 Projection refresh/notification jobs are idempotent and may be replayed from Postgres operational
 state. A document appears only when the exact M011 review/visibility/version binding and current
 grant authorize it; no single event is sufficient. The portal is not a separate source of truth.
 The appointment event contains only opaque refs/versions; each consumer reauthorizes and rereads
 M013, and unknown/raw provider events or revoked/stale roots cannot refresh client state.
+
+M014 canonical client invalidations include bounded `billing.quote_*`, `billing.obligation_*`,
+`billing.payment_*`, `billing.invoice_*`, `billing.refund_*` and `billing.dispute_*` transition facts.
+They contain only opaque refs/versions and never provider payloads, amounts, URLs, card facts or
+authorization. Consumers re-read M014/Postgres and show `unconfirmed|processing|unavailable` when
+freshness/completeness is missing; an event cannot directly mark portal state or begin service.
 
 For M012, canonical events are `secure_conversation.*`, `secure_message.*` and
 `secure_internal_note.*`. Client notification/projection consumers receive only opaque transition

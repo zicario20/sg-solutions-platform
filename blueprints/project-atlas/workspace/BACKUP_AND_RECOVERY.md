@@ -103,8 +103,49 @@ prove stale evidence cannot deny a fresh actor while current bounded controls st
 
 Export public Sanity datasets on a schedule and verify that exports contain no operational/private
 data. Stripe is not restored from local backup: retrieve authoritative external objects/events and
-run idempotent reconciliation to rebuild internal projections. Never store full payment-card data in
-backup artifacts.
+run idempotent reconciliation to rebuild internal projections. Never store full payment-card data,
+provider secrets, Checkout/receipt/Customer Portal URLs or raw payment-method details in backup
+artifacts.
+
+M014/M043–M045 recovery treats Stripe external financial state and Postgres operational state as
+separate authorities. At financial cutover:
+
+1. freeze new Checkout/refund/public-billing-capability operations and fence the old ingress
+   generation before restore;
+2. advance an externally protected monotonic recovery generation that cannot roll back with the
+   database snapshot. An old-generation webhook handler may return 2xx only if the receipt was
+   durably inserted and a final external-generation check still matches; after the fence changes it
+   returns a retryable non-2xx even if signature verification already succeeded;
+3. reject/purge pre-restore quote/payment return capabilities and browser operation handles;
+4. restore immutable quotes/obligations/provider bindings/operation reservations/inbox facts/
+   allocations/adjustments/approvals/audit from the selected database point;
+5. isolate event/idempotency namespaces by environment and ensure no test event can bind production;
+6. open signed webhook ingress first against the new generation, drain provider retries and keep all
+   provider mutation egress frozen;
+7. retrieve/reconcile Stripe Customer, Checkout, payment, invoice, refund and dispute objects in the
+   approved scope from a checkpoint before the recovery point through current provider time;
+8. match amount, currency, object linkage and monotonic state without last-event-wins or duplicate
+   journal/allocation/outbox effects;
+9. quarantine unknown/unallocated objects and mismatches for finance review;
+10. keep newly evaluated financial prerequisites `unconfirmed` until their reconciliation scope is
+   complete and fresh;
+11. resume provider mutations only after incident owner, independent reviewer and Product Owner
+    approve evidence under PAY-020.
+
+An existing Stripe Checkout/refund operation may have completed after the restored Postgres point.
+Recovery uses its bound request/object reference or exact protected/deterministically reproducible
+provider token plus an opaque SG operation correlation. If the local operation was rolled back,
+recovery performs provider-type/account/environment/time-bounded paginated correlation lookup.
+Provider idempotency retention is never treated as permanent; absent or duplicate matches become
+`manual_review|quarantined` and no replacement charge/refund is issued automatically. Provider event
+replay is safe only through generation-bound composite inbox identity, canonical object retrieval and
+provider-object/fact-version dedupe. Historical facts and allocations are corrected with append-only
+reconciliation/adjustment evidence, not destructive edits.
+
+Restore drills inject an event immediately before and after the generation fence, a provider success
+whose response and local binding are lost, recovery after provider idempotency expiry and ambiguous
+correlation matches. Evidence must prove retry/reconciliation captures each fact exactly once and no
+second Checkout/refund occurs.
 
 ## Configuration and secrets
 
@@ -130,7 +171,19 @@ can be transactionally undone.
 - [ ] Validate RLS/Storage policies with authorized and unauthorized identities.
 - [ ] Validate counts, referential integrity, audit chain and business-state invariants.
 - [ ] Import/validate the latest approved Sanity export if applicable.
-- [ ] Reconcile Stripe external state without replaying side effects.
+- [ ] Advance the protected financial recovery generation and invalidate pre-restore application
+  billing capabilities/return handles.
+- [ ] Freeze unsafe new provider mutations, fence old-generation webhook 2xx acknowledgement and
+  open only generation-bound ingress after restore before mutation egress.
+- [ ] Reconcile Stripe Customer/Checkout/payment/invoice/refund/dispute state from a documented
+  checkpoint without replaying side effects.
+- [ ] Prove duplicate/out-of-order provider events, including distinct Event IDs for one provider
+  fact and events on both sides of the recovery fence, yield one monotonic projection result.
+- [ ] Match every reconciled amount/currency/object to an immutable obligation or quarantine it.
+- [ ] Prove restored protected/reproducible provider-token and opaque-correlation evidence recover
+  uncertain Checkout/refund outcomes after lost response and key-window expiry; ambiguity must
+  quarantine rather than create a second provider mutation.
+- [ ] Keep new financial-prerequisite promotion disabled until reconciliation coverage is complete.
 - [ ] Rotate/reissue credentials used during recovery.
 - [ ] Run smoke, security and observability checks.
 - [ ] Measure actual RPO/RTO and record gaps.

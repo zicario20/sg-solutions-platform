@@ -435,7 +435,10 @@ M008 consumes, but does not own, events including:
   `document_review.correction_requested|accepted`, `document.client_visible_version_changed`;
 - `signature.requested`, `signature.completed`, `signature.expired`;
 - `appointment.client_projection_changed` (opaque refs/versions only; reauthorize and reread M013);
-- `payment.updated`, `payment.reconciled`, `invoice.updated`;
+- `billing.payment_processing_observed`, `billing.payment_succeeded_observed`,
+  `billing.payment_failed_observed`, `billing.payment_allocation_posted`,
+  `billing.reconciliation_mismatch_detected`, `billing.reconciliation_resolved` and
+  `billing.invoice_status_observed`;
 - `entitlement.changed`, `priority_policy.activated`;
 - `message.created`, `notification.created|dismissed` and `content.published|stale`.
 
@@ -624,7 +627,8 @@ The detailed execution specification is
 - M012/M025/M026 for message and notification summaries.
 - M013 for appointment truth/client projection and provider reconciliation; M024 only consumes an
   internal UI projection, while M008 receives no Google/provider reconciliation state.
-- M014/M042–M045 for authorized payment projection, catalog and entitlements.
+- M014/M042–M046 for authorized client billing projection, catalog, provider payments,
+  verification/reconciliation, entitlements and versioned pricing.
 - M067 for signature obligations and their client-visible projection.
 - M002/M062–M064 for approved current bilingual help content.
 - M077 for minimized audit/activity evidence.

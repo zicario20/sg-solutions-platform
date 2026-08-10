@@ -124,6 +124,20 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   `0/100`; full scaffold/build/hygiene validation passes. No `GENERATE`, route, schema/RLS policy,
   OAuth/calendar/meeting provider, notification/payment traffic, real appointment, merge or
   deployment is authorized. M014 may open only after the final clean M013 commit.
+- **M014 Client Payments and Billing:** Product/Architecture documentation is complete and
+  independently audited under Decision
+  025 from clean M013 commit `f50b71b`. The candidate defines M014 as the client projection/action
+  boundary over one shared Billing context; M021 owns ServiceOrder/human approval, M042 catalog, M043
+  provider integration, M044 verification/reconciliation, M045 entitlements and M046 pricing. It
+  specifies canonical price presentation with separate off-by-default publication, currency-policy
+  fail-closed activation, atomic quote/order/obligation acceptance, immutable money snapshots,
+  recoverable provider idempotency/correlation, signed generation-bound webhook invalidations with
+  canonical retrieval, orthogonal payment/approval/fulfillment axes, explicit access roots and safe
+  public/browser handoffs. Twenty Build/live policies remain `PAY-001`–`PAY-020`. Initial independent
+  findings were remediated; final independent review has zero open material findings and Cyber Neo is
+  security-clear at documentary risk `0/100`.
+  No `GENERATE`, route, schema/RLS policy, Stripe onboarding/secret/endpoint/event, price, payment,
+  merge or deployment is authorized. Decision 025 authorizes no M015 work after M014 closure.
 
 ## Architecture-first activation policy
 

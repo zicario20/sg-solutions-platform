@@ -175,3 +175,46 @@ the initial exact HTTPS provider destination without server fetching/following i
 idempotent and Postgres remains authority. M024 invokes M013 ports for internal calendar UI;
 M003–M006/M012 use the same ports for channel handoffs. Exact HTTP routes/payload limits await a Build
 gate and `APT-001`–`APT-020` decisions.
+
+M014 proposes separate `ClientBillingQueryService`, `StaffBillingQueryService` and future PAY-016
+`PublicBillingFacade` boundaries over the shared Billing context; M014 owns no portal-local payment
+table or direct Stripe calls. `QuoteService` creates/version-controls/sends/supersedes exact
+immutable quote versions. `QuoteAcceptanceOrchestrator.accept` CAS-validates one exact quote and, in
+one Postgres transaction, records acceptance, invokes M021's
+`ServiceOrderService.createOrBindFromAcceptedQuote`, opens exactly one obligation and commits one
+composite idempotency receipt; partial outcomes roll back. `ClientCheckoutService.createOrRecover`
+binds actor/capability, one service-
+order/case root, obligation/quote/price/terms/access/recovery versions, amount/currency, canonical
+digest and semantic operation before `PaymentProvider` egress. The exact provider idempotency token
+is protected/retrievable or deterministically reproducible by domain/key version; an opaque non-PII
+SG operation correlation supports type/account/environment/time-bounded paginated lookup after lost
+responses or restore. Provider-key expiry never permits blind reissue; ambiguity quarantines. Same-
+key/same-digest retry returns the original complete handoff; changed digest conflicts. Checkout/
+receipt/invoice/Customer Portal URLs are transient private/no-store destinations returned only after
+final authorization and exact activated HTTPS provider scheme/host/path/bound-object validation;
+they are never stored access authority or accepted as generic redirect input.
+
+`PaymentWebhookIngress.verifyAndAccept` accepts only bounded exact raw bytes with a valid environment-
+specific Stripe signature, durably inserts one minimal recovery-generation-bound inbox receipt under
+composite provider-account/environment/event identity and then permits asynchronous
+`PaymentProjectionService.applyAcceptedEvent`. Each event is an invalidation signal: projection
+retrieves canonical provider objects, uses processing leases and deduplicates both event identity and
+provider-object/fact version, never arrival order, and atomically commits
+provider fact, operational journal/allocation, obligation projection, M044 invalidation, audit and
+outbox. `PaymentReconciliationService` owns bounded checkpointed mismatch/recovery runs;
+`RefundWorkflowService` keeps request, approval, provider submission and observed outcome separate.
+`VerifiedPaymentPort` returns only a versioned `confirmed|pending|reversed|unconfirmed` financial
+assessment and cannot authorize M021 start or fulfillment.
+
+Every M014 Client/Public/Staff DTO is structurally separate, uses a frozen M007/ADR 004 authorization
+snapshot, performs no live provider fan-out and final-fences parent linkage, classification,
+visibility/block, financial/resource/access/recovery epochs before body, count, cursor, route key or
+destination. Payment/email/provider-customer/receipt possession grants nothing. Missing/stale source
+state becomes `unconfirmed|processing|unavailable`, not paid/zero/no-action. Exact routes, DTO limits,
+Stripe events and policies await a Build gate plus `PAY-001`–`PAY-020`.
+
+The PAY-016 public capability and provider return handle use separate purposes. GET/HEAD is inert;
+only an explicit POST/OTP exchange with exact Origin, Fetch Metadata and CSRF/bootstrap controls may
+establish an opaque host-only SameSite session. A clean redirect/history replacement removes token
+transport under no-referrer before personalized render/subresources, and edge/app logs, analytics,
+errors, caches and service workers exclude it.

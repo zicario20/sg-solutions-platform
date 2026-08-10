@@ -36,18 +36,26 @@ through delegated portal projections and background workflow coordinator.
 
 1. Staff converts a qualified lead or creates a client with duplicate review.
 2. Staff creates a service order from an approved catalog item/quote.
-3. After payment/approval prerequisites, staff opens a case and assigns responsibility.
+3. After the separately evaluated financial prerequisite and human approval prerequisites, staff
+   opens a case and assigns responsibility.
 4. Staff and workflows create tasks, request documents and update milestones.
 5. The client sees only the approved status, missing items and next action.
 6. Staff completes, cancels or archives the case while preserving audit/history.
 
 ## 7. States and transitions
 
-- Service order: `draft → quoted|payment_pending → paid_pending_approval → approved → active →
-  completed|cancelled|refunded` with payment and approval as separate facts.
-- Case: `intake_started → information_incomplete → payment_pending → payment_confirmed →
-  pending_review → authorized_to_begin → in_progress → waiting_documents|waiting_external →
-  completed|cancelled`.
+- ServiceOrder commercial state records accepted scope, internal review, approval, activation,
+  completion or cancellation only; it never encodes `paid`, `refunded` or provider state.
+- M044 financial assessment is an orthogonal axis:
+  `pending|confirmed|reversed|unconfirmed`; obligation lifecycle remains Billing-owned.
+- M074/M021 human approval is an orthogonal axis: `pending|approved|rejected|revoked` under its
+  approved policy. Financial confirmation cannot transition it.
+- Case fulfillment is an orthogonal operational axis such as
+  `intake_started|information_incomplete|pending_review|in_progress|waiting_documents|
+  waiting_external|completed|cancelled`; exact vertical mappings require their approved PRDs. It
+  never contains `payment_pending|payment_confirmed`.
+- Refund, dispute, reversal or cancellation on one axis emits a typed fact for human policy review;
+  it never automatically chooses a transition on another axis.
 - Task: `open → in_progress → blocked → completed|cancelled`; reopen requires reason.
 - Client/business records use active/archived status; archival never erases cases or audit evidence.
 
@@ -80,7 +88,10 @@ minor units/currency; time uses UTC plus IANA zone where local meaning matters.
 
 - `ClientService.createOrMatch`, `updateProfile`, `archive`.
 - `BusinessService.create`, `update`, `associateMember`.
-- `ServiceOrderService.createFromQuote`, `transition`, `cancel`.
+- `ServiceOrderService.createOrBindFromAcceptedQuote`, `transition`, `cancel`. The first is an
+  M021-owned port invoked by the Billing application orchestrator inside one Postgres transaction
+  that commits quote acceptance, exactly one ServiceOrder, exactly one obligation and a composite
+  idempotency receipt or rolls all of them back.
 - `CaseService.open`, `transition`, `setNextAction`, `assign`, `close`.
 - `TaskService.create`, `transition`, `completeWithEvidence`.
 - `NoteService.addInternal` creates only M018 client/case operational notes. It cannot create, revise,
@@ -129,6 +140,12 @@ stored in data/events.
 - Internal notes never appear in portal projections.
 - Every active case shows owner, current status and next action.
 - Case cancellation/archive preserves tasks, documents, payments, approvals and audit links.
+- A Cartesian state matrix proves ServiceOrder commercial, M044 financial, human approval and Case
+  fulfillment axes remain independent; cancellation/refund/dispute/reversal never auto-transition a
+  different axis.
+- Duplicate/stale quote acceptance and injected failure at every orchestration boundary produce no
+  partial acceptance, ServiceOrder or obligation; same-key/same-digest returns the original complete
+  receipt and changed semantics conflict.
 
 ## 18. Negative acceptance criteria
 
