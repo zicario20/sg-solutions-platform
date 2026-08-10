@@ -50,7 +50,9 @@ file.
 - `pnpm-lock.yaml` is unchanged with SHA-256
   `C1ABFA94B76E87B197ED33EB53829EF0A73BFEA830880AD47A0E43C1A3E6A31A`.
 - Cyber Neo lockfile checker: pnpm detected, 0 findings.
-- `git diff --check`: exit 0 before report recording; final validation is captured in the PCR.
+- `git diff --check`: exit 0 before report recording; final validation is recorded in
+  `PROJECT_STATE.md`. M008 remains a documentary candidate and does not claim operational
+  completion through a Phase Completion Report.
 
 ## Limitations and activation gates
 

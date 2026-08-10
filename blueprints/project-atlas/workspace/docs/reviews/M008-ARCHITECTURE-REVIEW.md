@@ -78,8 +78,9 @@ final link regression check must report zero broken local links.
 
 The independent re-review confirmed the six architectural remediations above, 21/21 required PRD
 sections, documentary-only scope and `git diff --check` exit 0. The hygiene review found only the
-two report links that are closed by recording these reports. Final automated evidence is captured
-in the M008 Phase Completion Report.
+two report links that are closed by recording these reports. Final automated evidence is recorded
+in `PROJECT_STATE.md`; M008 is a documentary candidate, so no Phase Completion Report claims
+operational completion.
 
 ## Limitations
 
