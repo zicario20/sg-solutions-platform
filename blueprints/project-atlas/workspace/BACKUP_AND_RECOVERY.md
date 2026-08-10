@@ -54,6 +54,51 @@ Restore tests prove a note never creates a Client-visible sequence/timestamp gap
 aggregate/counter/reservation/receipt without its revision/pointer remains unavailable and is
 reconciled or rolled back through the restricted recovery path.
 
+For M013, restoration reconciles appointment/type/availability-policy versions, UTC intervals and
+source IANA wall-time/offset evidence, active/expired holds, capacity invariants, immutable
+reschedule history, pending-capacity policy, requirements, the single access binding/authorization
+epochs and separate attendance/outcome/calendar/meeting/reminder states before accepting traffic.
+Expired holds/sessions/capabilities remain inactive even if cleanup state is restored. Short-TTL
+management-code plaintext vault objects are not restored from ordinary backup; restored opaque refs
+are revoked/purged and fresh issuance is required. Provider tokens are reissued or recovered only
+through the protected secret procedure; calendar/meeting events are not appointment truth.
+
+Before restored traffic, mark every restored meeting projection `recovery_required`, revoke its
+vault ref and launch receipt, and make launch fail closed. Provider revocation/reconciliation uses
+bounded idempotent retry plus a restricted manual path; a fresh current-epoch secret and final
+appointment authorization fence are required before launch can return. Restore tests take the
+snapshot before link rotation/revocation and prove the old projection/ref/receipt remains unusable
+even when provider cleanup is delayed; provider meeting state never mutates appointment truth.
+
+Before cutover, invalidate every admitted `CalendarSource` coverage receipt, watch generation and
+sync cursor, regardless of whether the provider was connected at backup time. Availability, hold and
+confirmation that depend on those sources fail closed until a full bounded paginated per-source sync
+publishes a new complete/fresh epoch. Provider unavailability, expired cursor, changed query filter
+or partial pagination keeps affected booking blocked; internal-only operation is allowed only when
+approved policy admits no external source. Rebuild generic projections using idempotent zero-attendee/
+no-provider-mail commands. Conflicts remain restricted/manual and cannot cancel, move or duplicate
+appointments silently. Restore tests include concurrent booking, DST gap/overlap, atomic reschedule,
+pending confirmation, duplicate callback/outbox replay, provider unavailable before/after restore,
+expired cursor, partial pagination, watch invalidation, meeting/code-secret revocation and access
+revocation.
+
+The recovery procedure also increments a protected `RecoveryEpoch` maintained outside the restored
+database generation. Every PublicBooking/Prospect session, management/OAuth/watch/code transaction,
+active hold, availability/context/bootstrap receipt, `SchedulingAbuseEvidence` counter/challenge/
+appeal state and gateway workload/replay proof binds that epoch.
+At cutover, reject all pre-restore epochs regardless of nominal TTL; expire/release all active holds,
+revoke/purge all management codes/capabilities and pending OAuth/watch transactions, rotate CSRF/
+gateway workload credentials as required, and clear/rebuild gateway nonce/replay state before
+traffic. Fresh ephemeral issuance is mandatory. Durable command idempotency receipts/outbox/audit
+restore with the appointment aggregate so a same-key/same-digest retry returns its recorded result
+without repeating an effect. Restore tests take a snapshot before revocation, restore it and
+prove that the old session, code, hold, receipt, CSRF, OAuth/watch transaction and signed gateway
+request all fail while confirmed appointment capacity remains intact.
+Scheduling abuse/rate/CAPTCHA/attempt evidence is purged or rebuilt from the new epoch at cutover;
+a restored counter or denial can never become a permanent block. Restore tests include a snapshot
+before abuse-state expiry, successful appeal and NAT/shared-network false-positive recovery, then
+prove stale evidence cannot deny a fresh actor while current bounded controls still apply.
+
 ## Sanity and Stripe
 
 Export public Sanity datasets on a schedule and verify that exports contain no operational/private

@@ -114,6 +114,16 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   has zero open findings and Cyber Neo is security-clear at documentary risk 0/100; twenty Build/live
   policies remain explicit `MSG-001`–`MSG-020` Product Owner decisions. M013 may open only after the
   final validated M012 commit.
+- **M013 Client Appointments:** Product/Architecture documentation is complete and independently
+  audited under Decision 025 from M012 commit `4fcbf425`. The candidate defines one Postgres
+  appointment authority, M013/M024 owner split, versioned availability, IANA/DST evidence, single-use
+  holds, database conflict protection, atomic rescheduling, separate lifecycle/prerequisite/
+  attendance/provider/reminder axes and independently gated minimized Google/Meeting projections.
+  Twenty Build/live policies remain explicit one-to-one `APT-001`–`APT-020` Product Owner decisions.
+  Independent review has zero open findings and Cyber Neo is security-clear at documentary risk
+  `0/100`; full scaffold/build/hygiene validation passes. No `GENERATE`, route, schema/RLS policy,
+  OAuth/calendar/meeting provider, notification/payment traffic, real appointment, merge or
+  deployment is authorized. M014 may open only after the final clean M013 commit.
 
 ## Architecture-first activation policy
 

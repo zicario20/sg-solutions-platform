@@ -19,8 +19,10 @@
 - `m012-secure-messaging.md` is the canonical PRD for authenticated secure conversations,
   client/staff messages, conversation-local internal notes, handoff, attachments-as-M011 references
   and message retention hooks.
+- `m013-client-appointments.md` is the canonical PRD for client/public appointment queries,
+  availability, holds, conflict-safe booking, appointment management and calendar reconciliation.
 - This document remains the umbrella for M008–M015 and the shared portal navigation/projection
-  principles. M013–M015 retain their owning PRDs or future dedicated specifications.
+  principles. M014–M015 retain their owning PRDs or future dedicated specifications.
 - Proposed ADR 012 governs the M008 aggregation, priority, freshness and no-store boundary.
 - Proposed ADR 013 governs M009 service/case grants, accepted-definition versions, state synthesis
   and the request-scoped service projection boundary.
@@ -30,7 +32,9 @@
   authorized byte delivery and recovery.
 - Proposed ADR 016 governs M012 secure-message content/visibility separation, durable ordering,
   typed owner references and human/AI handoff.
-- If this umbrella and a dedicated M008–M012 PRD conflict inside that module's scope, the dedicated
+- Proposed ADR 017 governs M013 appointment authority, versioned availability, concurrency,
+  time-zone evidence and minimized Google Calendar projection.
+- If this umbrella and a dedicated M008–M013 PRD conflict inside that module's scope, the dedicated
   PRD governs after Product Owner approval; unresolved cross-module policy is escalated rather than
   inferred.
 
@@ -144,10 +148,12 @@ staff notes, hidden fields and raw provider payloads.
 
 Portal consumes `case.client_projection_changed`, `document_request.published|satisfied`,
 `document_review.accepted` and `document.client_visible_version_changed`,
-`appointment.confirmed|changed`, `message.created`, `invoice.updated` and `payment.updated`.
+`appointment.client_projection_changed`, `message.created`, `invoice.updated` and `payment.updated`.
 Projection refresh/notification jobs are idempotent and may be replayed from Postgres operational
 state. A document appears only when the exact M011 review/visibility/version binding and current
 grant authorize it; no single event is sufficient. The portal is not a separate source of truth.
+The appointment event contains only opaque refs/versions; each consumer reauthorizes and rereads
+M013, and unknown/raw provider events or revoked/stale roots cannot refresh client state.
 
 For M012, canonical events are `secure_conversation.*`, `secure_message.*` and
 `secure_internal_note.*`. Client notification/projection consumers receive only opaque transition

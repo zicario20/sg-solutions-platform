@@ -116,5 +116,59 @@ prohibited from notification payloads, analytics, logs, traces, error reports, s
 browser persistence and external-channel copies. A participant or channel address never changes
 classification or authorization.
 
+M013 appointment/contact/participant details, exact times linked to a person, client-visible
+instructions, internal notes and service/case relationships are at least Confidential. OAuth access
+and refresh tokens, management/meeting secrets and any tax, credit, banking, identity or legal
+content embedded in an appointment context are Highly Sensitive. Calendar connection IDs,
+provider event IDs and per-source sync cursors are Internal or higher and remain server-only. A raw
+Google resource URI may contain a calendar/account email and is Confidential; M013 retains only the
+minimum resource ID needed to stop/bind plus a keyed canonical URI-comparison digest and never puts
+the raw URI in ordinary state, audit, telemetry or recoverable logs/backups. A one-time management
+code is Highly Sensitive: SG-controlled durable state may contain it only as a short-TTL envelope-
+encrypted vault object excluded from ordinary backups, while the approved M026 transport/recipient
+necessarily receives plaintext under APT-007 DPA/retention/recipient-risk controls. Public
+availability contains only opaque bounded slot receipts and generic modality/time facts. Raw
+external event titles, bodies, attendees and unrelated free/busy context are not retained. Calendar
+source-approved normalized `external_busy` intervals, `ExternalBusyCoverage` and source-projection
+metadata are Confidential server-only availability evidence: purpose/source/horizon bounded, exact-
+permission restricted and absent from Public/Client DTOs, ordinary Admin detail, analytics, tracing,
+error reports and support exports. They follow APT-015 retention/purge/legal-hold rules and backup
+retention cannot exceed that approved policy.
+Calendar
+and appointment content, capability/session handles, access/refresh tokens, contact values and
+sensitive times are prohibited from URLs, logs, analytics, traces, error reports and session replay.
+The sole SG callback/query-string exception is the transient OAuth callback authorization code +
+high-entropy opaque state:
+no PII, exact callback, PKCE, no-store/no-referrer, edge/app query-log redaction, immediate one-time
+consumption and clean redirect/replace; they are not application-durable data. Appointment
+confirmations/reminders are off before APT-010; after approval, a recipient-specific M026 delivery
+may contain only a generic SG Solutions appointment label, instant and intended display zone under
+current consent/preferences. The sole pre-APT-010 exception is APT-007 one-time management-code
+transport described above; management links/session handles remain prohibited. Type/service/case/
+staff/note/contact echoes, meeting/management links and provider metadata remain prohibited from
+notifications. Secret values use the approved secret/envelope-encryption boundary;
+an `_encrypted` name is never evidence of protection. All actor-bound scheduling responses are
+`private, no-store` and prohibited from ISR/CDN/service-worker/offline or browser-readable response/
+PII persistence. The application-session exception is an approved opaque host-only HttpOnly cookie
+handle for bounded server-side state. Separately gated/user-initiated APT-014 ICS download may persist
+as a disclosed non-revocable snapshot, and APT-011 meeting destination/history has its disclosed
+provider/browser exposure; neither is reusable SG authorization or permission for general API/PII
+browser storage.
+
+M013 `RecoveryEpoch`, workload-proof metadata and accepted replay nonces are Internal, server-only,
+content-free integrity/availability controls with bounded retention. The monotonic epoch is protected
+outside the restored database generation and may never decrease or restore from the same snapshot.
+Replay state stores only nonce, issuer, audience, key version, recovery epoch and expiry; raw body,
+body digest, signature and auth headers are prohibited. The workload signing/pepper keys are Highly
+Sensitive secrets held outside database/repository under approved custody, rotation and recovery.
+
+`SchedulingAbuseEvidence` is Confidential security data: purpose-scoped keyed network digest/key
+version, coarse risk counters, bounded TTL, explicit `RecoveryEpoch`, closed review/appeal result and
+opaque CAPTCHA/provider refs only. Raw IP, device
+fingerprint, contact text and provider token are prohibited from domain state, product analytics and
+ordinary telemetry. Access is limited to scheduling/security enforcement and approved review/appeal;
+expiry or epoch cutover deletes/rebuilds it under APT-017; restored prior-epoch evidence cannot make
+an allow, denial or challenge decision.
+
 [NEEDS PRODUCT OWNER DECISION: approve service-specific retention periods and legal-hold authority
 after Illinois/legal counsel review.]

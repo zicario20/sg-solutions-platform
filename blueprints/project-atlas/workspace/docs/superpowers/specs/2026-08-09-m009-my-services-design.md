@@ -396,7 +396,10 @@ link. It is not a miniature implementation of the destination module.
 ### Appointments
 
 - Shows next authorized appointment type, localized instant, IANA zone and safe channel label.
-- Reconciliation warning appears when applicable.
+- Uses M013 Postgres appointment truth plus M013 client-projection version/freshness only. Google/
+  provider reconciliation state never enters the Client DTO or warning copy. A stale/unavailable M013
+  projection is labeled generically and risky actions remain disabled until their M013 handoff
+  reauthorizes; it never invents or hides an appointment from external-calendar state.
 - Reschedule/cancel lives in M013.
 
 ### Messages

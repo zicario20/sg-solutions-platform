@@ -93,7 +93,7 @@ The following concepts are compatible and should inform later normalization:
 | M10 Process status | `m010-process-status.md` plus `client-portal.md` | Dedicated explicitly granted projection, deterministic status/action and governed real-event timeline in 1A; richer approved timelines/estimates in 1B. |
 | M11 Documents | `m011-document-portal.md` plus `document-center.md` | Dedicated secure request/quarantine/version/review/delivery core in 1A; M065 OCR, M066 generation, M067 signing and external sharing later. |
 | M12 Secure Messaging | `m012-secure-messaging.md` plus `client-portal.md` | Dedicated human secure-messaging core after 1A foundations; AI, richer routing and cross-channel continuity remain separately gated. |
-| M13 Appointments | `scheduling-calendar.md` | Basic safe scheduling in 1A; advanced Google synchronization in 1B. |
+| M13 Appointments | `m013-client-appointments.md` plus `scheduling-calendar.md` boundary | Basic safe scheduling in 1A; advanced Google synchronization in 1B. |
 | M14 Payments | `billing.md` | Deposits and one-time payments in 1A; plans and advanced reconciliation in 1B. |
 | M15 Financial/Business Profile | `data-platform.md` plus future service PRDs | Introduce only purpose-bound fields required by an approved service slice. |
 | M16 Admin Dashboard | `client-case-management.md` and future reporting PRD | Operational minimum only; avoid dashboard-driven domain logic. |

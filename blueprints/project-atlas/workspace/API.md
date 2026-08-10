@@ -129,4 +129,49 @@ readiness/activation policy. Neither receives transcript/session replay. M076 ow
 and human-required decisions; M047–M060 AI cannot replace it. M090/M091/M080/M081 retain system
 configuration, staff user and role authority; M012 cannot self-grant. M026 may receive only
 purpose-bound opaque recipient/event references inside its first-party boundary, never direct
-contact PII or protected content/resource IDs.
+contact PII or protected content/resource IDs. The sole M013 APT-007 exception is one-time management
+code delivery: the outbox/port carries only opaque contact and short-TTL vault/delivery refs, and only
+the scoped M026 delivery worker may retrieve plaintext for the approved transport. This is separate
+from APT-010 reminders and never places plaintext in ordinary events, logs, audit or retries.
+
+M013 proposes audience-separated `AppointmentQueryService`, `AppointmentTypeQueryService`,
+`StaffAppointmentQueryService` and Public/Client/Staff availability methods; split
+`BookingService.releaseHold|request|confirmPending|cancel|reschedule` plus future APT-008 `reassign`;
+`AppointmentRequirementService`; `AttendanceService`; `AppointmentOutcomeService`; read-only
+`ScheduleAdminQueryService` and
+draft/preview/publish/block/override `ScheduleAdminService`; `ProspectManagementService` code
+request/reissue/exchange; `ClientCalendarExportService`; and the M013 summary/timeline projection
+ports. Public raw contact/consent enters only the cross-domain `PublicBookingOrchestrator`, which sends
+it transiently to M020/M078 reservation and passes only an opaque receipt to M013; the context and
+appointment finalize atomically. Public slot reads return bounded opaque receipts, never staff/event/
+contact metadata. Commands bind actor/service identity, purpose/session where applicable, the single
+access root, type/policy/authorization versions, canonical opaque-only digest, trusted time and
+idempotency. Released/invalidated/expired/consumed holds cannot be reused.
+
+`PublicSchedulingFacade`, including its bounded `requestBooking` operation, is the only application
+boundary callable by the same-origin Astro Public Scheduling Gateway. `requestBooking` verifies the
+external envelope and then invokes `PublicBookingOrchestrator` internally; the orchestrator and M013
+domain ports are never Gateway-callable. The Gateway has no DB/provider/CRM credential, and signs each request with a
+rotating scoped workload proof bound to environment/issuer/audience/service/method/path/body digest/
+timestamp/nonce/key version/`RecoveryEpoch`. The application atomically claims replay state before
+work, rejects direct browser/internet/replayed/stale calls, applies `SchedulingAbuseEvidence` controls
+and still performs domain/session authorization. Browser mutations require exact Origin and, after
+the credential-free bootstrap POST, session-bound CSRF; provider/OAuth ingress uses its separate
+authenticated-channel/state proof. Client/Public/Staff DTOs are structurally separate,
+private/no-store and final-fenced.
+
+Pending confirmation uses complete owner evidence and either retained capacity or a fresh hold under
+APT-006; it never reuses the consumed hold. `CalendarConnectionService`,
+`CalendarConnectionQueryService` and provider busy/sync/credential-read contracts require APT-009/
+020. External event create/update/outward reconciliation additionally requires APT-014; invitations
+or provider mail additionally require coordinated APT-010/014. Scoped idempotent audited delete/
+cancel/stop/revoke of previously bound Calendar/Meeting artifacts remains available for gate-off,
+rollback and restore, but cannot create/update/rebind/launch. Per-source contracts use independent
+coverage/cursors, zero attendees and suppressed provider notifications; Google push `pending_watch`
+binds a resource only after the authenticated watch response. `MeetingConnectionService`, separate
+`MeetingConnectionQueryService`, `MeetingProvider` and `MeetingLaunchService` are independently gated
+by APT-011, store only opaque/vault refs and validate
+the initial exact HTTPS provider destination without server fetching/following it. Reconciliation is
+idempotent and Postgres remains authority. M024 invokes M013 ports for internal calendar UI;
+M003–M006/M012 use the same ports for channel handoffs. Exact HTTP routes/payload limits await a Build
+gate and `APT-001`–`APT-020` decisions.

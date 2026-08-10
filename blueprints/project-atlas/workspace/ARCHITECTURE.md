@@ -195,6 +195,29 @@ fence governs body, counts, cursors, read evidence and writes. Protected transcr
 enters logs, telemetry, notification payloads or browser persistence. Proposed ADR 016 records this
 boundary; no route, table/RLS policy, provider, AI, notification or real message is authorized.
 
+M013 proposes one appointment authority inside the modular monolith. It owns versioned appointment
+types/availability policies, holds, appointments, client/public projections, cancellation/
+rescheduling, attendance/structured outcomes and Google/meeting projections; M024 owns only the
+internal calendar experience and calls M013 ports. A static-first Astro `/book` shell uses a narrow
+same-origin Public Scheduling Gateway with no DB/provider credential; dynamic actor-bound responses
+are private/no-store, a credential-free Origin/Fetch-Metadata bootstrap creates the opaque server-
+side session and later browser mutations require Origin + CSRF. Gateway→app calls use a rotating
+workload signature bound to environment/audience/service/method/path/body/time/nonce/key version and
+RecoveryEpoch, with replay rejection, inner quotas and fail-closed outage. M020/M078 reserve scheduling-only
+prospect context and finalize it atomically with the winning appointment. Slot derivation uses UTC
+instants plus IANA evidence, versioned policy and independently complete/fresh external calendar
+sources. Positive-duration half-open capacity, single-use holds, Postgres transactions, expected
+versions and opaque-only digest-bound idempotency decide conflicts; browser/Google never do. Pending
+prerequisites retain or release capacity only under APT-006, and rescheduling secures the new interval
+before releasing the old. Appointment, prerequisite/payment, attendance, structured outcome,
+provider sync and reminder axes stay separate. Google OAuth and push use one-time/pending transactions;
+provider credentials/secrets stay in vault boundaries, per-source cursors/coverage fail closed,
+calendar projections default to zero attendees/no provider mail and meetings launch through an exact
+HTTPS allowlist. M003–M006/M012/M051 use M013 contracts, not channel calendars or direct AI authority.
+M014/M043–M045 retain money, M026 delivery, M077 audit, M085 retention and M092 reporting. Proposed
+ADR 017 records this boundary; no route, schema/RLS policy, calendar, credential, provider traffic or
+real appointment is authorized.
+
 ## Data protection
 
 Data follows `DATA_CLASSIFICATION.md`. Managed encryption at rest is necessary but insufficient for

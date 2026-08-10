@@ -67,7 +67,7 @@ Shared communications application/domain
   ├─ template/purpose policy
   ├─ M002 PublicKnowledgeProvider
   ├─ LeadIntakePort → M006 capture / M078 consent / M020 lead
-  ├─ M013/M024 SchedulingPort
+  ├─ M013 SchedulingPort (M024 is internal calendar UI only)
   ├─ M043–M045 Payment/secure-link ports
   ├─ M011 DocumentIntakePort (later)
   ├─ M025 InboxPort (later)
@@ -94,7 +94,7 @@ remain shared and provider-neutral. No separate service is justified initially.
 | Conversation/message/handoff ownership | Shared M003/M025 communications kernel |
 | Person, lead, client and duplicate handling | M017/M020/Client domain |
 | Consent evidence and contactability | M078 plus M006 channel-purpose policy |
-| Appointment truth | M013/M024 Postgres scheduler |
+| Appointment truth | M013 Postgres scheduler; M024 projects internal UI only |
 | Financial truth and payment link | M043–M045 / Stripe projection |
 | Document truth and media acceptance | M011 Document Center |
 | Public answer content | M002 public published projection |

@@ -50,7 +50,7 @@ records.
 - Optional conversion to lead/contact through M006 capture, M078 consent and M020 lead contracts
   after separate contact and marketing-consent capture; anonymous chat use alone does not imply
   marketing consent.
-- Optional appointment handoff through the M013/M024 scheduling contract when activated.
+- Optional appointment handoff through the M013 scheduling contract when activated; M024 is internal calendar UI only.
 - Bounded preliminary intake schemas for Credit, Taxes, Business Formation, Business Funding and
   Home Buying. Session answers remain drafts until the visitor confirms a structured M006 capture
   submission and its applicable M078 consent actions.

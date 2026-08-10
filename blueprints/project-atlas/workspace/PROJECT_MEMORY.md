@@ -310,3 +310,26 @@
   files/131 tests, import contracts and a 226-page Astro build. The stable candidate had 125 local
   links with zero broken, no introduced secrets/PII/local paths, unchanged lockfile and clean
   whitespace. The authenticated Next.js app remains intentionally empty and no route was invented.
+- M013 began from the independently audited M012 commit `4fcbf425`. The complete supplied M013 source
+  was normalized into one Postgres appointment authority for versioned types/policies, deterministic
+  availability, single-use holds, conflict-safe booking/rescheduling, separate prerequisite/
+  attendance/outcome axes and audience-specific Public/Client/Staff projections. M024 retains only
+  the internal calendar UI/authorized projection and has no appointment mutation authority.
+- Proposed ADR 017 makes Google Calendar a per-source minimized rebuildable projection, keeps Meeting
+  secrets behind a just-in-time vault boundary and defines independent activation plus cleanup-only
+  teardown gates. Public raw contact/consent reaches M020/M078 only through the internal application
+  orchestrator behind `PublicSchedulingFacade`; M013 receives an opaque receipt and the Astro Gateway
+  has no CRM, database or provider authority.
+- M013 independent review closed facade, booking-audience, hold/requirement lifecycle, timeline,
+  Admin/provider-query, Calendar/Meeting gate/teardown, external-busy privacy, restore, reason-code,
+  Client-consumer, ownership/sequencing and contrast-accessibility findings. The final pass reported
+  zero open findings. Cyber Neo's final post-contrast audits reported zero Critical/High/Medium/Low
+  findings and documentary risk 0/100.
+- Twenty unresolved M013 policies remain explicit one-to-one `APT-001`–`APT-020` Product Owner
+  decisions. The candidate creates no route, schema/RLS policy, OAuth/calendar/meeting configuration,
+  notification/payment traffic or real appointment and does not accept ADR 017.
+- Final M013 evidence passed lint/format over 143 files, 11-package typecheck, 20 test files/131 tests
+  with three deliberate skips, import contracts and a 226-page Astro build. The audited candidate had
+  55 local links with zero broken, unchanged lockfile, clean whitespace and zero introduced secrets,
+  PII, private URLs, local paths, media, binaries or dependency changes. M014 may open only from the
+  resulting clean M013 commit under Decision 025.

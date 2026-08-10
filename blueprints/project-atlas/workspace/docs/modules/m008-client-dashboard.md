@@ -80,7 +80,7 @@ Release 1A identifiers, DTOs, authorization decisions and priority-policy versio
 - Detailed service pages, complete timelines or full requirements; M009/M010 own them.
 - Upload, preview, download or document review behavior; M011 owns it.
 - Full message bodies, attachments or conversation actions; M012 owns them.
-- Booking, cancellation or rescheduling logic; M013/M024 own it.
+- Booking, cancellation or rescheduling logic; M013 owns it. M024 is internal calendar UI only.
 - Checkout, invoice, receipt, refund or dispute operations; M014/M043–M045 own them.
 - CRM records, internal notes, staff tasks, risk scores, approval rationale, AI reasoning, prompts,
   tool output, raw audit events or legal strategy.
@@ -277,8 +277,9 @@ The owning modules remain authoritative for their complete internal/provider sta
 10. The dashboard reads the Postgres reconciled financial projection. Stripe remains external
    financial authority; stale/missing reconciliation cannot be inferred from a return URL, client
    parameter or cached dashboard value.
-11. Google Calendar is never queried from the browser. The appointment summary uses the internal
-    scheduling record and its reconciliation status; stale external sync is labeled safely.
+11. Google Calendar is never queried from the browser. The appointment summary uses only current
+    M013 Postgres appointment truth and M013 client-projection freshness. External sync failure is an
+    internal M013 recovery concern and never becomes a false Client appointment state.
 12. Service progress uses real milestones and named stages. Fabricated percentages are prohibited.
 13. Timeline previews contain only explicitly client-visible events and never internal notes,
     prompts, risk signals, tool output, legal strategy or raw audit events.
@@ -355,7 +356,8 @@ an approved `last updated` value.
   keys, safe due instant/zone where applicable, owning service label and allowlisted route key.
 - `ClientObligationSummary`: authorized counts by safe state; no hidden-resource totals.
 - `ClientAppointmentSummary`: appointment type label, instant, IANA zone, channel-safe label and
-  reconciliation freshness; no unrelated calendar data.
+  M013 client-projection version/freshness; no Google/provider reconciliation state or unrelated
+  calendar data.
 - `ClientPaymentSummary`: amount/currency only when already authorized and owned by M014, safe
   obligation state and canonical portal route; no client secret, card data or raw Stripe object.
 - `ClientMessageSummary`: unread count and bounded metadata; no body or attachment content.
@@ -432,7 +434,7 @@ M008 consumes, but does not own, events including:
 - `task.client_action_changed`, `document_request.published|satisfied|expired`,
   `document_review.correction_requested|accepted`, `document.client_visible_version_changed`;
 - `signature.requested`, `signature.completed`, `signature.expired`;
-- `appointment.confirmed`, `appointment.changed`, `calendar.reconciled`;
+- `appointment.client_projection_changed` (opaque refs/versions only; reauthorize and reread M013);
 - `payment.updated`, `payment.reconciled`, `invoice.updated`;
 - `entitlement.changed`, `priority_policy.activated`;
 - `message.created`, `notification.created|dismissed` and `content.published|stale`.
@@ -465,8 +467,10 @@ amounts, counts tied to identity, message/document data or client profile fields
   safe retry/support path.
 - **Payment projection stale/unavailable:** never infer paid, unpaid or amount. Disable payment-state
   claims and direct the user to a safe refresh/M014 support route.
-- **Appointment reconciliation stale:** a last-known appointment may display only with an approved
-  `asOf` label and non-destructive actions disabled; otherwise show unavailable.
+- **M013 appointment projection stale/unavailable:** a last-known appointment may display only with
+  an approved `asOf` label and non-destructive actions disabled; otherwise show unavailable. Google/
+  external-calendar staleness is not a Client DTO field and cannot falsify or hide Postgres appointment
+  truth; M013 creates the staff recovery path while every client action reauthorizes directly in M013.
 - **Messages/notifications unavailable:** preserve core action/service content and label only the
   failed section; a zero badge is prohibited.
 - **Help content stale/missing locale:** omit unsafe guidance and provide a neutral Help Center link.
@@ -618,7 +622,8 @@ The detailed execution specification is
 - M009/M010 for detailed services and process status.
 - M011/Document Center for document obligations and secure owning routes.
 - M012/M025/M026 for message and notification summaries.
-- M013/M024 for appointment state and Google reconciliation.
+- M013 for appointment truth/client projection and provider reconciliation; M024 only consumes an
+  internal UI projection, while M008 receives no Google/provider reconciliation state.
 - M014/M042–M045 for authorized payment projection, catalog and entitlements.
 - M067 for signature obligations and their client-visible projection.
 - M002/M062–M064 for approved current bilingual help content.
@@ -636,7 +641,7 @@ approved owning capability is omitted or shown as unavailable—not simulated.
 | Cross-client or cross-context leakage | Complete authorization snapshot, per-port authorization, consistent RLS read snapshot, final revocation fence and adversarial tests. |
 | Misleading priority after partial failure | Critical-source completeness rule and `unconfirmed` state. |
 | Missing producer silently lowers priority | Closed policy-versioned source registry and fail-closed configuration tests. |
-| Stale financial/calendar data | Reconciled Postgres projections, per-section freshness and disabled risky actions. |
+| Stale financial/M013 client projection | Reconciled Postgres financial facts, M013-owned client-projection freshness and disabled risky actions. |
 | Dashboard becomes a second domain model | Read-only projection ports, no mutation ownership and ADR 012. |
 | Fan-out latency or exhaustion | One bounded aggregator, parallel domain ports, limits/timeouts and no live provider fan-out. |
 | Sensitive telemetry/cache leakage | Field allowlists, no-store, no browser persistence, redaction tests and no portal autocapture. |

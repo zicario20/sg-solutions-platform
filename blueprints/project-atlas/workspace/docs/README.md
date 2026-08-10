@@ -37,6 +37,7 @@ Security and recovery authorities:
 - [M010 Client Process Status and Public Timeline ADR](adr/014-client-process-status-and-public-timeline-boundary.md)
 - [M011 Document Authority, Quarantine, Version and Delivery ADR](adr/015-document-authority-quarantine-version-and-delivery-boundary.md)
 - [M012 Secure Messaging Content, Visibility, Ordering and Handoff ADR](adr/016-secure-messaging-content-visibility-ordering-and-handoff-boundary.md)
+- [M013 Appointment Authority, Availability, Concurrency and Calendar Projection ADR](adr/017-appointment-authority-availability-concurrency-and-calendar-projection.md)
 
 M001 delivery evidence:
 
@@ -155,6 +156,18 @@ M012 architecture candidate:
   is `SECURITY-CLEAR` at documentary risk `0/100`. The candidate is ready only for Product Owner
   architecture review; no Build, route, schema/RLS policy, provider, AI, notification, real message
   or production behavior is authorized.
+
+M013 architecture candidate:
+
+- [M013 Independent Architecture Review](reviews/M013-ARCHITECTURE-REVIEW.md)
+- [M013 Security Architecture Review](reviews/M013-SECURITY-REVIEW.md)
+- [M013 Client Appointments PRD](modules/m013-client-appointments.md)
+- [M013 Client Appointments Design](superpowers/specs/2026-08-09-m013-client-appointments-design.md)
+- [M013 Appointment Authority and Calendar Projection ADR](adr/017-appointment-authority-availability-concurrency-and-calendar-projection.md)
+- Independent architecture/accessibility review is approved with zero open findings and Cyber Neo
+  is `SECURITY-CLEAR` at documentary risk `0/100`. The candidate is ready only for Product Owner
+  architecture review; no Build, route, schema/RLS policy, OAuth/calendar/meeting provider,
+  notification/payment activation, real appointment or production behavior is authorized.
 
 Design specifications live under `superpowers/specs/`. The status in each specification header is
 authoritative: `Draft for Product Owner review` is not approved, while an approved specification

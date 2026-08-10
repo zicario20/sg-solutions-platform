@@ -265,7 +265,7 @@ email, phone, free text or internal IDs.
 
 Each is separate and disabled by default:
 
-- Scheduling starts after an accepted form receipt and calls M013/M024; it never writes Google
+- Scheduling starts after an accepted form receipt and calls M013; M024 is internal calendar UI only, and the form never writes Google
   directly and booking receipt remains distinct.
 - Quote/payment handoff calls M042–M045 with a server-approved catalog reference; browser prices or
   products are ignored and Stripe remains financial truth.

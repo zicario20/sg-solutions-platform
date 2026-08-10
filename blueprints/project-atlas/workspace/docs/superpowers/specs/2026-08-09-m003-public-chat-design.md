@@ -54,7 +54,7 @@ Astro public page
             ├─ ModerationProvider (disabled/local/live adapter)
             ├─ ChatModelProvider (disabled/live adapter)
             ├─ LeadIntakePort → M006 capture / M078 consent / M020 lead
-            ├─ PublicSchedulingPort → M013/M024
+            ├─ PublicSchedulingPort → M013 (M024 is internal calendar UI only)
             ├─ HumanHandoffPort → M025
             ├─ SafeStatus/Payment query ports → portal domains (later)
             ├─ MarketplaceDiscoveryPort → M037–M041 (later)

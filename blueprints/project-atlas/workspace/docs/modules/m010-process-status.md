@@ -486,6 +486,9 @@ Contract:
 - `DocumentProcessPort.getRequirementSummary`
 - `BillingProcessPort.getFinancialSummary`
 - `SchedulingProcessPort.getAppointmentSummary`
+- `SchedulingProcessPort.listClientTimelineFacts` maps directly to M013
+  `AppointmentProjectionPort.listClientTimelineFacts` and is the only appointment-history source;
+  `getAppointmentSummary` cannot synthesize or replace timeline facts.
 - `SignatureProcessPort.getSignatureSummary`
 - `MessageProcessPort.getConversationAvailability`
 - `DeliverableProcessPort.getDeliverableAvailability`
@@ -540,7 +543,7 @@ never invokes a command through the summary port.
 - `document_version.visibility_changed`
 - `document_context.visibility_changed`
 - `invoice.updated`, `payment.updated`, `refund.updated`, `dispute.updated`
-- `appointment.confirmed|changed|cancelled|completed|no_show`
+- `appointment.client_projection_changed` (opaque refs/versions only; reauthorize and reread M013)
 - `signature.requested|completed|declined|expired`
 - approved external-dependency and client-visibility events
 
@@ -560,6 +563,13 @@ events/state and maps it in request scope through the pinned `PublicProcessEvent
 - validates correction/retraction scope, expected chain version and acyclic links;
 - orders and paginates the derived result under the stable snapshot watermark;
 - returns no raw owner event, audit event, provider payload or unapproved public projection.
+
+For M013, `appointment.client_projection_changed` is only an invalidation hint. The M013 adapter must
+call `AppointmentProjectionPort.listClientTimelineFacts(root, actor, sinceVersionOrOpaqueCursor)` to
+obtain every immutable allowlisted transition fact with verified `SourceEventKey`, source/version and
+correction provenance. It must not reconstruct history from a single current-state summary. Multiple
+appointment transitions before a reread, duplicates, out-of-order delivery and corrections map
+idempotently without collapsing a real transition or inventing one.
 
 Release 1A creates no M010 projection table, writer, outbox consumer, materialization job,
 reconciliation job or rebuild job. Duplicate/out-of-order source facts are interpreted against the
@@ -730,6 +740,9 @@ unpublished in Release 1A. Motion is subtle and functional.
   reauthorizes independently.
 - [ ] Every timeline item traces to a real source event plus mapping-policy version; duplicate,
   out-of-order, corrected and retracted events are deterministic.
+- [ ] M013 adapter tests prove multiple appointment changes before one invalidation reread remain
+  distinct, ordered and provenance-backed; current-state reread alone cannot satisfy the timeline
+  contract and corrections never overwrite immutable transition evidence.
 - [ ] Timeline pagination is bounded, snapshot-consistent and deterministic; tampered, expired,
   cross-process/context or incompatible-policy cursors fail to a generic restart and grant/
   visibility changes cannot survive the final fence.

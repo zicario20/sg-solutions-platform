@@ -409,7 +409,7 @@ M009 owns no business-state event and no independent workflow. It consumes durab
 - `task.created|completed`, `document_request.published|satisfied`,
   `document_review.accepted|correction_requested|rejected`,
   `document.client_visible_version_changed`, `payment.updated`,
-  `appointment.changed`, `message.created`, `deliverable.ready|revoked`;
+  `appointment.client_projection_changed`, `message.created`, `deliverable.ready|revoked`;
 - `grant.created|revoked`, `entitlement.changed` and `policy.updated`.
 
 Release 1A recomputes request-scoped projections. A later materialized projection requires a

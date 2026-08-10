@@ -215,9 +215,10 @@ PostHog, chat and partner integrations remain outside scope.
 
 ## Dependencies for the next phase
 
-M006 owns public form persistence and consent capture; M013/M024 own scheduling; M017/M020 own CRM
-lead conversion; M007 owns client authentication; M042–M046 own pricing/payment behavior; M002 owns
-the searchable Help Center. None was implemented by M001.
+M006 owns public form persistence and consent capture; M013 owns scheduling/appointment authority and
+M024 owns only the internal calendar UI/authorized projection; M017/M020 own CRM lead conversion;
+M007 owns client authentication; M042–M046 own pricing/payment behavior; M002 owns the searchable
+Help Center. None was implemented by M001.
 
 ## Rollback
 

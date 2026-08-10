@@ -67,7 +67,7 @@ service was approved, a payment was made or professional eligibility was determi
 
 - Additional governed form types and conditional schema controls.
 - Approved anonymous draft/resume and abandonment recovery if privacy/retention decisions permit.
-- Embedded scheduling after an accepted submission through M013/M024.
+- Embedded scheduling after an accepted submission through M013; M024 is internal calendar UI only.
 - Server-issued payment/quote handoff through M042–M045 when service policy permits.
 - Risk-based external bot challenge after vendor/privacy approval.
 - Expanded attribution and consented campaign measurement.
@@ -112,7 +112,7 @@ migrations and optional fields. There is no disposable form endpoint or temporar
 - Operations administrator publishing/superseding future form versions under separation of duties.
 - M020 lead service and CRM operators.
 - M078 consent authority and M077 audit service.
-- M013/M024 scheduling, M026 notification, M042–M045 payment/quote and M011 document capabilities,
+- M013 scheduling, M026 notification, M042–M045 payment/quote and M011 document capabilities,
   each behind its own future gate.
 - Security, privacy, observability and incident-response operators.
 - Optional anti-abuse, email, analytics or model providers after separate activation approval.
@@ -155,7 +155,7 @@ migrations and optional fields. There is no disposable form endpoint or temporar
 ### Scheduling next step
 
 1. A submission must first reach `accepted` and receive an authoritative submission receipt.
-2. If M013/M024 is later active and the form/version allows it, the UI may request real slots using a
+2. If M013 is later active and the form/version allows it, the UI may request real slots using a
    separate scheduling contract.
 3. Slot selection and booking use the scheduler's concurrency/idempotency rules.
 4. Form receipt and appointment receipt remain distinct; a failed booking does not erase the form.
@@ -287,7 +287,7 @@ migrations and optional fields. There is no disposable form endpoint or temporar
 - Consent evidence includes exact copy/version/hash, locale, purpose, action, timestamp, form version
   and delivery context; a checkbox alone is insufficient evidence.
 - M020 owns lead creation/deduplication. M006 never directly creates/merges a client.
-- M013/M024 owns slots/bookings. M006 never invents an appointment.
+- M013 owns slots/bookings; M024 owns only internal calendar UI. M006 never invents an appointment.
 - M042–M045 owns quotes/payments. M006 never trusts price/product/payment state from the browser.
 - M078 owns consent state; M006 collects an evidence envelope under an approved policy.
 - M077 owns audit evidence; analytics events are not audit records.
@@ -734,7 +734,7 @@ may be described as live.
 - [NEEDS PRODUCT OWNER DECISION: approve whether any public upload initiation is allowed in a later
   slice and its file allowlist, size, consent and M011 quarantine/scan path; default is reject-all.]
 - [NEEDS PRODUCT OWNER DECISION: approve which accepted forms may offer embedded scheduling versus a
-  callback/redirect and the required M013/M024 fallback; no slot or booking is implied now.]
+  callback/redirect and the required M013 fallback; no slot or booking is implied now.]
 - [NEEDS PRODUCT OWNER DECISION: approve which accepted forms may receive a quote/payment handoff,
   catalog/price authority, copy and M042–M045 eligibility; browser-defined prices are forbidden.]
 - [NEEDS PRODUCT OWNER DECISION: approve any partner/Marketplace sharing purpose, exact fields,

@@ -48,7 +48,7 @@ Measured scale, hybrid infrastructure and mobile expansion
     M041 provider abstractions, M025 communications, M077 audit and M084 integration security; it
     never owns leads, clients, appointments, payments, consent or authorization.
 15. M006 owns public form projection/session/submission UX and receipt. M020 owns leads/deduplication,
-    M078 owns consent, M077 owns audit, and M013/M024, M042–M045, M011, M026 and M040 own their
+    M078 owns consent, M077 owns audit, and M013, M042–M045, M011, M026 and M040 own their
     optional handoffs. `apps/www` public ingress has no direct database/provider authority and a
     public submission never becomes a client/case/service order by implication.
 16. M007 owns client invitation, authentication, recovery, account-security UX and identity-linking
@@ -99,6 +99,19 @@ Measured scale, hybrid infrastructure and mobile expansion
     M012 cannot replace or self-grant through any of them.
     M025 receives a content-free list/assignment projection only; protected detail is a fresh
     request-scoped M012 read and is never persisted or cached by M025.
+23. M013 owns appointment types/policies, availability derivation, holds, bookings, client/public
+    appointment projection, lifecycle/attendance/structured-outcome commands and Google/meeting
+    projection/reconciliation. M024 owns the internal calendar UI/cross-domain agenda and M090 the
+    Settings placement; neither writes appointment state. M024's R1.3 task/agenda shell has no strict
+    dependency on the later R1.5 M013 appointment capability: the M013 projection/commands are an
+    optional gated contribution only after M013 approval/activation. M003–M006/M012 are channel clients. M020/
+    M078 own scheduling-purpose prospect/consent reservation and finalization; M007/ADR 004 identity/
+    resource access; M014/M043–M045 payment prerequisites; M017/M020 CRM activity; M021/M022 service/
+    case; M023 tasks; M026 reminder and APT-007 code delivery; M077 audit; M085 retention; M092
+    reporting; M097 telemetry. M041 supplies adapter conventions, while M013 owns domain ports.
+    After APT-019 only, M051 under M047 may call receipt-bound M013 tools; M076 owns compliance/human
+    decisions and AI never acquires availability, payment, attendance, note or authorization authority.
+    Provider, payment, requirement, attendance, structured outcome and reminder axes never collapse.
 
 ## Fronteras de extracción
 

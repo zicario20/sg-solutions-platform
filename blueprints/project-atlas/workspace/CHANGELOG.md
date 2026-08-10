@@ -149,3 +149,19 @@
 - Final M012 validation passed two frozen offline installs, lint, format, 11-package typecheck,
   20 test files/131 tests, import contracts, a 226-page Astro build, 125 local links and
   `git diff --check`; the lockfile remained unchanged and candidate secret/PII scans were clear.
+- Added the M013 Client Appointments PRD, responsive Public/Client/Admin design and proposed ADR 017.
+  The candidate defines one Postgres appointment/availability authority, audience-separated booking,
+  conflict-safe holds and rescheduling, typed prerequisite/attendance/outcome axes and minimized
+  Google/Meeting projections without creating a route, table/RLS policy, provider configuration or
+  real appointment.
+- Registered twenty unresolved M013 Build/live policies one-to-one as `APT-001`–`APT-020`, including
+  complete Calendar/Meeting activation and teardown, external-event copy, retention, abuse, analytics,
+  reminders, modality and AI-tool gates.
+- Closed M013 independent architecture/security findings covering facade-only public ingress,
+  Client/Staff booking contracts, timeline provenance, hold/requirement commands, M013/M024 ownership,
+  provider query/gate/teardown boundaries, RecoveryEpoch, external-busy privacy, free-text exclusion,
+  client projection truth and accessible contrast. Final independent review has zero findings and
+  Cyber Neo documentary risk is `0/100`; Build remains unauthorized.
+- Final M013 candidate validation passed lint/format, 11-package typecheck, 20 test files/131 tests,
+  import contracts, a 226-page Astro build, 55 candidate-local links and `git diff --check`; the
+  lockfile remained unchanged and post-contrast secret/PII/supply-chain scans were clear.

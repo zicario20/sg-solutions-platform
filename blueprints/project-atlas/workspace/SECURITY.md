@@ -122,6 +122,69 @@
   M012 conversation notes and M018 client/case notes are separate non-copying authorities. M092/M097
   cannot receive transcript/protected identifiers/session replay, and M026 receives only purpose-
   bound opaque recipient/event refs—not direct contact PII or protected content/resource IDs.
+- M013 authorizes every public/client/staff appointment read and command against current identity,
+  exactly one access binding, participant/representative evidence, policy/lifecycle, assurance,
+  epochs and expected version. The Astro Public Scheduling Gateway is same-origin/least-privilege,
+  has no DB/provider credential and calls only the typed M013 facade. GET/HEAD are inert; the sole
+  credential-free bootstrap POST accepts no booking/contact input and does not authenticate/derive
+  input from an ambient cookie; an existing/stale handle is ignored, revoked where resolvable and
+  atomically overwritten. It requires exact Origin, Fetch Metadata, trusted edge/host, bounds/rate/bot controls and fixation rotation before
+  returning CSRF private/no-store. Every later browser mutation requires an unsafe method, exact
+  Origin and session-bound CSRF. Actor-bound availability/hold/booking/manage/client/staff and OAuth/
+  bootstrap responses are dynamic `private, no-store`, never ISR/CDN/service-worker/offline or
+  browser-readable application response/PII persisted; the opaque host-only HttpOnly session handle
+  is the session exception, while separately gated/user-initiated ICS and meeting destination/history
+  retain only their disclosed boundaries. Exactly one clean M001-canonical booking route key per
+  approved locale accepts public booking steps; a separately localized clean management bootstrap is
+  absent until APT-007. Type/contact/capability values never enter any locale URL. Holds are session-bound, single-use and
+  use opaque-only canonical digests; positive-duration UTC half-open database capacity and
+  transactions—not browser checks—prevent double booking and rescheduling loss. Public prospect/
+  consent context is reserved by M020/M078 and finalized only with the winning appointment, so
+  rollback cannot leave an orphan Lead/Contact or reusable consent.
+
+- Every `apps/www`→`apps/app` scheduling-facade request uses a rotating scoped workload signature
+  bound to environment, issuer, exact audience/service/method/canonical path/body digest/timestamp/
+  nonce/key version and RecoveryEpoch. The app rejects direct browser/internet, wrong-audience,
+  stale/replayed and disallowed calls before domain parsing; a bounded nonce store, inner service/
+  session/risk quotas and full reauthorization remain mandatory. Rotation/replay-store/credential
+  outage fails closed. Restore increments the externally protected RecoveryEpoch, clears replay/CSRF
+  state and invalidates every pre-restore scheduling session/capability/code/OAuth/watch transaction,
+  hold and receipt regardless of TTL.
+
+- M013 management capabilities are action/audience/version-bound, expiring, revocable and rate-
+  limited. Ordinary state stores only the code digest. After APT-007, a raw code may be held in SG-
+  controlled durable state only as a short-TTL envelope-encrypted one-time vault object referenced
+  opaquely for bounded idempotent M026 delivery; it is purged/revoked on success, consumption,
+  cancellation or expiry and excluded from ordinary DB/events/audit/logs/telemetry/backups. M026 and
+  the approved transport/recipient necessarily see plaintext; activation therefore requires DPA,
+  recipient/reassigned-address/forwarding risk and provider-retention policy, with message-body
+  retention disabled/minimized where controllable. Code exchange creates a host-only, server-side,
+  scope/epoch/expiry/CSRF-bound prospect session—not M007 membership.
+
+- Google login grants no Calendar scope. OAuth binds staff session, intended connection/account/
+  calendar, environment, exact scopes/callback/return, state/browser and PKCE; mismatch fails closed.
+  Access/refresh tokens never enter browser/URL. The necessary transient callback code + opaque state
+  contain no PII, use exact callback, no-store/no-referrer and edge/app query-log redaction, are
+  consumed once immediately and redirect/replace to a clean URL; replay and durable app history fail.
+  Every admitted calendar has an independent query fingerprint, cursor and complete/fresh coverage.
+  Google push begins `pending_watch` with ID/token/request only; early `sync` may quarantine claimed
+  identifier digests but cannot mutate business state. Only a matching authenticated watch response
+  binds the minimum resource ID plus URI-comparison digest; raw calendar/email URI and secret headers
+  never persist or enter telemetry. Renewal overlap, Google 410/cursor expiry, partial pagination,
+  restore and dropped messages invalidate coverage and require full bounded per-source reconciliation.
+  Calendar projection commands default to zero attendees and suppress provider-generated messages.
+
+- Meeting joins remain bearer secrets. Release 1A public/prospect video is off. A future authenticated
+  final-fenced launch decrypts/normalizes inside the secret boundary, enforces exact initial provider
+  HTTPS scheme/host/port/path/query shape and rejects userinfo, CRLF and lookalike hosts. SG never
+  server-fetches, resolves or follows the join URL; downstream provider redirects remain an APT-011
+  vendor-trust/due-diligence risk, not an enforceable SG guarantee. Browser navigation uses
+  no-store/no-referrer/non-prefetched handoff. Raw URL exists transiently only in secret-boundary
+  memory and the final launch response/browser; it never appears in an SG route/query, persistent app/
+  browser storage, Referrer, notification, DOM before authorization, analytics, response/access logs,
+  trace or support copy. The unavoidable launch/provider/browser-history exposure is in the threat model.
+  Notifications remain off before APT-010; afterward only a recipient-specific generic label, instant
+  and display zone may enter M026. Proposed ADR 017 and APT-001–APT-020 gate all live activation.
 
 ## Data and cryptography
 

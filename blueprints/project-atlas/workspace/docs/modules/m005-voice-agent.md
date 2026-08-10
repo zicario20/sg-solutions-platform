@@ -55,7 +55,7 @@ media gateway/runtime. M003, M004 and M025 own shared conversation and inbox con
 - Deterministic greeting, automated-assistant disclosure, language selection and caller intent.
 - Public service orientation grounded only in approved, current M002 content.
 - Minimal M006-compatible preliminary intake and M020 lead/callback receipt creation.
-- M013/M024 appointment availability, booking, cancellation and rescheduling through authoritative
+- M013 appointment availability, booking, cancellation and rescheduling through authoritative
   scheduling receipts.
 - Human transfer, voicemail, callback request and after-hours flows.
 - Call, participant, transfer, verification, outcome and quality projections in the shared platform.
@@ -118,7 +118,7 @@ media gateway/runtime. M003, M004 and M025 own shared conversation and inbox con
 - Reception Agent policy/orchestration runtime.
 - M002 public knowledge adapter.
 - M006 form/evidence capture, M078 consent and M020 lead/deduplication services.
-- M013/M024 scheduling services.
+- M013 scheduling services; M024 is internal calendar UI only.
 - M017/M018 contact/client and M025 inbox services.
 - M026 follow-up notification service.
 - M043–M045 read-only payment/status and secure-link services.
@@ -288,7 +288,7 @@ Terminal alternatives: `rejected`, `missed`, `busy`, `failed`, `abandoned`, `can
   absent from the runtime registry, not merely discouraged in a prompt.
 - M006 owns form/evidence capture, M078 owns consent and M020 alone owns lead creation/
   deduplication. M005 owns the voice receipt and call outcome.
-- M013/M024 owns availability and appointments. M005 never invents slots or booking success.
+- M013 owns availability and appointments. M024 only presents the internal calendar UI; M005 never invents slots or booking success.
 - M043–M045 owns payment state. M005 may receive a coarse read-only projection only after the
   applicable authorization policy; it cannot alter money or service authorization.
 - Phone recognition creates a candidate relationship only. It never confirms client status or
@@ -696,7 +696,7 @@ Build gate. External activation additionally requires the evidence in the activa
 ### Required for architecture
 
 M002 public Help Center; M003/M004 conversation/channel patterns; M006 preliminary form/evidence
-capture; M078 consent; M020 lead/deduplication; M013/M024 scheduling; M017/M018 contacts/clients;
+capture; M078 consent; M020 lead/deduplication; M013 scheduling; M017/M018 contacts/clients;
 M025 unified communications; M026
 notifications; M041 provider abstraction; M043–M045 payment projections; M048/M049 Reception Agent;
 M060 compliance review; M075 human-in-the-loop; M077 audit; M078 consent; M080/M081 IAM/RBAC; M082

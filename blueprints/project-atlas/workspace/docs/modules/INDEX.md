@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Documentary capability index; M001/M002 are at PO Acceptance and M003–M012 await Product Owner architecture decisions after independent review
+- Status: Documentary capability index; M001/M002 are at PO Acceptance, M003–M012 await Product Owner architecture decisions after independent review, and M013 is the active documentary candidate
 - Update rule: every future implementation unit maps to an approved module PRD and ADRs
 
 The canonical catalog remains `../roadmap/MODULE_CATALOG.md`. The PRDs below specify bounded
@@ -24,11 +24,12 @@ requirements but do not by themselves authorize code or advance a module beyond 
 | [m010-process-status.md](m010-process-status.md) | M010 explicitly authorized process projection, deterministic public state/next action, version-bound milestones and governed public timeline. |
 | [m011-document-portal.md](m011-document-portal.md) | M011 secure requests/uploads, quarantine and safety promotion, immutable versions, review, authorized delivery and disposition hooks. |
 | [m012-secure-messaging.md](m012-secure-messaging.md) | M012 authenticated client/staff messaging, internal-note separation, durable ordering, safe attachment references and handoff. |
+| [m013-client-appointments.md](m013-client-appointments.md) | M013 single appointment authority, versioned availability, conflict-safe booking, client management and minimized calendar projection. |
 | [identity-access.md](identity-access.md) | Supabase identity, staff MFA, roles, resource grants, domain/RLS/Storage authorization. |
 | [crm-case-operations.md](crm-case-operations.md) | CRM, lead pipeline, assignment and conversion. |
 | [client-case-management.md](client-case-management.md) | Clients, businesses, service orders, cases, tasks and internal notes. |
 | [document-center.md](document-center.md) | Quarantine, scan, private storage, versions, grants, retention and downloads. |
-| [scheduling-calendar.md](scheduling-calendar.md) | Narrow scheduler, concurrency, IANA/DST and Google Calendar reconciliation. |
+| [scheduling-calendar.md](scheduling-calendar.md) | M013/M024 ownership umbrella; the dedicated M013 PRD owns appointment behavior. |
 | [billing.md](billing.md) | Quotes, invoices, Stripe, idempotency and reconciliation. |
 | [client-portal.md](client-portal.md) | Portal-safe projections, simple navigation and delegated access. |
 | [audit-activity-history.md](audit-activity-history.md) | Immutable minimized audit evidence and activity projections. |
@@ -50,5 +51,6 @@ Every unresolved business policy uses `[NEEDS PRODUCT OWNER DECISION: ...]`. An 
 exist only after the relevant PRD is approved, dependencies/gates are satisfied and the Product
 Owner explicitly authorizes `GENERATE` and the Build gate. Decisions 013 and 014 authorized this
 sequence only for M001 and M002 respectively; Decisions 016–021 authorize architecture/documentation
-only for their named modules; Decisions 022–025 authorize the same documentary scope only for M009–M012, and
-every other module remains gated.
+only for their named modules. Decisions 022–024 authorize the named M009–M011 documentary scope;
+Decision 025 authorizes the sequential M012–M014 documentary work only. Every Build and all other
+modules remain gated.

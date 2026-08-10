@@ -52,7 +52,7 @@ communications without duplicating people, leads, clients, cases, consent, messa
 - Optional preliminary structured intake using the exact M003 allowlist, classified Confidential as
   a complete draft and disabled until its separate WhatsApp/provider activation decision; M006 owns
   form/evidence capture, M078 owns consent and M020 remains the only lead/deduplication authority.
-- Appointment availability, booking, cancellation and rescheduling only through M013/M024 receipts.
+- Appointment availability, booking, cancellation and rescheduling only through M013 receipts; M024 is internal calendar UI only.
 - Domain-issued secure links to the portal, payment, document-upload, appointment or approved public
   resource destinations.
 - Transactional templates for appointments, payment projections, document requests/receipts,
@@ -159,7 +159,7 @@ communications without duplicating people, leads, clients, cases, consent, messa
 ### Prospect schedules an evaluation
 
 1. The person asks to schedule and confirms locale and IANA time zone.
-2. M004 requests public availability from M013/M024; it never invents or holds a slot itself.
+2. M004 requests public availability from M013; it never invents or holds a slot itself.
 3. The canonical scheduler completes the booking transaction.
 4. M004 sends confirmation only from a durable appointment receipt.
 5. Reminder delivery later re-checks channel policy and consent before dispatch.
@@ -823,7 +823,7 @@ honest automation/handoff states.
 ### Required for architecture
 
 M002 public Help Center, M003 shared conversation/handoff design, M006 form/evidence capture, M078
-consent, M020 lead/deduplication, M011 secure documents, M013/M024 scheduling, M017 CRM, M025 unified
+consent, M020 lead/deduplication, M011 secure documents, M013 scheduling, M017 CRM, M025 unified
 communications, M026 notifications, M041
 provider abstraction, M043–M045 payments/entitlements, M060 compliance review, M075 human-in-the-
 loop, M077 audit, M078 consent, M080/M081 IAM/RBAC, M082 PII, M084 integration security, M085

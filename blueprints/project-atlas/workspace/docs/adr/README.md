@@ -22,6 +22,7 @@
 | [014](014-client-process-status-and-public-timeline-boundary.md) | Proposed M010 canonical-state projection, closed source registry, public timeline provenance and final authorization fence. |
 | [015](015-document-authority-quarantine-version-and-delivery-boundary.md) | Proposed M011 single document authority, quarantine/promotion, immutable versions, resource access and byte-delivery boundary. |
 | [016](016-secure-messaging-content-visibility-ordering-and-handoff-boundary.md) | Proposed M012 authenticated secure-message authority, internal-note separation, durable ordering, typed references and handoff boundary. |
+| [017](017-appointment-authority-availability-concurrency-and-calendar-projection.md) | Proposed M013 appointment authority, deterministic availability, conflict-safe booking and minimized Google Calendar projection. |
 
 ADRs are tool-neutral. Supersede a decision with a new numbered ADR; do not erase historical
 rationale.

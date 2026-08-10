@@ -36,7 +36,7 @@ long-lived-connection and failure-isolation boundary.
 ### Rejected: independent voice CRM
 
 A self-contained voice bot with its own leads, contacts, scheduling and transcripts would duplicate
-M020, M013/M024, M025 and shared primitives. It would make channel data a competing source of truth
+M020, M013, M025 and shared primitives. M024 is internal calendar UI only. It would make channel data a competing source of truth
 and create unsafe authorization drift.
 
 ### Rejected: route live audio through ordinary Astro/Next request handlers
@@ -67,7 +67,7 @@ M096 Voice Gateway (specialized cloud boundary)
 apps/app integration facade + shared domain packages
   ├─ ReceptionPolicy and tool allowlist
   ├─ M006 capture / M078 consent / M020 lead-deduplication
-  ├─ M013/M024 scheduling
+  ├─ M013 scheduling (M024 is internal calendar UI only)
   ├─ M025 unified conversation/handoff
   ├─ M026 notification/link delivery
   ├─ M077 audit
@@ -198,7 +198,7 @@ zone, appointment type and channel back to the caller before a concurrency-safe 
 
 On a conflict the agent requests fresh slots. On provider or synchronization uncertainty it creates
 a callback task rather than claiming a booking. Cancellation and rescheduling require the approved
-identity/purpose path and reuse M013/M024 rules.
+identity/purpose path and reuse M013 rules.
 
 ## 11. Human transfer and message fallback
 

@@ -51,7 +51,7 @@ M001 does not implement:
 
 - form/evidence persistence (M006), consent records (M078), lead/deduplication (M020), spam scoring
   or CRM handoff (M017);
-- a scheduling engine or Google Calendar synchronization (M013/M024);
+- appointment scheduling engine or Google Calendar synchronization (M013; M024 only presents the internal calendar UI);
 - public chat, WhatsApp or voice agents (M003–M005);
 - authentication, account creation or the client portal (M007/M008 and related modules);
 - quotes, Stripe Checkout, invoices, payment state or refunds (M042–M046);
