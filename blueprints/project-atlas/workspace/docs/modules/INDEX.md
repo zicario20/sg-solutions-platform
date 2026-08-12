@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Documentary capability index; M001/M002 are at PO Acceptance and M003–M014 await Product Owner architecture decisions after independent review
+- Status: Documentary capability index; M001/M002 are at PO Acceptance and M003–M015 await Product Owner architecture decisions after independent review
 - Update rule: every future implementation unit maps to an approved module PRD and ADRs
 
 The canonical catalog remains `../roadmap/MODULE_CATALOG.md`. The PRDs below specify bounded
@@ -26,6 +26,7 @@ requirements but do not by themselves authorize code or advance a module beyond 
 | [m012-secure-messaging.md](m012-secure-messaging.md) | M012 authenticated client/staff messaging, internal-note separation, durable ordering, safe attachment references and handoff. |
 | [m013-client-appointments.md](m013-client-appointments.md) | M013 single appointment authority, versioned availability, conflict-safe booking, client management and minimized calendar projection. |
 | [m014-client-payments.md](m014-client-payments.md) | M014 client billing projection/actions, immutable obligations, secure Checkout handoff, signed provider inbox and reconciliation. |
+| [m015-financial-business-profile.md](m015-financial-business-profile.md) | M015 purpose-bound reusable profile facts, provenance, immutable revisions, conflicts, protected fields and minimized service projections. |
 | [identity-access.md](identity-access.md) | Supabase identity, staff MFA, roles, resource grants, domain/RLS/Storage authorization. |
 | [crm-case-operations.md](crm-case-operations.md) | CRM, lead pipeline, assignment and conversion. |
 | [client-case-management.md](client-case-management.md) | Clients, businesses, service orders, cases, tasks and internal notes. |
@@ -53,5 +54,5 @@ exist only after the relevant PRD is approved, dependencies/gates are satisfied 
 Owner explicitly authorizes `GENERATE` and the Build gate. Decisions 013 and 014 authorized this
 sequence only for M001 and M002 respectively; Decisions 016–021 authorize architecture/documentation
 only for their named modules. Decisions 022–024 authorize the named M009–M011 documentary scope;
-Decision 025 authorizes the sequential M012–M014 documentary work only. Every Build and all other
-modules remain gated.
+Decision 025 authorizes the sequential M012–M014 documentary work only; Decision 026 authorizes the
+M015 documentary candidate and independent audit. Every Build and all other modules remain gated.

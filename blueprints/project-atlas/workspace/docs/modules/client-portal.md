@@ -23,8 +23,10 @@
   availability, holds, conflict-safe booking, appointment management and calendar reconciliation.
 - `m014-client-payments.md` is the canonical PRD for client quote/payment/invoice projection,
   secure Checkout/document handoff, immutable obligation snapshots and financial reconciliation.
+- `m015-financial-business-profile.md` is the canonical PRD for progressive reusable profile facts,
+  provenance/revisions/conflicts, corrections and purpose-specific service projections.
 - This document remains the umbrella for M008–M015 and the shared portal navigation/projection
-  principles. M015 retains its future dedicated specification.
+  principles. Dedicated PRDs retain behavior/state ownership.
 - Proposed ADR 012 governs the M008 aggregation, priority, freshness and no-store boundary.
 - Proposed ADR 013 governs M009 service/case grants, accepted-definition versions, state synthesis
   and the request-scoped service projection boundary.
@@ -241,4 +243,5 @@ authorization, status mapping, negative tests and design review.
 - [NEEDS PRODUCT OWNER DECISION: approve notification defaults and channels for portal events.]
 - [NEEDS PRODUCT OWNER DECISION: decide whether delegated representatives/household members are in
   Release 1B or a later release.]
-- [NEEDS PRODUCT OWNER DECISION: approve which profile fields clients may edit directly.]
+- [NEEDS PRODUCT OWNER DECISION: close PFL-001–PFL-020 in the M015 PRD, including which profile
+  fields clients may edit directly.]

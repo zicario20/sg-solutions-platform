@@ -9,8 +9,10 @@
 
 Provider-managed TLS and encryption at rest protect all stored data. Selected Highly Sensitive
 structured values also use application-level envelope encryption before database persistence:
-SSN/ITIN, bank account/routing identifiers, external tax/identity account identifiers and future
-fields explicitly classified by threat review. Passwords remain with Supabase Auth; payment-card
+SSN/ITIN, EIN where retained as a protected identifier, full date of birth, protected residential
+street-address lines, government identity numbers, bank account/routing identifiers, external tax/
+identity account identifiers and future fields explicitly classified by threat review. The exact M015 inventory remains gated by PFL-013;
+the list authorizes no field collection by itself. Passwords remain with Supabase Auth; payment-card
 data remains with Stripe and is never stored.
 
 Each value uses authenticated encryption with a unique data-encryption key (DEK). A KMS-held
@@ -25,6 +27,14 @@ never source control, Postgres, client code or general environment files. Servic
 temporary decrypt capability. Rotation rewraps DEKs where supported and tracks key versions; it does
 not require plaintext bulk export.
 
+Profile idempotency/comparison MAC keys are purpose/domain-separated from KEKs, blind-index keys and
+other signing secrets. They use approved secret/KMS custody outside Postgres, repository and backups,
+and durable receipts record only key version plus protected output. Rotation retains the minimum old
+version needed for open idempotency/reconciliation windows under PFL-013/PFL-014. Restore must recover
+authorized key access and prove same-key/same-semantics still compares without exporting the secret.
+If an old version is intentionally destroyed, affected receipts expire or enter explicit manual
+reconciliation; they never silently become changed semantics or authorize a repeat mutation.
+
 [NEEDS PRODUCT OWNER DECISION: select and approve the managed KMS/key-custody provider before any
 application-level encrypted field is implemented.]
 
@@ -38,7 +48,9 @@ index partial SSN or other secrets merely for convenience.
 ## Backups, redaction and incidents
 
 Backups contain ciphertext and wrapped DEKs but not KEKs; recovery must restore both data and
-authorized KMS access. Logs/errors/traces redact protected fields before serialization. A suspected
+authorized KMS/MAC-key access. Tests prove comparison across approved rotation/restore and safe
+expiry/manual reconciliation when an old MAC key version is unavailable. Logs/errors/traces redact
+protected fields before serialization. A suspected
 key exposure triggers access revocation, key rotation/rewrap, audit review, affected-data analysis
 and Product Owner/legal escalation.
 

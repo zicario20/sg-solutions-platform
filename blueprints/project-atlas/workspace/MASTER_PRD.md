@@ -28,6 +28,11 @@ The platform is a modular monolith with a central transactional database. Shared
 
 Integrations use provider abstractions and adapters. Postgres is operational truth; Stripe is external financial authority. Payment confirmation does not equal human authorization. AI assists but never becomes business, compliance, financial or access authority.
 
+Reusable client financial/business context follows M015's purpose-bound profile model: typed facts,
+source/quality/freshness, immutable revisions and conflicts, explicit resource/purpose/consent access
+and minimized service DTOs. It does not duplicate identity, CRM/client/business, cases, documents or
+specialist records, and it never determines eligibility or authorizes work.
+
 ## Release strategy
 
 The first delivery family is **Release 1 — Production Foundation**, built for real clients and

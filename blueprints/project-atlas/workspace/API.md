@@ -218,3 +218,30 @@ only an explicit POST/OTP exchange with exact Origin, Fetch Metadata and CSRF/bo
 establish an opaque host-only SameSite session. A clean redirect/history replacement removes token
 transport under no-referrer before personalized render/subresources, and edge/app logs, analytics,
 errors, caches and service workers exclude it.
+
+M015 application contracts use `ProfileQuery.getSummary|getSection|listBusinesses`,
+`ProfileDraftService.startOrResume|saveDraft`, `ProfileChangeService.submitProposal`,
+`ProfileCorrectionService.submit`, `ProfileReviewService.accept|partiallyAccept|reject`,
+`ProfileVerificationService`, `ProfileConflictService`, `ProfileExportService` and purpose-specific
+`ProfileProjection` ports. Exact HTTP routes remain a Build decision.
+
+Every mutation carries actor, profile/resource/purpose, expected aggregate/revision/access epoch,
+idempotency key, current external `ProfileRecoveryEpoch` and a server-derived canonical digest.
+Same-key/same-digest recovery returns one receipt; same-key/different-digest conflicts. Protected or
+low-entropy input uses opaque refs/versions where possible or a domain-separated keyed MAC with key
+version—never a raw/bare hash, client-supplied digest, identifier or permission. Authorization,
+versions and recovery epoch are rechecked in the transaction.
+Private absence and denial share `not_found`; errors never reveal field existence, protected values,
+reviewer/security logic or provider evidence.
+
+Consumers request a versioned Basic, Credit, Tax, Home Buying, Business Formation or Business
+Funding DTO with ServiceOrder/CaseFile, purpose and consent/grant evidence. There is no full-profile
+DTO or route. Client, staff and service serializers are structurally distinct and final-fence
+resource, purpose, consent, classification and epochs before body/count/cursor. Forms, documents,
+providers and AI use proposal-only ports and cannot verify or mutate current protected facts.
+PFL-001–PFL-020 plus a Build gate control exact fields, routes and behavior.
+
+Every profile access snapshot, draft/reveal/export capability and job is epoch-bound. After restore,
+all pre-cutover artifacts fail and protected queries remain unavailable until M007/M078 state is
+reconciled from non-rolled-back evidence or explicitly reauthorized; the restored database cannot
+self-attest current authorization.

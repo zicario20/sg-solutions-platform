@@ -18,9 +18,12 @@ client/case logic as new services are added.
 
 ## 3. Scope
 
-Person/client/business profiles; service orders; case files; task/checklist execution; assignment;
-case milestones/status; internal notes; next step; deadlines; case/client history; archive/cancel;
-links to documents, appointments, messages, payments, consent, approvals and vertical extensions.
+Canonical M018 Person/Household/Client and M019 Organization/business records and their respective
+relationships; service orders; case files;
+task/checklist execution; assignment; case milestones/status; internal notes; next step; deadlines;
+case/client history; archive/cancel; links to documents, appointments, messages, payments, consent,
+approvals and vertical extensions. M015 separately owns reusable typed financial/business profile
+facts, provenance, revisions/conflicts and purpose-limited projections.
 
 ## 4. Explicit out of scope
 
@@ -86,8 +89,10 @@ minor units/currency; time uses UTC plus IANA zone where local meaning matters.
 
 ## 11. API or service contracts
 
-- `ClientService.createOrMatch`, `updateProfile`, `archive`.
+- `ClientService.createOrMatch`, `updateCanonicalMetadata`, `archive`; it does not mutate M015 facts.
 - `BusinessService.create`, `update`, `associateMember`.
+- `ProfileProjectionPort.getPurposeSubset` is consumed only when an approved M015 purpose policy is
+  active; client/case services never query profile tables or request a full profile.
 - `ServiceOrderService.createOrBindFromAcceptedQuote`, `transition`, `cancel`. The first is an
   M021-owned port invoked by the Billing application orchestrator inside one Postgres transaction
   that commits quote acceptance, exactly one ServiceOrder, exactly one obligation and a composite

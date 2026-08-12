@@ -19,6 +19,10 @@ business primitives. Verticals extend common clients, businesses, service orders
 tasks, appointments, messages, payments, consent, approvals, audit and workflows. Business
 Formation remains the first complete service vertical.
 
+Reusable client/profile facts are purpose-bound and provenance-aware. Canonical identity, contact,
+client, organization, service order, case and document ownership remain separate; consumers receive
+only approved service-specific projections, never a full profile.
+
 Supabase Auth is the identity source. Domain services plus Postgres RLS and Storage policies enforce
 authorization. Drizzle owns schema and migrations. Sanity stores public bilingual content only.
 Stripe owns external financial transaction state; Postgres owns internal operational state. Inngest

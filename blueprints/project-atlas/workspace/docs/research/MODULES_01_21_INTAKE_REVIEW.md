@@ -95,7 +95,7 @@ The following concepts are compatible and should inform later normalization:
 | M12 Secure Messaging | `m012-secure-messaging.md` plus `client-portal.md` | Dedicated human secure-messaging core after 1A foundations; AI, richer routing and cross-channel continuity remain separately gated. |
 | M13 Appointments | `m013-client-appointments.md` plus `scheduling-calendar.md` boundary | Basic safe scheduling in 1A; advanced Google synchronization in 1B. |
 | M14 Payments | `m014-client-payments.md` plus `billing.md` boundary | Deposits and one-time payments in 1A; plans and advanced reconciliation in 1B. |
-| M15 Financial/Business Profile | `data-platform.md` plus future service PRDs | Introduce only purpose-bound fields required by an approved service slice. |
+| M15 Financial/Business Profile | `m015-financial-business-profile.md`, proposed ADR 019 and `data-platform.md` | Dedicated candidate; introduce only purpose-bound typed facts required by an approved service slice, with provenance/revisions/conflicts and no full-profile consumer. |
 | M16 Admin Dashboard | `client-case-management.md` and future reporting PRD | Operational minimum only; avoid dashboard-driven domain logic. |
 | M17 CRM | `crm-case-operations.md` | Basic CRM and pipeline in 1A; scoring/automation/reporting later. |
 | M18 Client Management | `client-case-management.md` | Client, case, task and internal-note operations in 1A. |

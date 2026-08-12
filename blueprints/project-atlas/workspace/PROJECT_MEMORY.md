@@ -361,3 +361,39 @@
   `git diff --check` validation. The lockfile remains unchanged and candidate hygiene scans found no
   introduced secrets, PII, private URLs, local paths, media, binaries or dependency changes.
   Decision 025 authorizes no M015 work after the clean M014 commit.
+- The Product Owner then asked to complete M015. Decision 026 interprets that request within the
+  still-active Phase 0 gate: it authorizes the implementation-ready M015 documentary architecture,
+  responsive design, independent audit, remediation, validation and isolated commit, but not
+  `GENERATE`, product code, schema/RLS, KMS/provider/AI activation, real data, merge or deployment.
+- M015 began from audited M014 commit `1f70598` and carries the independently accepted M008 evidence
+  correction as base commit `57254ea`. The complete supplied M015 source was normalized into a
+  21-section PRD, design specification and proposed ADR 019. The source attachment remains outside
+  the repository, so independent review cannot prove one-to-one completeness against an immutable
+  source copy.
+- The candidate defines one reusable purpose-bound profile-fact context. M007 owns identity,
+  sessions, profile grants and account locale/time zone; M017 Contact/CRM; M020 Lead/deduplication;
+  M018 Person/Household/Client and their relationships; M019 Organization/business relationships;
+  M021/M022 ServiceOrder/CaseFile; M011 evidence bytes; and specialist modules their case data. M015
+  owns typed facts, immutable revisions, provenance, independent support/verification/freshness/
+  dispute/selection/disclosure axes, correction/conflict workflow and minimal purpose DTOs.
+- Authorization requires identity/session, exact permission, explicit M007 profile grant or exact
+  service/case relationship, purpose/consent, audience/classification, assurance and current access/
+  recovery epochs. Household/business scope conditionally requires reauthorized M018/M019
+  projections; M015 cannot mutate them. A failed policy/fence returns no protected value, count,
+  cache entry or actionable control.
+- Protected low-entropy comparisons use server-derived domain-separated keyed MACs whose keys are
+  separated from KEK/blind-index/signing material and remain outside database/backups. A monotonic
+  external `ProfileRecoveryEpoch` invalidates pre-restore capabilities and blocks protected access
+  until M007/M078 revocations are independently reconciled or reissued.
+- Independent review closed all architecture and documentary findings and returned PASS with zero
+  P0/P1/P2/P3 findings. Cyber Neo's post-remediation pass returned zero Critical/High/Medium/Low and
+  documentary risk `0/100`. Twenty unresolved Build/live policies remain exactly
+  `PFL-001`–`PFL-020` for Product Owner decision.
+- Final M015 evidence passed lint/format over 143 files, 11-package typecheck, 20 passing test files/
+  131 passing tests with three deliberate skips, import contracts, a 226-page Astro build, 179
+  active-workspace local Markdown links with zero broken (`workspace/**/*.md`, excluding
+  `node_modules` and `archive`) and `git diff --check`. Two frozen offline lockfile-only installs
+  preserved SHA-256
+  `C1ABFA94B76E87B197ED33EB53829EF0A73BFEA830880AD47A0E43C1A3E6A31A`; full materialization was
+  environment-limited by a missing cached pinned tarball and network timeout. No product source,
+  dependency or lockfile changed, and no Build or activation was opened.

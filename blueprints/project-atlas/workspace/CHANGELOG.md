@@ -182,3 +182,19 @@
   tests, import contracts, a 226-page direct Astro build, local-link and `git diff --check` validation;
   the lockfile remained unchanged and secrets/PII/supply-chain scans were clear. Build and all live
   payment activation remain unauthorized.
+- Added the M015 Financial and Business Profile PRD, branded responsive Client/Admin design and
+  proposed ADR 019. The candidate defines reusable purpose-bound facts, immutable revisions,
+  provenance, orthogonal quality axes, corrections/conflicts and minimized service DTOs without
+  creating a route, schema/RLS policy, KMS/provider/AI connection or real profile data.
+- Registered twenty unresolved M015 Build/live policies one-to-one as `PFL-001`–`PFL-020`. M007 owns
+  identity/session/grants, M018 owns Person/Household/Client relationships, M019 owns Organization/
+  business relationships and M015 only consumes their freshly authorized projections.
+- Closed independent architecture/security findings covering state-axis conflation, domain-owner
+  drift, stale authorization, keyed-MAC lifecycle, exact `profile.*` events, conditional relation
+  scope and post-restore revocation. Final independent review is PASS with zero findings and Cyber
+  Neo is security-clear at documentary risk `0/100`.
+- Final M015 validation passed lint/format over 143 files, 11-package typecheck, 20 test files/131
+  tests, import contracts, a 226-page Astro build, 179 active-workspace local Markdown links with zero
+  broken (`workspace/**/*.md`, excluding `node_modules` and `archive`) and `git diff --check`; two
+  frozen offline lockfile-only installs preserved the lock hash. No product source, dependency or
+  lockfile changed, and Build remains unauthorized.

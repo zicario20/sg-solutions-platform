@@ -181,6 +181,18 @@ M014 architecture candidate:
   architecture review; no Build, route, schema/RLS policy, Stripe onboarding/secret/endpoint/event,
   real price/payment, merge, deployment or production behavior is authorized.
 
+M015 architecture candidate:
+
+- [M015 Independent Architecture Review](reviews/M015-ARCHITECTURE-REVIEW.md)
+- [M015 Security Architecture Review](reviews/M015-SECURITY-REVIEW.md)
+- [M015 Financial and Business Profile PRD](modules/m015-financial-business-profile.md)
+- [M015 Financial and Business Profile Design](superpowers/specs/2026-08-12-m015-financial-business-profile-design.md)
+- [M015 Purpose-bound Profile Facts ADR](adr/019-purpose-bound-profile-facts-provenance-and-conflict.md)
+- Independent architecture review has zero open material findings and Cyber Neo is security-clear at
+  documentary risk `0/100`. The candidate awaits Product Owner documentary review and is not
+  approved for Build; no route, schema/migration/RLS policy, KMS/provider/AI activation, real profile
+  data, merge, deployment or production behavior is authorized.
+
 Design specifications live under `superpowers/specs/`. The status in each specification header is
 authoritative: `Draft for Product Owner review` is not approved, while an approved specification
 still does not authorize implementation without its separate Build gate.

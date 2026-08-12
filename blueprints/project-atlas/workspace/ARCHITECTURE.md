@@ -50,12 +50,13 @@ Authorization has three independent dimensions:
 
 1. **Identity:** Supabase Auth resolves the authenticated subject and session assurance.
 2. **Internal role:** role/permission assignments constrain staff actions using least privilege.
-3. **Resource access:** explicit client membership and case grants determine which records a client
-   may access.
+3. **Resource access:** membership links identity to a client but grants no case/profile access;
+   explicit case/resource grants and, when approved, an M007 self-profile-root grant determine which
+   records a client may access.
 
 An explicit active case grant inherits only to client-visible child resources within that case.
-Internal notes never inherit visibility. Highly sensitive documents may require an additional grant.
-Any resource may block inherited visibility. Revocation propagates to derived access and signed URLs
+Internal notes never inherit visibility. Highly sensitive documents/fields may require an additional
+grant. Any resource may block inherited visibility. Revocation propagates to derived access and signed URLs
 expire independently. Domain services enforce the decision before I/O; RLS and Storage policies
 provide defense in depth. See ADR 004 and the Identity and Access PRD.
 
@@ -246,6 +247,29 @@ acknowledgement, advances a protected generation, opens new ingress before mutat
 requires bounded Stripe reconciliation before newly satisfying a financial prerequisite. Proposed
 ADR 018 records this boundary; BIZ-001–003 and PAY-001–PAY-020 gate prices, policy, Build and all
 Stripe traffic.
+
+### M015 purpose-bound profile boundary
+
+M015 owns reusable typed profile facts, immutable revisions, provenance, verification/freshness,
+corrections/conflicts and minimized purpose projections. It does not absorb M007 identity/grants,
+M017 Contact/CRM, M020 Lead/deduplication, M018 Person/Household/Client or their relationships, M019
+Organization/business relationships, M021 ServiceOrder, M022 CaseFile, M011 documents/bytes or
+specialist credit/tax/funding/housing records. Its household/business context extends authorized
+M018/M019 projections, never a second relationship or business registry.
+
+Client and staff access requires an explicit self-profile or service/case resource relationship plus
+permission, purpose/consent, classification, assurance and final resource/access-epoch fences.
+Household/business relation, role, email, payment and matching contact data grant nothing. Services
+consume versioned allowlisted DTOs; no full-profile contract exists. Forms, document/OCR outputs,
+providers and AI can only propose revisions. Verified/document-supported facts use immutable
+revision/conflict review, never last-write-wins. Proposed ADR 019 records the boundary, and
+PFL-001–PFL-020 gate all fields, policies, Build and live processing.
+
+M007 owns profile/resource grants and M078 consent; M015 owns purpose-field policy only. Every M015
+access snapshot, capability and job binds a monotonic `ProfileRecoveryEpoch` protected outside a
+restored database generation. Recovery advances it, rejects all old artifacts and blocks protected
+profile access until grants/consent revocations are reconciled from independent post-checkpoint
+evidence or explicitly reissued. A restored Postgres snapshot cannot validate itself.
 
 ## Data protection
 

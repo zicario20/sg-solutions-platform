@@ -184,6 +184,26 @@ can be transactionally undone.
   uncertain Checkout/refund outcomes after lost response and key-window expiry; ambiguity must
   quarantine rather than create a second provider mutation.
 - [ ] Keep new financial-prerequisite promotion disabled until reconciliation coverage is complete.
+- [ ] Restore M015 encrypted profile facts/revisions/conflicts without KEKs in the database backup;
+  prove approved KMS access/key versions are recoverable before protected reads resume.
+- [ ] Recover authorized M015 comparison-MAC key versions outside Postgres/backups and prove an open
+  same-key/same-semantics retry compares after restore/rotation; if a version was intentionally
+  destroyed, expire/manual-reconcile its receipt without treating it as changed semantics or
+  repeating an effect.
+- [ ] Advance a monotonic `ProfileRecoveryEpoch` protected outside the restored database generation;
+  reject every pre-restore M015 access snapshot, draft/reveal/export capability and job regardless of
+  nominal TTL.
+- [ ] Keep all protected M015 reads/writes blocked until M007 grants and M078 consent/revocation
+  state are reconciled from independently recoverable post-checkpoint evidence or explicitly
+  reauthorized/reissued; never use the restored snapshot to validate itself.
+- [ ] Invalidate M015 derived completeness, freshness caches, outstanding exports and in-flight
+  consumer projections; rebuild only from durable Postgres facts after grant/consent/evidence checks.
+- [ ] Prove rejected/draft/conflict plaintext is absent from backup/log/outbox and that restored
+  client/business/household authorization cannot cross resource boundaries.
+- [ ] Reconcile M015 evidence references to restored M011 DocumentVersions and quarantine unresolved
+  links without changing current verified facts.
+- [ ] Restore from a point before a known grant/consent revocation and prove the old grant, consent,
+  draft, reveal/export capability and queued job all fail after the epoch cutover.
 - [ ] Rotate/reissue credentials used during recovery.
 - [ ] Run smoke, security and observability checks.
 - [ ] Measure actual RPO/RTO and record gaps.

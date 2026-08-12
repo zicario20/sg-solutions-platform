@@ -123,6 +123,15 @@ Measured scale, hybrid infrastructure and mobile expansion
     summaries/prerequisite evidence and never call Stripe or infer paid/approval/start. M026 owns
     delivery, M077 audit, M085 retention and M092 reporting. BIZ-001–003/PAY-001–PAY-020 gate all
     business policy, Build, Stripe traffic and Operational status.
+25. M015 owns reusable typed profile facts, provenance, immutable revisions, quality/freshness,
+    corrections/conflicts and purpose-specific DTOs. M007 identity, M017 Contact, M018 Person/
+    Household/Client and their relationships, M019 Organization/business relationships, M020
+    Lead/deduplication, M021 ServiceOrder, M022 CaseFile, M011 DocumentVersion, M077 Audit, M078
+    Consent and specialist service records remain canonical in their domains. M007
+    owns profile/resource grants; M015 owns purpose-field policy only. Explicit profile or
+    service/case grants combine with permission, purpose/consent, classification and assurance;
+    household/business relation grants nothing. Forms/documents/providers/AI propose only, and no
+    full-profile consumer or cross-domain state mutation exists under proposed ADR 019.
 
 ## Fronteras de extracción
 

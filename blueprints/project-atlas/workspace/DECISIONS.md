@@ -341,3 +341,23 @@ business/legal/provider policy, authorize `GENERATE`, product code, routes, sche
 policies, real messages/appointments/payments, AI, Google/Stripe/notification/channel activation,
 merge, deployment or Operational status. Work stops after the clean audited M014 commit unless the
 Product Owner gives a new instruction.
+
+## 2026-08-12 — Decision 026
+
+Decision: authorize Product/Architecture documentation and independent documentary audit for M015
+Financial and Business Profile in its own worktree based on the independently audited M014 commit.
+M015 must normalize the complete Product Owner-supplied source, remain the reusable purpose-bound
+profile fact/provenance/revision authority and preserve canonical ownership in M007, M011 and
+M017–M022 plus the specialist service domains.
+
+Reason: the Product Owner explicitly instructed Codex to implement Module 15 and continue until it
+is complete. The repository's universal Phase 0 gate still requires the exact token `GENERATE` and a
+recorded Build decision before product code; therefore this instruction authorizes completion of the
+same architecture/design/audit workflow used for M003–M014, not executable product behavior.
+
+Impact: Codex may prepare the M015 implementation-ready PRD, responsive branded UX/UI design,
+proposed ADR 019, PFL-001–PFL-020 decision register, cross-document authority updates and read-only
+independent/security reviews. This decision does not approve ADR 019 or unresolved business/legal/
+data policy, authorize `GENERATE`, routes, schemas/migrations/RLS, encryption keys, providers, AI,
+real profile data, merge, deployment or Operational status. Any M015 Build requires a separate
+Product Owner decision after the PRD/design/ADR and affected PFL gates are approved.

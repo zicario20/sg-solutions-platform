@@ -80,6 +80,9 @@ Read Only staff, Codex-operated service identity, provider callback and independ
   applicable resource scope.
 - Client membership grants no case access. An active case grant inherits only to client-visible
   children under ADR 004.
+- M015 self-profile access uses a separate explicit, revocable profile-root grant created only by an
+  approved identity/client-linking workflow. A case grant can authorize an M015 purpose subset but
+  never the full reusable profile; household/business relationships grant nothing by themselves.
 - Internal notes never inherit; Highly Sensitive documents may require an additional grant; any
   resource may block inheritance.
 - Domain services authorize before I/O; RLS/Storage policies enforce the same result.
@@ -88,7 +91,7 @@ Read Only staff, Codex-operated service identity, provider callback and independ
 ## 10. Data requirements
 
 Identity reference, person/client link, membership status, internal role assignment, permission
-version, case/resource grant, inheritance block, session assurance, invitation/recovery metadata,
+version, case/resource/profile grant, purpose/scope/expiry, inheritance block, session assurance, invitation/recovery metadata,
 MFA enrollment status, timestamps and audit correlation. Auth secrets/passwords remain in Supabase
 Auth. Under proposed ADR 011, only an opaque application-session handle reaches the browser;
 retained provider session material is envelope-encrypted in a server-only vault under ADR 005/KMS.
@@ -107,6 +110,10 @@ telemetry.
   expectedVersion, idempotencyKey)`.
 - `GrantService.grantCase|revokeCase|grantResource` requires an authorized actor, exact purpose,
   expected version and idempotency key; browser-supplied actor/client context is prohibited.
+- A future `GrantService.grantSelfProfile|revokeSelfProfile` uses the verified M007↔M018 linkage,
+  never email matching, and cannot create household/business/case access. Its grant/access snapshot
+  binds the externally protected M015 `ProfileRecoveryEpoch`; after recovery no old grant is usable
+  until M007 reconciles non-rolled-back revocation evidence or explicitly reissues it.
 - Admin HTTP boundaries use `/api/v1` and return stable 400/401/403/404/409/429 errors.
 
 These are provider-neutral contracts; exact route schemas require approval before Build.

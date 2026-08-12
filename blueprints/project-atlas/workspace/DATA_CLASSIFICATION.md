@@ -219,3 +219,31 @@ under ADR 018.
 
 [NEEDS PRODUCT OWNER DECISION: approve service-specific retention periods and legal-hold authority
 after Illinois/legal counsel review.]
+
+### M015 profile-specific boundary
+
+Public profile field definitions/copy may contain no client facts. Policy codes without client
+context are Internal. Contact/address, relationships, goals and ordinary reusable financial/business
+summaries are at least Confidential. Full SSN/ITIN/EIN/DOB, government identity evidence, detailed
+tax/credit/banking/income/debt/asset facts and protected household/dependent data are Highly
+Sensitive. Classification takes the maximum of value, metadata, source/evidence and purpose.
+
+Drafts, proposals, rejected values, immutable revisions, conflicts, calculations and exports inherit
+the protected value's class; “not accepted” never means low sensitivity. Full protected values use
+ADR 005 envelope encryption. Masked/last-four derivatives remain Confidential, are not
+authentication factors and cannot enter analytics, public search or logs. Ordinary audit records
+store opaque fact/profile IDs, field code, purpose, actor/action/result/policy and time—never old/new
+plaintext.
+
+Unkeyed hashes of SSN, DOB, address or financial values are prohibited. Any comparison/idempotency
+digest involving protected low-entropy values is a server-only domain-separated keyed MAC with key
+version; it is neither an authentication factor nor an access/deduplication grant and never enters a
+client DTO, analytics or logs. It is Confidential linkage evidence (Highly Sensitive when its
+context would reveal a protected fact), follows PFL-013 key custody and PFL-014 retention/backup, and
+is invalidated or rederived under the approved rotation/recovery policy.
+
+M015 product analytics is off until PFL-020. Even after approval, payloads exclude client/profile/
+fact/document/business/case IDs, field values, amounts, completeness/calculation results tied to
+identity, free text, URLs, DOM and session replay. AI/profile provider access is off until PFL-017/
+PFL-018 and uses minimal purpose DTOs only. PFL-014 controls retention/deletion/legal hold and
+PFL-015 controls reauthenticated, redacted, short-lived export.

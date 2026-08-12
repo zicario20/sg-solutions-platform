@@ -249,6 +249,22 @@ application-level envelope encryption for selected Highly Sensitive structured f
 it from provider-managed encryption at rest. Full payment-card data is never stored or processed by
 SG Solutions application code.
 
+M015 full SSN/ITIN/EIN, full DOB, approved government identifiers and approved banking identifiers
+use ADR 005 application-level envelope encryption before persistence. Masking occurs in backend DTOs;
+full values are not sent to ordinary browsers or hidden only with CSS. Decrypt/reveal, export,
+sharing, verification and conflict resolution are distinct purpose-bound, step-up and enhanced-audit
+actions when enabled. M015 cannot mutate household or business relationships: it consumes only
+reauthorized M018/M019 relationship projections. Relationship mutation remains an audited,
+owner-domain step-up action. KMS failure rejects protected writes and reveals without staging
+plaintext.
+
+Profile authorization combines exact permission, explicit self-profile or service/case relationship,
+purpose/consent, household/business scope, classification, assurance and resource/access epochs.
+Role/email/contact/payment/relationship evidence alone grants nothing. Domain services authorize
+before I/O, RLS defends every row operation and a final fence protects response/mutation/export.
+Every consumer uses a minimal versioned DTO; full-profile APIs and direct provider/AI writes are
+prohibited.
+
 ## Defense in depth
 
 Authorization is checked before queries, encoded in RLS and applied to Storage objects. Every

@@ -341,6 +341,36 @@ manual: ningún retorno, captura, cliente, agente o empleado puede fabricar una 
 | PAY-019 | Referral/partner commission/payment separation | `External activation deferred` | Mostrar/cobrar/pagar comisión o atribuir partner | Contract/disclosure/consent/statement/attribution/accounting matrix and tests separating client payment from commission |
 | PAY-020 | Readiness productiva Stripe | `External activation deferred` | Declarar M014/M043–M045 Operational | Sandbox contract/security/reconciliation/restore-cutover (events on both sides), lost-response/idempotency-expiry/ambiguous-correlation, incident/monitoring/rollback runbooks, independent review and Product Owner-approved controlled live payment |
 
+### Decisiones y configuración pendientes de M015
+
+M015 no activa campos, perfiles, proveedores, IA, cifrado ni datos reales. Estas filas controlan el
+alcance y las políticas necesarias antes de un Build. El default documental recopila nada: ningún
+rol, relación, caso, documento, proveedor o agente recibe un perfil completo ni convierte una
+sugerencia en dato verificado.
+
+| ID | Dependencia o decisión | Estado | Bloquea | Evidencia de salida requerida |
+|---|---|---|---|---|
+| PFL-001 | Propósito(s), secciones y campos Release 1A; required/optional/prohibited | `External activation deferred` | Crear campo/perfil/requirement real | Inventory versionada por servicio/propósito, clasificación, validación y minimization review; tests de no-overcollection |
+| PFL-002 | Ruta, label y ubicación de Perfil en navegación | `External activation deferred` | Crear/publicar ruta o navegación | IA ES/EN, role/route authorization, mobile/a11y tests y Product Owner visual approval |
+| PFL-003 | Campos editables inmediatos vs propuesta/revisión/evidencia | `External activation deferred` | Aceptar cambio real | Field-class/quality/actor matrix, immutable revision/CAS/idempotency and no-silent-overwrite tests |
+| PFL-004 | Roles, assignment, purpose y field-class staff access; segregation | `External activation deferred` | Leer/revisar/verificar datos reales por staff | Permission/resource/purpose/assurance matrix, RLS/final-fence/cross-client and two-person tests where required |
+| PFL-005 | Household/dependent/spouse/co-applicant/representative scope | `External activation deferred` | Crear/vincular/mostrar persona relacionada | Identity/relationship/consent/grant/expiry/revocation matrix and cross-person/no-inference tests |
+| PFL-006 | Business relationship, ownership/effective periods y M015/M019 edit boundary | `External activation deferred` | Crear/vincular/editar perfil empresarial | Canonical organization/relationship authority, matching/review, ownership-period constraints and cross-business tests |
+| PFL-007 | Verification methods, reviewers, evidence, expiry y two-person rules | `External activation deferred` | Marcar hecho verified/document-supported | Method/policy/version/evidence/role matrix and false-verification/expiry/revocation tests |
+| PFL-008 | Conflict materiality, reviewer, resolution y client outcome | `External activation deferred` | Resolver conflicto real | Typed comparison rules, immutable competing revisions, reason/copy and race/audit tests |
+| PFL-009 | Freshness periods and expiry behavior by purpose/field/source | `External activation deferred` | Treat data as current or satisfy requirement | Versioned freshness matrix, mid-process expiry policy and stale/missing/no-zero tests |
+| PFL-010 | Completeness rules, percentage/copy and visibility | `External activation deferred` | Show completion/result | Purpose/field/quality policy, no-eligibility/no-pressure semantics and incomplete-source tests |
+| PFL-011 | Deterministic calculations, units/currency/rounding/disclaimers | `External activation deferred` | Calculate/display income normalization, DTI or other metric | Formula/version/input-quality matrix and deterministic/missing/currency/rounding tests; no approval inference |
+| PFL-012 | Sensitive reveal, reauthentication, roles, duration and display/export controls | `External activation deferred` | Decrypt/show full protected value | Assurance/action/TTL/copy policy, backend mask, no-DOM/no-cache and enhanced audit tests |
+| PFL-013 | KMS/key custody, rotation/recovery and exact encrypted fields | `External activation deferred` | Persist any app-encrypted field | Approved ADR 005 provider/custodians, envelope/rotation/backup/plaintext-absence and KMS-outage tests |
+| PFL-014 | Retention, deletion, legal hold, history/conflict and backup expiry | `External activation deferred` | Retain/purge real profile data | Illinois/federal/legal review, class/period/authority matrix and delete/hold/restore/crypto-shred tests |
+| PFL-015 | Client export scope, exclusions, format, delivery and third-party treatment | `External activation deferred` | Generate/deliver export | Reauth/field/recipient/TTL/redaction policy, M011 delivery, forwarding/revocation/audit tests |
+| PFL-016 | Consent/purpose for prefill, secondary service reuse, household/business, AI and partner disclosure | `External activation deferred` | Reuse/share data across purpose | Versioned disclosure/consent/revocation/recipient/field matrix and no-secondary-use tests |
+| PFL-017 | Document/OCR/provider imports, fields, region, confidence and review | `External activation deferred` | Import/propose external value | Provider/DPA/contracts, field/source/version allowlist, suggestion-only and outage/revocation tests |
+| PFL-018 | AI model/provider, allowed tools/fields, redaction, retention and evals | `External activation deferred` | Send profile context to AI or accept AI suggestion | Data-processing review, DTO/tool allowlist, prompt-injection/overexposure/eval/human-review tests; default off |
+| PFL-019 | Profile request/update notifications, channels, quiet hours and copy | `External activation deferred` | Send external notification | M026 event/template/preference/consent policy and zero-value/zero-sensitive-context payload tests |
+| PFL-020 | Metrics, viewers, retention and product analytics schema | `External activation deferred` | Emit PostHog/profile analytics | Coarse event allowlist, zero-value/ID/free-text/DOM/replay tests and default-off proof |
+
 | Módulo(s) | Dependencia externa pendiente | Estado | Se completa ahora | Se difiere hasta activación | Fallback seguro |
 |---|---|---|---|---|---|
 | M007 y M080 IAM | Proyecto Supabase productivo, dominios, email y MFA configurados | `External activation deferred` | Arquitectura Auth/RLS, roles, grants, sesiones y pruebas locales autorizadas | Configuración productiva, remitente, proveedores sociales y pruebas de recuperación/MFA | Alta y soporte manual controlados; sin acceso si falla la verificación |
@@ -351,6 +381,7 @@ manual: ningún retorno, captura, cliente, agente o empleado puede fabricar una 
 | M012 Mensajería segura | M007/M009 grants, M011 attachments, M025/M026, retention/encryption y políticas MSG-001–MSG-020 | `External activation deferred` | PRD, UX, contratos de content/visibility/order/handoff y pruebas sintéticas autorizadas | Activar solo con state/role/content/security/retention/notification policies aprobadas y pruebas cross-client/internal-note/race | Soporte humano manual y portal no habilitado; nunca usar email/WhatsApp/IA como sustituto sensible |
 | M013 Client Appointments (proyectado en M024) | Cuenta Google Workspace/Calendar, OAuth y políticas APT-001–APT-020 | `External activation deferred` | PRD/UX y arquitectura/contratos del futuro motor interno definitivo, zonas IANA, concurrencia, buffers, owner boundaries y diseño del adapter; M024 sólo consume la proyección UI | Build, citas/datos reales, OAuth, calendario, meeting/reminder/payment providers, webhooks/sync y reconciliación productiva bajo M013 | Agenda interna/manual y bloqueo seguro; nunca inventar disponibilidad ni asumir sync |
 | M014 y M042–M046 Pagos | LLC/banco, cuenta Stripe verificada y políticas PAY-001–PAY-020 | `External activation deferred` | PRD/UX, obligación/ledger operacional, provider contracts, idempotencia, reconciliación, autorización y pruebas sintéticas autorizadas | Build, precios/datos reales, onboarding/credenciales/endpoints/eventos/métodos/tráfico y conciliación productiva | Cotización/registro pendiente y revisión manual; nunca marcar una captura/retorno/pago externo como confirmado por Stripe |
+| M015 Perfil financiero y empresarial | M007/M011/M017–M022/M077–M085 y políticas PFL-001–PFL-020 | `External activation deferred` | PRD/UX, facts/revisions/provenance/conflicts/purpose DTO contracts y pruebas sintéticas autorizadas | Build, campos/datos reales, KMS, provider/OCR/AI, export/notificación/analytics y políticas productivas | Intake manual mínimo dentro del expediente autorizado; no perfil completo, no sobrescritura ni inferencia de verificación/elegibilidad |
 
 ## Servicios, marketplace y partners
 

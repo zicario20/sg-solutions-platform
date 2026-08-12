@@ -137,7 +137,20 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   findings were remediated; final independent review has zero open material findings and Cyber Neo is
   security-clear at documentary risk `0/100`.
   No `GENERATE`, route, schema/RLS policy, Stripe onboarding/secret/endpoint/event, price, payment,
-  merge or deployment is authorized. Decision 025 authorizes no M015 work after M014 closure.
+  merge or deployment is authorized. Decision 026 now authorizes M015 documentary work from this
+  audited snapshot.
+- **M015 Financial and Business Profile:** Product/Architecture documentation is active under
+  Decision 026 from audited M014 commit `1f70598` with the M008 evidence correction carried forward.
+  The candidate defines one purpose-bound reusable profile fact authority: typed personal,
+  household, financial and business extensions with provenance, freshness, immutable revisions,
+  governed corrections/conflicts and minimal service DTOs. M007/M011/M017–M022 and specialist
+  service domains retain their canonical records; forms, documents, providers and AI submit
+  proposals only. Explicit profile or service/case grants combine with role, purpose/consent,
+  sensitivity, assurance, RLS and final fences. Twenty Build/live policies remain
+  `PFL-001`–`PFL-020`. Independent architecture review has zero open material findings and Cyber Neo
+  is security-clear at documentary risk `0/100`; the candidate now awaits Product Owner documentary
+  review. No `GENERATE`, route, schema/migration/RLS policy, KMS/provider/AI activation, real profile
+  data, merge or deployment is authorized.
 
 ## Architecture-first activation policy
 
@@ -175,6 +188,8 @@ reales con intervención humana explícita.
 - agenda básica con concurrencia segura y proyección Google controlada;
 - cotizaciones esenciales, depósitos y pagos únicos con Stripe/reconciliación mínima;
 - portal mínimo para servicios, estado, documentos, citas y pagos;
+- perfil progresivo mínimo limitado a los campos necesarios para el primer servicio real aprobado,
+  con procedencia, revisión, cifrado y acceso por propósito;
 - operación manual segura de Business Formation sobre primitivas comunes;
 - backups, despliegue, observabilidad y rutas manuales mínimas para operar clientes reales.
 
