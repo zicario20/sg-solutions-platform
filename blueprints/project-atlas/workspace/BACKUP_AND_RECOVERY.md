@@ -294,3 +294,39 @@ for speed.
 - [ ] Run cross-client/role/team/assignment/purpose/classification, merge, conversion, import/export,
       idempotency, security, observability and manual-fallback smoke tests.
 - [ ] Record actual RPO/RTO gaps, independent review and Product Owner approval before cutover.
+
+## M018 restore supplement
+
+- [ ] Inventory every M018 Person/contact-method/household, ClientRelationship/lifecycle,
+      assignment, representative/grant receipt, flag/restriction, onboarding/offboarding, operational
+      note, TemporaryClientAccessRequest/status/SoD/M007 receipt, aggregate cursor/cache and
+      operation/recovery record under `CLM-016`.
+- [ ] Restore M018 and owner references to a mutually consistent cut; until owner versions reconcile,
+      sections remain unavailable/partial and lifecycle/representative/restriction/offboarding/export/
+      merge/temporary-access commands remain frozen.
+- [ ] Prove a restored superseded Person/client alias cannot become current, authorize account/grant
+      resolution or recreate a duplicate client relationship.
+- [ ] Reconcile M007 representative grants/sessions/access epochs and expire pre-restore invitations,
+      temporary access, protected reveals, impersonation sessions, exports, cursors and workload
+      capabilities.
+- [ ] Reconcile every M018 temporary-access request/approval/revocation with current M007 grant/
+      invalidation receipt, access epoch, SoD and server time; never reactivate from restored request
+      state or extend a TTL.
+- [ ] Verify matching-token/encryption key versions are recoverable under separate custody without
+      placing key material in database backups; do not rederive/rotate outside approved procedure.
+- [ ] Reconcile open restrictions, suspension/block/deceased state, offboarding items, legal holds and
+      owner effects by stable operation/step IDs before retry.
+- [ ] Rebuild client 360/list projections only from current owner authority; never restore cache as
+      canonical state or map unavailable owners to zero/no action.
+- [ ] Rebuild only content-free attention dirty/source receipts; request-scoped viewer state and
+      cross-owner search/filter/sort indexes reauthorize/rebuild from current owners/M089.
+- [ ] Reconcile every ClientBusinessContext with current M019 relationship/version/effective interval/
+      access epoch; correction/revocation/denial/outage suppresses it without label fallback.
+- [ ] Preserve immutable workflow definition versions and each workflow's frozen version; never
+      migrate during restore without the approved preview/SoD path.
+- [ ] Reconcile restriction owner steps and independent receipt/history grants; never replay an
+      ambiguous effect, broaden scope or restore prior access because expiry time passed.
+- [ ] Preserve note revision/tombstone/hold/redaction receipts and prove restore cannot resurrect
+      redacted content or let ordinary author/edit permission execute redaction.
+- [ ] Run cross-client/team/purpose/section/field, representative revocation, lifecycle-axis,
+      idempotency/ambiguity, note/reveal/export leakage and EN/ES critical-journey smoke tests.

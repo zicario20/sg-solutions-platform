@@ -232,3 +232,21 @@
   workspace local links across 155 Markdown files with zero broken and `git diff --check`; two
   frozen offline lockfile-only installs preserved the lock hash. No product source, dependency or
   lockfile changed, and Build remains unauthorized.
+- Added the M018 Client Management PRD, branded responsive Admin design and proposed ADR 022. The
+  candidate defines canonical Person/contact-method/basic Household and formal Client lifecycle,
+  assignments, scoped representatives, restrictions, onboarding/offboarding, operational notes and
+  a closed source-aware Client 360 without creating product behavior.
+- Registered 23 unresolved M018 Build/live policies one-to-one as `CLM-001`–`CLM-023`. Organization,
+  ServiceOrder, CaseFile, Task, Document, Billing, Appointment, Communication, Consent, account/grant,
+  profile and audit truth remain with their canonical owners; M018 composes only typed minimized
+  projections and publishes typed party/client handoff ports.
+- Closed independent architecture/security findings covering owner boundaries, lifecycle axes,
+  section authorization/freshness, next actions, household isolation, onboarding/offboarding,
+  restriction effects, note redaction, temporary access, high-risk recovery and exact dependency
+  direction. Final independent review has zero P0–P3 findings and Cyber Neo is security-clear at
+  documentary risk `0/100`.
+- M018 validation passed Biome over 143 files, 11-package typecheck, 20 passing test
+  files/131 tests with three deliberate skips, import contracts, a 226-page Astro build and 193
+  active local links across 162 Markdown files with zero broken. Two frozen offline lockfile-only
+  installs preserved the lock hash. No product source, dependency or lockfile changed, and Build
+  remains unauthorized.

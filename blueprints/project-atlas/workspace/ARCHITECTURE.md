@@ -343,6 +343,53 @@ incompatible or concurrent conversion. Its candidate is review workflow; the res
 acyclic `OpportunityRelation` remains the commercial relation authority after review. Proposed ADR
 021 and `CRM-001`–`CRM-023` gate Build/live behavior.
 
+### M018 party, formal-client and client-360 boundary
+
+M018 owns canonical `Person`, `ContactMethod`, `Household`, formal `ClientRelationship`, assignment,
+scoped representative, client flag/restriction, onboarding/offboarding coordination and
+`ClientOperationalNote`. M019 owns Organization; M021/M022/M023 own ServiceOrder/CaseFile/Task;
+M007 owns account/session/grants; other summary facts remain in their domain owners. A formal Client
+is neither a User role nor an Opportunity/payment/account outcome.
+
+The M018 application facade lives inside the modular monolith. It uses a closed versioned section
+registry and typed owner ports; each section carries owner/contract/source version, freshness,
+classification, current resource/access epochs and an explicit complete/partial/stale/unavailable/
+suppressed/denied/unknown/not-applicable result. Hidden data/counts never reach the browser and
+drill-down reauthorizes. Disposable projections/caches cannot authorize or mutate.
+
+List/search/filter/sort and attention are viewer-scoped composition, not global convenience indexes.
+Queries route to canonical authorized owners (or M089), protected contact matching is keyed and a
+generic risk filter is prohibited. Denied facts cannot affect values, order, counts, cursors or
+timing; durable attention contains only content-free dirty/source receipts. Household/member
+relationships do not inherit access/consent. Individual-with-business binds a concrete current M019
+relationship/version/effective scope and fails closed when that authority changes or is unavailable.
+
+M018 publishes canonical PartyDirectory and formal-client handoff/projection ports to M017/M020/M021;
+the direction is caller → M018, never direct table ownership by CRM/intake/service. Contact
+verification stays distinct from identity, consent, M007 account linking and formal Client status.
+M018 also owns immutable published onboarding/offboarding definitions; workflows freeze exact
+versions and only explicit reviewed migrations can change an in-flight definition.
+
+The same caller → M018 direction applies to basic `HouseholdDirectory`: masked resolution/create/
+reuse and reviewed member add/correct/end/supersede are M018-owned, independently authorize every
+member and confer no access/consent. Advanced household models remain Future.
+
+M018 party/contact/household/member/business-context changes use transactional audit/outbox and
+content-free ref/change-code/version/access-epoch invalidation events. Consumers and caches must
+reauthorize/re-read published ports; duplicate/out-of-order/missed events reconcile and never carry
+or become protected projection/authorization data.
+
+Representatives and temporary staff access use explicit bounded grants, evidence, effective/expiry
+interval and access-epoch invalidation. Flags are review signals; restrictions are scoped controls;
+suspension/block/deceased/offboarding are separately reviewed lifecycle actions. High-risk effects
+use final authorization/version fences, semantic idempotency, stable owner-step reconciliation,
+transactional audit/outbox and manual recovery. Proposed ADR 022 and `CLM-001`–`CLM-023` gate this
+candidate; no M018 route/schema/data or behavior is authorized.
+
+Restriction apply/revoke/expiry uses a closed owner-effect plan and current policy, never a local
+boolean or clock-based restoration. Note revision is distinct from independently permissioned,
+hold-aware destructive redaction with preview/approval/SoD/tombstone/reconciliation.
+
 ## Data protection
 
 Data follows `DATA_CLASSIFICATION.md`. Managed encryption at rest is necessary but insufficient for

@@ -2,7 +2,8 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Implementation-ready architecture draft; open Product Owner decisions remain; no Build gate
+- Status: Cross-module architecture summary; M018 has a dedicated implementation-ready candidate;
+  open Product Owner decisions remain; no Build gate
 - Catalog modules: M018, M019, M021, M022, M023
 
 ## 1. Purpose
@@ -12,6 +13,11 @@ their separately owned operational notes across every service vertical. M018 own
 `ClientOperationalNote`; M022 owns `CaseOperationalNote`; M012 owns conversation-local notes; and
 M017 owns `CrmInternalNote`. No authority mutates or copies another note family.
 
+The exhaustive M018 contract is [`m018-client-management.md`](m018-client-management.md), with its
+party/lifecycle/representation/aggregate boundary proposed in
+[`ADR 022`](../adr/022-client-party-lifecycle-representation-and-aggregate-boundary.md). This file
+remains a compact cross-module summary and must not override that dedicated PRD.
+
 ## 2. Business value
 
 Give SG Solutions one trustworthy view of each relationship and process while avoiding duplicated
@@ -19,8 +25,8 @@ client/case logic as new services are added.
 
 ## 3. Scope
 
-Canonical M018 Person/Household/Client and M019 Organization/business records and their respective
-relationships; service orders; case files;
+Canonical M018 Person/Household/formal Client relationship and M019 Organization/business records
+and their respective relationships; service orders; case files;
 task/checklist execution; assignment; case milestones/status; internal notes; next step; deadlines;
 case/client history; archive/cancel; links to documents, appointments, messages, payments, consent,
 approvals and vertical extensions. M015 separately owns reusable typed financial/business profile
@@ -29,7 +35,9 @@ facts, provenance, revisions/conflicts and purpose-limited projections.
 ## 4. Explicit out of scope
 
 Service-specific tax/credit/funding/home-buying calculations, partner underwriting, automatic case
-decisions, client identity creation, payment processing and document-byte storage.
+decisions, M007 account/authentication-identity creation, payment processing and document-byte
+storage. Canonical natural-person resolution and formal Client lifecycle remain M018-owned exactly
+as defined by the dedicated M018 PRD; this summary does not redefine them.
 
 ## 5. Actors
 
@@ -38,7 +46,8 @@ through delegated portal projections and background workflow coordinator.
 
 ## 6. User journeys
 
-1. Staff converts a qualified lead or creates a client with duplicate review.
+1. An authorized M017/M020/M021 handoff requests M018 creation/reuse of the formal client
+   relationship with canonical-resolution review; the caller does not create Client directly.
 2. Staff creates a service order from an approved catalog item/quote.
 3. After the separately evaluated financial prerequisite and human approval prerequisites, staff
    opens a case and assigns responsibility.
@@ -61,11 +70,15 @@ through delegated portal projections and background workflow coordinator.
 - Refund, dispute, reversal or cancellation on one axis emits a typed fact for human policy review;
   it never automatically chooses a transition on another axis.
 - Task: `open → in_progress → blocked → completed|cancelled`; reopen requires reason.
-- Client/business records use active/archived status; archival never erases cases or audit evidence.
+- M018 Client lifecycle and operational-attention axes use only the versioned states/transitions in
+  the dedicated M018 PRD §7 and `CLM-005`; this summary defines no reduced `active/archived` model.
+  M019 separately owns Organization/business lifecycle after its PRD. Archival never erases cases or
+  audit evidence.
 
 ## 8. Business rules
 
-- One Person/Client may have multiple service orders and cases; vertical data extends the case.
+- One canonical Person/formal ClientRelationship may have multiple service orders and cases;
+  vertical data extends the case without another Person/Client record.
 - A confirmed payment can satisfy a prerequisite but cannot authorize sensitive work.
 - Every non-terminal case has a responsible owner, visible internal next action and optionally a
   separately approved client-facing next action.
@@ -75,23 +88,27 @@ through delegated portal projections and background workflow coordinator.
 
 ## 9. Authorization rules
 
-Staff permissions combine role and assigned/resource scope. Clients require active case grant and
-see only client-visible projections. Internal notes, staff-only tasks, approval rationale and audit
-events never inherit portal visibility. Highly Sensitive resources may require explicit access.
-Writes use optimistic version checks and authorization before mutation.
+Staff permissions combine role, assigned/resource scope, purpose and section/field authorization.
+Clients require explicit current self/service/case/resource grants under M007/ADR 004 and see only
+client-visible projections; email or formal Client status alone grants nothing. Internal notes,
+staff-only tasks, approval rationale and audit events never inherit portal visibility. Highly
+Sensitive resources may require explicit additional access. Writes use optimistic version checks
+and authorization before mutation.
 
 ## 10. Data requirements
 
-Person/client identifiers and contact references; Business/entity metadata; ServiceDefinition and
-price snapshot; ServiceOrder amounts/status/prerequisites; CaseFile service type/status/owner/next
+Opaque M018 Person/ClientRelationship and M019 Organization references; ServiceDefinition and price
+snapshot; ServiceOrder amounts/status/prerequisites; CaseFile service type/status/owner/next
 steps/milestones; Task type/priority/assignee/due/dependencies/evidence; Note classification and
 visibility; links to consent, approvals, documents, payments, appointments and audit. Money uses
 minor units/currency; time uses UTC plus IANA zone where local meaning matters.
 
 ## 11. API or service contracts
 
-- `ClientService.createOrMatch`, `updateCanonicalMetadata`, `archive`; it does not mutate M015 facts.
-- `BusinessService.create`, `update`, `associateMember`.
+- M018 Client Management queries/commands and events are defined exclusively in the dedicated M018
+  PRD §§11–12 and proposed ADR 022; this summary introduces no second `ClientService` shorthand.
+- M019 will exclusively define Organization/business queries, commands, relationships and events;
+  this summary does not pre-authorize a `BusinessService` contract.
 - `ProfileProjectionPort.getPurposeSubset` is consumed only when an approved M015 purpose policy is
   active; client/case services never query profile tables or request a full profile.
 - `ServiceOrderService.createOrBindFromAcceptedQuote`, `transition`, `cancel`. The first is an
@@ -109,9 +126,9 @@ minor units/currency; time uses UTC plus IANA zone where local meaning matters.
 
 ## 12. Events and background jobs
 
-`client.created`, `service_order.created`, `service_order.approved`, `case.opened`,
-`case.status_changed`, `case.next_action_changed`, `task.assigned`, `task.due`, `task.completed` and
-`case.closed`. Jobs generate reminders, detect overdue work and materialize portal-safe projections;
+M018 events are defined exclusively by its PRD §12. M021/M022/M023 own ServiceOrder/CaseFile/Task
+events respectively; this summary does not create alternative dotted event codes. Jobs may generate
+reminders, detect overdue work and materialize portal-safe projections only through those owners;
 durable state remains Postgres.
 
 ## 13. Error states and recovery
@@ -142,7 +159,8 @@ stored in data/events.
 
 ## 17. Acceptance criteria
 
-- A client and business can be reused across multiple service orders without duplication.
+- An M018 Person/formal ClientRelationship and separately owned M019 Organization can each be reused
+  across multiple service orders without duplication or conflation.
 - Opening a case requires all configured prerequisites and a separate human authorization state.
 - Invalid transitions and stale writes fail atomically.
 - Internal notes never appear in portal projections.
@@ -180,4 +198,6 @@ bounded extensions, portal projections, transition invariants, visibility tests 
   clients verbatim versus mapped to simpler client-facing labels.]
 - [NEEDS PRODUCT OWNER DECISION: define case cancellation/reopening authority and required reasons.]
 - [NEEDS PRODUCT OWNER DECISION: approve task priority levels and overdue escalation policy.]
-- [NEEDS PRODUCT OWNER DECISION: define client/business duplicate-resolution authority.]
+- [NEEDS PRODUCT OWNER DECISION: resolve natural-person/household matching and merge under M018
+  `CLM-022`; M019 must separately define Organization/business resolution and cross-owner
+  coordination without a shared generic merge authority.]

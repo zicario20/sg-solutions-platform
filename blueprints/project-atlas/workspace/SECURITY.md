@@ -390,3 +390,54 @@ are created before each sensitive integration reaches its Release gate.
   bypass; forgery, wrong audience/action, replay, expiry or revoked source fails closed and audits.
 - `CRM-001`–`CRM-023`, independent security review, Product Owner approval and a separate Build gate
   precede any route, schema, data, merge, import/export, automation or provider activation.
+
+## M018 Client Management
+
+- Formal Client is not an account role, CRM outcome, payment or service authorization. M018 owns
+  Person/contact-method/household and formal-client lifecycle; every other 360 section remains in its
+  canonical owner and independently authorizes rows, fields, purpose, classification and drill-down.
+- Staff access requires current membership, permission, assignment/resource scope, purpose,
+  classification and access epoch. Client/representative access uses M007 explicit grants; email,
+  family/professional label, public reference or staff status alone grants nothing.
+- The closed section registry returns explicit complete/partial/stale/unavailable/suppressed/denied/
+  unknown/not-applicable state. Hidden data/counts never reach the browser, and owner failure never
+  becomes zero, paid, complete or no action.
+- Household/co-applicant/member relationships never inherit access or consent; every visible person,
+  resource, field and action needs current explicit scope, and hidden members/counts are suppressed.
+  Individual-with-business requires a current exact M019 relationship/version/effective-scope
+  receipt; cross-organization, revoked, denied, superseded or unavailable context fails closed.
+- List/search/filter/sort and attention route only to owners the actor may query. Protected matching
+  is keyed; generic risk filtering is rejected. A denied payment/compliance/document/task/other fact
+  cannot affect a value, option, order, count, cursor or timing; durable attention is content-free.
+- Representative invitations are signed, short-lived, one-use and exact subject/scope/audience/
+  policy/nonce bound. Activation is separate from grant issuance. Revocation/expiry advances access
+  epochs and invalidates grants, sessions/capabilities and caches while preserving attributed history.
+- Flags do not enforce. Restrictions and suspension/block/deceased/offboarding require reviewed exact
+  scope, reason/evidence, current assurance/approval/SoD, expected versions, semantic idempotency,
+  owner receipts, audit and recovery. AI cannot execute them.
+- Restriction effects are closed owner mappings. Apply, revoke and expiry consume the same reviewed
+  current-policy plan. Unknown/unavailable owners fail closed; partial/ambiguous results reconcile by
+  stable step. A scoped effect cannot widen into whole-client suspension or automatically restore
+  previous access; receipt/history access is independent.
+- Canonical party/contact mutations exist only behind M018 ports; caller table writes and
+  contact-verification-to-identity/consent/account/client inference are forbidden. Published workflow
+  definitions are immutable/frozen per instance. Note redaction requires an independent destructive
+  capability, preview/approval/SoD, M085 hold receipt, final fence, tombstone and reconciliation.
+- Protected reveal is one-field/purpose-bound and `no-store`; export is actor-owned, row/field
+  reauthorized, redacted, formula-neutralized and privately time-limited through M011. Values/bodies
+  never enter audit, telemetry, analytics, URLs, errors or browser persistence.
+- Ordinary M018 export excludes internal notes, flag/restriction rationale, identity/security/audit,
+  score/risk/evaluation and AI material by default. A legal dataset is separately M085-authorized
+  with approval/SoD; ordinary export authority cannot broaden it.
+- Temporary access is an M018 exact-scope/purpose/reason/TTL request/approval/revocation receipt plus
+  M007 owner grant/invalidation outcome. SoD/step-up/current epochs apply; M018 never mutates grants
+  or sessions, and expiry/revocation clears caches/capabilities. Portal admin and preference changes
+  are typed M007/M080 and M026 owner actions, never generic M018 mutation.
+- Alert and quick-action registries are closed/versioned. Owner alerts retain source/version/
+  freshness/visibility and reauthorized owner CTA; M018 flags are review signals only. No generic
+  launcher, hidden count, partial-as-empty state or copied owner fact is permitted.
+- Canonical matching uses domain-separated keyed tokens with key/version outside Postgres/backups.
+  Name-only, unkeyed-hash, score-only, automatic and AI-only merge are prohibited. Merge freezes the
+  complete known owner graph and uses reviewed preview, final fences and reconciliation.
+- `CLM-001`–`CLM-023`, independent security review, Product Owner approval and a separate Build gate
+  precede any route, schema/RLS policy, real client data, reveal/export/merge/AI or lifecycle action.

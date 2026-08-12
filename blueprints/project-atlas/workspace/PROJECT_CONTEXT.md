@@ -35,6 +35,15 @@ CaseFile and M023 Task. Contact 360 composes minimized owner projections and rea
 drill-down. Opportunity `won`, payment, client activation, entitlement, authorization to start and
 case progress are independent facts. Duplicate candidates never merge people automatically.
 
+Client Management is the authorized operational home for a formal client relationship. M018 owns
+canonical natural-person/contact-method/household facts, formal Client lifecycle, client
+assignments, scoped representatives, client-level flags/restrictions, onboarding/offboarding and
+client operational notes. The client 360 is a request-scoped composition: Organization, services,
+cases, tasks, documents, billing, appointments, communications, consent, portal/security and profile
+facts remain in their owners. Formal Client, account, payment, service authorization and case
+progress are independent. Representative or staff access always requires explicit current resource,
+purpose and field/section authorization.
+
 Supabase Auth is the identity source. Domain services plus Postgres RLS and Storage policies enforce
 authorization. Drizzle owns schema and migrations. Sanity stores public bilingual content only.
 Stripe owns external financial transaction state; Postgres owns internal operational state. Inngest

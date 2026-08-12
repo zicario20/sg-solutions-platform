@@ -175,6 +175,19 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   policy, data, merge, import/export, automation, provider connection or deployment is authorized.
   M018 opens only after the clean audited M017 commit.
 
+- **M018 Client Management:** Product/Architecture documentation is complete and independently
+  audited under Decision 027 from audited M017 commit `667e020`. The candidate defines canonical
+  Person/contact-method/Household and formal Client lifecycle, assignments, scoped representatives,
+  client flags/restrictions, onboarding/offboarding, client operational notes and a closed
+  source-aware client 360 aggregate. Organization, services, cases, tasks, documents, billing,
+  appointments, communications, consent, portal/security and profile facts remain canonical in their
+  owners. Relationship, attention, onboarding, portal, service, case and payment axes remain
+  independent. Proposed ADR 022 controls concrete client-subject references, section authorization,
+  revocation, idempotency and recovery. Twenty-three Build/live policies remain `CLM-001`–
+  `CLM-023`. Independent architecture review has zero open P0–P3 findings and Cyber Neo is
+  security-clear at documentary risk `0/100`. No `GENERATE`, route, schema/RLS policy, real client
+  data, merge/export/AI/lifecycle behavior, provider connection or deployment is authorized.
+
 ## Architecture-first activation policy
 
 Modules may complete their durable architecture and later authorized local implementation before SG

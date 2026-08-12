@@ -27,6 +27,7 @@
 | [019](019-purpose-bound-profile-facts-provenance-and-conflict.md) | Proposed M015 typed reusable fact ownership, provenance, immutable revision/conflict and purpose-limited projection boundary. |
 | [020](020-role-scoped-admin-dashboard-aggregation-and-derived-state.md) | Proposed M016 server-side role-scoped composition, explicit partial/freshness state and disposable derived-dashboard boundary. |
 | [021](021-party-crm-opportunity-conversion-and-merge-boundary.md) | Proposed M017 canonical-party/CRM separation, opportunity/conversion independence and controlled identity-resolution boundary. |
+| [022](022-client-party-lifecycle-representation-and-aggregate-boundary.md) | Proposed M018 canonical party/formal-client lifecycle, scoped representation and source-aware aggregate boundary. |
 
 ADRs are tool-neutral. Supersede a decision with a new numbered ADR; do not erase historical
 rationale.

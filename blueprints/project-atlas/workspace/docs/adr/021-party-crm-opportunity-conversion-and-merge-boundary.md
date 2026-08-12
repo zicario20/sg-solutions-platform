@@ -6,7 +6,7 @@
 - Date: 2026-08-12
 - Scope: M017 and its boundaries with M007, M018–M026, M042–M046, M077–M085, M089 and M092
 - Supersedes: none
-- Related: ADR 004, ADR 005, ADR 010, ADR 011, ADR 018 and M017 CRM PRD
+- Related: ADR 004, ADR 005, ADR 010, ADR 011, ADR 018, proposed ADR 022 and M017/M018 PRDs
 
 ## Context
 
@@ -32,6 +32,11 @@ partial failure without introducing distributed infrastructure or direct cross-s
 - M017 owns `CrmRelationship`, `Opportunity`, versioned `PipelineDefinition`/
   `PipelineStageDefinition`, assignment history, CRM-authored activity/internal notes, governed
   source attribution and CRM data-quality orchestration.
+
+Proposed ADR 022 is the more specific contract for M018 formal-client subject/lifecycle,
+representatives and aggregate composition. It permits only concrete owner references and keeps
+unsupported organization-only CRM/client modes disabled until M019 and Product Owner policy are
+approved; it does not grant M017 a generic polymorphic subject or placeholder Person.
 
 `CrmRelationship` references exactly one canonical M018 Person ID. Within the single SG Solutions
 organization, one canonical Person has exactly one current/root CRM relationship; a uniqueness/CAS/

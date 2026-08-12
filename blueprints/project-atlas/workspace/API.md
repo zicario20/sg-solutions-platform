@@ -417,3 +417,60 @@ current actor/session/membership/permission/resource/access epoch/purpose/assura
 recovery generation and streams through a private `no-store` boundary. `revoke` invalidates pending
 capabilities. Forwarding, second unauthorized context, scope change, expiry, revocation, restore and
 concurrent/disallowed repeated consumption fail closed and are audited.
+
+## M018 Client Management application contracts
+
+M018 exposes server-only list/header/section/operational-summary/lifecycle/assignment/representative/
+restriction/alert/onboarding/offboarding/portal-security/timeline/authorized-quick-action/canonical-
+resolution/temporary-access-status queries and the command families listed
+exhaustively in `docs/modules/m018-client-management.md` section 11. Exact HTTP routes and payloads
+remain gated by `CLM-001`–`CLM-023` and a Build decision.
+
+Every list query authorizes before search, counts, filters and pagination and uses a server-issued
+opaque authenticated cursor bound to actor/session/membership/role/assignment/grants/access epochs,
+purpose/classification, normalized query, registry/policy/schema/contract versions, `asOf`, recovery
+generation and TTL. Client detail accepts a closed versioned section registry; each section calls one
+typed owner port, authorizes independently and returns source/version/freshness plus
+`complete|partial|stale|unavailable|suppressed|denied|unknown|not_applicable`. Hidden fields/counts
+never enter the DTO, and an opaque drill-down always reauthorizes in the owner.
+
+Search/filter/sort is a closed owner-routed inventory: M018 identity/state/assignment/locale, M019
+organization, M021/M042 service/order, M022 case, M023/workflow action, M014 billing, M011 document
+and minimized M015 location through typed ports or authorized M089. Protected email/phone matching
+is exact keyed matching; a generic `risk` query is rejected. A denied source has no effect on match,
+option, count, order, cursor or timing; owner outage is an explicit safe partial/unavailable result.
+Operational attention is likewise request-scoped and derived only from facts the actor may know;
+durable state stores only content-free invalidation/reconciliation receipts, never a protected cause.
+
+High-risk activation/lifecycle/representative/restriction/offboarding/export/merge/temporary-access
+commands use expected versions, final authorization fences, semantic idempotency and stable owner-
+step reconciliation. A representative invitation is short-lived, one-use and bound to exact client,
+representative, scope, audience, policy and nonce; acceptance does not itself mint M007 grants.
+Protected reveal returns one transient `no-store` field separately from a value-free M077 receipt.
+M018 never exposes a giant Client DTO or directly queries another domain's tables/provider.
+
+M018 publishes the canonical PartyDirectory port for masked resolution, create/reuse, purpose-limited
+projection, protected correction, verification receipt, end and supersede. M017/M020/M021 are callers,
+not party authorities; they cannot write M018 tables. Contact verification never implies identity,
+consent, account link or Client status. Household relationships never inherit grants/consent, and
+individual-with-business uses an exact current M019 relationship/version/effective-scope receipt.
+M018 likewise publishes HouseholdDirectory for masked resolution/create/reuse and reviewed member
+add/correct/end/supersede; exact evidence/version/purpose/idempotency/final-fence/recovery applies,
+each member authorizes independently and callers cannot direct-write the aggregate.
+ClientBusinessContext has purpose-limited query and bind/correct/end/supersede commands with exact
+M018/M019 versions/evidence/purpose/idempotency/final fences. M019 events only trigger an authorized
+re-read/reconciliation; neither callers nor event consumers write context rows.
+
+Immutable M018 onboarding/offboarding definitions use draft/validate/publish/supersede contracts;
+each workflow freezes one published version. A separately approved preview/execute migration is the
+only version-change path for in-flight work. Restriction apply/revoke uses one exact owner-effect
+preview/execute/reconcile plan; no clock job restores prior access or bypasses current owner policy.
+Operational-note redaction has separate request/preview/approve/execute/reconcile capabilities and
+cannot be inherited from create/revise.
+
+Quick actions are closed typed handoffs into M023/M011/M012/M013/M021/M007/M074 or local M018
+representative/reassignment flows; there is no generic cross-owner execute. Alerts are closed owner-
+sourced envelopes with source/version/freshness/visibility and opaque reauthorized owner CTA; flags
+remain separate. Temporary-access request/status/approve/revoke coordinates exact scope/purpose/
+reason/TTL/SoD and M007 grant/invalidation receipts without editing grant/session rows. Portal-admin
+and preference management use typed M007/M080 and M026 owner flows.

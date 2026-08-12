@@ -56,6 +56,16 @@ uses approved keyed matching rather than unkeyed low-entropy hashes and never pe
 or AI-only merge. Proposed ADR 021 records this boundary. `CRM-001`–`CRM-023` gate exact views,
 pipeline, access, merge, import/export, AI/automation, analytics and quality behavior.
 
+M018 is the canonical party/formal-client operating domain. It owns natural-person, contact-method
+and household facts; formal `ClientRelationship` lifecycle/history; client assignments; scoped
+representatives; client-level flags/restrictions; onboarding/offboarding coordination; and
+client-level operational notes. Its Admin client 360 is a closed, source-aware aggregate over typed
+owner projections. It does not copy Organization, ServiceOrder, CaseFile, Task, Document, Billing,
+Appointment, Communication, Consent, portal/security or profile facts, and every drill-down
+reauthorizes in the owner. Relationship, derived attention, onboarding, portal, service, case,
+payment and consent states stay separate. Proposed ADR 022 records the client-subject, lifecycle,
+representation, aggregation and recovery boundary; `CLM-001`–`CLM-023` gate exact Build/live policy.
+
 ## Release strategy
 
 The first delivery family is **Release 1 — Production Foundation**, built for real clients and

@@ -8,12 +8,18 @@
 - Surfaces: Admin Portal and bounded backend domain/application services
 - Related modules: M001, M003–M007, M013, M016, M018–M026, M040–M046, M074,
   M077–M085, M089–M092 and M097
-- Governing ADRs: ADR 001–006, ADR 010–011, ADR 018 and proposed ADR 021
+- Governing ADRs: ADR 001–006, ADR 010–011, ADR 018 and proposed ADRs 021–022
 
 This PRD normalizes the complete Product Owner-supplied M017 source into the approved Project Atlas
 modular-monolith architecture. It specifies a future production module; it does not authorize an
 Admin route, table, migration, RLS policy, worker, import/export, provider, real person/client data,
 merge, marketing message or product code.
+
+The dedicated M018 contract in [`m018-client-management.md`](m018-client-management.md) and proposed
+[`ADR 022`](../adr/022-client-party-lifecycle-representation-and-aggregate-boundary.md) refine the
+canonical Person/Household/formal Client, client-subject and 360-aggregation boundaries. M017 remains
+a downstream commercial consumer and cannot activate Client or manufacture an unsupported
+organization-only placeholder.
 
 ## 1. Purpose
 

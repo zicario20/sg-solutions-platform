@@ -157,6 +157,18 @@ Measured scale, hybrid infrastructure and mobile expansion
     M022 CaseFile depends on M021/M018, and M023 Task may depend on/link M022, never the reverse.
     Optional integration events do not create catalog dependency cycles or make CRM availability a
     prerequisite for durable lead capture/client/order/case/task truth.
+29. M018 owns canonical Person/contact-method/Household and formal Client lifecycle; it does not
+    depend on M017 to remain authoritative. Its client 360 depends only at query time on approved
+    typed projections from M017/M019/M021–M023/M025/M026/M007/M011–M015/M040/M042–M046/M078 and other owners. An unavailable
+    owner produces explicit partial/unavailable state, not a startup/write dependency or copied fact.
+    M018 publishes client/assignment/representative/lifecycle ports downstream; M017 may request but
+    cannot activate Client, M007 may grant access but cannot create Client, and aggregate consumers
+    cannot write M018 through a projection. Proposed ADR 022 governs this acyclic boundary.
+30. In M018 service composition, M021 alone owns contracted ServiceOrder state. M040 may later supply
+    a separately authorized partner/referral projection but interest/referral never becomes a service.
+    M014 aggregates billing while M043–M046 retain payment/refund/dispute/external-transaction/
+    entitlement/pricing subfacts. Every M018 projection preserves owner authorization/freshness and
+    denied/unavailable sources cannot become zero, resolved, counts or inferred partner/service facts.
 
 ## Fronteras de extracción
 

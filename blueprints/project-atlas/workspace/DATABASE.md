@@ -156,3 +156,43 @@ imports/exports reference M011 objects; file bytes and temporary delivery remain
 Merge preserves aliases/tombstones, conflict and recovery references instead of destructive history
 rewrites. No M017 table, migration, RLS policy or data is authorized by this documentary candidate;
 Drizzle remains the only schema/migration authority.
+
+## M018 conceptual persistence boundary
+
+Future M018 schema families are limited to canonical natural-person/contact-method/household facts,
+formal `ClientRelationship` and lifecycle history, client assignment, representative, flag,
+restriction, onboarding/offboarding coordination, client operational note and durable operation
+receipts. M019 Organization, M021 ServiceOrder, M022 CaseFile, M023 Task, M011 Document, M014 Billing,
+M013 Appointment, M012/M025 Communication, M078 Consent, M007 account/grants and M015 profile facts
+remain foreign owner references/projections and are not copied into M018 rows.
+
+Concrete subject references must be checkable and owner-versioned; a free-form polymorphic ID or
+placeholder Person is prohibited. Uniqueness/CAS/idempotency prevents a new current client
+relationship per service/channel. Representative/assignment/restriction records use effective
+intervals and immutable history. Derived 360/cache rows are disposable, epoch/source/version-bound
+and never authorization or state authority.
+
+`ClientBusinessContext` references the exact M019 Person-Organization relationship/version,
+Organization, effective interval, classification, purpose/visibility receipt and access epoch; it
+contains no copied business facts or fallback display code. Household membership has no grant or
+consent inheritance column. Durable attention data is limited to content-free dirty/reconciliation
+and owner/version receipts; protected cause, viewer state and cross-owner sort/filter fields are not
+persisted as global M018 authority.
+
+M018-owned immutable onboarding/offboarding definition and item-template versions are separate from
+workflow/item instances. Each instance stores its accepted published definition version; publishing
+or superseding never updates it in place. Canonical party/contact rows are writable only through the
+M018 application boundary. Note revisions/tombstones and redaction operation receipts are immutable;
+ordinary update authority cannot perform destructive redaction.
+
+Protected contact matching uses domain-separated keyed tokens with key version outside Postgres/
+backups/logs/telemetry. Sensitive notes/evidence follow ADR 005 encryption and cannot be plaintext-
+indexed. RLS enforces SG organization plus relationship/resource/assignment/purpose scope; services
+still authorize field/section/action. No M018 table, migration or RLS policy is authorized by this
+candidate; Drizzle remains the only schema/migration authority after Build begins.
+
+`TemporaryClientAccessRequest` is an M018 coordination record only: exact client/section/field/
+action/purpose/reason/TTL/approver/SoD/status/version plus opaque M007 grant/invalidation/access-epoch
+receipts and recovery refs. It cannot contain grant rows, session data, protected field values or a
+generic permission snapshot. Alert/quick-action aggregates are request-scoped DTOs/projections, not
+new persisted owner facts.

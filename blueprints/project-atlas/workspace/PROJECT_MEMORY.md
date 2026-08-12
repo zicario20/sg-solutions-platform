@@ -463,3 +463,49 @@
   lockfile-only installs preserved SHA-256
   `C1ABFA94B76E87B197ED33EB53829EF0A73BFEA830880AD47A0E43C1A3E6A31A`. No product behavior,
   provider, real data, merge, deployment or activation was created.
+
+## 2026-08-12 — M018 Client Management documentary candidate
+
+- Decision 027 authorized M018 only after M017 was independently audited, remediated, validated and
+  committed. M018 opened in its own worktree from exact M017 commit
+  `667e020386d2e71949e44061e79852c7cdd76ccb`; no `GENERATE` or Build gate was opened.
+- The complete supplied M018 source was normalized into a 21-section implementation-ready PRD,
+  branded responsive Admin design and proposed ADR 022. The source remains an external attachment,
+  so repository-only future review cannot reproduce source completeness without that file.
+- M018 owns canonical Person/contact methods/basic Household, explicit formal ClientRelationship,
+  lifecycle history, assignments, scoped representatives, flags/restrictions, versioned onboarding/
+  offboarding coordination, ClientOperationalNote and operation receipts. Every upstream caller uses
+  typed M018 ports; direct caller writes to canonical party/client state are prohibited.
+- Client 360 uses a closed typed section registry. Each owner projection is authorized and freshness-
+  checked independently, returns minimized explicit result states and reauthorizes drill-down. M019,
+  M021–M023, M011–M015, M017, M025/M026, M040, M042–M046, M074, M077/M078 and M007/M080 retain
+  their respective canonical truth.
+- Formal-client lifecycle, portal/account, service, case, payment, operational attention, onboarding
+  and offboarding remain separate axes. Household or representative relations never inherit
+  identity, consent, entitlement or grants; hidden members and counts remain suppressed.
+- Restriction and other high-risk operations use owner-routed preview/execute/reconcile, exact plan
+  digests, final fences, semantic idempotency, assurance, separation of duty and recovery epochs.
+  Notes use immutable revisions; destructive redaction is separately authorized and preserves a
+  tombstone. Restore cannot resurrect authority or repeat accepted/ambiguous effects.
+- Preliminary independent review closed every iterative material finding and reports zero open
+  P0/P1/P2/P3. Final frozen-snapshot architecture and Cyber Neo review remain pending. Exactly 23
+  unresolved Build/live policies remain `CLM-001`–`CLM-023` for Product Owner decision.
+- Pre-freeze evidence passed Biome over 143 files, 11-package typecheck, 20 passing test files/131
+  passing tests with three deliberate skips, import contracts, a 226-page Astro build and 193 active
+  local links across 160 Markdown files with zero broken. Two frozen offline lockfile-only installs
+  preserved SHA-256
+  `C1ABFA94B76E87B197ED33EB53829EF0A73BFEA830880AD47A0E43C1A3E6A31A`. No product behavior,
+  provider, real data, merge, deployment or activation was created.
+
+### Frozen review closure
+
+- The independent architecture auditor approved the frozen 26-path documentary snapshot with zero
+  open P0/P1/P2/P3 findings after reviewing all 115 supplied M018 source sections, 21 PRD sections,
+  23 decision/register pairs and 193 local links with zero broken.
+- Cyber Neo approved the same frozen documentary delta with zero Critical/High/Medium/Low findings
+  and risk `0/100`. It scanned 3,130 added/new lines and found no introduced secret, credential, real
+  PII, private URL/IP, local/attachment path, media, product code, dependency, manifest or lockfile
+  change. The lockfile hash remained unchanged.
+- These approvals authorize Product Owner documentary review only. They do not accept ADR 022,
+  resolve `CLM-001`–`CLM-023`, authorize `GENERATE`/Build, merge, provider activation, real client
+  data, deployment or production release.

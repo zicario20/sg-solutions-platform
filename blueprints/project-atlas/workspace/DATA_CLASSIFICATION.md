@@ -327,3 +327,36 @@ features, prompts/diffs, memberships and per-person facts. Search/report envelop
 allowlisted minimized fields/facts and inherit purpose/access/retention. M085 + CRM-022 governs
 retention, legal hold, crypto-shred/purge and backup expiry across every family; an absent record-
 specific policy fails closed.
+
+## M018 client-management data
+
+Generic lifecycle/section/assignment/representative/restriction definition codes may be Internal.
+An actual Person, contact method, household membership, formal client relationship, assignment,
+representative, onboarding/offboarding item, owner projection, timeline or operation receipt is at
+least Confidential and inherits the highest source, relationship, purpose, classification and
+inference level.
+
+A `TemporaryClientAccessRequest`, its exact scope/purpose/reason/approver/SoD/status and M007 grant/
+invalidation refs is at least Confidential; reason, target scope or security/approval evidence is
+Highly Sensitive whenever it reveals protected need, incident, field or access pattern. It is never
+analytics content or a broadly visible assignment record.
+
+Contact values, identity-resolution/matching evidence, household/representative evidence, protected
+notes, security/portal details, flags/restriction rationale, reveal results, export artifacts and any
+linked tax/credit/financial/identity/document fact are Highly Sensitive. Masking, tokenization,
+encryption or omission does not lower classification. Public client-reference examples are Public;
+real references remain Confidential and never authorize access.
+
+Household/member and M019 business-context references inherit the highest related person/
+organization/purpose classification and never imply access. Payment/compliance/document/task or
+other protected attention causes remain classified in their owner and cannot be copied into a
+globally visible M018 status, query index, sort key or telemetry. Restriction intent/effect and
+note-redaction receipts inherit the highest target/evidence classification even when the visible
+label is generic. Party-resolution candidate/match evidence and contact-verification receipts are
+Highly Sensitive and cannot become identity/account/consent/client assertions.
+
+Highly Sensitive persisted fields use the approved ADR 005 field matrix/application envelope
+encryption where required. Protected values, match tokens, note bodies, evidence, search text,
+reveals/exports and per-client facts are prohibited from URLs, browser persistence, shared cache,
+logs, traces, Sentry, PostHog, session replay, notification payloads and broad analytics/export.
+`CLM-016` plus M085 governs retention/hold/deletion/backup expiry; missing policy fails closed.
