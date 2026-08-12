@@ -28,6 +28,13 @@ It derives minimized widgets and deterministic priority from owner-domain projec
 explicit freshness/coverage/partial-failure state and reauthorizes every drill-down in the owning
 module. Derived metrics, preferences and caches cannot grant access or change operational state.
 
+The CRM is the authorized commercial-relationship workspace inside the Admin surface. M017 owns
+CRM relationships, opportunities, versioned pipelines, assignments and CRM-authored activities;
+M018 owns Person/Household/formal Client, M019 Organization, M020 Lead, M021 ServiceOrder, M022
+CaseFile and M023 Task. Contact 360 composes minimized owner projections and reauthorizes every
+drill-down. Opportunity `won`, payment, client activation, entitlement, authorization to start and
+case progress are independent facts. Duplicate candidates never merge people automatically.
+
 Supabase Auth is the identity source. Domain services plus Postgres RLS and Storage policies enforce
 authorization. Drizzle owns schema and migrations. Sanity stores public bilingual content only.
 Stripe owns external financial transaction state; Postgres owns internal operational state. Inngest

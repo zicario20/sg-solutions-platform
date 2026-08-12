@@ -432,3 +432,34 @@
   installs preserved SHA-256
   `C1ABFA94B76E87B197ED33EB53829EF0A73BFEA830880AD47A0E43C1A3E6A31A`. No product source,
   dependency or lockfile changed, and no Build or activation was opened.
+
+## 2026-08-12 — M017 CRM documentary candidate
+
+- Decision 027 authorized M017 only after M016 was independently audited, remediated, validated and
+  committed. M017 opened in its own worktree from exact M016 commit
+  `de4e35b5dde4bf0b7ac780c95a13fc3ee3cc3db2`; no `GENERATE` or Build gate was opened.
+- The complete supplied M017 source was normalized into a 21-section implementation-ready PRD,
+  branded responsive Admin design and proposed ADR 021. The source remains an external attachment,
+  so repository-only future review cannot reproduce source completeness without that file.
+- M017 owns an identity-neutral `CrmRelationship`, stable versioned purpose bindings, Opportunities,
+  Pipeline/Stage, assignments, next-action/activity/internal-note/attribution histories, governed
+  metadata and recoverable CRM operations. M018–M023 and M077/M078 retain Person/Client,
+  Organization, Lead, ServiceOrder, CaseFile, Task, audit and consent authority.
+- Authorization is purpose-, binding-, epoch-, classification-, role/team/assignment- and resource-
+  scoped before match/count/cursor. M019 organization and M023 Task links require fresh owner
+  receipts; the typed M020 qualification projection and closed Contact 360 registry cannot infer or
+  broaden owner truth. Protected reveal separates transient values from value-free M077 evidence.
+- Opportunity `won`, formal Client, payment, entitlement, approval-to-start and Case progress remain
+  independent. Conversion/merge/duplicate resolution/import/export/retention use exact plan digests,
+  complete scopes, semantic idempotency, assurance/SoD and recovery; legal hold is a separately
+  explicit direct-CAS transition. Restore cannot repeat accepted/ambiguous effects or resurrect access.
+- Independent review closed every iterative finding and confirmed zero P0/P1/P2/P3 on the final
+  snapshot. Cyber Neo confirmed zero Critical/High/Medium/Low, risk `0/100`, zero introduced secrets,
+  PII, private URLs/paths, media, code/dependencies or lockfile changes. Twenty-three unresolved
+  policies remain exactly `CRM-001`–`CRM-023` for Product Owner decision.
+- Final evidence passed Biome over 143 files, 11-package typecheck, 20 passing test files/131 passing
+  tests with three deliberate skips, import contracts, a 226-page Astro build, 188 active local links
+  across 155 Markdown files with zero broken and clean whitespace checks. Two frozen offline
+  lockfile-only installs preserved SHA-256
+  `C1ABFA94B76E87B197ED33EB53829EF0A73BFEA830880AD47A0E43C1A3E6A31A`. No product behavior,
+  provider, real data, merge, deployment or activation was created.

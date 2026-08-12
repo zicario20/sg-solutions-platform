@@ -293,7 +293,7 @@ restore or source-version change.
 21. M089 owns global search; M092 owns durable reporting/product analytics; M097 owns technical
     observability; M016 consumes minimized projections.
 22. M074 owns approvals, M079 risks, M026 notifications, M023 tasks, M013 appointments, M014/M043–
-    M044 billing facts and M017/M018 CRM/client facts.
+    M044 billing facts, M017 CRM-relationship/opportunity facts and M018 canonical client facts.
 23. M016 emits its own preference/snapshot/receipt facts only after durable local change. Owner
     invalidations are consumed as reread hints, not republished as source truth.
 24. Postgres remains durable state authority; cache/materialized views are disposable projections.

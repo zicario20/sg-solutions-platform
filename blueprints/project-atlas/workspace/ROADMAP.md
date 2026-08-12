@@ -162,6 +162,18 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   risk `0/100`; the candidate awaits Product Owner documentary review. No `GENERATE`, route,
   schema/RLS policy, metric/widget activation, real dashboard, merge or deployment is authorized.
   M017 may open only after a clean audited M016 commit.
+- **M017 CRM:** Product/Architecture documentation is complete and independently audited under
+  Decision 027 from audited M016
+  commit `de4e35b`. The candidate defines the Admin commercial-relationship workspace while M018
+  Person/Client, M019 Organization, M020 Lead, M021 ServiceOrder, M022 CaseFile and M023 Task remain
+  canonical. M017 owns CRM relationships, opportunities, versioned pipelines, assignments and
+  bounded CRM activity. Opportunity `won`, client activation, payment, entitlement, approval and
+  case progress remain independent. Proposed ADR 021 controls typed owner projections, idempotent
+  conversion and reviewed canonical resolution; no automatic merge. Independent architecture
+  review has zero open P0–P3 and Cyber Neo is security-clear at documentary risk `0/100`.
+  Twenty-three Build/live policies remain `CRM-001`–`CRM-023`. No `GENERATE`, route, schema/RLS
+  policy, data, merge, import/export, automation, provider connection or deployment is authorized.
+  M018 opens only after the clean audited M017 commit.
 
 ## Architecture-first activation policy
 

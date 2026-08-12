@@ -119,7 +119,8 @@ media gateway/runtime. M003, M004 and M025 own shared conversation and inbox con
 - M002 public knowledge adapter.
 - M006 form/evidence capture, M078 consent and M020 lead/deduplication services.
 - M013 scheduling services; M024 is internal calendar UI only.
-- M017/M018 contact/client and M025 inbox services.
+- M018 canonical Person/Client/contact methods, M017 CRM relationship/opportunity and M025 inbox
+  services.
 - M026 follow-up notification service.
 - M043–M045 read-only payment/status and secure-link services.
 - M077 audit, M078 consent and M080/M081 identity/authorization services.
@@ -696,7 +697,8 @@ Build gate. External activation additionally requires the evidence in the activa
 ### Required for architecture
 
 M002 public Help Center; M003/M004 conversation/channel patterns; M006 preliminary form/evidence
-capture; M078 consent; M020 lead/deduplication; M013 scheduling; M017/M018 contacts/clients;
+capture; M078 consent; M020 lead/capture deduplication; M013 scheduling; M018 canonical Person/
+Client/contact methods; M017 CRM relationship/opportunity;
 M025 unified communications; M026
 notifications; M041 provider abstraction; M043–M045 payment projections; M048/M049 Reception Agent;
 M060 compliance review; M075 human-in-the-loop; M077 audit; M078 consent; M080/M081 IAM/RBAC; M082

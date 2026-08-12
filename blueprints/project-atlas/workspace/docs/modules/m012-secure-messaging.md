@@ -29,10 +29,11 @@ It reuses the shared conversation kernel established by M003/M004, contributes a
 items to the future M025 unified inbox and does not duplicate CRM, cases, tasks, documents,
 scheduling, billing, notifications, audit or AI authorities.
 
-Conversation-local notes are M012 records bound to one conversation. M018 remains the authority for
-client/case operational notes. Neither service can create, revise, redact or delete the other's note
-type; integration is limited to an opaque typed link or authorized projection and never dual-writes
-or copies protected note content. Neither note family inherits client visibility.
+Conversation-local notes are M012 records bound to one conversation. M018 owns only client-level
+`ClientOperationalNote`; M022 owns case-level `CaseOperationalNote`; M017 owns `CrmInternalNote`.
+No service can create, revise, redact or delete another note type; integration is limited to an
+opaque typed link or authorized projection and never dual-writes/copies protected content or
+inherits client visibility.
 
 ## 2. Business value
 
@@ -788,8 +789,8 @@ The full responsive specification is
 - [ ] A quoted reply resolves to an eligible current client-visible revision in the same authorized
   conversation, is digest-bound and rejects cross-client/context/thread, internal, redacted or
   withdrawn targets without excerpt/existence leakage.
-- [ ] M012 conversation notes and M018 client/case notes remain separate authorities with typed
-  links/projections only; neither service mutates, copies or grants visibility to the other.
+- [ ] M012 conversation, M017 CRM, M018 client and M022 case notes remain separate authorities with
+      typed links/projections only; no service mutates, copies or grants visibility to another.
 - [ ] M025 projection/event schemas cannot represent body/note/quote/translation/attachment title;
   authorized staff detail re-reads M012 and leaves no M025 protected-content copy/cache.
 - [ ] AI is absent in Release 1A unless its separate gate is approved; any future AI is identified,
@@ -858,8 +859,9 @@ The full responsive specification is
 - M009/M010 for authorized service/process roots and owning-route handoffs.
 - M011/ADR 015 for attachment/document lifecycle and byte access.
 - M013 scheduling, M014 billing, M023 tasks and M067 signature for typed owner actions.
-- M017/M018/M021/M022 for CRM, client, service-order and case context. M018 owns client/case notes;
-  M012 owns only conversation-local notes and the two link by opaque reference/projection, not copy.
+- M017 for CRM relationship/opportunity and M018/M021/M022 for canonical client, service-order and
+  case context. M017 owns CRM notes, M018 client notes, M022 case notes and M012 conversation-local
+  notes; note families link only by typed opaque projection and never copy bodies/visibility.
 - M025 for unified communications inbox/assignment projection and M026 for delivery/preferences.
 - M002 for approved public help; M003–M005 for channel-specific kernels/adapters and handoff context.
 - M047–M060 for AI/model/prompt/tool/evaluation behavior; M060 remains subordinate to M076 policy

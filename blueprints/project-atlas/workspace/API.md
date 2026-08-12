@@ -122,7 +122,8 @@ no M025 content cache. M026 receives only content-free template
 requests and future M047–M060 AI remains separately gated. Exact routes and payload limits await a
 Build gate; personalized responses are private/no-store and normal operation requires no Redis,
 Kafka, WebSocket cluster or external provider.
-M018 owns client/case notes; M012 owns only conversation-local notes, with opaque links/projections
+M018 owns client-level operational notes, M022 owns case-level operational notes and M012 owns only
+conversation-local notes, with opaque links/projections
 and no cross-mutation/copy. M092 future analytics/report consumption remains off until MSG-018; M097
 separately owns required content-free, identifier-free operational/security telemetry under its own
 readiness/activation policy. Neither receives transcript/session replay. M076 owns compliance policy
@@ -274,3 +275,145 @@ or event-stream endpoint. It accepts the full M016 authorization context and bou
 returns allowlisted semantic event code, safe localized parameters, event/source time/version,
 freshness/coverage and an optional opaque drill-down reference, and excludes technical/private
 events, invalidation payloads and content. Every destination reauthorizes.
+
+M017 proposes the server-only, versioned command/query contract families enumerated exactly in
+`docs/modules/m017-crm.md` section 11. That section alone is the exhaustive candidate inventory;
+this API authority intentionally does not maintain a second shorthand list that can drift. It includes
+all command, query, history, protected-reveal, configuration, preview/execute, status and recovery
+families declared there. Opportunity duplicate resolution never invokes canonical Person/Client
+merge. Later additions require an approved PRD/ADR change.
+The server derives actor/session/membership/permission/
+role/team/assignment/grant/purpose/classification context; IDs, role or scope are never accepted as
+client authority. Lists authorize before match/count/cursor and return field-minimized DTOs.
+
+`actorContext` is a tagged `HumanActorContext | WorkloadActorContext`, never a loose shared object.
+Human context carries the complete session/membership/permission/resource/purpose/classification
+fence. Workload context is a closed capability union. Every variant inherits a mandatory signed
+envelope containing environment, SG organization, issuer, audience, service, exact method/action,
+`iat`/`nbf`/`exp`, signing-key ID/version, recovery epoch and nonce; verifiers/key rings are pinned per
+environment + audience + action. Its normal one-use variant additionally binds exact canonical
+target/root set, the closed active purpose-binding set and per-binding access epochs, normalized command/payload digest, expected resource versions, idempotency namespace/
+key, immutable source receipt, schema/policy/recovery versions, timestamp and nonce. The server
+derives all bound values only from that immutable receipt and rejects job/client overrides. It cannot
+list/search/count/detail/export/merge or disclose existence. Human-derived jobs bind and revalidate
+the original actor/purpose authorization receipt. Browser forgery; target, purpose, payload, key or
+version substitution; wrong audience/action; expiry; replay; revoked source; or stale generation
+fails closed. Server-derived scoped RLS claims apply, and nonce consumption commits atomically with
+reservation, mutation, outbox and audit.
+
+The only pre-binding variant is `LeadHandoffBootstrapCapability`. In addition to the common envelope,
+it is bound to one immutable M020 handoff
+receipt, exact Person-resolution ref/version, proposed purpose/evidence, `acceptLeadHandoff`, payload
+digest, key, epochs and nonce. It can create/reuse only the identity-neutral root plus a `proposed`
+binding; it cannot activate contactability/consent, query existence or invoke another action. Its
+nonce/reservation/root-and-proposal mutation/outbox/audit commit atomically.
+
+Opportunity and assignment writes use expected versions; retryable creation/transition/conversion/
+merge/import/export uses semantic idempotency. Conversion returns independent M018/M021/M022 owner
+results (`created|reused|blocked|conflict|unavailable`) and never maps opportunity `won` to payment,
+entitlement or service authority. Contact 360 owner projections carry source/version/freshness and
+an explicit `complete|partial|stale|unavailable|suppressed|denied|unknown|not_applicable` result
+state; unknown/not-applicable cannot become zero, absence or a satisfied prerequisite. Links use only
+opaque references and are reauthorized at the destination.
+
+Contact 360 accepts only the versioned closed section registry in the M017 PRD. Every section calls
+one typed owner port with exact refs/versions, purpose, classification, current owner grants/access
+epochs and freshness budget; it authorizes independently and returns an opaque reauthorized route.
+M020 owns the explicit Lead qualification list/detail projection. M017 never infers qualification
+from CRM stage, score or tag. Protected contact reveal returns transient values separately from an
+opaque M077 audit receipt; M077 receives minimized allowed/denied/failed attempt metadata and no
+value or replayable capability.
+
+Optional next-action Task references require the current M023 owner-issued target/purpose/
+visibility/classification/access receipt on write and read. Optional Opportunity organization
+context similarly requires the current M019 relationship/effective-interval/purpose/
+classification/access receipt on create, organization-dependent read/mutation and conversion.
+Owner correction, deletion/end, reassignment or revocation invalidates the minimized link and never
+falls back to another resource or mutates the owner record.
+
+Each Opportunity carries one immutable exact `CrmPurposeBinding` reference. Relationship next-action
+commands must supply the exact binding/version/access epoch; Opportunity commands reuse only that
+immutable binding and revalidate its current epoch. No server or client may infer a primary/default
+purpose.
+
+Future M017 imports accept only an M011-approved `DocumentVersion`, produce a versioned mapping/
+validation/deduplication preview and require a separate apply command. Exports authorize dataset,
+rows and fields server-side, require approved reason/assurance, neutralize spreadsheet formulas and
+deliver a short-lived private M011 artifact. Exact HTTP routes and schemas remain `CRM-001`–
+`CRM-023` plus a Build decision.
+
+Every retryable local M017 mutation uses a server-derived `CrmMutationFingerprint` bound to complete
+human/workload actor context, operation namespace/version, target/root refs, expected version,
+canonical input/policy/schema versions and recovery generation. Its scoped reservation commits with
+the mutation, audit and outbox receipt. Same-key/same-fingerprint returns the original receipt after
+a lost response; changed semantics conflict. Cross-owner/preview operations add the stronger
+semantic-operation uniqueness contract below.
+
+For conversion, canonical merge, Opportunity duplicate resolution, Opportunity-relation correction,
+binding-access-ended remediation, pipeline-version migration execute, import apply, import
+compensation, CRM retention disposition apply, legal-hold apply/release, automation action-port
+execution, approved-AI-proposal consumption and any reconciliation/resume
+step that commands an owner or destructive disposition, the server
+atomically reserves the key before
+the first effect against a canonical fingerprint of environment, organization, actor/account/session/
+auth epoch/assurance/membership, exact permission/role/team/assignment/grant/access epochs, purpose/
+classification, operation namespace/version, roots, approved preview ID/digest/use state, normalized
+input digest, expected owner/resource/schema/contract/policy versions and `CrmRecoveryEpoch`.
+Same-key/same-fingerprint returns or resumes the original durable receipt; same-key/different-
+fingerprint conflicts. Key uniqueness includes environment, SG organization, authenticated actor/
+approved issuer and operation namespace/version; keys are high entropy, bounded and rate-limited.
+The preview is opaque, scope-bound, short-lived and single-use/revocable. A second unique semantic
+identity is the recovery-stable tuple `(environment, organization, namespace/version, canonical effect type, ordered canonical
+root set, normalized effect digest, applicable expected resource/owner versions, preview-content
+digest, schema/contract/policy versions, canonical domain-intent ref/version)`. It
+excludes actor, raw key, recovery generation and an equivalent preview instance ID. The server issues
+no external journal: the intent is deterministically derived from immutable roots, exact expected
+versions, approved transition/plan/request version and normalized effect digest. Lost reservations
+reproduce the same identity for reconciliation. A legitimate repeat advances the approved canonical
+business/request version after the earlier receipt is terminal; retry/equivalent preview reuses it.
+Operation-specific canonicalizers keep distinct inputs on one root. Opportunity resolution binds
+both exact Opportunity/purpose-binding versions/epochs, disposition/preservation plan and complete
+known downstream owner inventory/version; import compensation binds its plan digest; retention/hold
+binds the ordered closed record/version set, disposition, M085 authority/policy/legal/minimum-
+retention/downstream/backup-expiry versions and SoD receipt.
+Relation correction binds the complete current group/version, normalized acyclic replacement and all
+member/binding/owner/conversion versions. Binding-ended remediation binds ended epoch, ordered frozen
+children/versions, local-only disposition plan and SoD. Automation/AI consumption binds exact rule/
+evaluation or proposal version, target/binding/epoch, closed command digest and expected owner
+version; stable steps/reconciliation apply when an owner port is invoked. These
+canonicalizers separate distinct effects while admitting only one identical effect across actors/
+keys/previews. Deterministic owner-
+step IDs derive from this stable tuple; compensation additionally binds its approved plan digest and
+exact owner versions. Recovery generation remains in the authorization/request fingerprint only;
+after restore the stable identity reconciles against canonical owners/audit/artifact inventory before
+any new effect. Owner-enforced digests make ambiguous
+responses reconcilable before retry and prevent a second Client/ServiceOrder/Case/merge/Opportunity-
+resolution/relation-correction/pipeline-migration/import/retention/automation/AI-consume effect.
+Every enhanced execute receives the exact approved plan ID/version/digest/unused state, final closed
+scope, current assurance and applicable SoD receipt. Reconcile is read-only over stable ambiguous
+step IDs with current scope/recovery epoch. Resume requires an approved recovery plan ID+digest,
+complete final scope, only proven-not-started steps, current assurance/SoD and current recovery epoch.
+Accepted or ambiguous effects cannot be reissued through a substitute plan or actor.
+
+Canonical operation fingerprints prefer opaque refs/versions/codes. Protected or low-entropy
+email/phone/note/query/row values never use an unkeyed digest; unavoidable equality uses a purpose-
+and domain-separated keyed MAC with key version/custody outside Postgres/backups/logs/telemetry.
+Fingerprint values remain server-only and never enter a client DTO, cursor, error or analytics.
+
+Every M017 list cursor is server-issued, authenticated and opaque. Its MAC/context binds actor/
+account/session/auth epoch/assurance/membership, permissions/role/team/assignment/grants/access
+epochs, purpose/classification, normalized query/filter/sort and registry versions, `asOf`, schema/
+contract version, recovery generation and TTL. Tamper, cross-context replay, revocation, stale epoch
+or expiry fails closed without disclosing hidden rows/counts.
+
+Export request is intentionally excluded from cross-actor semantic-operation uniqueness. The server
+creates a versioned `CrmExportRequestIntent` owned by the exact actor/account; lost-response
+deduplication uses only that actor-scoped key/fingerprint and intent version. Equivalent requests by
+different authorized users produce separate jobs/receipts and never share a capability.
+
+`CrmExportService.request` creates a durable generation receipt; it does not return an authoritative
+object URL. `CrmExportService.consume(actorContext, exportCapability, expectedVersion)` final-fences
+current actor/session/membership/permission/resource/access epoch/purpose/assurance/export status/
+recovery generation and streams through a private `no-store` boundary. `revoke` invalidates pending
+capabilities. Forwarding, second unauthorized context, scope change, expiry, revocation, restore and
+concurrent/disallowed repeated consumption fail closed and are audited.

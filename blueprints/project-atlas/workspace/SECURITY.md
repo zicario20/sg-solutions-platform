@@ -119,7 +119,8 @@
   prohibited from logs, audit payloads, traces, Sentry, PostHog, notification payloads, URLs,
   browser persistence and shared/offline cache. Proposed ADR 016 and MSG-001–MSG-020 gate exact
   message, search/encryption, retention, notification, channel and AI policies.
-  M012 conversation notes and M018 client/case notes are separate non-copying authorities. M092/M097
+  M012 conversation notes, M018 client-level notes and M022 case-level notes are separate non-copying
+  authorities. M092/M097
   cannot receive transcript/protected identifiers/session replay, and M026 receives only purpose-
   bound opaque recipient/event refs—not direct contact PII or protected content/resource IDs.
 - M013 authorizes every public/client/staff appointment read and command against current identity,
@@ -139,8 +140,10 @@
   absent until APT-007. Type/contact/capability values never enter any locale URL. Holds are session-bound, single-use and
   use opaque-only canonical digests; positive-duration UTC half-open database capacity and
   transactions—not browser checks—prevent double booking and rescheduling loss. Public prospect/
-  consent context is reserved by M020/M078 and finalized only with the winning appointment, so
-  rollback cannot leave an orphan Lead/Contact or reusable consent.
+  consent context is reserved by M020/M078 and finalized only with the winning appointment. Owner
+  receipts and explicit compensation prevent an orphan M020 Lead, an unauthorized M017 handoff/
+  proposed purpose binding or reusable consent; the appointment flow never implies rollback of an
+  M018 Person/contact method.
 
 - Every `apps/www`→`apps/app` scheduling-facade request uses a rotating scoped workload signature
   bound to environment, issuer, exact audience/service/method/canonical path/body digest/timestamp/
@@ -312,3 +315,78 @@ are created before each sensitive integration reaches its Release gate.
   minimized product/operational analytics and telemetry event schemas/allowlists, viewers and
   retention before anything beyond essential content-free security/performance diagnostics.
   `ADM-020` sets quality SLOs only and cannot activate collection.
+
+## M017 CRM
+
+- M017 owns commercial relationship/opportunity/pipeline/assignment state, not M018 person/client,
+  M019 organization, M020 lead, M021/M022 order/case, M023 task, M078 consent or owner-domain detail.
+  Contact 360 accepts only a closed section registry and invokes typed owner ports with exact refs/
+  versions/purpose/classification/grants/access epochs/freshness. Sections authorize independently,
+  incomplete results remain incomplete, and every opaque destination reauthorizes. M020—not CRM
+  stage/tag/score—owns Lead qualification.
+- Every list, match, count, cursor, detail and mutation checks server-derived session/membership/
+  permission/role/team/assignment/resource/purpose/classification state before access; Postgres RLS
+  is defense in depth. Email, phone, name, company, payment, opportunity or tag grants nothing.
+- Protected matching uses server-only domain-separated keyed tokens and key versions outside
+  Postgres/backups. Unkeyed email/phone hashes, name-only matching and automatic/AI-only merges are
+  prohibited.
+- Canonical resolution is enhanced-review work: current versions, dry-run graph, conflicts,
+  explicit reason/authority, idempotency, aliases/tombstones, access/session re-evaluation, audit and
+  recovery are required. Ambiguity preserves separate records.
+- Purpose-binding activation/revocation/supersession, Opportunity duplicate resolution, conversion,
+  pipeline-version migration execute, import apply, any reconciliation that commands an owner,
+  import compensation, export, internal-note redaction/retention disposition
+  and protected-field reveal are separate enhanced capabilities. Each requires exact binding/owner
+  versions, current assurance, approved reason/evidence, final authorization fence and any approved
+  separation of duties; possessing one never implies another.
+- Every enhanced execute binds the exact approved plan ID/version/digest/unused state, final closed
+  inventory, current assurance and applicable SoD receipt. Reconcile is read-only by stable ambiguous
+  steps/current scope/recovery epoch; resume requires an approved recovery plan+digest, only proven-
+  not-started steps, final scope, current assurance/SoD and current recovery epoch.
+- Optional M023 Task links and M019 Opportunity organization context require current owner-issued
+  target/relationship, purpose, visibility/classification and access-epoch receipts on mutation and
+  read. Owner correction/deletion/end/reassignment/revocation invalidates the link; M017 neither
+  mutates the owner record nor falls back to another Task/organization.
+- Protected reveal returns transient values separately from an opaque M077 receipt. M077 records
+  allowed, denied and failed attempts using minimized metadata only; values and replayable references
+  never enter audit, M017 persistence, logs, telemetry or caches.
+- Internal-note redaction additionally requires the independent destructive capability, exact note/
+  target/binding revision and epoch, current assurance, CRM-010/022 plus M085 retention/deletion/
+  legal-hold authority and a durable disposition receipt. A hold or unmet retention minimum denies
+  tombstone/crypto-shred; ordinary note supersede permission is insufficient.
+- General bulk CRM-record mutation is absent in 1A/1B/Future until a later concrete Product Owner-
+  approved PRD/gate defines preview, batch limits, per-item authorization/versions/idempotency,
+  partial receipts, SoD and recovery. Export and M025/M026/M078 campaign delivery are distinct and do
+  not grant bulk record mutation.
+- Opportunity duplicate dry-run binds both Opportunities/purpose epochs and every known conversion,
+  order/case/task/quote/payment/entitlement/approval owner ref/version. It preserves both histories
+  and attribution, never rewires owner facts, blocks incompatible downstream effects and prevents a
+  concurrent duplicate owner effect: a superseded member cannot convert; related members with the
+  same canonical commercial intent/version + owner effect/service/scope deduplicate, while related
+  members with different immutable intent/effect scope may convert independently. Keep-both creates
+  no blocking relation.
+- Approved Opportunity relations are durable, versioned and acyclic; candidate workflow is not the
+  relation authority. Relation-group queries and close/reopen/conversion final-fence every member.
+- Export requests are actor/account-owned versioned intents. Equivalent requests never deduplicate
+  across actors; each receipt/artifact/capability remains current-session/assurance-bound and non-
+  transferable.
+- Opportunity `won`, Client activation, payment, entitlement, approval to start and case progress
+  are independent owner states. Conversion records each owner result and reconciles partial/unknown
+  outcomes before retry.
+- Internal notes and import text are untrusted, encrypted where approved, excluded from client DTOs,
+  telemetry and AI by default, and protected against stored XSS, formula and prompt injection.
+- Imports require M011 quarantine/content validation/malware scanning before parsing. Exports require
+  fresh row/field authorization, approved reason/assurance, formula neutralization, private short-
+  lived delivery, revocation and generation/download audit.
+- Consent M078 and preference M026 are checked fresh at communication time. CRM history, tag or old
+  opt-in cannot authorize marketing. Unavailable consent fails closed.
+- M017 distinguishes full human actor context from signed, short-lived, least-privilege workload
+  capabilities. Every variant's envelope binds environment/SG organization/issuer/audience/service/
+  exact action, `iat`/`nbf`/`exp`, signing-key version, recovery epoch and nonce under a verifier/key
+  ring pinned per environment+audience+action. Normal variants additionally bind exact targets,
+  binding-set epochs, payload, expected versions, idempotency and source receipt; they are command-
+  only, cannot enumerate/list/export/merge, and revalidate an
+  original human authorization receipt when applicable. There is no network-location/trusted-worker
+  bypass; forgery, wrong audience/action, replay, expiry or revoked source fails closed and audits.
+- `CRM-001`–`CRM-023`, independent security review, Product Owner approval and a separate Build gate
+  precede any route, schema, data, merge, import/export, automation or provider activation.

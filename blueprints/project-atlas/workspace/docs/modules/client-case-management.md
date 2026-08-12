@@ -8,8 +8,9 @@
 ## 1. Purpose
 
 Create the durable operational record for clients, businesses, service orders, cases, tasks and
-client/case operational notes across every service vertical. M012 separately owns conversation-local
-notes; neither authority mutates or copies the other.
+their separately owned operational notes across every service vertical. M018 owns only
+`ClientOperationalNote`; M022 owns `CaseOperationalNote`; M012 owns conversation-local notes; and
+M017 owns `CrmInternalNote`. No authority mutates or copies another note family.
 
 ## 2. Business value
 
@@ -99,9 +100,11 @@ minor units/currency; time uses UTC plus IANA zone where local meaning matters.
   idempotency receipt or rolls all of them back.
 - `CaseService.open`, `transition`, `setNextAction`, `assign`, `close`.
 - `TaskService.create`, `transition`, `completeWithEvidence`.
-- `NoteService.addInternal` creates only M018 client/case operational notes. It cannot create, revise,
-  redact or delete M012 conversation notes; an opaque typed link/projection may connect them without
-  copying content. Any future client-visible message uses Messaging, not a note flag.
+- `ClientNoteService.addInternal` creates only M018 `ClientOperationalNote` and
+  `CaseNoteService.addInternal` creates only M022 `CaseOperationalNote`. Neither can create, revise,
+  redact or delete M012 conversation notes or M017 CRM notes; opaque typed links/projections may
+  connect them without copying content or inheriting visibility. Any future client-visible message
+  uses Messaging, not a note flag.
 - All mutations require actor, expected version and idempotency key where retryable.
 
 ## 12. Events and background jobs

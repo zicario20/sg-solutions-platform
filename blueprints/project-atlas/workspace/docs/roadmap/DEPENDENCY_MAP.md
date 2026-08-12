@@ -90,7 +90,8 @@ Measured scale, hybrid infrastructure and mobile expansion
     notes, participation, durable ordering and handoff; M011 owns attachments, M013/M014/M023/M067
     own typed actions, M025 owns the unified inbox, M026 owns notifications and M047–M060 own AI.
     Participant/contact/message references never grant resource access, and Client/Internal DTOs and
-    event namespaces remain structurally separate. M018 owns client/case operational notes; neither
+    event namespaces remain structurally separate. M018 owns client-level operational notes and M022
+    owns case-level operational notes; neither
     note authority mutates or copies the other, and only opaque typed links/projections cross the
     boundary. M092 owns analytics/report consumption and MSG-018 gates its minimized M012 facts.
     M097 separately owns required content-free, identifier-free operational/security observability
@@ -124,7 +125,8 @@ Measured scale, hybrid infrastructure and mobile expansion
     delivery, M077 audit, M085 retention and M092 reporting. BIZ-001–003/PAY-001–PAY-020 gate all
     business policy, Build, Stripe traffic and Operational status.
 25. M015 owns reusable typed profile facts, provenance, immutable revisions, quality/freshness,
-    corrections/conflicts and purpose-specific DTOs. M007 identity, M017 Contact, M018 Person/
+    corrections/conflicts and purpose-specific DTOs. M007 identity, M017 CRM relationship/contact
+    projection, M018 Person/
     Household/Client and their relationships, M019 Organization/business relationships, M020
     Lead/deduplication, M021 ServiceOrder, M022 CaseFile, M011 DocumentVersion, M077 Audit, M078
     Consent and specialist service records remain canonical in their domains. M007
@@ -140,6 +142,21 @@ Measured scale, hybrid infrastructure and mobile expansion
     M079 risk; M092 reporting; and M097 observability remain canonical. Widget access is evaluated
     server-side per request, drill-down reauthorizes in the owner and no cache, count or M016 control
     changes domain state under proposed ADR 020.
+27. M017 owns CRM relationship, Opportunity, versioned Pipeline/Stage, assignment history,
+    CRM-authored activity/internal note, source attribution and controlled data-quality orchestration.
+    M018 owns Person/Household/Client/contact methods; M019 Organization/business relationships; M020
+    Lead/capture deduplication; M021/M022/M023 ServiceOrder/CaseFile/Task; M078 consent and M026
+    preferences. Contact 360 consumes minimized authorized owner projections and every drill-down
+    reauthorizes. `won`, Client, paid, entitled, approved-to-start and case progress remain independent.
+    Conversion and high-risk canonical-resolution workflows use expected versions, semantic
+    idempotency, transactional receipts, reconciliation, audit and recovery under proposed ADR 021;
+    no automatic/name-only/unkeyed-hash/AI-only merge is allowed.
+28. Canonical owners do not depend on M017 merely because CRM consumes them. M018 Person/Client and
+    M020 Lead remain independently operable and publish typed owner ports/outbox receipts; M017 is a
+    downstream consumer. M021 ServiceOrder receives authorized caller commands without importing CRM;
+    M022 CaseFile depends on M021/M018, and M023 Task may depend on/link M022, never the reverse.
+    Optional integration events do not create catalog dependency cycles or make CRM availability a
+    prerequisite for durable lead capture/client/order/case/task truth.
 
 ## Fronteras de extracción
 

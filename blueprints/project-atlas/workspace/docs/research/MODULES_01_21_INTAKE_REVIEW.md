@@ -97,8 +97,8 @@ The following concepts are compatible and should inform later normalization:
 | M14 Payments | `m014-client-payments.md` plus `billing.md` boundary | Deposits and one-time payments in 1A; plans and advanced reconciliation in 1B. |
 | M15 Financial/Business Profile | `m015-financial-business-profile.md`, proposed ADR 019 and `data-platform.md` | Dedicated candidate; introduce only purpose-bound typed facts required by an approved service slice, with provenance/revisions/conflicts and no full-profile consumer. |
 | M16 Admin Dashboard | `m016-admin-dashboard.md`, proposed ADR 020 and M092 reporting boundary | Role-scoped read-oriented operational composition only; owner modules retain truth/actions and charts/reporting remain separately gated. |
-| M17 CRM | `crm-case-operations.md` | Basic CRM and pipeline in 1A; scoring/automation/reporting later. |
-| M18 Client Management | `client-case-management.md` | Client, case, task and internal-note operations in 1A. |
+| M17 CRM | `m017-crm.md`, `crm-case-operations.md`, proposed ADR 021 | Dedicated Product/Architecture candidate: CRM relationship/opportunity/pipeline/assignment/activity in 1A; canonical M018–M023 owner boundaries; controlled conversion/deduplication; import/export, scoring, automation and reporting later. |
+| M18 Client Management | `client-case-management.md` | Canonical Person/Household/Client, contact methods and client-level operational note only; M021 owns ServiceOrder, M022 owns CaseFile/case notes and M023 owns Task. |
 | M19 Organizations | Future organization/business-domain PRD | Reuse shared party and relationship primitives; phase by real service need. |
 | M20A/M20B Catalog and workflows | Billing, case and future catalog/workflow PRDs | Minimal service order/configuration in 1A; richer catalog and automation later. |
 | M21 Partner Marketplace | Future marketplace PRD | Reserve architectural extension points; no implied Release 1A implementation. |

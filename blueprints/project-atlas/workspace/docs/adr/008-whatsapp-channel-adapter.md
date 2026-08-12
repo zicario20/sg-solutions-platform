@@ -11,7 +11,8 @@ M004 must support WhatsApp orientation, follow-up, templates, appointments, secu
 notifications and human handoff. The Product Owner-supplied source correctly prohibits WhatsApp Web
 automation and provider coupling, but its older `.NET/Redis` diagram conflicts with the approved
 pnpm/Astro/Next/Supabase baseline. The architecture must also avoid duplicating the M003 conversation
-kernel, M017/M020 contact/lead records and M025 unified inbox.
+kernel, M017 CRM relationships, M018 canonical people/contact methods, M020 lead records and M025
+unified inbox.
 
 SG Solutions does not yet have its final WhatsApp Business account, institutional number, approved
 templates or provider agreement. ADR 006 permits durable architecture now while external activation

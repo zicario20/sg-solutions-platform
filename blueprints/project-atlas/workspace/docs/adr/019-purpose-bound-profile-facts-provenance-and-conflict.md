@@ -30,8 +30,9 @@ without absorbing them.
 ### 1. M015 owns reusable facts, not canonical neighboring records
 
 - M007/Supabase Auth owns identity and session proof.
-- M017 owns Contact and CRM projection/pipeline data; M020 owns Lead and deduplication; M018 owns
-  canonical Person/Household/Client records and relationship establishment.
+- M017 owns the CRM relationship/contact projection and pipeline data; M020 owns Lead and capture
+  deduplication; M018 owns canonical Person/Household/Client, contact methods and relationship
+  establishment.
 - M019 owns the canonical Organization/business and its relationship establishment/validation.
 - M021/M022 own ServiceOrder and CaseFile.
 - M011 owns document metadata/versions/bytes and authorized delivery.
@@ -53,7 +54,7 @@ competing preference truth.
 
 Central facts use typed records with database constraints: purpose-bound personal/residence-history,
 household financial context/reference, employment/income, expense/liability/asset, specialist
-summaries, business extension/financial records and goals. M017/M018 retain canonical contact/
+summaries, business extension/financial records and goals. M018 retains canonical contact/
 mailing/person attributes, and M018 retains household relationship establishment. Common metadata
 supplies source, effective period, classification, quality, verification, freshness, consent/purpose
 evidence, actor and immutable revision.

@@ -92,7 +92,7 @@ remain shared and provider-neutral. No separate service is justified initially.
 | Concern | Authority |
 |---|---|
 | Conversation/message/handoff ownership | Shared M003/M025 communications kernel |
-| Person, lead, client and duplicate handling | M017/M020/Client domain |
+| CRM relationship, person/client, lead and duplicate handling | M017/M018/M020 owner domains |
 | Consent evidence and contactability | M078 plus M006 channel-purpose policy |
 | Appointment truth | M013 Postgres scheduler; M024 projects internal UI only |
 | Financial truth and payment link | M043–M045 / Stripe projection |

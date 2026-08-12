@@ -234,3 +234,63 @@ for speed.
 - [ ] Independently vary M016 purpose, assurance, permission version, grant/access epoch and
       classification clearance after restore; prove every old snapshot/cache digest misses and no
       stale protected fallback survives delayed invalidation.
+
+## M017 restore-test extension
+
+- [ ] Advance an M017 recovery generation protected outside the restored database before CRM reads,
+      matching, conversion, merge, import/export or background jobs resume.
+- [ ] Reconcile M007 account/external-identity linkage, sessions, grants, revocations and access
+      epochs only through M007/ADR 011/IAM-008 evidence not rolled back with Postgres. Never follow a
+      CRM/Person alias or tombstone for authentication or resource resolution; a restored snapshot
+      cannot validate itself.
+- [ ] Separately reconcile M018 Person/Client, M019 organization relationship, M020 Lead, M021
+      ServiceOrder and M022 CaseFile owner versions/receipts. For each conversion step prove
+       `created|reused` occurred once or remains `ambiguous`/manual; never infer owner success.
+- [ ] Reconcile every M017 `CrmPurposeBinding` lifecycle and its evidence from an approved recovery
+      source/audit trail that did not roll back with the snapshot. Preserve post-snapshot revoke/
+      expire/supersede outcomes, advance affected binding access epochs, and fail closed while
+      evidence is missing or ambiguous.
+- [ ] Invalidate/reject every cursor, job capability, preview, projection, cache and pending command
+      bound to an earlier purpose access epoch; prove revoked-purpose data cannot be read, listed,
+      counted, exported or mutated after restore and cannot fall back to another binding.
+- [ ] Rebuild Contact 360/search/report projections from freshly authorized owners; partial or
+      unavailable owners never become absence, zero, distinct identity or successful conversion.
+- [ ] Reconcile opportunity transition, assignment, conversion, canonical merge, Opportunity
+      duplicate resolution, durable Opportunity relations, pipeline-version migration,
+      binding-ended remediation, import-compensation and actor-owned export intents
+      idempotency/outbox receipts before retry. Reproduce recovery-stable domain-intent and owner-step
+      IDs from immutable roots, exact expected versions, approved transition/plan/request version and
+      normalized effect digest; reconcile them against canonical Postgres owners, available M077
+      evidence, M011 artifact inventory and approved external owner receipts before admitting a new
+      effect. Prove each effect occurs at most once across a restore; specifically test concurrent/
+      restored Opportunity resolution against conversion and downstream owner receipts. No external
+      journal is assumed.
+- [ ] Reconcile every `CrmRetentionOperation`, `CrmLegalHold` and per-record disposition receipt by
+      recovery-stable semantic operation/step identity before any retry, purge, crypto-shred, hold
+      apply or release. Final-fence current M085/legal authority, overlapping holds, minimum-retention
+      clocks, record/key/downstream owner state, backup-expiry evidence, assurance/SoD and current
+      recovery epoch. A restored `not_started` claim cannot override evidence of accepted/ambiguous
+      destruction; a missing/ambiguous hold or disposition fails closed and never resurrects data or
+      permits release/purge.
+- [ ] Reconcile the complete normative M017 §10–§11 inventory, not only core Opportunities: immutable
+      pipeline/source/campaign/tag/custom-field/list/segment/assignment/automation/scoring/AI-tool
+      registries and usage inventories; saved views; tag/custom-field/list memberships/values;
+      assignment/automation/score/AI proposal/evaluation/decision receipts; Activities/Notes/
+      Attribution; Duplicate/Quality; search/report envelopes and every operation/job/current pointer.
+      Invalidate drafts, previews, evaluations, proposals, views, cursors, capabilities and jobs when
+      registry, source, owner, purpose, policy, key, access or recovery epochs differ. Rebuild only
+      from current owner authority; do not edit immutable published/historical versions after restore.
+- [ ] Preserve merge aliases/tombstones, conflict decisions and provenance; prove restore cannot
+      revive a superseded relationship as a second active person/client, give a losing CRM alias an
+      account/session/grant/winner resource or undo a revocation.
+- [ ] Verify protected match-token key versions remain available under separate key recovery without
+      placing key material in database backups; rotate/rederive only through the approved procedure.
+- [ ] Keep pre-restore imports/exports unavailable; revalidate M011 source files, expire/revoke all
+      prior temporary artifacts/URLs and prove downloads fail.
+- [ ] Reconcile consent/preference facts before any outbound communication and prove rolled-back
+      opt-in does not reactivate messaging.
+- [ ] Verify internal-note/import/export plaintext remains encrypted or absent from logs, traces,
+      analytics, outbox and recovery reports.
+- [ ] Run cross-client/role/team/assignment/purpose/classification, merge, conversion, import/export,
+      idempotency, security, observability and manual-fallback smoke tests.
+- [ ] Record actual RPO/RTO gaps, independent review and Product Owner approval before cutover.

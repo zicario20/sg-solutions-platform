@@ -52,7 +52,8 @@ application, a professional determination or a marketing dossier.
 
 - One `ClientProfile` root linked to the canonical M018 Client, not to an email string.
 - Basic purpose-specific profile facts that do not redefine M007 account locale/time-zone, M026
-  notification preferences, M017 contact/CRM or M018 person/client ownership.
+  notification preferences, M017 CRM-relationship/contact projection or M018 canonical person/
+  client/contact-method ownership.
 - Purpose-specific profile sections for the first approved real-client service slice.
 - Typed employment, income, expense, liability, asset and goal records required by that slice.
 - Source, evidence, quality status, effective dates, freshness and immutable revision metadata.
@@ -297,8 +298,9 @@ approved service/retention policy and cannot be silently reused.
 
 ## 8. Business rules
 
-1. Canonical identities remain separate: M007 UserAccount/grants, M017 Contact/CRM projection, M020
-   Lead/deduplication, M018 Person/Household/Client and their relationship establishment, M019
+1. Canonical identities remain separate: M007 UserAccount/grants, M017 CRM relationship/contact
+   projection, M020 Lead/deduplication, M018 Person/Household/Client/contact methods and their
+   relationship establishment, M019
    Organization/business relationships, M021 ServiceOrder, M022 CaseFile and M011 Document.
 2. M015 owns reusable profile facts, provenance, revisions, conflicts, quality/freshness and
    purpose-limited projections. It does not own canonical contact, organization, case or document.
@@ -429,8 +431,9 @@ The names below are conceptual. Drizzle schemas/migrations remain unauthorized u
 - `PersonalProfile`: legal/preferred name projection, DOB protection reference, residency/citizenship
   only when purpose-approved;
 - `PurposeResidenceHistoryRecord`: a purpose-bound residence/history fact with explicit semantic
-  type, effective period, protected lines, locality, source and quality. M017/M018 retain canonical
-  contact/mailing/person address attributes; M015 never silently replaces or synchronizes them;
+  type, effective period, protected lines, locality, source and quality. M018 alone retains
+  canonical contact/mailing/person address attributes; M017 consumes only its authorized CRM
+  projection and M015 never silently replaces or synchronizes either owner contract;
 - `HouseholdFinancialContext`: reusable household-size/shared financial facts linked to an opaque
   M018-owned Person/Household relationship projection, purpose, consent/scope and effective period.
   M015 cannot create/link/revoke the relationship or store a free-text-only member;
@@ -767,8 +770,9 @@ blocked by PFL-014 until approved.
     deterministic rounding; M015 cannot create/link/revoke person/household/business relationships.
 19. Jobs are idempotent, bounded and recoverable; Postgres remains the durable authority.
 20. Product Owner decisions PFL-001–PFL-020 are closed for the affected Build behavior.
-21. M017/M018 canonical contact/mailing addresses and M015 purpose-bound residence/history facts use
-    separate contracts and cannot silently synchronize or overwrite each other.
+21. M018 canonical contact/mailing addresses, M017 authorized CRM projections and M015 purpose-bound
+    residence/history facts use separate contracts and cannot silently synchronize or overwrite
+    each other.
 22. Every emitted event uses the exact versioned `profile.*` namespace, opaque allowlisted payload
     and owner reauthorization; unprefixed aliases and protected values are rejected.
 23. Locale/time-zone updates remain M007 commands; M015 consumes their current projection and cannot
@@ -827,7 +831,8 @@ M015 is not acceptable if it:
 - Product Owner approval of this PRD, design, proposed ADR 019 and affected PFL decisions.
 - A separately recorded `GENERATE`/Build gate.
 - M007 identity/session/linking, ADR 004 resource grants and M080/M081 permission policy.
-- Canonical M017 Contact/CRM, M020 Lead/deduplication, M018 Person/Household/Client relationships,
+- Canonical M017 CRM relationship/contact projection, M020 Lead/deduplication, M018 Person/Household/
+  Client/contact-method relationships,
   M019 Organization/business relationships, M021 ServiceOrder and M022 CaseFile contracts for the
   selected slice.
 - M077 audit and M078 consent contracts; ADR 005 KMS/key custody for protected fields.

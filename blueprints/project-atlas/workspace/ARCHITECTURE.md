@@ -191,7 +191,8 @@ applicable counters, encrypted initial immutable revision/current pointer, aggre
 receipt and outbox/audit; any failure rolls back every row/counter/reservation. M011 owns all attachment bytes and safe delivery;
 M013/M014/M023/M067 own their typed actions; M026 owns notifications; M025 owns a content-free unified
 cross-channel inbox projection; M047–M060 own AI/model/tool behavior subordinate to M076 compliance
-policy and human decisions. M018 retains client/case note authority. A final M007/ADR 004 resource
+policy and human decisions. M018 owns client-level operational notes, M022 owns case-level notes,
+M017 owns CRM internal notes and M012 owns conversation-local notes. A final M007/ADR 004 resource
 fence governs body, counts, cursors, read evidence and writes. Protected transcript content never
 enters logs, telemetry, notification payloads or browser persistence. Proposed ADR 016 records this
 boundary; no route, table/RLS policy, provider, AI, notification or real message is authorized.
@@ -252,7 +253,7 @@ Stripe traffic.
 
 M015 owns reusable typed profile facts, immutable revisions, provenance, verification/freshness,
 corrections/conflicts and minimized purpose projections. It does not absorb M007 identity/grants,
-M017 Contact/CRM, M020 Lead/deduplication, M018 Person/Household/Client or their relationships, M019
+M017 CRM relationship/contact projection, M020 Lead/deduplication, M018 Person/Household/Client or their relationships, M019
 Organization/business relationships, M021 ServiceOrder, M022 CaseFile, M011 documents/bytes or
 specialist credit/tax/funding/housing records. Its household/business context extends authorized
 M018/M019 projections, never a second relationship or business registry.
@@ -297,6 +298,50 @@ A future M016 recent-activity widget consumes only a minimized versioned M077/ca
 projection with event allowlist, exact resource authorization, freshness/coverage and reauthorized
 drill-down. It is not raw audit history and excludes invalidation payloads, technical/private events
 and event content.
+
+### M017 party, CRM and conversion boundary
+
+M017 owns `CrmRelationship`, `Opportunity`, durable versioned `OpportunityRelation`, versioned `PipelineDefinition` and
+`PipelineStageDefinition`, assignment history, CRM-authored activities/internal notes, controlled
+source attribution and CRM data-quality orchestration. M018 remains the canonical Person,
+Household, Client and contact-method owner; M019 owns Organization/business relationships; M020 owns
+Lead/capture duplicate handling; M021/M022/M023 own ServiceOrder/CaseFile/Task. M017 composes those
+owners through typed, minimized, freshness-aware ports and reauthorizes every drill-down rather than
+copying records or bodies.
+Contact 360 accepts only a closed versioned section registry and authorizes each named owner port
+independently with exact refs/versions/purpose/classification/grants/access epochs/freshness. M020
+owns Lead qualification. Optional Task links and Opportunity organization context final-fence the
+current M023/M019 owner-issued relationship/purpose/visibility/classification/access receipt; owner
+correction/revoke/end/reassignment invalidates the minimized link without fallback or owner mutation.
+Protected reveal values remain transient/no-store and separate from value-free M077 attempt receipts.
+
+The M017 application facade lives inside the modular monolith. It derives the complete actor/session/
+membership/permission/role/team/assignment/grant/purpose/classification context server-side,
+authorizes before matching/counting/pagination and applies RLS as defense in depth. Postgres remains
+durable state authority; Inngest coordinates bounded retries/reconciliation only. No Redis, generic
+event bus, microservice or external CRM is introduced by this candidate.
+
+The CRM root is identity-neutral and has only current/superseded state. Each exact purpose binding
+owns its commercial engagement lifecycle, assignment and pre-Opportunity next action; ordinary work
+never mutates those fields across bindings. A separately authorized minimized proposal-review path
+is the only way to inspect/activate/reject a bootstrap proposal before it becomes ordinary CRM work.
+Opportunity list/detail/pipeline, activity/note/quality queues, configuration and import/export status
+use explicit server-side query contracts; presentation never reads tables directly.
+
+Opportunity, Client, ServiceOrder, payment, entitlement, approval-to-start and CaseFile axes remain
+independent. Conversion records versioned, idempotent owner results and cannot manufacture success
+from a partial/ambiguous response. M020/M017 may surface duplicate evidence, while M018/M019 retain
+canonical resolution. Protected email/phone matching uses domain-separated keyed tokens whose key
+and version live outside Postgres/backups; name-only, unkeyed-hash and AI-only merges are prohibited.
+High-risk resolution uses dry-run impact/conflicts, expected versions, aliases/tombstones, audit and
+recovery. Enhanced execute binds the exact approved plan ID/version/digest/unused state, complete
+final scope, current assurance and applicable SoD; read-only reconcile and enhanced resume use
+stable step IDs, current closed scope and recovery epoch so accepted/ambiguous effects cannot replay.
+Opportunity duplicate resolution is separate from canonical party merge and final-fences
+both purpose epochs plus downstream owner inventory; it preserves owner facts/history and blocks
+incompatible or concurrent conversion. Its candidate is review workflow; the resulting immutable,
+acyclic `OpportunityRelation` remains the commercial relation authority after review. Proposed ADR
+021 and `CRM-001`–`CRM-023` gate Build/live behavior.
 
 ## Data protection
 

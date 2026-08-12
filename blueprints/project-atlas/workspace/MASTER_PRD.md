@@ -40,6 +40,22 @@ results; explains deterministic priority; treats caches/snapshots as disposable;
 all detail/actions in their owning modules. Release 1A is read-oriented and omits unapproved charts,
 exports, bulk actions, impersonation, realtime infrastructure and sensitive technical detail.
 
+M017 is the commercial operating workspace inside `/admin`. It owns CRM relationship state,
+Opportunity, immutable/versioned Pipeline and Stage definitions, assignment history, CRM-authored
+activities/internal notes, durable versioned Opportunity relations, source attribution and controlled
+data-quality orchestration. It does
+not own M018 Person/Household/formal Client/contact methods, M019 Organization, M020 Lead, M021
+ServiceOrder, M022 CaseFile, M023 Task, M078 Consent, M026 preferences or owner-domain records shown
+in Contact 360. Those appear only through minimized authorized projections and reauthorized links.
+
+An opportunity becoming `won` cannot establish payment, entitlement, human authorization, service
+start, case progress or completion. Conversion is a versioned idempotent orchestration whose owner
+modules independently create/reuse/block their records and whose ambiguous outcomes reconcile
+before retry. Duplicate detection emits review evidence; canonical person resolution remains M018,
+uses approved keyed matching rather than unkeyed low-entropy hashes and never permits an automatic
+or AI-only merge. Proposed ADR 021 records this boundary. `CRM-001`–`CRM-023` gate exact views,
+pipeline, access, merge, import/export, AI/automation, analytics and quality behavior.
+
 ## Release strategy
 
 The first delivery family is **Release 1 — Production Foundation**, built for real clients and

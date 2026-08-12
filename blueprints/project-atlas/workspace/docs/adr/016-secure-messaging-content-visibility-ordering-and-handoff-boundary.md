@@ -70,7 +70,8 @@ never receive internal-note events. Compliance-only notes require their own exac
 scope. This structural split is the primary defense against accidental publication; color or hidden
 frontend controls are not the boundary.
 
-M012 owns only conversation-local notes; M018 owns client/case operational notes. Neither service
+M012 owns only conversation-local notes; M018 owns client-level operational notes and M022 owns
+case-level operational notes. Neither service
 can create, revise, redact, delete, copy or derive client visibility for the other's type. A typed
 opaque link/authorized projection is the only integration. The note aggregate has no body column;
 body exists only in immutable note revisions. All note creation/revision UI, commands and events are

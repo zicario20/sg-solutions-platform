@@ -272,3 +272,58 @@ security/performance diagnostics—correlation, widget definition/version, coars
 latency—but never source values, query results, authorization fingerprint inputs/digests, tokens or
 resource identifiers. `ADM-020` defines quality SLOs only. Derived-state retention/deletion remains
 `ADM-019` plus M085/legal review.
+
+### M017 CRM boundary
+
+Pipeline/stage definitions and generic bilingual CRM labels are Internal. Relationship,
+purpose binding/evidence refs, opportunity, assignment, activity/source references, attribution, next action, import/export job and
+duplicate/merge metadata are Confidential. `CrmDataQualityIssue`, its minimized/masked evidence
+reason codes, assignee and owner-resolution receipt are at least Confidential and inherit Highly
+Sensitive from the canonical source/context. `OpportunityStageTransitionHistory` is Confidential and
+inherits the Opportunity/source classification. Idempotency/operation/owner-step receipts and
+fingerprints are Confidential server-only metadata; any protected-source context raises them to
+Highly Sensitive even though payload values are excluded. Internal note bodies, protected contact values, identity-
+resolution evidence, detailed qualification answers and any projection of credit, tax, financial,
+household, identity or document facts are Highly Sensitive when their source/context is Highly
+Sensitive. Masking, tokenizing or aggregating does not automatically declassify them.
+
+M017 stores no message/document/transcript bodies, full payment-card data, credentials, provider
+tokens or specialist tax/credit facts. Protected low-entropy email/phone matching uses a server-only
+domain-separated keyed token with key version; raw normalized values and unkeyed hashes are
+prohibited. Key material is outside Postgres/backups. Internal note plaintext and approved protected
+fields use application-level encryption under ADR 005, with separate search/index limitations.
+Protected contact reveal values remain transient/no-store and are never included in M017 persistence,
+events, audit, logs, traces, analytics or replay. The separate M077 audit attempt contains only
+opaque actor/resource refs, field-class codes, reason, assurance, outcome, time, policy and
+correlation metadata. M019 organization-context and M023 Task-link receipts inherit the stricter
+classification of their owner resource/purpose and expose only minimized authorized projections.
+
+CRM authenticated-page analytics, autocapture and session replay are off. `CRM-020` is the only gate
+for minimized product/operational CRM metrics; events exclude person/client/resource/contact/
+campaign identifiers, counts below approved aggregation, filter/query values, free text, URLs, DOM
+and note/activity contents. Essential logs/traces/Sentry may include correlation, contract/version,
+coarse operation/result class and latency, never values, match tokens, candidate detail or exported
+data. Import/export/notes/activities follow their approved classification, retention and legal-hold
+policies; temporary exports expire and remain revoked after restore.
+`CrmPurposeBinding` is at least Confidential and inherits Highly Sensitive from its purpose,
+service/source/evidence or inferred context. Its consent reference is evidence only, never consent
+authority. Access epochs, revocation and retention/purge/restore follow `CRM-003/015/022`.
+
+Campaign/custom-field/list/segment definitions and assignment/automation rule definitions are
+Internal only when they contain generic policy metadata; their values, static membership,
+evaluations/executions and target refs are at least Confidential and inherit the highest source,
+purpose, classification, inference and target level. ScoreEvaluation/explanation/fairness receipts,
+AiProposal/source/diff/decision/consume receipts, search envelopes/results, reporting facts and
+retention/legal-hold receipts are at least Confidential and become Highly Sensitive whenever their
+inputs, target, inference or mere existence is Highly Sensitive. Derived/inferred data never receives
+a lower class because values are masked, tokenized or omitted.
+
+Highly Sensitive custom values, score features/explanations, AI proposal content and any protected
+retained body require application-level encryption under ADR 005 when persisted; definition codes,
+opaque versions and content-free receipts may rely on managed encryption at rest only under an
+approved field matrix. Plaintext indexes/full-text search, browser/client caches, URLs, logs, traces,
+Sentry, PostHog, session replay, DOM capture and broad exports are prohibited for protected values,
+features, prompts/diffs, memberships and per-person facts. Search/report envelopes use only approved
+allowlisted minimized fields/facts and inherit purpose/access/retention. M085 + CRM-022 governs
+retention, legal hold, crypto-shred/purge and backup expiry across every family; an absent record-
+specific policy fails closed.

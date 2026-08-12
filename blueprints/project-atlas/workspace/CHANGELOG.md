@@ -215,3 +215,20 @@
   Markdown files with zero broken and `git diff --check`; two frozen offline lockfile-only installs
   preserved the lock hash. The intentionally route-less Next.js scaffold has no applicable product
   build yet. No product source, dependency or lockfile changed, and Build remains unauthorized.
+- Added the M017 CRM PRD, branded responsive Admin design and proposed ADR 021. The candidate defines
+  one identity-neutral commercial relationship root, stable versioned purpose bindings,
+  Opportunities, immutable Pipeline/Stage and relation/history boundaries, typed owner projections,
+  recoverable conversion/merge/import/export and governed metadata without creating product behavior.
+- Registered 23 unresolved M017 Build/live policies one-to-one as `CRM-001`–`CRM-023`. M018 owns
+  Person/Household/formal Client/contact methods, M019 Organization relationships, M020 Lead and
+  qualification, M021/M022/M023 Order/Case/Task and M077/M078 audit/consent; M017 duplicates none.
+- Closed independent architecture/security findings covering per-purpose isolation, Task and
+  organization-link receipts, Contact 360/M020 qualification, protected reveal/M077, definition and
+  saved-view lifecycle, Opportunity duplicate preservation, high-risk idempotency/recovery and
+  retention/restore. Final independent review has zero P0–P3 and Cyber Neo is security-clear at
+  documentary risk `0/100`.
+- M017 final validation passed lint/format over 143 files, 11-package typecheck, 20 passing test
+  files/131 tests with three deliberate skips, import contracts, a 226-page Astro build, 188 active-
+  workspace local links across 155 Markdown files with zero broken and `git diff --check`; two
+  frozen offline lockfile-only installs preserved the lock hash. No product source, dependency or
+  lockfile changed, and Build remains unauthorized.

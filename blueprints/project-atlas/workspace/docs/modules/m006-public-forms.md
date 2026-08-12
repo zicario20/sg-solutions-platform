@@ -659,7 +659,8 @@ tests and independent review. External activation requires its register evidence
 
 ### Required for architecture
 
-M001 Public Website; M002 Help Center; M017 contacts; M020 leads; M025 communications; M026
+M001 Public Website; M002 Help Center; M017 CRM relationships; M018 canonical people/contact
+methods; M020 leads; M025 communications; M026
 notifications; M041 provider abstraction; M077 audit; M078 consent; M080/M081 IAM/RBAC; M082 PII;
 M084 integration security; M085 retention; M086 information architecture; M087/M088 design/UX; M090
 configuration; M092 analytics; M097 observability; M098 recovery; M099 deployment; existing

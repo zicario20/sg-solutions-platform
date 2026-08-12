@@ -46,7 +46,8 @@ communications without duplicating people, leads, clients, cases, consent, messa
 - Inbound and outbound text messages, approved interactive actions and delivery/read/failure
   projections.
 - Shared conversations, messages and human handoff with M003/M025.
-- Person/contact-channel association and duplicate-candidate handling through M017/M020.
+- M018 canonical Person/contact-method association and identity resolution, M020 lead/capture
+  duplicate handling and M017 CRM-relationship/opportunity candidate review.
 - Spanish and English locale detection, explicit preference and approved copy.
 - Public orientation grounded only in current M002 public content.
 - Optional preliminary structured intake using the exact M003 allowlist, classified Confidential as

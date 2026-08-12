@@ -1,146 +1,61 @@
-# Module PRD — CRM and Pipeline
+# CRM and case operations — domain guide
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Implementation-ready architecture draft; open Product Owner decisions remain; no Build gate
-- Catalog modules: M017, M020
+- Status: Active routing guide; no Build gate
+- Catalog modules: M017, M018, M019, M020, M021, M022 and M023
 
-## 1. Purpose
+This document is the cross-module guide for commercial and operational work. It is not a substitute
+for the implementation-ready module PRDs and does not give M017 ownership of every concept shown in
+the CRM experience.
 
-Provide a reliable lead and opportunity workspace from first consented contact through conversion or
-closure.
+## Canonical boundaries
 
-## 2. Business value
+| Concern | Canonical module | Detailed PRD status |
+|---|---|---|
+| CRM relationship, opportunity, pipeline, assignment and CRM activity | [M017](m017-crm.md) | Product/Architecture candidate |
+| Person, Household and formal Client relationship | M018 | Source accepted; sequential candidate follows M017 |
+| Organization/business and person-organization relationship | M019 | Concept/source intake |
+| Lead, public capture handoff and lead duplicate handling | M020 | Concept/source intake |
+| ServiceOrder/commercial service contract | M021 | Concept/source intake |
+| CaseFile/operational service execution | M022 | Concept/source intake |
+| Task/work item | M023 | Concept |
 
-Prevent prospects from being lost, show the owner-operator the next action and measure which Google,
-Meta and organic channels produce qualified work.
+M017 presents an authorized CRM composition, not a second Person, Client, Organization, Lead,
+ServiceOrder, CaseFile or Task database. M017 may request owner commands and retain typed receipts;
+owner modules validate and persist their own state.
 
-## 3. Scope
+## Relationship flow
 
-Leads, contact points, source/attribution, requested service, locale, pipeline stages, assignments,
-tags, notes, follow-ups, duplicate candidates, conversion to client/service-order preparation and
-loss/closure history.
+```text
+Public/channel submission
+        ↓ M006/M020 + M078 consent evidence
+Lead (M020)
+        ↓ authorized handoff
+CRM relationship + Opportunity (M017)
+        ↓ independent approved conversion steps
+Client relation (M018) + ServiceOrder (M021) + CaseFile (M022)
+        ↓
+Tasks (M023), Documents (M011), Messages (M012/M025), Appointments (M013)
+```
 
-## 4. Explicit out of scope
+No arrow means automatic creation. `Opportunity won`, `payment confirmed`, `Client active`,
+`entitled`, `authorized to start`, `Case in progress` and `completed` are independent facts.
 
-Cases/service delivery, autonomous AI qualification, multi-organization sales, ad-platform audience
-uploads, unrestricted bulk messaging, predictive scoring and full marketing automation.
+## Shared invariants
 
-## 5. Actors
+- Default-deny authorization is enforced in domain services and Postgres RLS.
+- Email/phone/name/company/payment relationships do not grant identity or resource access.
+- Every cross-module drill-down reauthorizes in the canonical owner.
+- Consent M078 and notification preferences M026 are checked fresh before communication.
+- Notes, messages, tasks, activity and audit events remain different record types.
+- Duplicate candidates never merge automatically; canonical person resolution belongs to M018.
+- All retries use semantic idempotency; ambiguous outcomes reconcile before retry.
+- Inngest coordinates jobs but does not own durable business state.
+- Product Owner decisions and an explicit Build gate are required before product implementation.
 
-Anonymous prospect, Product Owner/Owner operator, future authorized staff, public form/chat adapter,
-scheduler adapter and read-only auditor.
+## Source coverage
 
-## 6. User journeys
-
-1. A consented public form creates or safely matches a lead and preserves attribution.
-2. Staff reviews new leads, records contact attempts and schedules the next action.
-3. Staff moves an opportunity through approved stages with reason/evidence.
-4. A qualified prospect receives a consultation/quote path.
-5. Staff converts the lead to a Client without duplicating Person/contact data.
-6. Staff closes a lead as lost/unqualified with an approved reason and retention behavior.
-
-## 7. States and transitions
-
-The architecture supports `new`, `contact_pending`, `contacted`, `evaluation_scheduled`,
-`qualified`, `quote_pending`, `won`, `lost` and `disqualified`. Only approved transitions are valid;
-terminal records may be reopened only through an audited action. Stage configuration is versioned so
-historical reports preserve meaning.
-
-These codes are an architecture draft only; the Product Owner must approve the Release 1A stage
-set, transition fields and closure reasons before Build.
-
-## 8. Business rules
-
-- Lead capture requires source-specific contact consent evidence.
-- A duplicate suggestion never merges records automatically.
-- Conversion reuses Person/contact information and records the source lead.
-- Every active lead has an owner or explicit unassigned queue and a visible next action.
-- Stage movement cannot imply service eligibility, professional advice or guaranteed outcomes.
-- Attribution metadata is minimized and never contains form/free-text answers.
-
-## 9. Authorization rules
-
-Only permitted staff may read/update leads. Read Only cannot mutate. Public integrations may create
-bounded submissions but cannot query CRM data. Sensitive notes require staff role and are never
-client-visible. Exports require separate permission and audit.
-
-## 10. Data requirements
-
-Lead ID, Person/contact references, requested service, preferred locale/time zone, source, campaign
-IDs on an allowlist, consent record, stage/version, assigned staff, next action/due time, tags,
-structured qualification answers, internal notes, duplicate-candidate links, conversion link,
-closure reason and audit metadata. Free text is Confidential and excluded from analytics.
-
-## 11. API or service contracts
-
-- `LeadCaptureService.capture(input, consent, idempotencyKey) → LeadRef`.
-- `LeadService.list(actor, filters, cursor)` and `get(actor, leadId)`.
-- `PipelineService.transition(actor, leadId, fromVersion, toStage, reason)`.
-- `LeadService.assign`, `recordContactAttempt`, `setNextAction`, `close`.
-- `LeadConversionService.convert(actor, leadId, expectedVersion) → ClientRef`.
-- Public capture returns a generic success response even when matching an existing record.
-
-## 12. Events and background jobs
-
-`lead.captured`, `lead.assigned`, `lead.stage_changed`, `lead.followup_due`, `lead.converted` and
-`lead.closed`. Jobs create reminders, detect overdue next actions and reconcile failed provider
-notifications. They do not send marketing communication without valid consent.
-
-## 13. Error states and recovery
-
-Invalid/expired consent, duplicate submission, ambiguous duplicate, stale stage version, invalid
-transition, assigned user disabled, failed notification and conversion conflict. Idempotent capture
-returns the original result; conflicts require staff resolution rather than silent merge/overwrite.
-
-## 14. Security and privacy requirements
-
-Rate limit and bot-protect public capture; validate all fields; minimize attribution; audit reads of
-exports and all writes; mask contact details in broad lists when role does not require them; apply
-retention/deletion rules; prohibit sensitive data from PostHog/Sentry/traces.
-
-## 15. UX and accessibility requirements
-
-Keyboard-operable list/board views, equivalent non-drag controls, visible next action, filters with
-announced result counts, accessible stage changes, autosave indication, confirmation for destructive
-close/merge actions, mobile list fallback and clear loading/empty/error states.
-
-## 16. Bilingual requirements
-
-Prospect-facing capture, consent and confirmations require English/Spanish parity. Internal stage
-codes remain locale-neutral while labels/help can be localized. Staff-entered notes are not
-automatically translated.
-
-## 17. Acceptance criteria
-
-- Duplicate submissions with the same idempotency key create one lead.
-- An invalid stage transition is rejected without partial mutation.
-- Conversion creates/reuses one Client and retains source attribution/audit.
-- Every active lead exposes assignment state and next action.
-- Public capture cannot retrieve whether a person already exists.
-- Reports can distinguish source, stage and conversion without ingesting sensitive free text.
-
-## 18. Negative acceptance criteria
-
-- No automatic merge, qualification, service approval or marketing enrollment.
-- No pipeline drag/drop as the only interaction.
-- No ad click identifiers stored outside the approved allowlist/retention window.
-- No client portal access to internal CRM notes or lead data.
-
-## 19. Dependencies
-
-Marketing Leads and Consent PRD, Identity/Access, audit/activity history, Client and Case Management,
-service catalog, scheduling and data-classification policy.
-
-## 20. Risks
-
-Duplicate people, consent mismatch, stale follow-ups, biased future scoring, attribution leakage and
-stage definitions that change reporting history. Mitigate with explicit matching review, immutable
-consent evidence, versioned stages and structured transition reasons.
-
-## 21. Open questions
-
-- [NEEDS PRODUCT OWNER DECISION: approve pipeline stages and closure reasons.]
-- [NEEDS PRODUCT OWNER DECISION: define response/follow-up service targets for new leads.]
-- [NEEDS PRODUCT OWNER DECISION: define which qualification answers are required per service.]
-- [NEEDS PRODUCT OWNER DECISION: approve duplicate-match and manual-merge authority.]
+The former combined M017/M020 draft has been superseded for M017 by the complete Product Owner
+source normalization in `m017-crm.md` and proposed ADR 021. Capabilities owned by M018–M023 remain in
+the 110-module roadmap and will be normalized sequentially rather than silently absorbed into M017.
