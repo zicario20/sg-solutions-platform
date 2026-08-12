@@ -33,6 +33,13 @@ source/quality/freshness, immutable revisions and conflicts, explicit resource/p
 and minimized service DTOs. It does not duplicate identity, CRM/client/business, cases, documents or
 specialist records, and it never determines eligibility or authorizes work.
 
+The M016 Administrative Dashboard is the staff operational home inside `/admin`. It composes
+role/team/assignment/resource-scoped summaries from canonical owner modules through one server-side
+aggregation contract. It distinguishes complete, partial, stale, unavailable, suppressed and denied
+results; explains deterministic priority; treats caches/snapshots as disposable; and reauthorizes
+all detail/actions in their owning modules. Release 1A is read-oriented and omits unapproved charts,
+exports, bulk actions, impersonation, realtime infrastructure and sensitive technical detail.
+
 ## Release strategy
 
 The first delivery family is **Release 1 — Production Foundation**, built for real clients and

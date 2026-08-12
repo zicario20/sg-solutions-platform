@@ -3,7 +3,7 @@
 - Owner: Product Owner
 - Maintainer: Codex Architecture Agent
 - Status: Active living register
-- Last updated: 2026-08-09
+- Last updated: 2026-08-12
 - Update rule: actualizar al aprobar una arquitectura, seleccionar un proveedor, obtener una cuenta o
   contrato, completar una prueba de activación o cambiar una dependencia externa
 
@@ -371,6 +371,36 @@ sugerencia en dato verificado.
 | PFL-019 | Profile request/update notifications, channels, quiet hours and copy | `External activation deferred` | Send external notification | M026 event/template/preference/consent policy and zero-value/zero-sensitive-context payload tests |
 | PFL-020 | Metrics, viewers, retention and product analytics schema | `External activation deferred` | Emit PostHog/profile analytics | Coarse event allowlist, zero-value/ID/free-text/DOM/replay tests and default-off proof |
 
+### Decisiones y configuración pendientes de M016
+
+M016 no activa widgets, métricas, rutas, acciones, exports, realtime, analytics ni datos reales.
+Estas filas controlan el alcance y las políticas necesarias antes de un Build. El default documental
+es read-only, server-authorized, sin charts decorativos, sin contenido sensible y sin asumir que una
+fuente fallida equivale a cero.
+
+| ID | Dependencia o decisión | Estado | Bloquea | Evidencia de salida requerida |
+|---|---|---|---|---|
+| ADM-001 | Roles/presets e inventario exacto de widgets obligatorios/opcionales Release 1A | `External activation deferred` | Renderizar un dashboard real | Role/widget/source/permission matrix, minimization review and role/cross-client tests |
+| ADM-002 | Ruta canónica, label y navegación Admin ES/EN | `External activation deferred` | Crear/publicar ruta | Approved IA, route authorization, mobile/a11y tests and Product Owner visual acceptance |
+| ADM-003 | Definición/version/source/period/owner de cada métrica | `External activation deferred` | Calcular/mostrar métrica real | Versioned metric registry, formula/source/coverage/rounding tests and owner sign-off |
+| ADM-004 | Factores, pesos, desempate y explicación de prioridad | `External activation deferred` | Ordenar trabajo real | Versioned deterministic policy, reason-code/fairness/tie/missing-input tests; no LLM authority |
+| ADM-005 | Matriz completa actor/session/auth epoch/assurance/membership/permission/role/team/assignment/grant/access epoch/purpose/classification scope y protección de inferencia | `External activation deferred` | Leer cualquier dato operacional | Canonical fingerprint, domain/RLS/final-fence/minimum-aggregation/timing/cross-scope and per-dimension delayed-invalidation tests |
+| ADM-006 | Taxonomía/severidad/SLA/owner y autoridad de acknowledgement/dismissal/resolution de alertas | `External activation deferred` | Mostrar alerta o control acknowledge/dismiss/resolve real | Versioned alert registry, source/freshness/escalation/false-alert/mandatory-visibility and owner-command authority tests |
+| ADM-007 | Periodos, custom range, IANA time zone y moneda | `External activation deferred` | Filtrar/comparar métricas | Period/time-zone/DST/currency semantics and boundary tests |
+| ADM-008 | Umbrales de freshness y comportamiento partial/stale/unavailable | `External activation deferred` | Presentar estado de resumen | Source-class policy and zero-vs-failure/coverage/recovery tests |
+| ADM-009 | Elegibilidad, TTL, fingerprint/keys exactos e invalidación de cache/snapshots | `External activation deferred` | Persistir/reutilizar derivado | Exact canonical-digest matrix, missing/mismatch miss/fail-closed, revocation/policy/source/recovery purge and no-truth tests |
+| ADM-010 | Personalización, widgets obligatorios, vistas/filtros guardados y reset | `External activation deferred` | Guardar preferencias | Role/policy boundaries, version/CAS/reset/migration tests and mandatory-alert protection |
+| ADM-011 | Quick actions Release 1A y comandos propietarios | `External activation deferred` | Mostrar/ejecutar acción | Allowlist, owner command/authz/idempotency/confirmation/audit and no-local-mutation tests |
+| ADM-012 | Dataset/roles/purpose/formato/retención de export | `External activation deferred` | Exportar datos | Reauth/minimization/redaction/expiry/delivery/audit and inference tests |
+| ADM-013 | Acciones bulk, batch limit, preview, autorización y rollback | `External activation deferred` | Ejecutar lote | Per-item authz, dry-run/idempotency/partial-failure/audit tests; sensitive bulk defaults off |
+| ADM-014 | Existencia y controles de impersonation | `External activation deferred` | Impersonar usuario | Explicit legal/security policy, role/read-only/banner/reason/TTL/audit/no-silent tests; two-person control only when/if Product Owner approves it in ADM-014 |
+| ADM-015 | Widgets de integration/AI/system health y roles técnicos | `External activation deferred` | Mostrar salud técnica | Coarse status/role/redaction/source/freshness tests; no logs/secrets/client data |
+| ADM-016 | Polling/realtime event classes, transport, rate y fallback | `External activation deferred` | Activar updates automáticos | Provider-neutral contract, duplicate/delay/outage/recovery/manual-refresh tests |
+| ADM-017 | Charts, product/operational analytics y telemetry schemas/allowlists, viewers, retention y frontera M016/M092 | `External activation deferred` | Mostrar tendencias/reportes o emitir analytics/telemetry no esencial | Metric/event/privacy/source/viewer/retention/default-off/no-PII-no-DOM tests and M092 ownership proof |
+| ADM-018 | Thresholds, minimum aggregation, count suppression y differencing | `External activation deferred` | Mostrar/suprimir un aggregate/count | Versioned rule, subtraction/timing/filter/expiry tests; no alert acknowledgement/dismissal authority |
+| ADM-019 | Retención/backup/deletion de preferences/snapshots/audit | `External activation deferred` | Persistir derivados reales | Class/period/legal-hold/recovery-generation/delete/restore tests and M085 review |
+| ADM-020 | SLOs de performance/accesibilidad, devices y widget/load budget | `External activation deferred` | Declarar calidad del dashboard | Budgets, WCAG/EN-ES/mobile/performance evidence; no analytics/telemetry activation authority |
+
 | Módulo(s) | Dependencia externa pendiente | Estado | Se completa ahora | Se difiere hasta activación | Fallback seguro |
 |---|---|---|---|---|---|
 | M007 y M080 IAM | Proyecto Supabase productivo, dominios, email y MFA configurados | `External activation deferred` | Arquitectura Auth/RLS, roles, grants, sesiones y pruebas locales autorizadas | Configuración productiva, remitente, proveedores sociales y pruebas de recuperación/MFA | Alta y soporte manual controlados; sin acceso si falla la verificación |
@@ -382,6 +412,7 @@ sugerencia en dato verificado.
 | M013 Client Appointments (proyectado en M024) | Cuenta Google Workspace/Calendar, OAuth y políticas APT-001–APT-020 | `External activation deferred` | PRD/UX y arquitectura/contratos del futuro motor interno definitivo, zonas IANA, concurrencia, buffers, owner boundaries y diseño del adapter; M024 sólo consume la proyección UI | Build, citas/datos reales, OAuth, calendario, meeting/reminder/payment providers, webhooks/sync y reconciliación productiva bajo M013 | Agenda interna/manual y bloqueo seguro; nunca inventar disponibilidad ni asumir sync |
 | M014 y M042–M046 Pagos | LLC/banco, cuenta Stripe verificada y políticas PAY-001–PAY-020 | `External activation deferred` | PRD/UX, obligación/ledger operacional, provider contracts, idempotencia, reconciliación, autorización y pruebas sintéticas autorizadas | Build, precios/datos reales, onboarding/credenciales/endpoints/eventos/métodos/tráfico y conciliación productiva | Cotización/registro pendiente y revisión manual; nunca marcar una captura/retorno/pago externo como confirmado por Stripe |
 | M015 Perfil financiero y empresarial | M007/M011/M017–M022/M077–M085 y políticas PFL-001–PFL-020 | `External activation deferred` | PRD/UX, facts/revisions/provenance/conflicts/purpose DTO contracts y pruebas sintéticas autorizadas | Build, campos/datos reales, KMS, provider/OCR/AI, export/notificación/analytics y políticas productivas | Intake manual mínimo dentro del expediente autorizado; no perfil completo, no sobrescritura ni inferencia de verificación/elegibilidad |
+| M016 Dashboard administrativo | M007/M011–M014/M017–M026/M042–M046/M074/M077/M079/M089/M092/M097 y ADM-001–ADM-020 | `External activation deferred` | PRD/UX, aggregation/priority/freshness/coverage/suppression/owner-port contracts y pruebas sintéticas autorizadas | Build, route, widgets/métricas/datos reales, cache/realtime/actions/export/analytics e integración técnica | Operar directamente en módulos propietarios; dashboard no disponible o muestra estado parcial sin fabricar cero/éxito |
 
 ## Servicios, marketplace y partners
 

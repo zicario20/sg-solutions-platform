@@ -397,3 +397,38 @@
   `C1ABFA94B76E87B197ED33EB53829EF0A73BFEA830880AD47A0E43C1A3E6A31A`; full materialization was
   environment-limited by a missing cached pinned tarball and network timeout. No product source,
   dependency or lockfile changed, and no Build or activation was opened.
+
+## 2026-08-12 — M016 Administrative Dashboard documentary candidate
+
+- Decision 027 authorized sequential Product/Architecture documentation for M016, M017 and M018 in
+  separate worktrees, each starting only after its predecessor is audited, remediated, validated and
+  committed. It did not authorize `GENERATE`, Build, product code, schema, real data, merge or deploy.
+- M016 began from audited M015 commit `015ab3ba95bf828456a6f95b59ad4d3932b8af5a` and normalized the
+  complete supplied source lines 25214–27164 into a 21-section PRD, responsive design and proposed
+  ADR 020. The raw source remains an external attachment rather than repository authority.
+- The candidate creates one read-oriented role-scoped Admin composition/BFF boundary. Canonical
+  owners retain CRM/client/business/order/case/task/document/communication/appointment/billing/
+  approval/risk/reporting/observability state and commands. M016 owns widget definitions,
+  deterministic priority, freshness/coverage/failure semantics, optional preferences and disposable
+  snapshots only.
+- A single complete `DashboardAuthorizationFingerprint` binds identity/session/auth epoch/assurance,
+  membership/permission/role/team/assignment, exact grants/access epochs, purpose/classification,
+  widget/owner/policy/source/presentation versions and recovery generation. Exact equality is
+  required at source request, cache lookup and final fence; missing/changed dimensions fail closed.
+- `complete`, `partial`, `stale`, `unavailable`, `suppressed` and `denied` remain distinct. A zero
+  requires source-confirmed full authorized coverage. Every displayed result is derived/advisory and
+  owner commands reauthorize/reread current state.
+- `ADM-006` controls alert lifecycle authority, `ADM-018` count privacy, `ADM-017` analytics/
+  nonessential telemetry and `ADM-020` quality SLOs. Future recent activity is a minimized
+  allowlisted M077/owner projection, not raw audit history. Impersonation and any dual control remain
+  Product Owner decisions.
+- Independent review closed all findings and returned PASS with zero P0/P1/P2/P3. Cyber Neo returned
+  zero Critical/High/Medium/Low and documentary risk `0/100`. Exactly twenty unresolved Build/live
+  decisions remain `ADM-001`–`ADM-020`.
+- Final evidence passed lint/format over 143 files, 11-package typecheck, 20 passing test files/131
+  tests with three deliberate skips, import contracts, a 226-page Astro build, 186 active-workspace
+  local links across 150 Markdown files with zero broken and `git diff --check`. The intentionally
+  route-less Next.js scaffold has no applicable product build. Two frozen offline lockfile-only
+  installs preserved SHA-256
+  `C1ABFA94B76E87B197ED33EB53829EF0A73BFEA830880AD47A0E43C1A3E6A31A`. No product source,
+  dependency or lockfile changed, and no Build or activation was opened.

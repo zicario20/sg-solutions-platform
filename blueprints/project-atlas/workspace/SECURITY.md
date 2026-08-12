@@ -285,3 +285,30 @@ Security incidents use a safe manual path: contain access, revoke sessions/crede
 audit evidence, isolate affected data, notify the Product Owner, assess legal obligations, restore
 from validated recovery points if needed and document lessons learned. Detailed provider playbooks
 are created before each sensitive integration reaches its Release gate.
+
+## M016 administrative dashboard
+
+- M016 derives one canonical server-side authorization fingerprint from actor/account, session/auth
+  epoch/assurance, membership, exact permission/role/team/assignment, exact grants/access epochs,
+  purpose, classification ceiling/clearance, dashboard/widget/owner-contract/policy versions,
+  normalized filters/period/locale/IANA zone, source version and recovery generation. No security
+  dimension is optional.
+- Authorization is evaluated per widget and rechecked at final serialization. A browser never
+  receives broad data for local filtering, and a visible widget never grants owner-module access.
+- Aggregate counts use approved minimum-population/suppression rules. Denied, hidden, suppressed,
+  unavailable and zero states cannot be probed through timing, pagination, filters or error copy.
+- Cache/snapshot lookup and final serialization require the exact opaque fingerprint digest/version.
+  Missing or changed dimensions miss and fail closed; revocation purges affected entries even when
+  source invalidation is delayed. The digest is never client-supplied, logged or analyzed.
+- M016 excludes client PII, protected profile values, document/message/internal-note contents, raw
+  financial/provider data, tokens, credentials and technical logs. Diagnostics are coarse and
+  content-free.
+- Drill-downs carry only allowlisted route keys and opaque bounded references. Every destination
+  performs fresh owner-domain authorization; M016 never exposes a generic command endpoint.
+- Quick, bulk, export and impersonation actions are off until their ADM gates, enhanced review and
+  Product Owner approval. Payment, approval, document, communication and case changes remain owner
+  commands with fresh authorization, idempotency and audit.
+- Authenticated Admin analytics/autocapture/session replay is off by default. `ADM-017` must approve
+  minimized product/operational analytics and telemetry event schemas/allowlists, viewers and
+  retention before anything beyond essential content-free security/performance diagnostics.
+  `ADM-020` sets quality SLOs only and cannot activate collection.

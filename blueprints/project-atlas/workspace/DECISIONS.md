@@ -361,3 +361,26 @@ independent/security reviews. This decision does not approve ADR 019 or unresolv
 data policy, authorize `GENERATE`, routes, schemas/migrations/RLS, encryption keys, providers, AI,
 real profile data, merge, deployment or Operational status. Any M015 Build requires a separate
 Product Owner decision after the PRD/design/ADR and affected PFL gates are approved.
+
+## 2026-08-12 — Decision 027
+
+Decision: authorize Product/Architecture documentation and independent documentary audit for M016
+Administrative Dashboard, then M017 CRM and M018 Client Management, strictly one at a time in
+separate worktrees. M016 begins from independently audited M015 commit
+`015ab3ba95bf828456a6f95b59ad4d3932b8af5a`; each later worktree may open only after the preceding
+module is audited, remediated, validated and committed.
+
+Reason: the Product Owner explicitly authorized executing M016, M017 and M018 in sequence with the
+same worktree, design, independent-audit and security-audit operating method used for the prior
+modules, and instructed Codex not to stop before all three documentary candidates are complete. The
+universal Phase 0 gate still requires the exact token `GENERATE` plus a recorded Build decision
+before product code.
+
+Impact: for M016, Codex may normalize the complete supplied source into its implementation-ready
+PRD, responsive branded Admin UX/UI design, proposed ADR 020, `ADM-001`–`ADM-020` decision register,
+authority updates and read-only independent/security reviews. Equivalent documentary scope is
+authorized later for M017 and M018 only after their predecessor gates close. This decision does not
+approve any proposed ADR or unresolved business/legal/data policy, authorize `GENERATE`, routes,
+schemas/migrations/RLS, real clients/leads/dashboard behavior, providers, AI, merge, deployment or
+Operational status. Work stops after the clean audited M018 commit unless the Product Owner gives a
+new instruction.

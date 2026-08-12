@@ -25,6 +25,7 @@
 | [017](017-appointment-authority-availability-concurrency-and-calendar-projection.md) | Proposed M013 appointment authority, deterministic availability, conflict-safe booking and minimized Google Calendar projection. |
 | [018](018-financial-authority-obligation-snapshot-idempotency-and-reconciliation.md) | Proposed M014/M021/M042–M046 financial authority, immutable obligation, provider idempotency, signed inbox and reconciliation boundary. |
 | [019](019-purpose-bound-profile-facts-provenance-and-conflict.md) | Proposed M015 typed reusable fact ownership, provenance, immutable revision/conflict and purpose-limited projection boundary. |
+| [020](020-role-scoped-admin-dashboard-aggregation-and-derived-state.md) | Proposed M016 server-side role-scoped composition, explicit partial/freshness state and disposable derived-dashboard boundary. |
 
 ADRs are tool-neutral. Supersede a decision with a new numbered ADR; do not erase historical
 rationale.

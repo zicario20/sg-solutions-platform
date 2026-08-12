@@ -151,6 +151,17 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   is security-clear at documentary risk `0/100`; the candidate now awaits Product Owner documentary
   review. No `GENERATE`, route, schema/migration/RLS policy, KMS/provider/AI activation, real profile
   data, merge or deployment is authorized.
+- **M016 Administrative Dashboard:** Product/Architecture documentation is active under Decision
+  027 from audited M015 commit `015ab3b`. The candidate defines one read-oriented, role-scoped
+  aggregation/BFF boundary in the existing Admin surface. Owner modules retain operational truth and
+  commands; M016 owns widget definitions, deterministic priority composition, explicit source/
+  period/freshness/coverage/partial-failure semantics and disposable preferences/snapshots. Every
+  widget is authorized server-side and every drill-down reauthorizes in its owner; zero never means
+  unavailable or incomplete. Twenty Build/live policies remain `ADM-001`–`ADM-020`. Independent
+  architecture review has zero open P0–P3 findings and Cyber Neo is security-clear at documentary
+  risk `0/100`; the candidate awaits Product Owner documentary review. No `GENERATE`, route,
+  schema/RLS policy, metric/widget activation, real dashboard, merge or deployment is authorized.
+  M017 may open only after a clean audited M016 commit.
 
 ## Architecture-first activation policy
 

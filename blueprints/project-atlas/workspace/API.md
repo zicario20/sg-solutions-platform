@@ -245,3 +245,32 @@ Every profile access snapshot, draft/reveal/export capability and job is epoch-b
 all pre-cutover artifacts fail and protected queries remain unavailable until M007/M078 state is
 reconciled from non-rolled-back evidence or explicitly reauthorized; the restored database cannot
 self-attest current authorization.
+
+M016 proposes one authenticated versioned `AdminDashboardQuery.compose` contract. The server derives
+the canonical authorization fingerprint from actor/account, session/auth epoch/assurance, membership,
+exact permission/role/team/assignment and resource grants/access epochs, purpose, classification
+ceiling/clearance, dashboard/widget/owner-contract/policy versions, normalized filters/period/locale/
+IANA zone, source version and recovery generation; then selects allowed widget definitions and calls
+typed minimal owner projection ports. The opaque digest is never client-supplied or serialized. The
+response contains a page composition state and independently typed widget results with
+`complete|partial|stale|unavailable|suppressed|denied`, definition/version, period/IANA time zone,
+source/computed timestamps, freshness and coverage. Denied widgets are normally omitted; private
+absence/denial and count-suppression cannot reveal a resource or threshold.
+
+`AdminDashboardQuery.refresh` is a query invalidation/recomposition request, not a domain mutation.
+Future quick actions call an allowlisted owner command directly after fresh authorization,
+expected-version/idempotency validation and audit; M016 exposes no generic command, bulk, export or
+impersonation endpoint. Drill-down contracts return only a destination code and opaque bounded
+reference/allowlisted filter; the destination reauthorizes. Exact HTTP routes remain `ADM-002` and a
+future Build decision.
+
+Snapshot/cache lookup and final serialization require exact canonical fingerprint equality. Missing
+or changed purpose, assurance, permission, grant/access epoch, classification or any other dimension
+is a miss and fails closed; revocation additionally purges affected entries even with delayed owner
+invalidation.
+
+A future `RecentOperationalActivityProjection` is an M077/canonical-owner read port, not a raw audit
+or event-stream endpoint. It accepts the full M016 authorization context and bounded cursor/period,
+returns allowlisted semantic event code, safe localized parameters, event/source time/version,
+freshness/coverage and an optional opaque drill-down reference, and excludes technical/private
+events, invalidation payloads and content. Every destination reauthorizes.

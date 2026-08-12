@@ -216,3 +216,21 @@ The incident owner immediately notifies the Product Owner of suspected data loss
 unauthorized restore access or missed objectives. Legal/privacy notification decisions belong to
 the Product Owner with qualified counsel. Recovery never bypasses authorization or audit controls
 for speed.
+
+## M016 restore-test extension
+
+- [ ] Advance the M016 external recovery generation before protected dashboard reads resume; reject
+      every pre-restore composition, cursor, cache/snapshot, export capability and background job.
+- [ ] Keep M016 unavailable until current M007 role/team/assignment/resource grants and owner-domain
+      revocations are reconciled from evidence not rolled back with Postgres.
+- [ ] Discard and rebuild every M016 derived metric/priority/freshness snapshot from freshly
+      authorized owner projections; never restore it as operational or financial truth.
+- [ ] Verify each rebuilt widget records definition/policy/source/period/freshness/coverage and that
+      incomplete owners produce `partial|stale|unavailable`, not zero or healthy.
+- [ ] Reconcile pending source invalidations and owner-module outbox positions before enabling
+      polling/realtime hints; duplicate or delayed invalidations remain idempotent.
+- [ ] Prove role/grant revocation removes protected widgets/counts/drill-downs after recovery and
+      that logs/telemetry contain no restored client/resource values.
+- [ ] Independently vary M016 purpose, assurance, permission version, grant/access epoch and
+      classification clearance after restore; prove every old snapshot/cache digest misses and no
+      stale protected fallback survives delayed invalidation.

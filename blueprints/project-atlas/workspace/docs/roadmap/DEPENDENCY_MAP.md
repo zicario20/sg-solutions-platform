@@ -132,6 +132,14 @@ Measured scale, hybrid infrastructure and mobile expansion
     service/case grants combine with permission, purpose/consent, classification and assurance;
     household/business relation grants nothing. Forms/documents/providers/AI propose only, and no
     full-profile consumer or cross-domain state mutation exists under proposed ADR 019.
+26. M016 owns the role-scoped Admin dashboard composition contract, widget definitions,
+    deterministic priority, explicit freshness/coverage/failure semantics and disposable derived
+    preferences/snapshots. M007 provides identity/session/role/grants; M017/M020 CRM/Lead; M018/M019
+    Client/Business; M021/M022 ServiceOrder/CaseFile; M023 Task; M011 Document; M012/M025
+    communication; M013/M024 appointment/calendar; M014/M042–M046 billing/payment; M074 approval;
+    M079 risk; M092 reporting; and M097 observability remain canonical. Widget access is evaluated
+    server-side per request, drill-down reauthorizes in the owner and no cache, count or M016 control
+    changes domain state under proposed ADR 020.
 
 ## Fronteras de extracción
 

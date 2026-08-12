@@ -96,7 +96,7 @@ The following concepts are compatible and should inform later normalization:
 | M13 Appointments | `m013-client-appointments.md` plus `scheduling-calendar.md` boundary | Basic safe scheduling in 1A; advanced Google synchronization in 1B. |
 | M14 Payments | `m014-client-payments.md` plus `billing.md` boundary | Deposits and one-time payments in 1A; plans and advanced reconciliation in 1B. |
 | M15 Financial/Business Profile | `m015-financial-business-profile.md`, proposed ADR 019 and `data-platform.md` | Dedicated candidate; introduce only purpose-bound typed facts required by an approved service slice, with provenance/revisions/conflicts and no full-profile consumer. |
-| M16 Admin Dashboard | `client-case-management.md` and future reporting PRD | Operational minimum only; avoid dashboard-driven domain logic. |
+| M16 Admin Dashboard | `m016-admin-dashboard.md`, proposed ADR 020 and M092 reporting boundary | Role-scoped read-oriented operational composition only; owner modules retain truth/actions and charts/reporting remain separately gated. |
 | M17 CRM | `crm-case-operations.md` | Basic CRM and pipeline in 1A; scoring/automation/reporting later. |
 | M18 Client Management | `client-case-management.md` | Client, case, task and internal-note operations in 1A. |
 | M19 Organizations | Future organization/business-domain PRD | Reuse shared party and relationship primitives; phase by real service need. |

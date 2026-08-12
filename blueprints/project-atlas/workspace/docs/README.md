@@ -193,6 +193,18 @@ M015 architecture candidate:
   approved for Build; no route, schema/migration/RLS policy, KMS/provider/AI activation, real profile
   data, merge, deployment or production behavior is authorized.
 
+M016 architecture candidate:
+
+- [M016 Independent Architecture Review](reviews/M016-ARCHITECTURE-REVIEW.md)
+- [M016 Security Architecture Review](reviews/M016-SECURITY-REVIEW.md)
+- [M016 Administrative Dashboard PRD](modules/m016-admin-dashboard.md)
+- [M016 Administrative Dashboard Design](superpowers/specs/2026-08-12-m016-admin-dashboard-design.md)
+- [M016 Role-scoped Dashboard Aggregation ADR](adr/020-role-scoped-admin-dashboard-aggregation-and-derived-state.md)
+- Independent architecture review has zero open P0–P3 findings and Cyber Neo is security-clear at
+  documentary risk `0/100`. The candidate awaits Product Owner documentary review and is not
+  approved for Build; no route, schema/RLS policy, widget/metric activation, real dashboard, merge,
+  deployment or production behavior is authorized.
+
 Design specifications live under `superpowers/specs/`. The status in each specification header is
 authoritative: `Draft for Product Owner review` is not approved, while an approved specification
 still does not authorize implementation without its separate Build gate.

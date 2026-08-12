@@ -271,6 +271,33 @@ restored database generation. Recovery advances it, rejects all old artifacts an
 profile access until grants/consent revocations are reconciled from independent post-checkpoint
 evidence or explicitly reissued. A restored Postgres snapshot cannot validate itself.
 
+### M016 role-scoped administrative composition boundary
+
+M016 owns one authenticated Admin dashboard aggregation/BFF contract, versioned widget definitions,
+deterministic operational-priority composition, freshness/coverage/partial-failure semantics and
+optional derived preferences/snapshots. Canonical owners retain client, business, lead, order, case,
+task, document, communication, appointment, financial, approval, risk, analytics and observability
+state. M016 consumes typed minimized projection ports and cannot import provider SDKs or mutate those
+records.
+
+One canonical server-derived authorization fingerprint inseparably binds actor/account, session plus
+auth epoch/assurance, membership, exact permission/role/team/assignment, exact resource grants/access
+epochs, purpose, classification ceiling/clearance, dashboard/widget/owner-contract/policy versions,
+normalized filters/period/locale/IANA zone, source version and external recovery generation. Every
+source request, snapshot/cache lookup and final response requires exact equality; a missing or changed
+dimension misses/purges/fails closed even with delayed invalidation. The opaque digest never enters a
+client DTO, URL, log or analytics. Authorization is evaluated per widget and final response; the
+browser never receives a broad result for local filtering. Values carry source, definition, period,
+freshness and coverage. A confirmed zero never stands in for partial, stale, unavailable, suppressed
+or denied. Drill-down passes only allowlisted filters/opaque references and every destination
+reauthorizes. Proposed ADR 020 records the boundary; `ADM-001`–`ADM-020` gate exact widgets,
+policies, schemas and Build/live behavior.
+
+A future M016 recent-activity widget consumes only a minimized versioned M077/canonical-owner event
+projection with event allowlist, exact resource authorization, freshness/coverage and reauthorized
+drill-down. It is not raw audit history and excludes invalidation payloads, technical/private events
+and event content.
+
 ## Data protection
 
 Data follows `DATA_CLASSIFICATION.md`. Managed encryption at rest is necessary but insufficient for

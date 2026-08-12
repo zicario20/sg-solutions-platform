@@ -247,3 +247,28 @@ fact/document/business/case IDs, field values, amounts, completeness/calculation
 identity, free text, URLs, DOM and session replay. AI/profile provider access is off until PFL-017/
 PFL-018 and uses minimal purpose DTOs only. PFL-014 controls retention/deletion/legal hold and
 PFL-015 controls reauthenticated, redacted, short-lived export.
+
+### M016 administrative-dashboard boundary
+
+Widget definitions and generic bilingual labels without operational context are Internal. Staff
+preferences, role/team views, operational counts, assignments, due/overdue summaries, source health
+and resource references are at least Confidential. A dashboard result inherits Highly Sensitive if
+its source, combination, low-population count or context can reveal protected identity, credit, tax,
+financial, household, document, communication or service facts; Release 1A avoids returning those
+values and normally suppresses the aggregate instead.
+
+M016 never receives document/message bodies, full protected identifiers, tax/credit reports,
+bank/card data, raw provider payloads, internal note bodies or decrypted profile values. Caches,
+snapshots, exports, telemetry and screenshots inherit the highest source classification and the same
+purpose/access/retention limits. Masking a label does not declassify an aggregate. Low-population and
+cross-filter counts use approved suppression policy; the browser cannot discover the threshold or
+subtract neighboring scopes to infer a person.
+
+PostHog/autocapture/session replay is off for authenticated Admin pages. `ADM-017` is the sole M016
+gate for product/operational analytics and nonessential telemetry schemas, allowlists, viewers and
+retention; any approved event remains coarse with no client/resource/widget value, count, filter,
+URL parameter, free text or DOM capture. Sentry/traces/logs may record essential content-free
+security/performance diagnostics—correlation, widget definition/version, coarse result class and
+latency—but never source values, query results, authorization fingerprint inputs/digests, tokens or
+resource identifiers. `ADM-020` defines quality SLOs only. Derived-state retention/deletion remains
+`ADM-019` plus M085/legal review.

@@ -23,6 +23,11 @@ Reusable client/profile facts are purpose-bound and provenance-aware. Canonical 
 client, organization, service order, case and document ownership remain separate; consumers receive
 only approved service-specific projections, never a full profile.
 
+The Admin Dashboard is a role-scoped operational composition surface, not another source of truth.
+It derives minimized widgets and deterministic priority from owner-domain projections, preserves
+explicit freshness/coverage/partial-failure state and reauthorizes every drill-down in the owning
+module. Derived metrics, preferences and caches cannot grant access or change operational state.
+
 Supabase Auth is the identity source. Domain services plus Postgres RLS and Storage policies enforce
 authorization. Drizzle owns schema and migrations. Sanity stores public bilingual content only.
 Stripe owns external financial transaction state; Postgres owns internal operational state. Inngest
