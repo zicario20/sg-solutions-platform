@@ -5,14 +5,14 @@
 - Surface: External messaging channel; Public acquisition with future Client/Admin projections
 - Domain: Communications / Public Acquisition
 - Release: R7 target capability; architecture prepared during Phase 0
-- Status: Draft for Product Owner approval — architecture only; no Build gate
-- Last updated: 2026-08-09
+- Status: Build authorized by Decision 028 — queued after clean M003 closure
+- Last updated: 2026-08-12
 - External readiness: `External activation deferred` in `EXTERNAL_ACTIVATION_REGISTER.md`
 
 This PRD normalizes the complete Product Owner-supplied M004 source into the approved Project Atlas
 architecture. It preserves the long-term WhatsApp capability while separating durable architecture,
-future local construction and real Meta/authorized-provider activation. Approval of this document
-does not authorize application code, a phone number, provider credentials, live messages or release.
+local construction and real Meta activation. Decision 028 authorizes bounded local/staging code
+after M003; it does not authorize a phone number, provider credentials, live messages or release.
 
 ## 1. Purpose
 
@@ -896,7 +896,7 @@ answers to approve the provider-neutral architecture.
 
 ## Delivery and activation record
 
-- Architecture: candidate prepared for Product Owner review on 2026-08-09.
-- Local implementation: not authorized and not started.
+- Architecture: independently reviewed candidate completed on 2026-08-09.
+- Local implementation: authorized by Decision 028 only after clean, audited M003 closure.
 - External activation: deferred; see `EXTERNAL_ACTIVATION_REGISTER.md`.
 - Operational status: not eligible.

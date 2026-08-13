@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+- Recorded Decision 028: bounded sequential `GENERATE` for M003–M005 with provider activation,
+  credentials, live traffic and production release still deferred.
 - Documentary architecture baseline prepared.
 - Added canonical product definition, release horizons, dependency map, module status model and the complete conceptual module catalog.
 - Aligned the roadmap around Release 1 — Production Foundation and Business Formation as the first complete vertical.

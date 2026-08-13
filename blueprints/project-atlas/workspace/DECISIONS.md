@@ -384,3 +384,28 @@ approve any proposed ADR or unresolved business/legal/data policy, authorize `GE
 schemas/migrations/RLS, real clients/leads/dashboard behavior, providers, AI, merge, deployment or
 Operational status. Work stops after the clean audited M018 commit unless the Product Owner gives a
 new instruction.
+
+## 2026-08-12 — Decision 028
+
+Decision: authorize `GENERATE` and a bounded local/staging Build gate for M003 Public Chat, followed
+by M004 WhatsApp Business and M005 Voice Agent, strictly one module at a time in separate worktrees.
+Each module requires TDD, responsive bilingual UX/UI, Drizzle-controlled schema changes, enforced
+authorization, complete validation, independent code review, read-only Cyber Neo review and a
+separate clean commit before its successor may begin.
+
+Provider direction: M004 will implement a direct Meta Cloud API adapter; M005 will implement a
+Twilio telephony adapter. AI, moderation, STT and TTS remain replaceable ports with deterministic,
+fail-closed disabled modes. Public WhatsApp and telephone entry points remain hidden until their
+respective activation flags and external gates are separately approved.
+
+Reason: the Product Owner clarified that these modules must be real production-quality code—not
+documentation alone—and explicitly confirmed the proposed provider and inactive-channel design.
+The goal is to complete construction now while postponing only business-account setup and live
+connections until SG Solutions is ready to operate them.
+
+Impact: code, tests, Drizzle migrations, RLS/Storage policies where applicable, synthetic contract
+tests and inactive adapters/configuration may be created for M003–M005. This decision does not
+invent or approve unresolved business/legal policy; activate Meta/Twilio/model providers; authorize
+real accounts, credentials, numbers, templates, webhooks, live traffic, real client data,
+production deployment, default-branch merge or `Operational` status. Unresolved affected behavior
+must remain disabled or fail closed. No M006 or later Build is authorized by this decision.

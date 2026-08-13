@@ -5,16 +5,16 @@
 - Surface: Public communications channel with future Client/Admin projections
 - Domain: Communications / Voice / Public Acquisition
 - Release: R7 target capability; architecture prepared during Phase 0
-- Status: Draft for Product Owner approval — architecture only; no Build gate
-- Last updated: 2026-08-09
+- Status: Build authorized by Decision 028 — queued after clean M004 closure
+- Last updated: 2026-08-12
 - External readiness: `External activation deferred` in `EXTERNAL_ACTIVATION_REGISTER.md`
 
 This PRD normalizes the complete Product Owner-supplied M005 source into the approved Project Atlas
 architecture. It preserves M005 as a professional bilingual virtual receptionist and separates it
 from M096 Voice Gateway infrastructure. It replaces the source document's obsolete `.NET/Redis`
 assumption with the approved TypeScript modular monolith plus a narrowly justified specialized voice
-runtime. Approval does not authorize code, a phone number, provider credentials, recording, live
-calls, external messages, deployment or release.
+runtime. Decision 028 authorizes bounded local/staging construction after M004; it does not
+authorize a phone number, provider credentials, recording, live calls, deployment or release.
 
 ## 1. Purpose
 
@@ -784,7 +784,7 @@ invented answers to approve the provider-neutral architecture.
 
 ## Delivery and activation record
 
-- Architecture: candidate prepared for Product Owner review on 2026-08-09.
-- Local implementation: not authorized and not started.
+- Architecture: independently reviewed candidate completed on 2026-08-09.
+- Local implementation: authorized by Decision 028 only after clean, audited M004 closure.
 - External activation: deferred; see `EXTERNAL_ACTIVATION_REGISTER.md`.
 - Operational status: not eligible.

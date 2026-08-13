@@ -19,29 +19,18 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   live CMS credentials and unapproved analytics transport.
 - Exit: Product Owner acceptance and merge/deployment decision. No next module is authorized by this
   completion.
-- **M003 Public Chat:** Product/Architecture documentation is active under Decision 016. The target
-  is an implementation-ready, provider-neutral design with human handoff, consent, moderation,
-  security, M002 knowledge reuse and explicit fallbacks. No M003 Build gate or live connection is
-  authorized by this architecture work. The final documentary candidate passed independent and
-  Cyber Neo review and now awaits Product Owner approval of the PRD/design, ADR 007 and transcript
-  boundary.
-- **M004 WhatsApp Business:** Product/Architecture documentation is active under Decision 017. The
-  target is an official provider-neutral channel adapter over the shared M003/M025 communication
-  kernel, with verified durable webhooks, consent/opt-out, bilingual templates, idempotent
-  inbox/outbox, secure portal handoffs and manual recovery. No M004 Build gate, account, number,
-  credential, template submission, live message or campaign is authorized. Direct Meta versus an
-  approved BSP and every operational policy remain activation decisions. The final documentary
-  candidate passed independent review and Cyber Neo at risk 0/100 and now awaits Product Owner
-  approval of the PRD/design and proposed ADR 008.
-- **M005 Voice Agent:** Product/Architecture documentation is active under Decision 018. The target
-  is a provider-neutral bilingual receptionist whose durable policy/state stays in the modular
-  monolith and whose proposed M096 boundary handles only real-time media and scoped speech adapters.
-  Caller ID is never identity, recording/transcription remain disabled, and client-specific work
-  defaults to the secure portal. No Build gate, runtime/provider dependency, account, number,
-  credential, real call or deployment is authorized. The final candidate passed independent
-  architecture review with zero open findings and Cyber Neo at documentary risk 0/100 after all
-  security/consistency findings were remediated. It now awaits Product Owner approval or revision of
-  the PRD/design and proposed ADR 009.
+- **M003 Public Chat:** Build active under Decision 028 after its independently reviewed
+  architecture candidate. Implement the bilingual public UI, secure conversation kernel, M002
+  grounding, consent, moderation, lead/handoff boundaries, deterministic disabled mode, Drizzle/RLS
+  controls and automated tests. Live model traffic and public production activation remain deferred.
+- **M004 WhatsApp Business:** Build queued after clean M003 closure. Implement the direct Meta Cloud
+  API adapter, verified durable webhook inbox/outbox, consent/opt-out, bilingual templates,
+  idempotency, reconciliation, handoff and tests. Meta account, number, credentials, template
+  submission and live messages remain deferred; its public entry point stays hidden.
+- **M005 Voice Agent:** Build queued after clean M004 closure. Implement the bounded Twilio adapter,
+  bilingual receptionist state machine, replaceable STT/model/TTS ports, transfer/callback/handoff
+  boundaries, deterministic simulator and tests. Number, credentials, recording/transcription,
+  real calls and deployment remain deferred; its public entry point stays hidden.
 - **M006 Public Forms:** Product/Architecture documentation is active under Decision 019. The target
   is a bilingual, versioned, accessible public capture capability using a narrow same-origin Astro
   gateway and durable domain acceptance before generic success. It delegates leads/deduplication to

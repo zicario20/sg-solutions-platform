@@ -509,3 +509,18 @@
 - These approvals authorize Product Owner documentary review only. They do not accept ADR 022,
   resolve `CLM-001`–`CLM-023`, authorize `GENERATE`/Build, merge, provider activation, real client
   data, deployment or production release.
+
+## 2026-08-12 — M003–M005 Build authorization
+
+- The Product Owner clarified that M003–M005 must be implemented as real production-quality code,
+  not left as documentation, and explicitly confirmed the direct Meta Cloud API, Twilio and
+  replaceable AI/speech-adapter direction.
+- Decision 028 authorizes sequential `GENERATE`: M003, then M004, then M005 in isolated worktrees
+  with TDD, independent audit, Cyber Neo, full validation and separate commits.
+- External business accounts, credentials, approved phone numbers/templates, live provider traffic,
+  public activation, production deployment and `Operational` status remain deferred. WhatsApp and
+  telephone public entry points stay hidden until separately activated.
+- The M003 build worktree was advanced to the clean M018 documentary baseline so all current
+  governance and security corrections are inherited. Baseline lint, typecheck, 131 tests and import
+  contracts passed before product changes; online dependency installation was unavailable, so the
+  existing validated workspace toolchain is used until frozen-install verification can be repeated.

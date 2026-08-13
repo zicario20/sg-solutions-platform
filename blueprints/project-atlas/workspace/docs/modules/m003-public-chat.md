@@ -5,14 +5,14 @@
 - Surface: Public; shared conversation kernel prepared for later Client/Admin adapters
 - Domain: Public Acquisition / Communications
 - Release: R7 target capability with an architecture slice prepared during current discovery
-- Status: Draft for Product Owner approval — architecture only; no Build gate
-- Last updated: 2026-08-09
+- Status: Build authorized by Decision 028 — written specification review in progress
+- Last updated: 2026-08-12
 - External readiness: `External activation deferred` in `EXTERNAL_ACTIVATION_REGISTER.md`
 
 This PRD normalizes the Product Owner-supplied M003 source requirements to the approved Project
 Atlas architecture. It preserves the full target capability while separating provider-neutral
-architecture from live account activation. Approval of this document advances the Product gate; it
-does not authorize code, credentials, provider traffic or production release.
+architecture from live account activation. Decision 028 authorizes bounded local/staging code and
+tests; it does not authorize credentials, provider traffic, public activation or production release.
 
 ## 1. Purpose
 
@@ -714,7 +714,7 @@ the provider-neutral architecture in this PRD.
 
 ## Delivery and activation record
 
-- Architecture: draft completed for Product Owner review on 2026-08-09.
-- Local implementation: not authorized and not started.
+- Architecture: independently reviewed candidate completed on 2026-08-09.
+- Local implementation: authorized by Decision 028; written-specification review precedes TDD.
 - External activation: deferred; see `EXTERNAL_ACTIVATION_REGISTER.md`.
 - Operational status: not eligible.
