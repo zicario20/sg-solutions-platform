@@ -62,14 +62,36 @@ export type ChatFailureCode =
   | "expired"
   | "revoked"
   | "conflict"
+  | "command_in_progress"
   | "invalid_transition"
   | "human_active"
   | "content_rejected"
   | "moderation_unavailable"
   | "knowledge_unavailable"
   | "assistant_unavailable"
+  | "clarification_required"
   | "handoff_required"
   | "handoff_unavailable";
+
+export type ChatReasonCode =
+  | "ambiguous"
+  | "government_identifier"
+  | "payment_card"
+  | "bank_account"
+  | "credential"
+  | "markup"
+  | "abuse"
+  | "safety"
+  | "policy_required"
+  | "visitor_requested"
+  | "complaint"
+  | "assistant_unavailable"
+  | "disabled"
+  | "timeout"
+  | "provider_error"
+  | "response_invalid"
+  | "response_rejected"
+  | "unknown";
 
 export type ChatCommandSuccess = {
   ok: true;
@@ -80,7 +102,7 @@ export type ChatCommandSuccess = {
 export type ChatCommandFailure = {
   ok: false;
   code: ChatFailureCode;
-  reason?: string;
+  reason?: ChatReasonCode;
   projection?: PublicChatProjection;
 };
 
@@ -91,10 +113,27 @@ export type PublicSessionContext = {
   correlationId: string;
 };
 
-export type ConversationCommit = {
+export type CommandReservation = {
+  conversationId: string;
+  expectedVersion: number;
+  idempotencyKey: string;
+  leaseExpiresAt: Date;
+};
+
+export type CommandClaimResult =
+  | { status: "claimed"; leaseToken: string }
+  | { status: "completed"; result: ChatCommandResult }
+  | { status: "in_progress" }
+  | { status: "conflict" };
+
+export type ClaimedCommandAdvance = {
   conversation: PublicChatConversation;
   expectedVersion: number;
   idempotencyKey: string;
+  leaseToken: string;
+};
+
+export type CommandCompletion = ClaimedCommandAdvance & {
   result: ChatCommandResult;
 };
 
@@ -105,7 +144,14 @@ export interface ConversationRepository {
     conversationId: string,
     idempotencyKey: string,
   ): Promise<ChatCommandResult | null>;
-  commit(command: ConversationCommit): Promise<"committed" | "conflict">;
+  claimCommand(command: CommandReservation): Promise<CommandClaimResult>;
+  waitForCommandResult(
+    conversationId: string,
+    idempotencyKey: string,
+    waitUntil: Date,
+  ): Promise<ChatCommandResult | null>;
+  advanceClaimedCommand(command: ClaimedCommandAdvance): Promise<"advanced" | "conflict">;
+  completeCommand(command: CommandCompletion): Promise<"completed" | "conflict">;
 }
 
 export type AuditEvent = {
@@ -121,7 +167,7 @@ export type AuditEvent = {
   correlationId: string;
   version: number;
   locale: ChatLocale;
-  reason?: string;
+  reason?: ChatReasonCode;
 };
 
 export interface AuditPort {

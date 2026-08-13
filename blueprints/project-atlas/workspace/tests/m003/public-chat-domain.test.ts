@@ -3,7 +3,9 @@ import {
   type AuditEvent,
   type ChatCommandResult,
   type ChatModelProvider,
-  type ConversationCommit,
+  type ClaimedCommandAdvance,
+  type CommandCompletion,
+  type CommandReservation,
   type ConversationRepository,
   canTransitionConversation,
   createConversationService,
@@ -11,13 +13,18 @@ import {
   type ModerationProvider,
   type PublicChatConversation,
   type PublicKnowledgeProvider,
-} from "../../packages/domain/src/public-chat";
+} from "../../packages/domain/src/public-chat/index.ts";
 
 const NOW = new Date("2026-08-12T18:00:00.000Z");
 
 class MemoryConversationRepository implements ConversationRepository {
   readonly records = new Map<string, PublicChatConversation>();
   readonly results = new Map<string, ChatCommandResult>();
+  readonly reservations = new Map<
+    string,
+    { leaseToken: string; waiters: Array<(result: ChatCommandResult) => void> }
+  >();
+  readonly statusWrites: Array<{ status: string; version: number }> = [];
   commitCount = 0;
 
   async create(conversation: PublicChatConversation): Promise<void> {
@@ -39,17 +46,72 @@ class MemoryConversationRepository implements ConversationRepository {
     return structuredClone(this.results.get(`${conversationId}:${idempotencyKey}`) ?? null);
   }
 
-  async commit(command: ConversationCommit): Promise<"committed" | "conflict"> {
-    const current = this.records.get(command.conversation.id);
-    if (!current || current.version !== command.expectedVersion) return "conflict";
+  async claimCommand(command: CommandReservation) {
+    const resultKey = `${command.conversationId}:${command.idempotencyKey}`;
+    const result = this.results.get(resultKey);
+    if (result) return { status: "completed", result: structuredClone(result) } as const;
+    if (this.reservations.has(resultKey)) return { status: "in_progress" } as const;
 
+    const current = this.records.get(command.conversationId);
+    if (!current || current.version !== command.expectedVersion)
+      return { status: "conflict" } as const;
+    const leaseToken = `lease:${resultKey}`;
+    this.reservations.set(resultKey, { leaseToken, waiters: [] });
+    return { status: "claimed", leaseToken } as const;
+  }
+
+  async waitForCommandResult(conversationId: string, idempotencyKey: string) {
+    const resultKey = `${conversationId}:${idempotencyKey}`;
+    const completed = this.results.get(resultKey);
+    if (completed) return structuredClone(completed);
+    const reservation = this.reservations.get(resultKey);
+    if (!reservation) return null;
+    return new Promise<ChatCommandResult>((resolve) => reservation.waiters.push(resolve));
+  }
+
+  async advanceClaimedCommand(command: ClaimedCommandAdvance) {
     const resultKey = `${command.conversation.id}:${command.idempotencyKey}`;
-    if (this.results.has(resultKey)) return "conflict";
+    const reservation = this.reservations.get(resultKey);
+    const current = this.records.get(command.conversation.id);
+    if (
+      !reservation ||
+      reservation.leaseToken !== command.leaseToken ||
+      !current ||
+      current.version !== command.expectedVersion
+    ) {
+      return "conflict" as const;
+    }
+    this.commitCount += 1;
+    this.records.set(command.conversation.id, structuredClone(command.conversation));
+    this.statusWrites.push({
+      status: command.conversation.status,
+      version: command.conversation.version,
+    });
+    return "advanced" as const;
+  }
 
+  async completeCommand(command: CommandCompletion) {
+    const resultKey = `${command.conversation.id}:${command.idempotencyKey}`;
+    const reservation = this.reservations.get(resultKey);
+    const current = this.records.get(command.conversation.id);
+    if (
+      !reservation ||
+      reservation.leaseToken !== command.leaseToken ||
+      !current ||
+      current.version !== command.expectedVersion
+    ) {
+      return "conflict" as const;
+    }
     this.commitCount += 1;
     this.records.set(command.conversation.id, structuredClone(command.conversation));
     this.results.set(resultKey, structuredClone(command.result));
-    return "committed";
+    this.statusWrites.push({
+      status: command.conversation.status,
+      version: command.conversation.version,
+    });
+    for (const waiter of reservation.waiters) waiter(structuredClone(command.result));
+    this.reservations.delete(resultKey);
+    return "completed" as const;
   }
 }
 
@@ -63,6 +125,7 @@ function createFixture(overrides?: {
   const auditEvents: AuditEvent[] = [];
   let sequence = 0;
   let modelCalls = 0;
+  let currentNow = new Date(NOW);
 
   const knowledge: PublicKnowledgeProvider =
     overrides?.knowledge ??
@@ -111,12 +174,22 @@ function createFixture(overrides?: {
     model,
     handoff,
     audit: { record: async (event) => void auditEvents.push(structuredClone(event)) },
-    clock: { now: () => NOW },
+    clock: { now: () => new Date(currentNow) },
     ids: { next: (prefix) => `${prefix}_${++sequence}` },
     sessionTtlSeconds: 1_800,
+    commandLeaseSeconds: 30,
+    commandWaitMilliseconds: 5_000,
   });
 
-  return { service, repository, auditEvents, getModelCalls: () => modelCalls };
+  return {
+    service,
+    repository,
+    auditEvents,
+    getModelCalls: () => modelCalls,
+    setNow: (value: Date) => {
+      currentNow = new Date(value);
+    },
+  };
 }
 
 function requireRecord(repository: MemoryConversationRepository, conversationId: string) {
@@ -293,7 +366,50 @@ describe("M003 conversation service", () => {
 
     expect(result).toEqual({ ok: false, code: "moderation_unavailable" });
     expect(fixture.getModelCalls()).toBe(0);
-    expect(fixture.repository.commitCount).toBe(0);
+    expect(requireRecord(fixture.repository, started.id).messages).toEqual([]);
+  });
+
+  it("maps an unbounded provider reason to a closed code without leaking its text", async () => {
+    const sensitiveReason = "provider copied 111-22-3333 and token_secret_value";
+    const fixture = createFixture({
+      moderation: {
+        classify: async () => ({ decision: "reject", reason: sensitiveReason }) as never,
+      },
+    });
+    const started = await startConversation(fixture);
+
+    const result = await fixture.service.acceptMessage({
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_5a" },
+      conversationId: started.id,
+      text: "A normal public question",
+      idempotencyKey: "message_key_0005a",
+      expectedVersion: 1,
+    });
+
+    expect(result).toEqual({ ok: false, code: "content_rejected", reason: "unknown" });
+    expect(JSON.stringify(result)).not.toContain(sensitiveReason);
+    expect(JSON.stringify(fixture.auditEvents)).not.toContain(sensitiveReason);
+    expect(JSON.stringify(requireRecord(fixture.repository, started.id))).not.toContain(
+      sensitiveReason,
+    );
+  });
+
+  it("handles clarify as a bounded deterministic action without calling the model", async () => {
+    const fixture = createFixture({
+      moderation: { classify: async () => ({ decision: "clarify", reason: "ambiguous" }) },
+    });
+    const started = await startConversation(fixture);
+
+    const result = await fixture.service.acceptMessage({
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_5aa" },
+      conversationId: started.id,
+      text: "Help",
+      idempotencyKey: "message_key_0005aa",
+      expectedVersion: 1,
+    });
+
+    expect(result).toEqual({ ok: false, code: "clarification_required", reason: "ambiguous" });
+    expect(fixture.getModelCalls()).toBe(0);
   });
 
   it("maps a thrown moderation dependency error to a safe unavailable result", async () => {
@@ -393,6 +509,100 @@ describe("M003 conversation service", () => {
     expect(JSON.stringify(result)).not.toContain("attacker.example");
   });
 
+  it.each([
+    { label: "markup", text: "<script>unsafe()</script>" },
+    { label: "control character", text: "unsafe\u0085response" },
+    { label: "oversized text", text: "a".repeat(4_001) },
+  ])("fails closed before persisting a model response containing $label", async ({ text }) => {
+    const fixture = createFixture({
+      model: {
+        respond: async () => ({ status: "answered", text, citations: [] }),
+      },
+    });
+    const started = await startConversation(fixture);
+
+    const result = await fixture.service.acceptMessage({
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_5f" },
+      conversationId: started.id,
+      text: "Can you help?",
+      idempotencyKey: `message_key_0005f_${text.length}`,
+      expectedVersion: 1,
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      code: "assistant_unavailable",
+      reason: "response_invalid",
+    });
+    expect(JSON.stringify(requireRecord(fixture.repository, started.id))).not.toContain(text);
+  });
+
+  it("renews expiry from the last confirmed activity instead of using an absolute start deadline", async () => {
+    const fixture = createFixture();
+    const started = await startConversation(fixture);
+    fixture.setNow(new Date("2026-08-12T18:29:00.000Z"));
+
+    const accepted = await fixture.service.acceptMessage({
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_5g" },
+      conversationId: started.id,
+      text: "Can you help?",
+      idempotencyKey: "message_key_0005g",
+      expectedVersion: 1,
+    });
+    expect(accepted.ok && accepted.projection.expiresAt.toISOString()).toBe(
+      "2026-08-12T18:59:00.000Z",
+    );
+
+    fixture.setNow(new Date("2026-08-12T18:31:00.000Z"));
+    expect(
+      (await fixture.service.get({ conversationId: started.id, sessionHash: "session_hash_a" })).ok,
+    ).toBe(true);
+    fixture.setNow(new Date("2026-08-12T19:00:00.000Z"));
+    expect(
+      await fixture.service.get({ conversationId: started.id, sessionHash: "session_hash_a" }),
+    ).toEqual({ ok: false, code: "expired" });
+  });
+
+  it("reserves an idempotency key before model work so concurrent duplicates share one result", async () => {
+    let modelCalls = 0;
+    let releaseModel: (() => void) | undefined;
+    let announceModel: (() => void) | undefined;
+    const modelStarted = new Promise<void>((resolve) => {
+      announceModel = resolve;
+    });
+    const modelGate = new Promise<void>((resolve) => {
+      releaseModel = resolve;
+    });
+    const fixture = createFixture({
+      model: {
+        respond: async ({ sources }) => {
+          modelCalls += 1;
+          announceModel?.();
+          await modelGate;
+          return { status: "answered", text: "Bounded answer", citations: sources };
+        },
+      },
+    });
+    const started = await startConversation(fixture);
+    const command = {
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_race_1" },
+      conversationId: started.id,
+      text: "Can you help?",
+      idempotencyKey: "message_race_key_1",
+      expectedVersion: 1,
+    };
+
+    const firstPromise = fixture.service.acceptMessage(command);
+    await modelStarted;
+    const secondPromise = fixture.service.acceptMessage(command);
+    releaseModel?.();
+    const [first, second] = await Promise.all([firstPromise, secondPromise]);
+
+    expect(modelCalls).toBe(1);
+    expect(first.ok && first.replayed).toBe(false);
+    expect(second).toEqual(first.ok ? { ...first, replayed: true } : first);
+  });
+
   it("claims a queued handoff only after receiving a durable receipt", async () => {
     const fixture = createFixture();
     const started = await startConversation(fixture);
@@ -409,6 +619,10 @@ describe("M003 conversation service", () => {
 
     expect(result.ok && result.projection.status).toBe("waiting_for_human");
     expect(fixture.repository.records.get(started.id)?.handoffReceiptId).toBe("handoff_receipt_1");
+    expect(fixture.repository.statusWrites).toEqual([
+      { status: "human_requested", version: 2 },
+      { status: "waiting_for_human", version: 3 },
+    ]);
   });
 
   it("keeps handoff unconfirmed when no durable receipt exists", async () => {
@@ -456,6 +670,48 @@ describe("M003 conversation service", () => {
     expect(result).toMatchObject({ ok: false, code: "handoff_unavailable" });
     expect(JSON.stringify(result)).not.toContain("private handoff provider detail");
     expect(requireRecord(fixture.repository, started.id).status).toBe("human_requested");
+  });
+
+  it("reserves an idempotency key before handoff so concurrent duplicates enqueue once", async () => {
+    let handoffCalls = 0;
+    let releaseHandoff: (() => void) | undefined;
+    let announceHandoff: (() => void) | undefined;
+    const handoffStarted = new Promise<void>((resolve) => {
+      announceHandoff = resolve;
+    });
+    const handoffGate = new Promise<void>((resolve) => {
+      releaseHandoff = resolve;
+    });
+    const fixture = createFixture({
+      handoff: {
+        enqueue: async () => {
+          handoffCalls += 1;
+          announceHandoff?.();
+          await handoffGate;
+          return { status: "queued", receiptId: "handoff_race_receipt", queuedAt: NOW };
+        },
+      },
+    });
+    const started = await startConversation(fixture);
+    const record = requireRecord(fixture.repository, started.id);
+    fixture.repository.records.set(started.id, { ...record, status: "ai_active" });
+    const command = {
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_race_2" },
+      conversationId: started.id,
+      reason: "visitor_requested" as const,
+      idempotencyKey: "handoff_race_key_1",
+      expectedVersion: 1,
+    };
+
+    const firstPromise = fixture.service.requestHandoff(command);
+    await handoffStarted;
+    const secondPromise = fixture.service.requestHandoff(command);
+    releaseHandoff?.();
+    const [first, second] = await Promise.all([firstPromise, secondPromise]);
+
+    expect(handoffCalls).toBe(1);
+    expect(first.ok && first.replayed).toBe(false);
+    expect(second).toEqual(first.ok ? { ...first, replayed: true } : first);
   });
 
   it("closes a conversation idempotently without adding a second transition", async () => {

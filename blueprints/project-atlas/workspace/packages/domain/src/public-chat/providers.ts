@@ -10,11 +10,24 @@ export interface PublicKnowledgeProvider {
   getByIds(input: { locale: ChatLocale; ids: string[] }): Promise<PublicCitation[]>;
 }
 
+export type ModerationReason =
+  | "ambiguous"
+  | "government_identifier"
+  | "payment_card"
+  | "bank_account"
+  | "credential"
+  | "markup"
+  | "abuse"
+  | "safety"
+  | "policy_required"
+  | "complaint"
+  | "unknown";
+
 export type ModerationResult =
   | { decision: "allow" }
-  | { decision: "clarify"; reason: string }
-  | { decision: "handoff"; reason: string }
-  | { decision: "reject"; reason: string }
+  | { decision: "clarify"; reason: ModerationReason }
+  | { decision: "handoff"; reason: ModerationReason }
+  | { decision: "reject"; reason: ModerationReason }
   | { decision: "unavailable" };
 
 export interface ModerationProvider {
@@ -37,11 +50,18 @@ export type HandoffResult =
   | { status: "queued"; receiptId: string; queuedAt: Date }
   | { status: "unavailable" };
 
+export type HandoffReason =
+  | "visitor_requested"
+  | "complaint"
+  | "safety"
+  | "policy_required"
+  | "assistant_unavailable";
+
 export interface HumanHandoffPort {
   enqueue(input: {
     conversationId: string;
     locale: ChatLocale;
-    reason: string;
+    reason: HandoffReason;
     correlationId: string;
     idempotencyKey: string;
   }): Promise<HandoffResult>;
