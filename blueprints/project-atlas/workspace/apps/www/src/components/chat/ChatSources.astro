@@ -1,0 +1,11 @@
+---
+interface Props {
+  heading: string;
+}
+const { heading } = Astro.props;
+---
+
+<section class="public-chat-sources" data-public-chat-sources hidden aria-labelledby="chat-sources-title">
+  <h3 id="chat-sources-title">{heading}</h3>
+  <ul data-public-chat-source-list></ul>
+</section>

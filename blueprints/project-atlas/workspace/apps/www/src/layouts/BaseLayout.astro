@@ -1,4 +1,6 @@
 ---
+import { readPublicChatConfig } from "@atlas/config";
+import ChatExperience from "../components/chat/ChatExperience.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import { SITE_CHROME } from "../content/site-chrome";
@@ -10,15 +12,30 @@ interface Props {
   page: PublicPage;
   alternatePath?: string;
   structuredData?: object;
+  suppressFloatingChat?: boolean;
 }
-const { page, alternatePath, structuredData: providedStructuredData } = Astro.props;
+const {
+  page,
+  alternatePath,
+  structuredData: providedStructuredData,
+  suppressFloatingChat = false,
+} = Astro.props;
 const copy = SITE_CHROME[page.locale];
 const origin = Astro.site?.toString() ?? "https://www.sgsllc.com";
 const seo = createSeoProjection(page, origin, alternatePath);
-const structuredData = providedStructuredData ?? createStructuredData(page, origin);
+const structuredData = providedStructuredData ?? createStructuredData(page, origin, alternatePath);
 const serializedStructuredData = serializeStructuredData(structuredData);
 const esPage = page.locale === "es" ? seo.canonical : seo.alternate;
 const enPage = page.locale === "en" ? seo.canonical : seo.alternate;
+const chat = readPublicChatConfig({
+  PUBLIC_CHAT_STATE: import.meta.env.PUBLIC_CHAT_STATE,
+  PUBLIC_CHAT_ENABLED: import.meta.env.PUBLIC_CHAT_ENABLED,
+  PUBLIC_CHAT_CANONICAL_ORIGIN: import.meta.env.PUBLIC_CHAT_CANONICAL_ORIGIN,
+  PUBLIC_CHAT_SESSION_TTL_SECONDS: import.meta.env.PUBLIC_CHAT_SESSION_TTL_SECONDS,
+  PUBLIC_CHAT_MAX_MESSAGE_CHARACTERS: import.meta.env.PUBLIC_CHAT_MAX_MESSAGE_CHARACTERS,
+  PUBLIC_CHAT_ACTIVATION_READY_APPROVAL: import.meta.env.PUBLIC_CHAT_ACTIVATION_READY_APPROVAL,
+  PUBLIC_CHAT_OPERATIONAL_APPROVAL: import.meta.env.PUBLIC_CHAT_OPERATIONAL_APPROVAL,
+});
 ---
 
 <!doctype html>
@@ -52,6 +69,7 @@ const enPage = page.locale === "en" ? seo.canonical : seo.alternate;
     <SiteHeader page={page} alternatePath={alternatePath} />
     <main id="main-content"><slot /></main>
     <SiteFooter locale={page.locale} />
+    {chat.enabled && !suppressFloatingChat && <ChatExperience locale={page.locale} />}
     <script is:inline src="/scripts/mobile-navigation.js" defer></script>
   </body>
 </html>

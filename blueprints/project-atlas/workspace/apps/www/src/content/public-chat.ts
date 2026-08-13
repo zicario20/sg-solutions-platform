@@ -23,6 +23,24 @@ type PublicChatCopy = {
   errors: Record<keyof typeof sharedKeys.errors, string>;
   handoff: { requested: string; queued: string; unavailable: string };
   orientation: { matches: string; noMatch: string };
+  ui: {
+    launcher: string;
+    title: string;
+    automated: string;
+    close: string;
+    language: string;
+    acknowledge: string;
+    start: string;
+    placeholder: string;
+    send: string;
+    sending: string;
+    statusReady: string;
+    sources: string;
+    helpCenter: string;
+    fullPage: string;
+    newConversation: string;
+    characterCount: string;
+  };
 };
 
 export const PUBLIC_CHAT_COPY: Record<"es" | "en", PublicChatCopy> = {
@@ -55,6 +73,24 @@ export const PUBLIC_CHAT_COPY: Record<"es" | "en", PublicChatCopy> = {
       noMatch:
         "No encontré una respuesta pública vigente para esa pregunta. Puedes explorar el Centro de Ayuda o solicitar atención humana.",
     },
+    ui: {
+      launcher: "Abrir asistente de SG Solutions",
+      title: "Asistente de SG Solutions",
+      automated: "Asistente automatizado",
+      close: "Cerrar chat",
+      language: "English",
+      acknowledge: "Entiendo y acepto estas condiciones para comenzar.",
+      start: "Empezar conversación",
+      placeholder: "Escribe tu pregunta sin información sensible",
+      send: "Enviar",
+      sending: "Enviando…",
+      statusReady: "Listo para ayudarte.",
+      sources: "Fuentes públicas",
+      helpCenter: "Visitar el Centro de Ayuda",
+      fullPage: "Abrir chat en página completa",
+      newConversation: "Nueva conversación",
+      characterCount: "caracteres disponibles",
+    },
   },
   en: {
     notice:
@@ -84,6 +120,24 @@ export const PUBLIC_CHAT_COPY: Record<"es" | "en", PublicChatCopy> = {
       matches: "I found these public resources that may help orient you:",
       noMatch:
         "I could not find a current public answer for that question. You can explore the Help Center or request human support.",
+    },
+    ui: {
+      launcher: "Open the SG Solutions assistant",
+      title: "SG Solutions Assistant",
+      automated: "Automated assistant",
+      close: "Close chat",
+      language: "Español",
+      acknowledge: "I understand and accept these conditions to begin.",
+      start: "Start conversation",
+      placeholder: "Write your question without sensitive information",
+      send: "Send",
+      sending: "Sending…",
+      statusReady: "Ready to help.",
+      sources: "Public sources",
+      helpCenter: "Visit the Help Center",
+      fullPage: "Open chat on a full page",
+      newConversation: "New conversation",
+      characterCount: "characters available",
     },
   },
 };

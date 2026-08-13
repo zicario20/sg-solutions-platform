@@ -1,0 +1,21 @@
+---
+import type { ChatLocale } from "@atlas/domain";
+import "../../styles/public-chat.css";
+import ChatLauncher from "./ChatLauncher.astro";
+import ChatPanel from "./ChatPanel.astro";
+
+interface Props {
+  locale: ChatLocale;
+  mode?: "floating" | "page";
+}
+const { locale, mode = "floating" } = Astro.props;
+const launcherLabel =
+  locale === "es" ? "Abrir asistente de SG Solutions" : "Open the SG Solutions assistant";
+---
+
+<div class:list={["public-chat", { "public-chat--page": mode === "page" }]} data-public-chat-root data-locale={locale}>
+  {mode === "floating" && <ChatLauncher label={launcherLabel} />}
+  <ChatPanel locale={locale} mode={mode} />
+</div>
+
+<script src="../../scripts/public-chat.ts"></script>

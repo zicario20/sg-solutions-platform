@@ -30,8 +30,12 @@ export function createSeoProjection(
   };
 }
 
-export function createStructuredData(page: PublicPage, origin: string): object {
-  const seo = createSeoProjection(page, origin);
+export function createStructuredData(
+  page: PublicPage,
+  origin: string,
+  alternatePath?: string,
+): object {
+  const seo = createSeoProjection(page, origin, alternatePath);
   const organization = {
     "@type": "Organization",
     name: "SG Solutions LLC",

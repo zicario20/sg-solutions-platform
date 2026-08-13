@@ -1,0 +1,52 @@
+---
+import { readPublicChatConfig } from "@atlas/config";
+import ChatExperience from "../../components/chat/ChatExperience.astro";
+import type { PublicPage } from "../../domain/public-site";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+const page: PublicPage = {
+  routeKey: "chat",
+  locale: "en",
+  path: "/en/chat/",
+  kind: "standard",
+  title: "SG Solutions Assistant",
+  description: "Automated orientation about SG Solutions services and public resources.",
+  hero: {
+    eyebrow: "General orientation",
+    heading: "How can we guide you?",
+    summary: "Explore services and public resources. Do not share sensitive information.",
+  },
+  sections: [],
+  publicationState: "review-required",
+};
+const chat = readPublicChatConfig({
+  PUBLIC_CHAT_STATE: import.meta.env.PUBLIC_CHAT_STATE,
+  PUBLIC_CHAT_ENABLED: import.meta.env.PUBLIC_CHAT_ENABLED,
+  PUBLIC_CHAT_CANONICAL_ORIGIN: import.meta.env.PUBLIC_CHAT_CANONICAL_ORIGIN,
+  PUBLIC_CHAT_SESSION_TTL_SECONDS: import.meta.env.PUBLIC_CHAT_SESSION_TTL_SECONDS,
+  PUBLIC_CHAT_MAX_MESSAGE_CHARACTERS: import.meta.env.PUBLIC_CHAT_MAX_MESSAGE_CHARACTERS,
+  PUBLIC_CHAT_ACTIVATION_READY_APPROVAL: import.meta.env.PUBLIC_CHAT_ACTIVATION_READY_APPROVAL,
+  PUBLIC_CHAT_OPERATIONAL_APPROVAL: import.meta.env.PUBLIC_CHAT_OPERATIONAL_APPROVAL,
+});
+---
+
+<BaseLayout page={page} alternatePath="/chat/" suppressFloatingChat>
+  <section class="chat-page-shell">
+    <div class="chat-page-intro">
+      <p class="section-eyebrow">{page.hero.eyebrow}</p>
+      <h1>{page.hero.heading}</h1>
+      <p>{page.hero.summary}</p>
+    </div>
+    {
+      chat.enabled ? (
+        <ChatExperience locale="en" mode="page" />
+      ) : (
+        <div class="site-container standard-panel">
+          <h2>The assistant is not active yet</h2>
+          <p>In the meantime, visit the Help Center or contact SG Solutions.</p>
+          <p><a class="text-link" href="/en/resources/">Visit the Help Center</a></p>
+        </div>
+      )
+    }
+  </section>
+</BaseLayout>
