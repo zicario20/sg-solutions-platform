@@ -34,6 +34,7 @@ describe("M003 bilingual public chat UI contract", () => {
 
   it("uses safe dynamic rendering and never persists chat state in browser storage", () => {
     const controller = read("apps/www/src/scripts/public-chat.ts");
+    const resumeRoute = read("apps/www/src/pages/api/public/chat/conversations/[id]/resume.ts");
     expect(controller).toContain("textContent");
     expect(controller).not.toMatch(/innerHTML|outerHTML|insertAdjacentHTML/u);
     expect(controller).not.toMatch(/localStorage|sessionStorage|indexedDB/u);
@@ -41,9 +42,12 @@ describe("M003 bilingual public chat UI contract", () => {
     expect(controller).toContain('credentials: "same-origin"');
     expect(controller).toContain("resetConversationUi");
     expect(controller).toContain("resumeConversation");
+    expect(controller).toContain("{ resume: true }");
     expect(controller).toContain("changeConversationLocale");
     expect(controller).toContain("AbortController");
     expect(controller).not.toContain("approvedTransport");
+    expect(resumeRoute).toContain("export const POST");
+    expect(resumeRoute).not.toContain("export const GET");
   });
 
   it("does not expose a permanently clipped focus target inside the modal trap", () => {

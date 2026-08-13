@@ -284,6 +284,7 @@ function initExperience(root: HTMLElement): void {
     try {
       const value = await request(
         `/api/public/chat/conversations/${encodeURIComponent(match[1])}/resume`,
+        { resume: true },
       );
       if (!value.ok || !value.csrfToken) {
         const message = errorText(config.copy, value.ok ? "session_invalid" : value.code);

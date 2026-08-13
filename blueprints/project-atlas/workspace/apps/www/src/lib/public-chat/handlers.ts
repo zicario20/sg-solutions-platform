@@ -385,13 +385,29 @@ export function createConversationHandlers(
     },
 
     async resume(conversationId: string, request: Request): Promise<Response> {
-      if (request.method !== "GET") {
-        return errorResponse("method_not_allowed", 405, correlationId(), { allow: "GET" });
+      if (request.method !== "POST") {
+        return errorResponse("method_not_allowed", 405, correlationId(), { allow: "POST" });
       }
       const authenticated = await requireSession(dependencies, request, false);
       if (!authenticated.ok) return authenticated.response;
       const invalid = validConversationId(conversationId, authenticated.session.correlationId);
       if (invalid) return invalid;
+      const parsed = await parseJson(request);
+      if (
+        !parsed.ok ||
+        typeof parsed.value !== "object" ||
+        parsed.value === null ||
+        Array.isArray(parsed.value) ||
+        Object.keys(parsed.value).length !== 1 ||
+        !("resume" in parsed.value) ||
+        parsed.value.resume !== true
+      ) {
+        return errorResponse(
+          parsed.ok ? "invalid_request" : parsed.tooLarge ? "request_too_large" : "invalid_request",
+          parsed.ok ? 400 : parsed.tooLarge ? 413 : 400,
+          authenticated.session.correlationId,
+        );
+      }
       try {
         const result = await dependencies.service.get({
           conversationId,

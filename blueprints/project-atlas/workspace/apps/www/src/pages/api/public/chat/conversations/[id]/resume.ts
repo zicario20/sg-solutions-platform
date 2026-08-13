@@ -3,5 +3,5 @@ import { getPublicChatRuntime } from "../../../../../../lib/public-chat/runtime.
 
 export const prerender = false;
 
-export const GET: APIRoute = ({ params, request }) =>
+export const POST: APIRoute = ({ params, request }) =>
   getPublicChatRuntime().handlers.resume(params.id ?? "", request);

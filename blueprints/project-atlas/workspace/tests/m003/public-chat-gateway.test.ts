@@ -352,11 +352,14 @@ describe("M003 same-origin public chat gateway", () => {
     const resumed = await fixture.handlers.resume(
       "conversation_1",
       new Request(`${ORIGIN}/api/public/chat/conversations/conversation_1/resume`, {
+        method: "POST",
         headers: {
           cookie: boot.cookie,
-          referer: `${ORIGIN}/en/chat/#conversation=conversation_1`,
+          origin: ORIGIN,
           "sec-fetch-site": "same-origin",
+          "content-type": "application/json",
         },
+        body: JSON.stringify({ resume: true }),
       }),
     );
     const body = (await resumed.json()) as { ok: true; csrfToken: string };
@@ -372,14 +375,37 @@ describe("M003 same-origin public chat gateway", () => {
     const response = await fixture.handlers.resume(
       "conversation_1",
       new Request(`${ORIGIN}/api/public/chat/conversations/conversation_1/resume`, {
+        method: "POST",
         headers: {
           cookie: boot.cookie,
-          referer: "https://evil.example/",
+          origin: "https://evil.example",
           "sec-fetch-site": "cross-site",
+          "content-type": "application/json",
         },
+        body: JSON.stringify({ resume: true }),
       }),
     );
     expect(response.status).toBe(403);
+    expect(fixture.calls).not.toContainEqual(expect.objectContaining({ name: "get" }));
+  });
+
+  it("rejects a resume command without the explicit bounded JSON intent", async () => {
+    const fixture = dependencies();
+    const boot = await bootstrap(fixture);
+    const response = await fixture.handlers.resume(
+      "conversation_1",
+      new Request(`${ORIGIN}/api/public/chat/conversations/conversation_1/resume`, {
+        method: "POST",
+        headers: {
+          cookie: boot.cookie,
+          origin: ORIGIN,
+          "sec-fetch-site": "same-origin",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ resume: false }),
+      }),
+    );
+    expect(response.status).toBe(400);
     expect(fixture.calls).not.toContainEqual(expect.objectContaining({ name: "get" }));
   });
 
