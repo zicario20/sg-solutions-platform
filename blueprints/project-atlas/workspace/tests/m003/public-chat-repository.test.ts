@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   deserializePublicChatCommandResult,
+  isValidPublicChatAdvanceVersion,
+  isValidPublicChatCompletionVersion,
   serializePublicChatCommandResult,
 } from "../../packages/database/src/postgres-public-chat-store.ts";
 import {
@@ -298,5 +300,37 @@ describe("M003 Postgres repository behavior", () => {
     expect(() =>
       deserializePublicChatCommandResult({ schemaVersion: 1, result: { ok: true } }),
     ).toThrowError("PUBLIC_CHAT_COMMAND_RESULT_INVALID");
+  });
+
+  it("requires exactly one version advance while completion permits unchanged failure results", () => {
+    const base = conversation({ version: 2 });
+    const command = {
+      conversation: base,
+      expectedVersion: 1,
+      idempotencyKey: "message_key_version",
+      leaseToken: "lease",
+      result: { ok: false, code: "conflict" } as const,
+    };
+    expect(isValidPublicChatAdvanceVersion(1, command)).toBe(true);
+    expect(
+      isValidPublicChatAdvanceVersion(1, {
+        ...command,
+        conversation: conversation({ version: 1 }),
+      }),
+    ).toBe(false);
+    expect(
+      isValidPublicChatAdvanceVersion(1, {
+        ...command,
+        conversation: conversation({ version: 3 }),
+      }),
+    ).toBe(false);
+    expect(isValidPublicChatCompletionVersion(1, command)).toBe(true);
+    expect(
+      isValidPublicChatCompletionVersion(1, {
+        ...command,
+        conversation: conversation({ version: 1 }),
+        result: { ok: false, code: "conflict" },
+      }),
+    ).toBe(true);
   });
 });

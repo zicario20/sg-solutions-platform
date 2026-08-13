@@ -673,6 +673,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
           correlationId: input.context.correlationId,
           version: waiting.version,
           locale: previous.locale,
+          reason,
         });
       }
       return completed;

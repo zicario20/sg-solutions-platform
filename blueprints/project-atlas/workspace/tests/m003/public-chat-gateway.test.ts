@@ -151,6 +151,14 @@ describe("M003 same-origin public chat gateway", () => {
     });
   });
 
+  it("accepts a same-origin request when Fetch Metadata is unavailable", async () => {
+    const fixture = dependencies();
+    const response = await fixture.bootstrap(
+      new Request(`${ORIGIN}/api/public/chat/bootstrap`, { headers: { origin: ORIGIN } }),
+    );
+    expect(response.status).toBe(200);
+  });
+
   it("rejects credentialed CORS preflight", async () => {
     const fixture = dependencies();
     const response = await fixture.bootstrap(
@@ -235,6 +243,144 @@ describe("M003 same-origin public chat gateway", () => {
       }),
     );
     expect(oversized.status).toBe(413);
+
+    const streamedOversized = await fixture.handlers.start(
+      new Request(`${ORIGIN}/api/public/chat/conversations`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ value: "x".repeat(70_000) }),
+      }),
+    );
+    expect(streamedOversized.status).toBe(413);
+
+    const wrongType = await fixture.handlers.start(
+      new Request(`${ORIGIN}/api/public/chat/conversations`, {
+        method: "POST",
+        headers: { ...headers, "content-type": "text/plain" },
+        body: "{}",
+      }),
+    );
+    expect(wrongType.status).toBe(400);
+  });
+
+  it("rejects duplicate session cookies and invalid conversation identifiers", async () => {
+    const fixture = dependencies();
+    const boot = await bootstrap(fixture);
+    const duplicateCookie = `${boot.cookie}; ${boot.cookie}`;
+    const response = await fixture.handlers.start(
+      mutationRequest(
+        "/api/public/chat/conversations",
+        { locale: "es", noticeVersion: "notice.v1", noticeAcknowledged: true },
+        { cookie: duplicateCookie, csrfToken: boot.json.csrfToken },
+      ),
+    );
+    expect(response.status).toBe(401);
+
+    const invalidId = await fixture.handlers.get(
+      "../private",
+      new Request(`${ORIGIN}/api/public/chat/conversations/private`, {
+        headers: { origin: ORIGIN, cookie: boot.cookie },
+      }),
+    );
+    expect(invalidId.status).toBe(400);
+    expect(fixture.calls).toHaveLength(0);
+  });
+
+  it("rotates the session and CSRF credentials after a successful handoff", async () => {
+    const fixture = dependencies();
+    const boot = await bootstrap(fixture);
+    const response = await fixture.handlers.handoff(
+      "conversation_1",
+      mutationRequest(
+        "/api/public/chat/conversations/conversation_1/handoff",
+        {
+          reason: "visitor_requested",
+          idempotencyKey: "handoff_key_0001",
+          expectedVersion: 1,
+        },
+        { cookie: boot.cookie, csrfToken: boot.json.csrfToken },
+      ),
+    );
+    const result = (await response.json()) as { ok: true; csrfToken: string };
+    const nextCookie = response.headers.get("set-cookie")?.split(";")[0] ?? "";
+    expect(response.status).toBe(200);
+    expect(result.csrfToken).toMatch(/^opaque_/u);
+    expect(result.csrfToken).not.toBe(boot.json.csrfToken);
+    expect(nextCookie).not.toBe(boot.cookie);
+
+    const oldCredential = await fixture.handlers.start(
+      mutationRequest(
+        "/api/public/chat/conversations",
+        { locale: "es", noticeVersion: "notice.v1", noticeAcknowledged: true },
+        { cookie: boot.cookie, csrfToken: boot.json.csrfToken },
+      ),
+    );
+    expect(oldCredential.status).toBe(401);
+
+    const newCredential = await fixture.handlers.start(
+      mutationRequest(
+        "/api/public/chat/conversations",
+        { locale: "es", noticeVersion: "notice.v1", noticeAcknowledged: true },
+        { cookie: nextCookie, csrfToken: result.csrfToken },
+      ),
+    );
+    expect(newCredential.status).toBe(201);
+  });
+
+  it("revokes the anonymous session and expires its cookie after close", async () => {
+    const fixture = dependencies();
+    const boot = await bootstrap(fixture);
+    const response = await fixture.handlers.close(
+      "conversation_1",
+      mutationRequest(
+        "/api/public/chat/conversations/conversation_1/close",
+        { idempotencyKey: "close_key_0001", expectedVersion: 1 },
+        { cookie: boot.cookie, csrfToken: boot.json.csrfToken },
+      ),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
+
+    const replay = await fixture.handlers.start(
+      mutationRequest(
+        "/api/public/chat/conversations",
+        { locale: "es", noticeVersion: "notice.v1", noticeAcknowledged: true },
+        { cookie: boot.cookie, csrfToken: boot.json.csrfToken },
+      ),
+    );
+    expect(replay.status).toBe(401);
+  });
+
+  it("rate-limits unauthenticated traffic before session lookup and ignores spoofed forwarding", async () => {
+    let authenticationCalls = 0;
+    const fixture = dependencies();
+    const handlers = createConversationHandlers({
+      canonicalOrigin: ORIGIN,
+      enabled: true,
+      sessions: {
+        ...fixture.sessions,
+        async authenticate() {
+          authenticationCalls += 1;
+          return { ok: false as const, code: "session_invalid" as const };
+        },
+      },
+      rateLimiter: createMemoryRateLimiter({ limit: 1, windowSeconds: 60, now: () => NOW }),
+      networkBucketSecret: "test-only-network-bucket-secret-32-bytes",
+      service: {
+        start: async () => ({ ok: false, code: "conflict" as const }),
+        get: async () => ({ ok: false, code: "not_found" as const }),
+        acceptMessage: async () => ({ ok: false, code: "conflict" as const }),
+        requestHandoff: async () => ({ ok: false, code: "conflict" as const }),
+        close: async () => ({ ok: false, code: "conflict" as const }),
+      },
+    });
+    const request = (spoofed: string) =>
+      new Request(`${ORIGIN}/api/public/chat/conversations/conversation_1`, {
+        headers: { origin: ORIGIN, "x-forwarded-for": spoofed },
+      });
+    expect((await handlers.get("conversation_1", request("198.51.100.1"))).status).toBe(401);
+    expect((await handlers.get("conversation_1", request("203.0.113.5"))).status).toBe(429);
+    expect(authenticationCalls).toBe(1);
   });
 
   it("rejects revoked and expired cookies as indistinguishable sessions", async () => {

@@ -7,6 +7,8 @@ import {
   findPublicChatSessionByHash,
   type PublicChatSql,
   registerPublicChatSession,
+  revokePublicChatSession,
+  rotatePublicChatSessionSecrets,
 } from "@atlas/database";
 import {
   type AuditEvent,
@@ -98,6 +100,9 @@ function postgresSessionStore(sql: PublicChatSql): PublicChatSessionStore {
       });
     },
     findBySessionHash: (sessionHash) => findPublicChatSessionByHash(sql, sessionHash),
+    rotateSecrets: (currentSessionHash, next) =>
+      rotatePublicChatSessionSecrets(sql, { currentSessionHash, ...next }),
+    revoke: (sessionHash, revokedAt) => revokePublicChatSession(sql, sessionHash, revokedAt),
   };
 }
 
@@ -127,7 +132,10 @@ function createRuntime(): Runtime {
     };
   }
 
-  const databaseUrl = import.meta.env.PUBLIC_CHAT_DATABASE_URL;
+  if (import.meta.env.PUBLIC_CHAT_DATABASE_URL) {
+    throw new Error("PUBLIC_CHAT_DATABASE_CREDENTIAL_MUST_BE_SERVER_ONLY");
+  }
+  const databaseUrl = import.meta.env.CHAT_DATABASE_URL;
   if (!databaseUrl) throw new Error("PUBLIC_CHAT_DATABASE_UNAVAILABLE");
   const sql = createPublicChatSql(databaseUrl);
   const knowledge = createM002KnowledgeProvider(HELP_CONTENT, new Date());

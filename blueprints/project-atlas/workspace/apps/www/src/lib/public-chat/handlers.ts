@@ -6,7 +6,11 @@ import {
   parseStartConversation,
 } from "@atlas/validation";
 import { domainResponse, errorResponse, jsonResponse } from "./http-responses.ts";
-import { type PublicChatSessionSecurity, serializePublicChatCookie } from "./session-security.ts";
+import {
+  expirePublicChatCookie,
+  type PublicChatSessionSecurity,
+  serializePublicChatCookie,
+} from "./session-security.ts";
 
 const MAX_JSON_BYTES = 65_536;
 const CONVERSATION_ID = /^[a-z][a-z0-9_-]{1,127}$/u;
@@ -81,9 +85,10 @@ function requestGuard(request: Request, canonicalOrigin: string): Response | nul
   if (request.method === "OPTIONS") {
     return errorResponse("method_not_allowed", 405, correlationId(), { allow: "GET, POST" });
   }
+  const fetchSite = request.headers.get("sec-fetch-site");
   if (
     request.headers.get("origin") !== canonicalOrigin ||
-    request.headers.get("sec-fetch-site") !== "same-origin"
+    (fetchSite && fetchSite !== "same-origin")
   ) {
     return errorResponse("request_forbidden", 403, correlationId());
   }
@@ -91,10 +96,10 @@ function requestGuard(request: Request, canonicalOrigin: string): Response | nul
 }
 
 async function requestBucket(request: Request, secret: string): Promise<string> {
+  // Vercel overwrites this header at the trusted deployment boundary. Do not trust
+  // x-forwarded-for or arbitrary vendor headers supplied by the browser.
   const address =
-    request.headers.get("cf-connecting-ip") ??
-    request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() ??
-    "unidentified";
+    request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() ?? "unidentified";
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -116,10 +121,27 @@ async function parseJson(
     return { ok: false, tooLarge: true };
   }
   try {
-    const body = await request.text();
-    if (new TextEncoder().encode(body).byteLength > MAX_JSON_BYTES) {
-      return { ok: false, tooLarge: true };
+    if (!request.body) return { ok: false, tooLarge: false };
+    const reader = request.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let received = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      received += value.byteLength;
+      if (received > MAX_JSON_BYTES) {
+        await reader.cancel();
+        return { ok: false, tooLarge: true };
+      }
+      chunks.push(value);
     }
+    const bytes = new Uint8Array(received);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    const body = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
     return { ok: true, value: JSON.parse(body) as unknown };
   } catch {
     return { ok: false, tooLarge: false };
@@ -135,6 +157,20 @@ type CommonDependencies = {
   networkBucketSecret: string;
 };
 
+async function consumeNetworkRate(
+  dependencies: CommonDependencies,
+  request: Request,
+): Promise<Response | null> {
+  const rate = await dependencies.rateLimiter.consume(
+    `network:${await requestBucket(request, dependencies.networkBucketSecret)}`,
+  );
+  return rate.allowed
+    ? null
+    : errorResponse("rate_limited", 429, correlationId(), {
+        "retry-after": String(rate.retryAfterSeconds),
+      });
+}
+
 async function requireSession(
   dependencies: CommonDependencies,
   request: Request,
@@ -148,6 +184,8 @@ async function requireSession(
   if (!dependencies.enabled) {
     return { ok: false, response: errorResponse("chat_disabled", 503, correlationId()) };
   }
+  const networkLimited = await consumeNetworkRate(dependencies, request);
+  if (networkLimited) return { ok: false, response: networkLimited };
   const auth = await dependencies.sessions.authenticate(request, { requireCsrf });
   if (!auth.ok) {
     return {
@@ -232,14 +270,8 @@ export function createBootstrapHandler(dependencies: CommonDependencies) {
     const guarded = requestGuard(request, dependencies.canonicalOrigin);
     if (guarded) return guarded;
     if (!dependencies.enabled) return errorResponse("chat_disabled", 503, correlationId());
-    const rate = await dependencies.rateLimiter.consume(
-      `bootstrap:${await requestBucket(request, dependencies.networkBucketSecret)}`,
-    );
-    if (!rate.allowed) {
-      return errorResponse("rate_limited", 429, correlationId(), {
-        "retry-after": String(rate.retryAfterSeconds),
-      });
-    }
+    const networkLimited = await consumeNetworkRate(dependencies, request);
+    if (networkLimited) return networkLimited;
     const session = await dependencies.sessions.bootstrap();
     return jsonResponse(
       { ok: true, csrfToken: session.csrfToken, correlationId: session.correlationId },
@@ -312,15 +344,35 @@ export function createConversationHandlers(
       if (!validated.ok) return validated.response;
       const invalid = validConversationId(conversationId, validated.session.correlationId);
       if (invalid) return invalid;
-      return executeDomain(
-        () =>
-          dependencies.service.requestHandoff({
-            context: validated.session,
-            conversationId,
-            ...validated.input,
-          }),
-        validated.session.correlationId,
-      );
+      try {
+        const result = await dependencies.service.requestHandoff({
+          context: validated.session,
+          conversationId,
+          ...validated.input,
+        });
+        if (!result.ok) return domainResponse(result, validated.session.correlationId);
+        const rotated = await dependencies.sessions.rotate(request);
+        if (!rotated.ok) {
+          return errorResponse("session_invalid", 401, validated.session.correlationId);
+        }
+        return jsonResponse(
+          {
+            ok: true,
+            data: result.projection,
+            correlationId: rotated.correlationId,
+            csrfToken: rotated.csrfToken,
+          },
+          200,
+          {
+            "set-cookie": serializePublicChatCookie(
+              rotated.cookieValue,
+              dependencies.sessionTtlSeconds ?? 1_800,
+            ),
+          },
+        );
+      } catch {
+        return errorResponse("assistant_unavailable", 503, validated.session.correlationId);
+      }
     },
 
     async close(conversationId: string, request: Request): Promise<Response> {
@@ -328,15 +380,22 @@ export function createConversationHandlers(
       if (!validated.ok) return validated.response;
       const invalid = validConversationId(conversationId, validated.session.correlationId);
       if (invalid) return invalid;
-      return executeDomain(
-        () =>
-          dependencies.service.close({
-            context: validated.session,
-            conversationId,
-            ...validated.input,
-          }),
-        validated.session.correlationId,
-      );
+      try {
+        const result = await dependencies.service.close({
+          context: validated.session,
+          conversationId,
+          ...validated.input,
+        });
+        if (!result.ok) return domainResponse(result, validated.session.correlationId);
+        await dependencies.sessions.terminate(request);
+        return jsonResponse(
+          { ok: true, data: result.projection, correlationId: validated.session.correlationId },
+          200,
+          { "set-cookie": expirePublicChatCookie() },
+        );
+      } catch {
+        return errorResponse("assistant_unavailable", 503, validated.session.correlationId);
+      }
     },
   };
 }

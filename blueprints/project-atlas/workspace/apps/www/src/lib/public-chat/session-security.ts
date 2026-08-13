@@ -14,6 +14,11 @@ export type PublicChatSessionRecord = {
 export interface PublicChatSessionStore {
   create(record: PublicChatSessionRecord): Promise<void>;
   findBySessionHash(sessionHash: string): Promise<PublicChatSessionRecord | null>;
+  rotateSecrets(
+    currentSessionHash: string,
+    next: { sessionHash: string; csrfHash: string; expiresAt: Date; updatedAt: Date },
+  ): Promise<PublicChatSessionRecord | null>;
+  revoke(sessionHash: string, revokedAt: Date): Promise<boolean>;
 }
 
 export type MemoryPublicChatSessionStore = PublicChatSessionStore & {
@@ -40,6 +45,17 @@ export type PublicChatSessionSecurity = {
     | { ok: true; session: AuthenticatedPublicChatSession }
     | { ok: false; code: "session_invalid" | "csrf_invalid" }
   >;
+  rotate(request: Request): Promise<
+    | {
+        ok: true;
+        cookieValue: string;
+        csrfToken: string;
+        correlationId: string;
+        expiresAt: Date;
+      }
+    | { ok: false }
+  >;
+  terminate(request: Request): Promise<boolean>;
 };
 
 async function sha256(value: string): Promise<string> {
@@ -84,6 +100,25 @@ export function createMemoryPublicChatSessionStore(): MemoryPublicChatSessionSto
       const record = records.get(sessionHash);
       return record ? structuredClone(record) : null;
     },
+    async rotateSecrets(currentSessionHash, next) {
+      const record = records.get(currentSessionHash);
+      if (!record || record.revokedAt) return null;
+      records.delete(currentSessionHash);
+      const rotated = {
+        ...record,
+        sessionHash: next.sessionHash,
+        csrfHash: next.csrfHash,
+        expiresAt: next.expiresAt,
+      };
+      records.set(rotated.sessionHash, rotated);
+      return structuredClone(rotated);
+    },
+    async revoke(sessionHash, revokedAt) {
+      const record = records.get(sessionHash);
+      if (!record || record.revokedAt) return false;
+      records.set(sessionHash, { ...record, revokedAt });
+      return true;
+    },
     async snapshot() {
       return [...records.values()].map((record) => structuredClone(record));
     },
@@ -102,6 +137,27 @@ export function createPublicChatSessionSecurity(input: {
 }): PublicChatSessionSecurity {
   const now = input.now ?? (() => new Date());
   const randomId = input.randomId ?? defaultRandomId;
+  const authenticate: PublicChatSessionSecurity["authenticate"] = async (request, options) => {
+    const cookieValue = readCookie(request);
+    if (!cookieValue) return { ok: false, code: "session_invalid" };
+    const sessionHash = await sha256(cookieValue);
+    const record = await input.store.findBySessionHash(sessionHash);
+    if (!record || record.revokedAt || record.expiresAt.getTime() <= now().getTime()) {
+      return { ok: false, code: "session_invalid" };
+    }
+    if (options.requireCsrf) {
+      const csrfToken = request.headers.get(PUBLIC_CHAT_CSRF_HEADER);
+      if (!csrfToken || csrfToken.length > 128) return { ok: false, code: "csrf_invalid" };
+      const csrfHash = await sha256(csrfToken);
+      if (!constantTimeEqual(csrfHash, record.csrfHash)) {
+        return { ok: false, code: "csrf_invalid" };
+      }
+    }
+    return {
+      ok: true,
+      session: { sessionHash: record.sessionHash, correlationId: record.correlationId },
+    };
+  };
   return {
     async bootstrap() {
       const createdAt = now();
@@ -121,30 +177,45 @@ export function createPublicChatSessionSecurity(input: {
       return { cookieValue, csrfToken, correlationId, expiresAt };
     },
 
-    async authenticate(request, options) {
-      const cookieValue = readCookie(request);
-      if (!cookieValue) return { ok: false, code: "session_invalid" };
-      const sessionHash = await sha256(cookieValue);
-      const record = await input.store.findBySessionHash(sessionHash);
-      if (!record || record.revokedAt || record.expiresAt.getTime() <= now().getTime()) {
-        return { ok: false, code: "session_invalid" };
-      }
-      if (options.requireCsrf) {
-        const csrfToken = request.headers.get(PUBLIC_CHAT_CSRF_HEADER);
-        if (!csrfToken || csrfToken.length > 128) return { ok: false, code: "csrf_invalid" };
-        const csrfHash = await sha256(csrfToken);
-        if (!constantTimeEqual(csrfHash, record.csrfHash)) {
-          return { ok: false, code: "csrf_invalid" };
-        }
-      }
-      return {
-        ok: true,
-        session: { sessionHash: record.sessionHash, correlationId: record.correlationId },
-      };
+    authenticate,
+
+    async rotate(request) {
+      const authenticated = await authenticate(request, { requireCsrf: true });
+      if (!authenticated.ok) return { ok: false };
+      const cookieValue = randomId();
+      const csrfToken = randomId();
+      const updatedAt = now();
+      const expiresAt = new Date(updatedAt.getTime() + input.ttlSeconds * 1_000);
+      const rotated = await input.store.rotateSecrets(authenticated.session.sessionHash, {
+        sessionHash: await sha256(cookieValue),
+        csrfHash: await sha256(csrfToken),
+        expiresAt,
+        updatedAt,
+      });
+      return rotated
+        ? {
+            ok: true,
+            cookieValue,
+            csrfToken,
+            correlationId: rotated.correlationId,
+            expiresAt,
+          }
+        : { ok: false };
+    },
+
+    async terminate(request) {
+      const authenticated = await authenticate(request, { requireCsrf: true });
+      return authenticated.ok
+        ? input.store.revoke(authenticated.session.sessionHash, now())
+        : false;
     },
   };
 }
 
 export function serializePublicChatCookie(cookieValue: string, maxAgeSeconds: number): string {
   return `${PUBLIC_CHAT_COOKIE_NAME}=${cookieValue}; Secure; HttpOnly; Path=/; SameSite=Lax; Max-Age=${maxAgeSeconds}`;
+}
+
+export function expirePublicChatCookie(): string {
+  return `${PUBLIC_CHAT_COOKIE_NAME}=deleted; Secure; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`;
 }

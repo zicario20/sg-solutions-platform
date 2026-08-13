@@ -489,7 +489,7 @@ function completionAuditEvent(command: CommandCompletion): {
   return { eventName: "chat_message_accepted" };
 }
 
-function validVersion(
+export function isValidPublicChatCompletionVersion(
   currentVersion: number,
   command: ClaimedCommandAdvance | CommandCompletion,
 ): boolean {
@@ -497,6 +497,16 @@ function validVersion(
     currentVersion === command.expectedVersion &&
     (command.conversation.version === command.expectedVersion ||
       command.conversation.version === command.expectedVersion + 1)
+  );
+}
+
+export function isValidPublicChatAdvanceVersion(
+  currentVersion: number,
+  command: ClaimedCommandAdvance,
+): boolean {
+  return (
+    currentVersion === command.expectedVersion &&
+    command.conversation.version === command.expectedVersion + 1
   );
 }
 
@@ -561,9 +571,6 @@ export function createPostgresPublicChatStore(
           limit 1
           for update
         `;
-        if (versions[0]?.version !== command.expectedVersion) {
-          return { status: "conflict" as const };
-        }
         const existingRows = await tx<CommandRow[]>`
           select state, lease_token_hash, lease_expires_at, result, expected_version,
                  lease_expires_at > current_timestamp as lease_active
@@ -579,6 +586,9 @@ export function createPostgresPublicChatStore(
             status: "completed" as const,
             result: deserializePublicChatCommandResult(existing.result),
           };
+        }
+        if (versions[0]?.version !== command.expectedVersion) {
+          return { status: "conflict" as const };
         }
         if (existing?.lease_active) {
           return { status: "in_progress" as const };
@@ -629,6 +639,11 @@ export function createPostgresPublicChatStore(
 
     async advanceCommand(command, leaseTokenHash, transcriptPersistence) {
       return withGatewayTransaction(sql, async (tx) => {
+        const versions = await tx<{ version: number }[]>`
+          select version from public_chat_conversations
+          where id = ${command.conversation.id}
+          limit 1 for update
+        `;
         const claims = await tx<CommandRow[]>`
           select state, lease_token_hash, lease_expires_at, result, expected_version,
                  lease_expires_at > current_timestamp as lease_active
@@ -638,11 +653,6 @@ export function createPostgresPublicChatStore(
           limit 1
           for update
         `;
-        const versions = await tx<{ version: number }[]>`
-          select version from public_chat_conversations
-          where id = ${command.conversation.id}
-          limit 1 for update
-        `;
         const claim = claims[0];
         const currentVersion = versions[0]?.version;
         if (
@@ -651,7 +661,7 @@ export function createPostgresPublicChatStore(
           !claim.lease_active ||
           claim.expected_version !== command.expectedVersion ||
           currentVersion === undefined ||
-          !validVersion(currentVersion, command)
+          !isValidPublicChatAdvanceVersion(currentVersion, command)
         ) {
           return "conflict" as const;
         }
@@ -674,6 +684,11 @@ export function createPostgresPublicChatStore(
 
     async completeCommand(command, leaseTokenHash, transcriptPersistence) {
       return withGatewayTransaction(sql, async (tx) => {
+        const versions = await tx<{ version: number }[]>`
+          select version from public_chat_conversations
+          where id = ${command.conversation.id}
+          limit 1 for update
+        `;
         const claims = await tx<CommandRow[]>`
           select state, lease_token_hash, lease_expires_at, result, expected_version,
                  lease_expires_at > current_timestamp as lease_active
@@ -683,11 +698,6 @@ export function createPostgresPublicChatStore(
           limit 1
           for update
         `;
-        const versions = await tx<{ version: number }[]>`
-          select version from public_chat_conversations
-          where id = ${command.conversation.id}
-          limit 1 for update
-        `;
         const claim = claims[0];
         const currentVersion = versions[0]?.version;
         if (
@@ -696,7 +706,7 @@ export function createPostgresPublicChatStore(
           !claim.lease_active ||
           claim.expected_version !== command.expectedVersion ||
           currentVersion === undefined ||
-          !validVersion(currentVersion, command)
+          !isValidPublicChatCompletionVersion(currentVersion, command)
         ) {
           return "conflict" as const;
         }
@@ -785,6 +795,78 @@ export async function findPublicChatSessionByHash(
           createdAt: row.created_at,
         }
       : null;
+  });
+}
+
+export async function rotatePublicChatSessionSecrets(
+  sql: PublicChatSql,
+  input: {
+    currentSessionHash: string;
+    sessionHash: string;
+    csrfHash: string;
+    expiresAt: Date;
+    updatedAt: Date;
+  },
+): Promise<{
+  id: string;
+  sessionHash: string;
+  csrfHash: string;
+  correlationId: string;
+  expiresAt: Date;
+  revokedAt: Date | null;
+  createdAt: Date;
+} | null> {
+  return withGatewayTransaction(sql, async (tx) => {
+    const rows = await tx<
+      Array<{
+        id: string;
+        session_hash: string;
+        csrf_hash: string;
+        correlation_id: string;
+        expires_at: Date;
+        revoked_at: Date | null;
+        created_at: Date;
+      }>
+    >`
+      update public_chat_sessions
+      set session_hash = ${input.sessionHash},
+          csrf_hash = ${input.csrfHash},
+          expires_at = ${input.expiresAt},
+          updated_at = ${input.updatedAt}
+      where session_hash = ${input.currentSessionHash}
+        and revoked_at is null
+        and expires_at > current_timestamp
+      returning id, session_hash, csrf_hash, correlation_id, expires_at, revoked_at, created_at
+    `;
+    const row = rows[0];
+    return row
+      ? {
+          id: row.id,
+          sessionHash: row.session_hash,
+          csrfHash: row.csrf_hash,
+          correlationId: row.correlation_id,
+          expiresAt: row.expires_at,
+          revokedAt: row.revoked_at,
+          createdAt: row.created_at,
+        }
+      : null;
+  });
+}
+
+export async function revokePublicChatSession(
+  sql: PublicChatSql,
+  sessionHash: string,
+  revokedAt: Date,
+): Promise<boolean> {
+  return withGatewayTransaction(sql, async (tx) => {
+    const rows = await tx<{ id: string }[]>`
+      update public_chat_sessions
+      set revoked_at = ${revokedAt}, updated_at = ${revokedAt}
+      where session_hash = ${sessionHash}
+        and revoked_at is null
+      returning id
+    `;
+    return rows.length === 1;
   });
 }
 
