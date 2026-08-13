@@ -40,10 +40,14 @@ describe("M003 minimized observability", () => {
     }
   });
 
-  it("keeps transport disabled unless an approved caller explicitly supplies it", () => {
+  it("keeps external transport unavailable even when an extra caller argument is supplied", () => {
     expect(recordPublicChatMetric(validMetric)).toEqual(validMetric);
     const transport = vi.fn();
-    expect(recordPublicChatMetric(validMetric, transport)).toEqual(validMetric);
-    expect(transport).toHaveBeenCalledExactlyOnceWith(validMetric);
+    const untrustedCall = recordPublicChatMetric as unknown as (
+      input: unknown,
+      ignoredTransport: (metric: unknown) => void,
+    ) => unknown;
+    expect(untrustedCall(validMetric, transport)).toEqual(validMetric);
+    expect(transport).not.toHaveBeenCalled();
   });
 });

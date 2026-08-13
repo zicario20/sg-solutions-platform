@@ -87,11 +87,6 @@ export function projectPublicChatMetric(input: unknown): PublicChatMetric {
   };
 }
 
-export function recordPublicChatMetric(
-  input: unknown,
-  approvedTransport?: (metric: PublicChatMetric) => void,
-): PublicChatMetric {
-  const metric = projectPublicChatMetric(input);
-  approvedTransport?.(metric);
-  return metric;
+export function recordPublicChatMetric(input: unknown): PublicChatMetric {
+  return projectPublicChatMetric(input);
 }
