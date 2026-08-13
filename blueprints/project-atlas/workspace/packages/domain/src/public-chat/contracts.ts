@@ -19,6 +19,14 @@ export type PublicCitation = {
   title: string;
   path: string;
   locale: ChatLocale;
+  summary: string;
+  disclosure: string;
+  sourceKind: "provider" | null;
+};
+
+export type PublicChatAction = {
+  key: "help_center" | "human_support";
+  path: string;
 };
 
 export type PublicChatMessage = {
@@ -27,6 +35,7 @@ export type PublicChatMessage = {
   body: string;
   state: MessageState;
   citations: PublicCitation[];
+  actions: PublicChatAction[];
   createdAt: Date;
 };
 

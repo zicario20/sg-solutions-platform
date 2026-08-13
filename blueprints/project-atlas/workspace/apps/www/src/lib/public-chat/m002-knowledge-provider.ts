@@ -1,87 +1,70 @@
 import type { PublicCitation, PublicKnowledgeProvider } from "@atlas/domain";
 import type { KnowledgeRecord } from "../../domain/help-center.ts";
 import { evaluateFreshness, toPublicKnowledge } from "../help-content.ts";
+import { hasExternalProviderSource } from "../help-provider.ts";
 import { getHelpDetailPath } from "../help-routes.ts";
+import { buildSearchIndex, searchHelp } from "../help-search.ts";
 
-const SEARCH_RESULT_LIMIT = 5;
+const SEARCH_RESULT_LIMIT = 3;
 
-function normalizeSearchText(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLocaleLowerCase("en-US")
-    .replace(/[^a-z0-9]+/gu, " ")
-    .trim();
-}
-
-function toCurrentCitation(
-  record: KnowledgeRecord,
+function selectCurrentRecords(
+  records: KnowledgeRecord[],
   locale: "es" | "en",
   now: Date,
-): PublicCitation | null {
-  if (
-    record.locale !== locale ||
-    record.status !== "published" ||
-    !record.audiences.includes("public") ||
-    evaluateFreshness(record, now) !== "current"
-  ) {
-    return null;
-  }
+): KnowledgeRecord[] {
+  return records.filter(
+    (record) =>
+      record.locale === locale &&
+      record.status === "published" &&
+      record.audiences.includes("public") &&
+      evaluateFreshness(record, now) === "current",
+  );
+}
+
+function toCitation(record: KnowledgeRecord, now: Date): PublicCitation | null {
   const publicRecord = toPublicKnowledge(record, now);
   if (!publicRecord) return null;
+  const sourceKind = hasExternalProviderSource(publicRecord) ? "provider" : null;
+  if (sourceKind === "provider" && !publicRecord.disclosure.trim()) {
+    throw new Error(`Provider disclosure is required: ${publicRecord.id}`);
+  }
   return {
     sourceId: publicRecord.id,
     title: publicRecord.title,
     path: getHelpDetailPath(publicRecord.locale, publicRecord.type, publicRecord.slug),
     locale: publicRecord.locale,
+    summary: publicRecord.summary,
+    disclosure: publicRecord.disclosure,
+    sourceKind,
   };
-}
-
-function scoreRecord(record: KnowledgeRecord, tokens: string[]): number {
-  const title = normalizeSearchText(record.title);
-  const keywords = record.keywords.map(normalizeSearchText);
-  const summary = normalizeSearchText(record.summary);
-  return tokens.reduce((score, token) => {
-    if (title.includes(token)) return score + 30;
-    if (keywords.some((keyword) => keyword.includes(token))) return score + 20;
-    if (summary.includes(token)) return score + 10;
-    return score;
-  }, 0);
 }
 
 export function createM002KnowledgeProvider(
   records: KnowledgeRecord[],
   now: Date,
 ): PublicKnowledgeProvider {
-  const currentRecords = (locale: "es" | "en") =>
-    records
-      .map((record) => ({ record, citation: toCurrentCitation(record, locale, now) }))
-      .filter(
-        (candidate): candidate is { record: KnowledgeRecord; citation: PublicCitation } =>
-          candidate.citation !== null,
-      );
+  const current = (locale: "es" | "en") => selectCurrentRecords(records, locale, now);
+  const citationsById = (locale: "es" | "en") =>
+    new Map(
+      current(locale).flatMap((record) => {
+        const citation = toCitation(record, now);
+        return citation ? [[citation.sourceId, citation] as const] : [];
+      }),
+    );
 
   return {
     async search({ locale, query }) {
-      const tokens = [...new Set(normalizeSearchText(query).split(" ").filter(Boolean))];
-      if (tokens.length === 0) return [];
-      return currentRecords(locale)
-        .map(({ record, citation }) => ({ citation, score: scoreRecord(record, tokens) }))
-        .filter(({ score }) => score > 0)
-        .sort(
-          (left, right) =>
-            right.score - left.score ||
-            left.citation.title.localeCompare(right.citation.title, locale) ||
-            left.citation.sourceId.localeCompare(right.citation.sourceId),
-        )
-        .slice(0, SEARCH_RESULT_LIMIT)
-        .map(({ citation }) => citation);
+      const eligibleRecords = current(locale);
+      const ranked = searchHelp(buildSearchIndex(eligibleRecords, locale, now), query, {});
+      const byId = citationsById(locale);
+      return ranked.slice(0, SEARCH_RESULT_LIMIT).flatMap((document) => {
+        const citation = byId.get(document.id);
+        return citation ? [citation] : [];
+      });
     },
 
     async getByIds({ locale, ids }) {
-      const byId = new Map(
-        currentRecords(locale).map(({ citation }) => [citation.sourceId, citation] as const),
-      );
+      const byId = citationsById(locale);
       const seen = new Set<string>();
       return ids.flatMap((id) => {
         if (seen.has(id)) return [];

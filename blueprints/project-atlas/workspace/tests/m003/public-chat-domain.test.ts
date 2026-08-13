@@ -136,6 +136,9 @@ function createFixture(overrides?: {
           title: locale === "es" ? "Servicios de SG Solutions" : "SG Solutions services",
           path: locale === "es" ? "/recursos" : "/en/resources",
           locale,
+          summary: "Approved summary",
+          disclosure: "General information only.",
+          sourceKind: null,
         },
       ],
       getByIds: async () => [],
@@ -490,6 +493,9 @@ describe("M003 conversation service", () => {
               title: "Fabricated source",
               path: "https://attacker.example/",
               locale: "es",
+              summary: "Fabricated summary",
+              disclosure: "Fabricated disclosure",
+              sourceKind: null,
             },
           ],
         }),
@@ -506,6 +512,33 @@ describe("M003 conversation service", () => {
     });
 
     expect(result.ok && result.projection.messages[1]?.citations).toEqual([]);
+    expect(JSON.stringify(result)).not.toContain("attacker.example");
+  });
+
+  it("re-resolves model action paths and ignores malformed action entries", async () => {
+    const fixture = createFixture({
+      model: {
+        respond: async ({ sources }) => ({
+          status: "answered",
+          text: "General orientation",
+          citations: sources,
+          actions: [null as never, { key: "help_center", path: "https://attacker.example/" }],
+        }),
+      },
+    });
+    const started = await startConversation(fixture);
+
+    const result = await fixture.service.acceptMessage({
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_5ea" },
+      conversationId: started.id,
+      text: "Can you help?",
+      idempotencyKey: "message_key_0005ea",
+      expectedVersion: 1,
+    });
+
+    expect(result.ok && result.projection.messages[1]?.actions).toEqual([
+      { key: "help_center", path: "/recursos/" },
+    ]);
     expect(JSON.stringify(result)).not.toContain("attacker.example");
   });
 

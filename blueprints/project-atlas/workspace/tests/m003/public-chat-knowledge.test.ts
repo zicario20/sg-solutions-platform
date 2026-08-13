@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PUBLIC_CHAT_COPY } from "../../apps/www/src/content/public-chat.ts";
 import type { KnowledgeRecord } from "../../apps/www/src/domain/help-center.ts";
+import { buildSearchIndex, searchHelp } from "../../apps/www/src/lib/help-search.ts";
 import { createDeterministicOrientationProvider } from "../../apps/www/src/lib/public-chat/deterministic-orientation.ts";
 import { createM002KnowledgeProvider } from "../../apps/www/src/lib/public-chat/m002-knowledge-provider.ts";
 import type {
@@ -60,6 +61,9 @@ describe("M003 M002 public knowledge adapter", () => {
         title: current.title,
         path: `/recursos/preguntas-frecuentes/${current.slug}/`,
         locale: "es",
+        summary: current.summary,
+        disclosure: current.disclosure,
+        sourceKind: null,
       },
     ]);
   });
@@ -82,6 +86,9 @@ describe("M003 M002 public knowledge adapter", () => {
         title: approved.title,
         path: `/recursos/preguntas-frecuentes/${approved.slug}/`,
         locale: "es",
+        summary: approved.summary,
+        disclosure: approved.disclosure,
+        sourceKind: null,
       },
     ]);
     expect(JSON.stringify(results)).not.toContain("attacker.example");
@@ -104,6 +111,39 @@ describe("M003 M002 public knowledge adapter", () => {
       "summary-match",
     ]);
   });
+
+  it.each([
+    {
+      query: "impuestos",
+      records: [record("tax-record", { keywords: ["taxes", "w-2"] })],
+    },
+    {
+      query: "comprar casa",
+      records: [record("home-record", { keywords: ["vivienda", "hipoteca"] })],
+    },
+    {
+      query: "préstamo rural cero inicial",
+      records: [record("usda-record", { keywords: ["usda", "rural", "vivienda"] })],
+    },
+  ])("matches canonical M002 ranking for reviewed query '$query'", async ({ query, records }) => {
+    const provider = createM002KnowledgeProvider(records, NOW);
+    const canonical = searchHelp(buildSearchIndex(records, "es", NOW), query, {})
+      .slice(0, 3)
+      .map((item) => item.id);
+
+    const actual = await provider.search({ locale: "es", query });
+    expect(actual.map((item) => item.sourceId)).toEqual(canonical);
+  });
+
+  it("returns at most the three highest-ranked current records", async () => {
+    const records = Array.from({ length: 5 }, (_, index) =>
+      record(`match-${index}`, { title: `Crédito ${index}`, keywords: ["crédito"] }),
+    );
+    const provider = createM002KnowledgeProvider(records, NOW);
+
+    const results = await provider.search({ locale: "es", query: "crédito" });
+    expect(results).toHaveLength(3);
+  });
 });
 
 describe("M003 deterministic orientation", () => {
@@ -113,6 +153,9 @@ describe("M003 deterministic orientation", () => {
       title: "Trusted source",
       path: "/recursos/preguntas-frecuentes/trusted-source/",
       locale: "es",
+      summary: "Trusted summary",
+      disclosure: "General information only.",
+      sourceKind: null,
     };
     const knowledge: PublicKnowledgeProvider = {
       search: async () => [],
@@ -148,8 +191,50 @@ describe("M003 deterministic orientation", () => {
       status: "answered",
       text: PUBLIC_CHAT_COPY.en.orientation.noMatch,
       citations: [],
+      actions: [{ key: "help_center", path: "/en/resources/" }],
     });
     expect(JSON.stringify(response)).not.toMatch(/guarantee|approved|eligible/i);
+  });
+
+  it.each([
+    {
+      locale: "es" as const,
+      disclosure:
+        "Esta referencia proviene de un proveedor externo. No implica asociación, recomendación ni garantía.",
+    },
+    {
+      locale: "en" as const,
+      disclosure:
+        "This reference comes from an external provider. It does not imply partnership, endorsement, or guarantee.",
+    },
+  ])("preserves the reviewed Tradelines disclosure in $locale", async ({ locale, disclosure }) => {
+    const tradeline = record(`tradelines-${locale}`, {
+      locale,
+      category: "tradelines",
+      title: locale === "es" ? "Preguntas sobre tradelines" : "Tradelines questions",
+      summary:
+        locale === "es" ? "Información pública del proveedor" : "Public provider information",
+      keywords: ["tradelines"],
+      disclosure,
+      sources: [
+        {
+          title: "Tradeline Supply FAQ",
+          authority: "Tradeline Supply",
+          sourceKind: "provider",
+          url: "https://tradelinesupply.com/faq/",
+          retrievedAt: "2026-08-01",
+        },
+      ],
+    });
+    const knowledge = createM002KnowledgeProvider([tradeline], NOW);
+    const orientation = createDeterministicOrientationProvider(knowledge);
+    const sources = await knowledge.search({ locale, query: "tradelines" });
+    const response = await orientation.respond({ locale, message: "tradelines", sources });
+
+    expect(sources[0]?.disclosure).toBe(disclosure);
+    expect(sources[0]?.sourceKind).toBe("provider");
+    expect(response.status === "answered" && response.text).toContain(disclosure);
+    expect(response.status === "answered" && response.citations[0]?.disclosure).toBe(disclosure);
   });
 });
 

@@ -1,4 +1,4 @@
-import type { ChatLocale, PublicCitation } from "./contracts.ts";
+import type { ChatLocale, PublicChatAction, PublicCitation } from "./contracts.ts";
 
 export type KnowledgeSearchInput = {
   locale: ChatLocale;
@@ -35,7 +35,12 @@ export interface ModerationProvider {
 }
 
 export type ModelResponse =
-  | { status: "answered"; text: string; citations: PublicCitation[] }
+  | {
+      status: "answered";
+      text: string;
+      citations: PublicCitation[];
+      actions?: PublicChatAction[];
+    }
   | { status: "unavailable"; reason: "disabled" | "timeout" | "provider_error" };
 
 export interface ChatModelProvider {

@@ -8,6 +8,7 @@ import type {
   Clock,
   ConversationRepository,
   IdFactory,
+  PublicChatAction,
   PublicChatConversation,
   PublicChatMessage,
   PublicChatProjection,
@@ -154,6 +155,22 @@ function validateModelText(value: string): string | null {
   return normalized;
 }
 
+function resolvePublicActions(
+  actions: PublicChatAction[] | undefined,
+  locale: ChatLocale,
+): PublicChatAction[] {
+  const catalog: Record<PublicChatAction["key"], Record<ChatLocale, string>> = {
+    help_center: { es: "/recursos/", en: "/en/resources/" },
+    human_support: { es: "/contacto/", en: "/en/contact/" },
+  };
+  const keys = (actions ?? []).flatMap((action) => {
+    if (!action || typeof action !== "object" || !("key" in action)) return [];
+    const key = action.key;
+    return key === "help_center" || key === "human_support" ? [key] : [];
+  });
+  return [...new Set(keys)].map((key) => ({ key, path: catalog[key][locale] }));
+}
+
 async function classifySafely(
   provider: ModerationProvider,
   input: { text: string; locale: ChatLocale },
@@ -209,6 +226,7 @@ async function respondSafely(
       citations: result.citations.filter(
         (citation) => citation && typeof citation.sourceId === "string",
       ),
+      actions: Array.isArray(result.actions) ? result.actions : [],
     };
   } catch {
     return { status: "unavailable", reason: "provider_error" };
@@ -466,6 +484,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
         body: input.text,
         state: response.status === "answered" ? "accepted" : "failed",
         citations: [],
+        actions: [],
         createdAt: now,
       };
       let next = appendMessage(previous, visitorMessage);
@@ -523,6 +542,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
         citations: sources.filter((source) =>
           response.citations.some((citation) => citation.sourceId === source.sourceId),
         ),
+        actions: resolvePublicActions(response.actions, previous.locale),
         createdAt: now,
       });
       const targetStatus = previous.status === "new" ? "ai_active" : previous.status;
