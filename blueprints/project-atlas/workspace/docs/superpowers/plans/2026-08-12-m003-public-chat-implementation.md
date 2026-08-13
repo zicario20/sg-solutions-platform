@@ -110,7 +110,7 @@ git commit -m "build(m003): establish public chat runtime gate"
 - [ ] **Step 1: Write failing table-driven validation tests**
 
 Use hand-authored fixtures proving: `es|en` only; notice acknowledgement must be `true`; messages
-normalize Unicode/line endings; blank, control-character and over-1,200-character input fails;
+normalize Unicode/line endings; blank, control-character and over-2,000-character input fails;
 SSN/ITIN, payment-card-like, bank-routing/account, API-key/password and HTML/script fixtures return
 only a bounded reason and never echo the input.
 
