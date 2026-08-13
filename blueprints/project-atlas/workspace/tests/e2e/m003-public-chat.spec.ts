@@ -205,10 +205,8 @@ test.describe("M003 Public Chat", () => {
     const launcher = page.getByRole("button", { name: "Abrir asistente de SG Solutions" });
     await launcher.click();
     await page.getByRole("checkbox").check();
-    await page.getByRole("button", { name: "Empezar conversaciÃ³n" }).click();
-    await page
-      .getByPlaceholder("Escribe tu pregunta sin informaciÃ³n sensible")
-      .fill("Mensaje que no debe reaparecer");
+    await page.getByRole("button", { name: /^Empezar/u }).click();
+    await page.getByPlaceholder(/^Escribe tu pregunta/u).fill("Mensaje que no debe reaparecer");
     await page.getByRole("button", { name: "Enviar" }).click();
     await page.getByRole("button", { name: "Cerrar chat" }).click();
     await expect(page.getByRole("dialog", { name: "Asistente de SG Solutions" })).toBeHidden();
