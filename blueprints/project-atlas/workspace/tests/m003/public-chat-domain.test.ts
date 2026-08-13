@@ -234,6 +234,40 @@ describe("M003 conversation service", () => {
     expect(JSON.stringify(projection)).not.toContain("session_hash_a");
   });
 
+  it("changes the explicit conversation locale idempotently without losing its transcript", async () => {
+    const fixture = createFixture();
+    const started = await startConversation(fixture);
+    const accepted = await fixture.service.acceptMessage({
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_locale_1" },
+      conversationId: started.id,
+      text: "Necesito orientación general",
+      idempotencyKey: "message_locale_0001",
+      expectedVersion: started.version,
+    });
+    if (!accepted.ok) throw new Error("Expected accepted message");
+    const command = {
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_locale_2" },
+      conversationId: started.id,
+      locale: "en" as const,
+      idempotencyKey: "locale_change_0001",
+      expectedVersion: accepted.projection.version,
+    };
+
+    const changed = await fixture.service.changeLocale(command);
+    const replay = await fixture.service.changeLocale(command);
+
+    expect(changed).toMatchObject({
+      ok: true,
+      replayed: false,
+      projection: { locale: "en", messages: accepted.projection.messages },
+    });
+    expect(replay).toEqual(changed.ok ? { ...changed, replayed: true } : changed);
+    expect(fixture.auditEvents.at(-1)).toMatchObject({
+      name: "chat_locale_changed",
+      locale: "en",
+    });
+  });
+
   it("rejects a valid conversation id when the session hash belongs to another visitor", async () => {
     const fixture = createFixture();
     const projection = await startConversation(fixture);

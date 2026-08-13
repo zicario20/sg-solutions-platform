@@ -12,6 +12,7 @@ type Message = {
 type Projection = {
   id: string;
   version: number;
+  locale: Locale;
   status: string;
   messages: Message[];
 };
@@ -31,13 +32,14 @@ type Copy = {
     send: string;
     sending: string;
     statusReady: string;
+    helpCenter: string;
     characterCount: string;
   };
 };
 type ExperienceConfig = {
   locale: Locale;
   copy: Copy;
-  paths: { help: string; contact: string };
+  paths: { help: string; contact: string; alternate: string };
 };
 type SuccessEnvelope = {
   ok: true;
@@ -105,6 +107,7 @@ function initExperience(root: HTMLElement): void {
   const panel = required<HTMLElement>(root, "[data-public-chat-panel]");
   const launcher = element<HTMLButtonElement>(root, "[data-public-chat-launcher]");
   const dismiss = element<HTMLButtonElement>(root, "[data-public-chat-dismiss]");
+  const language = required<HTMLAnchorElement>(root, "[data-public-chat-language]");
   const consent = required<HTMLElement>(root, "[data-public-chat-consent]");
   const acknowledge = required<HTMLInputElement>(root, "[data-public-chat-acknowledge]");
   const start = required<HTMLButtonElement>(root, "[data-public-chat-start]");
@@ -114,6 +117,7 @@ function initExperience(root: HTMLElement): void {
   const send = required<HTMLButtonElement>(root, "[data-public-chat-send]");
   const count = required<HTMLElement>(root, "[data-public-chat-count]");
   const status = required<HTMLElement>(root, "[data-public-chat-status]");
+  const alert = required<HTMLElement>(root, "[data-public-chat-alert]");
   const actions = required<HTMLElement>(root, "[data-public-chat-actions]");
   const human = required<HTMLButtonElement>(root, "[data-public-chat-human]");
   const sources = required<HTMLElement>(root, "[data-public-chat-sources]");
@@ -123,9 +127,18 @@ function initExperience(root: HTMLElement): void {
   let projection: Projection | null = null;
   let pending = false;
   let returnFocus: HTMLElement | null = null;
+  let closeController: AbortController | null = null;
+  let closingRequest: Promise<void> | null = null;
 
   const announce = (message: string) => {
+    alert.hidden = true;
+    alert.textContent = "";
     status.textContent = message;
+  };
+
+  const announceError = (message: string) => {
+    alert.textContent = message;
+    alert.hidden = false;
   };
 
   const setPending = (value: boolean) => {
@@ -133,13 +146,17 @@ function initExperience(root: HTMLElement): void {
     start.disabled = value || !acknowledge.checked;
     input.disabled = value;
     send.disabled = value;
-    human.disabled = value || !projection;
+    human.disabled = value;
     send.textContent = value ? config.copy.ui.sending : config.copy.ui.send;
   };
 
-  async function request(path: string, body?: unknown): Promise<SuccessEnvelope | FailureEnvelope> {
+  async function request(
+    path: string,
+    body?: unknown,
+    signal?: AbortSignal,
+  ): Promise<SuccessEnvelope | FailureEnvelope> {
     const headers = new Headers({ accept: "application/json" });
-    const init: RequestInit = { credentials: "same-origin", headers };
+    const init: RequestInit = { credentials: "same-origin", headers, signal };
     if (body !== undefined) {
       init.method = "POST";
       headers.set("content-type", "application/json");
@@ -158,14 +175,14 @@ function initExperience(root: HTMLElement): void {
         | { ok: true; csrfToken: string; correlationId: string }
         | FailureEnvelope;
       if (!value.ok) {
-        announce(errorText(config.copy, value.code));
+        announceError(errorText(config.copy, value.code));
         return false;
       }
       if (typeof value.csrfToken !== "string") return false;
       csrfToken = value.csrfToken;
       return true;
     } catch {
-      announce(config.copy.errors.temporarilyUnavailable);
+      announceError(config.copy.errors.temporarilyUnavailable);
       return false;
     }
   }
@@ -228,6 +245,64 @@ function initExperience(root: HTMLElement): void {
     human.disabled = false;
   }
 
+  function resetConversationUi(): void {
+    projection = null;
+    csrfToken = null;
+    pending = false;
+    acknowledge.checked = false;
+    consent.hidden = false;
+    start.disabled = true;
+    composer.hidden = true;
+    actions.hidden = true;
+    sources.hidden = true;
+    sourceList.replaceChildren();
+    input.value = "";
+    input.disabled = false;
+    send.disabled = false;
+    send.textContent = config.copy.ui.send;
+    human.disabled = false;
+    count.textContent = `${MESSAGE_LIMIT} ${config.copy.ui.characterCount}`;
+    transcript.replaceChildren();
+    const greeting = document.createElement("article");
+    greeting.className = "public-chat-message public-chat-message--assistant";
+    const actor = document.createElement("p");
+    actor.className = "public-chat-message__actor";
+    actor.textContent = config.copy.ui.automated;
+    const body = document.createElement("p");
+    body.textContent = config.copy.greeting;
+    greeting.append(actor, body);
+    transcript.append(greeting);
+    announce(config.copy.ui.statusReady);
+  }
+
+  async function resumeConversation(): Promise<void> {
+    const match = window.location.hash.match(/^#conversation=([a-z][a-z0-9_-]{1,127})$/u);
+    if (!match?.[1]) {
+      await ensureBootstrap();
+      return;
+    }
+    try {
+      const value = await request(
+        `/api/public/chat/conversations/${encodeURIComponent(match[1])}/resume`,
+      );
+      if (!value.ok || !value.csrfToken) {
+        const message = errorText(config.copy, value.ok ? "session_invalid" : value.code);
+        resetConversationUi();
+        announceError(message);
+        await ensureBootstrap();
+        return;
+      }
+      csrfToken = value.csrfToken;
+      renderProjection(value.data);
+      announce(config.copy.ui.statusReady);
+      history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    } catch {
+      resetConversationUi();
+      announceError(config.copy.errors.temporarilyUnavailable);
+      await ensureBootstrap();
+    }
+  }
+
   async function startConversation(): Promise<void> {
     if (pending || !acknowledge.checked || !(await ensureBootstrap())) return;
     setPending(true);
@@ -242,10 +317,10 @@ function initExperience(root: HTMLElement): void {
         announce(config.copy.ui.statusReady);
         input.focus();
       } else {
-        announce(errorText(config.copy, value.code));
+        announceError(errorText(config.copy, value.code));
       }
     } catch {
-      announce(config.copy.errors.temporarilyUnavailable);
+      announceError(config.copy.errors.temporarilyUnavailable);
     } finally {
       setPending(false);
     }
@@ -254,7 +329,7 @@ function initExperience(root: HTMLElement): void {
   async function sendMessage(text: string): Promise<void> {
     const normalized = text.normalize("NFC").trim();
     if (pending || !projection || !normalized || [...normalized].length > MESSAGE_LIMIT) {
-      announce(config.copy.errors.invalidMessage);
+      announceError(config.copy.errors.invalidMessage);
       return;
     }
     setPending(true);
@@ -273,10 +348,10 @@ function initExperience(root: HTMLElement): void {
         renderProjection(value.data);
         announce(config.copy.ui.statusReady);
       } else {
-        announce(errorText(config.copy, value.code));
+        announceError(errorText(config.copy, value.code));
       }
     } catch {
-      announce(config.copy.errors.temporarilyUnavailable);
+      announceError(config.copy.errors.temporarilyUnavailable);
     } finally {
       setPending(false);
       input.focus();
@@ -304,28 +379,39 @@ function initExperience(root: HTMLElement): void {
         renderProjection(value.data);
         announce(config.copy.handoff.queued);
       } else {
-        announce(config.copy.handoff.unavailable);
+        announceError(config.copy.handoff.unavailable);
       }
     } catch {
-      announce(config.copy.handoff.unavailable);
+      announceError(config.copy.handoff.unavailable);
     } finally {
       setPending(false);
     }
   }
 
-  async function closePanel(): Promise<void> {
-    if (projection && csrfToken) {
-      try {
-        await request(`/api/public/chat/conversations/${encodeURIComponent(projection.id)}/close`, {
+  function closePanel(): void {
+    const active = projection;
+    if (active && csrfToken) {
+      closeController?.abort();
+      closeController = new AbortController();
+      const controller = closeController;
+      const timer = window.setTimeout(() => controller.abort(), 1_500);
+      closingRequest = request(
+        `/api/public/chat/conversations/${encodeURIComponent(active.id)}/close`,
+        {
           idempotencyKey: idempotencyKey("close"),
-          expectedVersion: projection.version,
+          expectedVersion: active.version,
+        },
+        controller.signal,
+      )
+        .then(() => undefined)
+        .catch(() => undefined)
+        .finally(() => {
+          window.clearTimeout(timer);
+          if (closeController === controller) closeController = null;
+          closingRequest = null;
         });
-      } catch {
-        // The visible panel still closes; the server-side session expires independently.
-      }
     }
-    csrfToken = null;
-    projection = null;
+    resetConversationUi();
     if (panel.dataset.publicChatMode === "floating") panel.hidden = true;
     launcher?.setAttribute("aria-expanded", "false");
     returnFocus?.focus();
@@ -336,11 +422,41 @@ function initExperience(root: HTMLElement): void {
     panel.hidden = false;
     launcher?.setAttribute("aria-expanded", "true");
     dismiss?.focus();
+    if (closingRequest) await closingRequest;
     await ensureBootstrap();
   }
 
+  async function changeConversationLocale(event: MouseEvent): Promise<void> {
+    if (!projection || pending) return;
+    event.preventDefault();
+    const active = projection;
+    setPending(true);
+    try {
+      const value = await request(
+        `/api/public/chat/conversations/${encodeURIComponent(active.id)}/language`,
+        {
+          locale: config.locale === "es" ? "en" : "es",
+          idempotencyKey: idempotencyKey("locale"),
+          expectedVersion: active.version,
+        },
+      );
+      if (!value.ok) {
+        announceError(errorText(config.copy, value.code));
+        return;
+      }
+      const target = new URL(config.paths.alternate, window.location.origin);
+      target.hash = `conversation=${encodeURIComponent(value.data.id)}`;
+      window.location.assign(target.href);
+    } catch {
+      announceError(config.copy.errors.temporarilyUnavailable);
+    } finally {
+      setPending(false);
+    }
+  }
+
   launcher?.addEventListener("click", () => void openPanel());
-  dismiss?.addEventListener("click", () => void closePanel());
+  dismiss?.addEventListener("click", () => closePanel());
+  language.addEventListener("click", (event) => void changeConversationLocale(event));
   acknowledge.addEventListener("change", () => {
     start.disabled = pending || !acknowledge.checked;
   });
@@ -362,7 +478,7 @@ function initExperience(root: HTMLElement): void {
   panel.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && panel.dataset.publicChatMode === "floating") {
       event.preventDefault();
-      void closePanel();
+      closePanel();
       return;
     }
     if (event.key !== "Tab" || panel.dataset.publicChatMode !== "floating") return;
@@ -383,7 +499,7 @@ function initExperience(root: HTMLElement): void {
     }
   });
 
-  if (panel.dataset.publicChatMode === "page") void ensureBootstrap();
+  if (panel.dataset.publicChatMode === "page") void resumeConversation();
 }
 
 for (const root of document.querySelectorAll<HTMLElement>(ROOT_SELECTOR)) initExperience(root);

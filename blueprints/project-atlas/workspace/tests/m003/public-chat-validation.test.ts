@@ -1,12 +1,30 @@
 import { describe, expect, it } from "vitest";
 import {
   inspectProhibitedChatContent,
+  parseChangeChatLocale,
   parseChatMessage,
   parseHandoffRequest,
   parseStartConversation,
 } from "../../packages/validation/src/public-chat.ts";
 
 describe("public chat validation", () => {
+  it("accepts only a supported locale with an idempotent optimistic command", () => {
+    expect(
+      parseChangeChatLocale({
+        locale: "en",
+        idempotencyKey: "locale_change_0001",
+        expectedVersion: 2,
+      }),
+    ).toEqual({ locale: "en", idempotencyKey: "locale_change_0001", expectedVersion: 2 });
+    expect(() =>
+      parseChangeChatLocale({
+        locale: "fr",
+        idempotencyKey: "locale_change_0001",
+        expectedVersion: 2,
+      }),
+    ).toThrow();
+  });
+
   it.each(["es", "en"] as const)("accepts the supported %s locale", (locale) => {
     expect(
       parseStartConversation({

@@ -1,5 +1,6 @@
 import type { ChatCommandResult, HandoffReason } from "@atlas/domain";
 import {
+  parseChangeChatLocale,
   parseChatMessage,
   parseCloseConversation,
   parseHandoffRequest,
@@ -37,6 +38,13 @@ export type PublicChatGatewayService = {
     context: { sessionHash: string; correlationId: string };
     conversationId: string;
     reason: HandoffReason;
+    idempotencyKey: string;
+    expectedVersion: number;
+  }): Promise<ChatCommandResult>;
+  changeLocale?(input: {
+    context: { sessionHash: string; correlationId: string };
+    conversationId: string;
+    locale: "es" | "en";
     idempotencyKey: string;
     expectedVersion: number;
   }): Promise<ChatCommandResult>;
@@ -86,6 +94,24 @@ function requestGuard(request: Request, canonicalOrigin: string): Response | nul
     return errorResponse("method_not_allowed", 405, correlationId(), { allow: "GET, POST" });
   }
   const fetchSite = request.headers.get("sec-fetch-site");
+  if (request.method === "GET") {
+    let initiatorOrigin = request.headers.get("origin");
+    if (!initiatorOrigin) {
+      try {
+        initiatorOrigin = new URL(request.headers.get("referer") ?? "").origin;
+      } catch {
+        initiatorOrigin = null;
+      }
+    }
+    if (
+      new URL(request.url).origin !== canonicalOrigin ||
+      initiatorOrigin !== canonicalOrigin ||
+      (fetchSite && fetchSite !== "same-origin")
+    ) {
+      return errorResponse("request_forbidden", 403, correlationId());
+    }
+    return null;
+  }
   if (
     request.headers.get("origin") !== canonicalOrigin ||
     (fetchSite && fetchSite !== "same-origin")
@@ -337,6 +363,63 @@ export function createConversationHandlers(
           }),
         validated.session.correlationId,
       );
+    },
+
+    async language(conversationId: string, request: Request): Promise<Response> {
+      const validated = await validatedMutation(dependencies, request, parseChangeChatLocale);
+      if (!validated.ok) return validated.response;
+      const invalid = validConversationId(conversationId, validated.session.correlationId);
+      if (invalid) return invalid;
+      if (!dependencies.service.changeLocale) {
+        return errorResponse("assistant_unavailable", 503, validated.session.correlationId);
+      }
+      return executeDomain(
+        () =>
+          dependencies.service.changeLocale?.({
+            context: validated.session,
+            conversationId,
+            ...validated.input,
+          }) ?? Promise.resolve({ ok: false as const, code: "assistant_unavailable" as const }),
+        validated.session.correlationId,
+      );
+    },
+
+    async resume(conversationId: string, request: Request): Promise<Response> {
+      if (request.method !== "GET") {
+        return errorResponse("method_not_allowed", 405, correlationId(), { allow: "GET" });
+      }
+      const authenticated = await requireSession(dependencies, request, false);
+      if (!authenticated.ok) return authenticated.response;
+      const invalid = validConversationId(conversationId, authenticated.session.correlationId);
+      if (invalid) return invalid;
+      try {
+        const result = await dependencies.service.get({
+          conversationId,
+          sessionHash: authenticated.session.sessionHash,
+        });
+        if (!result.ok) return domainResponse(result, authenticated.session.correlationId);
+        const rotated = await dependencies.sessions.rotate(request, { requireCsrf: false });
+        if (!rotated.ok) {
+          return errorResponse("session_invalid", 401, authenticated.session.correlationId);
+        }
+        return jsonResponse(
+          {
+            ok: true,
+            data: result.projection,
+            correlationId: rotated.correlationId,
+            csrfToken: rotated.csrfToken,
+          },
+          200,
+          {
+            "set-cookie": serializePublicChatCookie(
+              rotated.cookieValue,
+              dependencies.sessionTtlSeconds ?? 1_800,
+            ),
+          },
+        );
+      } catch {
+        return errorResponse("assistant_unavailable", 503, authenticated.session.correlationId);
+      }
     },
 
     async handoff(conversationId: string, request: Request): Promise<Response> {

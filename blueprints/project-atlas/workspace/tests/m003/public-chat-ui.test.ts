@@ -19,10 +19,14 @@ describe("M003 bilingual public chat UI contract", () => {
   it("renders one shared experience with dialog, live region, notices and human support", () => {
     const experience = read("apps/www/src/components/chat/ChatExperience.astro");
     const panel = read("apps/www/src/components/chat/ChatPanel.astro");
+    const transcript = read("apps/www/src/components/chat/ChatTranscript.astro");
     const composer = read("apps/www/src/components/chat/ChatComposer.astro");
     expect(experience).toContain("data-public-chat-root");
     expect(panel).toContain('role="dialog"');
     expect(panel).toContain('aria-live="polite"');
+    expect(panel).toContain('role="alert"');
+    expect(transcript).toContain('role="log"');
+    expect(transcript).toContain('aria-relevant="additions text"');
     expect(panel).toContain("data-public-chat-human");
     expect(panel).toContain("data-public-chat-notice");
     expect(composer).toContain('maxlength="2000"');
@@ -35,6 +39,16 @@ describe("M003 bilingual public chat UI contract", () => {
     expect(controller).not.toMatch(/localStorage|sessionStorage|indexedDB/u);
     expect(controller).toContain("x-atlas-chat-csrf");
     expect(controller).toContain('credentials: "same-origin"');
+    expect(controller).toContain("resetConversationUi");
+    expect(controller).toContain("resumeConversation");
+    expect(controller).toContain("changeConversationLocale");
+    expect(controller).toContain("AbortController");
+    expect(controller).not.toContain("approvedTransport");
+  });
+
+  it("does not expose a permanently clipped focus target inside the modal trap", () => {
+    const panel = read("apps/www/src/components/chat/ChatPanel.astro");
+    expect(panel).not.toContain('<a class="sr-only"');
   });
 
   it("meets minimum target, narrow-screen, zoom and reduced-motion contracts", () => {

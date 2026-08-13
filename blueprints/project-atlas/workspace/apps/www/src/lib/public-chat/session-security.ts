@@ -45,7 +45,10 @@ export type PublicChatSessionSecurity = {
     | { ok: true; session: AuthenticatedPublicChatSession }
     | { ok: false; code: "session_invalid" | "csrf_invalid" }
   >;
-  rotate(request: Request): Promise<
+  rotate(
+    request: Request,
+    options?: { requireCsrf?: boolean },
+  ): Promise<
     | {
         ok: true;
         cookieValue: string;
@@ -179,8 +182,10 @@ export function createPublicChatSessionSecurity(input: {
 
     authenticate,
 
-    async rotate(request) {
-      const authenticated = await authenticate(request, { requireCsrf: true });
+    async rotate(request, options) {
+      const authenticated = await authenticate(request, {
+        requireCsrf: options?.requireCsrf ?? true,
+      });
       if (!authenticated.ok) return { ok: false };
       const cookieValue = randomId();
       const csrfToken = randomId();

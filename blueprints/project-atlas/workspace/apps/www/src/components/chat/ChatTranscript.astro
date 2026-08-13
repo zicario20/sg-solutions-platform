@@ -6,7 +6,15 @@ interface Props {
 const { greeting, automated } = Astro.props;
 ---
 
-<div class="public-chat-transcript" data-public-chat-transcript tabindex="0" aria-label={automated}>
+<div
+  class="public-chat-transcript"
+  data-public-chat-transcript
+  tabindex="0"
+  aria-label={automated}
+  role="log"
+  aria-live="polite"
+  aria-relevant="additions text"
+>
   <article class="public-chat-message public-chat-message--assistant" data-chat-initial-message>
     <p class="public-chat-message__actor">{automated}</p>
     <p>{greeting}</p>

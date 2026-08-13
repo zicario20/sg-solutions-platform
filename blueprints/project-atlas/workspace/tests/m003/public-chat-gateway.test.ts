@@ -53,6 +53,10 @@ function dependencies() {
       calls.push({ name: "handoff", input });
       return nextResult;
     },
+    changeLocale: async (input: unknown) => {
+      calls.push({ name: "locale", input });
+      return nextResult;
+    },
     close: async (input: unknown) => {
       calls.push({ name: "close", input });
       return nextResult;
@@ -325,6 +329,58 @@ describe("M003 same-origin public chat gateway", () => {
       ),
     );
     expect(newCredential.status).toBe(201);
+  });
+
+  it("changes locale through an authenticated command and resumes by rotating credentials", async () => {
+    const fixture = dependencies();
+    const boot = await bootstrap(fixture);
+    const session = { cookie: boot.cookie, csrfToken: boot.json.csrfToken };
+    const language = await fixture.handlers.language(
+      "conversation_1",
+      mutationRequest(
+        "/api/public/chat/conversations/conversation_1/language",
+        { locale: "en", idempotencyKey: "locale_change_0001", expectedVersion: 1 },
+        session,
+      ),
+    );
+    expect(language.status).toBe(200);
+    expect(fixture.calls.at(-1)).toMatchObject({
+      name: "locale",
+      input: { conversationId: "conversation_1", locale: "en", expectedVersion: 1 },
+    });
+
+    const resumed = await fixture.handlers.resume(
+      "conversation_1",
+      new Request(`${ORIGIN}/api/public/chat/conversations/conversation_1/resume`, {
+        headers: {
+          cookie: boot.cookie,
+          referer: `${ORIGIN}/en/chat/#conversation=conversation_1`,
+          "sec-fetch-site": "same-origin",
+        },
+      }),
+    );
+    const body = (await resumed.json()) as { ok: true; csrfToken: string };
+    expect(resumed.status).toBe(200);
+    expect(body.csrfToken).toMatch(/^opaque_/u);
+    expect(body.csrfToken).not.toBe(boot.json.csrfToken);
+    expect(resumed.headers.get("set-cookie")).toContain("__Host-atlas_public_chat=");
+  });
+
+  it("rejects a resume request with a cross-site initiator before session rotation", async () => {
+    const fixture = dependencies();
+    const boot = await bootstrap(fixture);
+    const response = await fixture.handlers.resume(
+      "conversation_1",
+      new Request(`${ORIGIN}/api/public/chat/conversations/conversation_1/resume`, {
+        headers: {
+          cookie: boot.cookie,
+          referer: "https://evil.example/",
+          "sec-fetch-site": "cross-site",
+        },
+      }),
+    );
+    expect(response.status).toBe(403);
+    expect(fixture.calls).not.toContainEqual(expect.objectContaining({ name: "get" }));
   });
 
   it("revokes the anonymous session and expires its cookie after close", async () => {

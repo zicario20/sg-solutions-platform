@@ -53,6 +53,14 @@ const closeConversationSchema = z
   })
   .strict();
 
+const changeChatLocaleSchema = z
+  .object({
+    locale: chatLocaleSchema,
+    idempotencyKey: idempotencyKeySchema,
+    expectedVersion: expectedVersionSchema,
+  })
+  .strict();
+
 export type StartConversationInput = z.infer<typeof startConversationSchema>;
 export type AcceptMessageInput = {
   text: string;
@@ -61,6 +69,7 @@ export type AcceptMessageInput = {
 };
 export type HandoffInput = z.infer<typeof handoffRequestSchema>;
 export type CloseConversationInput = z.infer<typeof closeConversationSchema>;
+export type ChangeChatLocaleInput = z.infer<typeof changeChatLocaleSchema>;
 
 export type SensitiveReason =
   | "government_identifier"
@@ -144,6 +153,10 @@ export function parseHandoffRequest(input: unknown): HandoffInput {
 
 export function parseCloseConversation(input: unknown): CloseConversationInput {
   return closeConversationSchema.parse(input);
+}
+
+export function parseChangeChatLocale(input: unknown): ChangeChatLocaleInput {
+  return changeChatLocaleSchema.parse(input);
 }
 
 export function inspectProhibitedChatContent(text: string): ChatContentInspection {

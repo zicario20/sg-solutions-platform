@@ -33,7 +33,7 @@ const fullPagePath = locale === "es" ? "/chat/" : "/en/chat/";
       <p class="public-chat-kicker">{copy.ui.automated}</p>
       <h2 id="public-chat-title">{copy.ui.title}</h2>
     </div>
-    <a class="public-chat-language" href={alternatePath} hreflang={locale === "es" ? "en" : "es"}>
+    <a class="public-chat-language" href={alternatePath} hreflang={locale === "es" ? "en" : "es"} data-public-chat-language>
       {copy.ui.language}
     </a>
     {
@@ -48,6 +48,7 @@ const fullPagePath = locale === "es" ? "/chat/" : "/en/chat/";
   <div class="public-chat-status" role="status" aria-live="polite" aria-atomic="true" data-public-chat-status>
     {copy.ui.statusReady}
   </div>
+  <div class="public-chat-alert" role="alert" aria-atomic="true" data-public-chat-alert hidden></div>
 
   <div class="public-chat-body">
     <div class="public-chat-notice" data-public-chat-notice>
@@ -85,12 +86,11 @@ const fullPagePath = locale === "es" ? "/chat/" : "/en/chat/";
     </button>
     <a href={helpPath}>{copy.ui.helpCenter}</a>
     {mode === "floating" && <a href={fullPagePath}>{copy.ui.fullPage}</a>}
-    <a class="sr-only" href={contactPath}>Contact SG Solutions</a>
   </footer>
 
   <script type="application/json" data-public-chat-copy set:html={JSON.stringify({
     locale,
     copy,
-    paths: { help: helpPath, contact: contactPath },
+    paths: { help: helpPath, contact: contactPath, alternate: alternatePath },
   })}></script>
 </section>

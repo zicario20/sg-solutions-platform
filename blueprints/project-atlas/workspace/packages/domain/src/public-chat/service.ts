@@ -679,6 +679,59 @@ export function createConversationService(dependencies: ConversationServiceDepen
       return completed;
     },
 
+    async changeLocale(input: {
+      context: PublicSessionContext;
+      conversationId: string;
+      locale: ChatLocale;
+      idempotencyKey: string;
+      expectedVersion: number;
+    }): Promise<ChatCommandResult> {
+      const claimed = await claimCommand(dependencies, input);
+      if (claimed.kind === "result") return claimed.result;
+      const previous = claimed.conversation;
+      if (
+        previous.status === "closed" ||
+        previous.status === "expired" ||
+        previous.status === "restricted"
+      ) {
+        return finishUnchanged(previous, claimed.leaseToken, input.idempotencyKey, {
+          ok: false,
+          code: "invalid_transition",
+        });
+      }
+      const now = dependencies.clock.now();
+      const next =
+        previous.locale === input.locale
+          ? previous
+          : withActivity(
+              { ...previous, locale: input.locale },
+              now,
+              dependencies.sessionTtlSeconds,
+            );
+      const result: ChatCommandSuccess = {
+        ok: true,
+        projection: project(next),
+        replayed: false,
+      };
+      const completed = await completeCommand(dependencies, {
+        previous,
+        next,
+        idempotencyKey: input.idempotencyKey,
+        leaseToken: claimed.leaseToken,
+        result,
+      });
+      if (completed.ok && previous.locale !== input.locale) {
+        await recordAuditSafely(dependencies.audit, {
+          name: "chat_locale_changed",
+          conversationId: previous.id,
+          correlationId: input.context.correlationId,
+          version: next.version,
+          locale: next.locale,
+        });
+      }
+      return completed;
+    },
+
     async close(input: {
       context: PublicSessionContext;
       conversationId: string;

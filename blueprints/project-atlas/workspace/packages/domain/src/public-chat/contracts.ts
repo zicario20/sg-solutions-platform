@@ -177,6 +177,7 @@ export type AuditEvent = {
     | "chat_response_failed"
     | "chat_handoff_requested"
     | "chat_handoff_queued"
+    | "chat_locale_changed"
     | "chat_conversation_closed";
   conversationId: string;
   correlationId: string;

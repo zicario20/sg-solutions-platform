@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
-import { dirname, extname, resolve } from "node:path";
+import { dirname, extname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -27,12 +27,35 @@ function waitForExit(child) {
   });
 }
 
+const corepackCli = resolve(dirname(process.execPath), "node_modules/corepack/dist/corepack.js");
+const build = spawn(process.execPath, [corepackCli, "pnpm", "--filter", "@atlas/www", "build"], {
+  cwd: workspaceRoot,
+  env: {
+    ...process.env,
+    PUBLIC_CHAT_STATE: "local",
+    PUBLIC_CHAT_ENABLED: "true",
+    PUBLIC_CHAT_CANONICAL_ORIGIN: "http://127.0.0.1:4322",
+    PUBLIC_CHAT_RATE_LIMIT_SECRET: "test-only-rate-limit-secret-32-bytes",
+  },
+  stdio: "inherit",
+  windowsHide: true,
+});
+if ((await waitForExit(build)) !== 0) throw new Error("M003_FRESH_BUILD_FAILED");
+await stat(resolve(staticRoot, "chat/index.html"));
+
 const server = createServer(async (request, response) => {
   try {
     const pathname = decodeURIComponent(new URL(request.url ?? "/", "http://127.0.0.1").pathname);
-    const relative = pathname.endsWith("/") ? `${pathname}index.html` : pathname;
-    let file = resolve(staticRoot, `.${relative}`);
-    if (!file.startsWith(staticRoot)) throw new Error("PATH_OUTSIDE_STATIC_ROOT");
+    const relativeRequest = pathname.endsWith("/") ? `${pathname}index.html` : pathname;
+    let file = resolve(staticRoot, `.${relativeRequest}`);
+    const containment = relative(staticRoot, file);
+    if (
+      containment === ".." ||
+      containment.startsWith(`..${sep}`) ||
+      resolve(file) === staticRoot
+    ) {
+      throw new Error("PATH_OUTSIDE_STATIC_ROOT");
+    }
     if ((await stat(file)).isDirectory()) file = resolve(file, "index.html");
     const body = await readFile(file);
     response.writeHead(200, {
