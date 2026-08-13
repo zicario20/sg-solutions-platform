@@ -9,6 +9,7 @@ import {
   publicChatHandoffs,
   publicChatIdempotency,
   publicChatMessages,
+  publicChatRateLimits,
   publicChatSessions,
 } from "../../packages/database/src/schema.ts";
 
@@ -36,9 +37,24 @@ describe("M003 Drizzle schema contract", () => {
       (column) => column.name,
     );
     expect(sessionColumns).toEqual(
-      expect.arrayContaining(["session_hash", "csrf_hash", "expires_at", "revoked_at"]),
+      expect.arrayContaining([
+        "session_hash",
+        "csrf_hash",
+        "correlation_id",
+        "expires_at",
+        "revoked_at",
+      ]),
     );
     expect(sessionColumns).not.toEqual(expect.arrayContaining(["session_token", "csrf_token"]));
+  });
+
+  it("stores only a hashed key for distributed rate-limit buckets", () => {
+    const config = getPublicChatTableConfig(publicChatRateLimits);
+    expect(config.enableRLS).toBe(true);
+    expect(config.columns.find((column) => column.name === "bucket_hash")?.primary).toBe(true);
+    expect(config.columns.map((column) => column.name)).not.toEqual(
+      expect.arrayContaining(["ip", "ip_address", "session_token"]),
+    );
   });
 
   it("exposes version, expiry, reconciliation, and nullable body columns", () => {
@@ -75,10 +91,15 @@ describe("M003 Drizzle schema contract", () => {
   });
 
   it("forces RLS and revokes direct browser roles in the migration", () => {
-    const migration = readFileSync(
-      fileURLToPath(new URL("../../drizzle/0001_thick_riptide.sql", import.meta.url)),
-      "utf8",
-    );
+    const migration = [
+      "0000_abnormal_orphan.sql",
+      "0001_thick_riptide.sql",
+      "0002_green_tempest.sql",
+    ]
+      .map((file) =>
+        readFileSync(fileURLToPath(new URL(`../../drizzle/${file}`, import.meta.url)), "utf8"),
+      )
+      .join("\n");
     for (const table of [
       "public_chat_sessions",
       "public_chat_conversations",
@@ -87,11 +108,16 @@ describe("M003 Drizzle schema contract", () => {
       "public_chat_handoffs",
       "public_chat_idempotency",
       "public_chat_audit_events",
+      "public_chat_rate_limits",
     ]) {
       expect(migration).toContain(`ALTER TABLE "${table}" FORCE ROW LEVEL SECURITY`);
       expect(migration).toContain(
         `REVOKE ALL ON TABLE "${table}" FROM PUBLIC, anon, authenticated`,
       );
     }
+    expect(migration).toContain("CREATE ROLE atlas_public_chat_gateway");
+    expect(migration).toContain("NOBYPASSRLS");
+    expect(migration).toContain("NOLOGIN");
+    expect(migration).toContain('TO "atlas_public_chat_gateway" USING (true) WITH CHECK (true)');
   });
 });

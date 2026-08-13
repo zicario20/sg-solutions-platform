@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  deserializePublicChatCommandResult,
+  serializePublicChatCommandResult,
+} from "../../packages/database/src/postgres-public-chat-store.ts";
+import {
   createMemoryPublicChatStore,
   createPostgresConversationRepository,
 } from "../../packages/database/src/public-chat-repository.ts";
@@ -173,5 +177,126 @@ describe("M003 Postgres repository behavior", () => {
     expect(fixture.store.citations[0]?.sourceId).toBe("faq_1");
     expect(fixture.store.handoffs[0]?.receiptId).toBe("handoff_receipt_1");
     expect(JSON.stringify(fixture.store)).not.toContain("Confidential response body");
+  });
+
+  it("retains normalized metadata while durable message bodies remain absent", async () => {
+    const fixture = repository();
+    const original = conversation();
+    await fixture.repository.create(original);
+    const claim = await fixture.repository.claimCommand({
+      conversationId: original.id,
+      idempotencyKey: "message_key_first",
+      expectedVersion: 1,
+      leaseExpiresAt: new Date("2026-08-12T23:59:00.000Z"),
+    });
+    if (claim.status !== "claimed") throw new Error("Expected claim");
+    const next = conversation({
+      version: 2,
+      status: "ai_active",
+      messages: [
+        {
+          id: "message_first",
+          actor: "assistant",
+          body: "Sensitive first transcript",
+          state: "answered",
+          actions: [{ key: "help_center", path: "/recursos/" }],
+          citations: [
+            {
+              sourceId: "source_first",
+              title: "First",
+              path: "/recursos/guias/first/",
+              locale: "es",
+              summary: "Summary",
+              disclosure: "Educational only",
+              sourceKind: null,
+            },
+          ],
+          createdAt: NOW,
+        },
+      ],
+    });
+    await fixture.repository.completeCommand({
+      conversation: next,
+      expectedVersion: 1,
+      idempotencyKey: "message_key_first",
+      leaseToken: claim.leaseToken,
+      result: { ok: false, code: "conflict" },
+    });
+
+    const reloaded = await fixture.repository.findOwned(next.id, next.sessionHash);
+    expect(reloaded?.messages).toEqual([
+      expect.objectContaining({
+        id: "message_first",
+        body: null,
+        actions: [{ key: "help_center", path: "/recursos/" }],
+        citations: [expect.objectContaining({ sourceId: "source_first" })],
+      }),
+    ]);
+    expect(JSON.stringify(fixture.store.messages)).not.toContain("Sensitive first transcript");
+  });
+
+  it.each([
+    "visitor_requested",
+    "complaint",
+    "safety",
+    "policy_required",
+    "assistant_unavailable",
+  ] as const)("persists the exact bounded handoff reason %s", async (reason) => {
+    const fixture = repository();
+    const original = conversation();
+    await fixture.repository.create(original);
+    const claim = await fixture.repository.claimCommand({
+      conversationId: original.id,
+      idempotencyKey: `handoff_${reason}`,
+      expectedVersion: 1,
+      leaseExpiresAt: new Date("2026-08-12T23:59:00.000Z"),
+    });
+    if (claim.status !== "claimed") throw new Error("Expected claim");
+    const requested = conversation({
+      version: 2,
+      status: "human_requested",
+      handoffReason: reason,
+    });
+    await fixture.repository.advanceClaimedCommand({
+      conversation: requested,
+      expectedVersion: 1,
+      idempotencyKey: `handoff_${reason}`,
+      leaseToken: claim.leaseToken,
+    });
+    expect(fixture.store.handoffs).toEqual([expect.objectContaining({ reason })]);
+  });
+
+  it("round-trips versioned JSON results and fails closed on corrupted shapes", () => {
+    const result: ChatCommandResult = {
+      ok: true,
+      replayed: false,
+      projection: {
+        id: "conversation_1",
+        version: 2,
+        locale: "es",
+        status: "ai_active",
+        messages: [
+          {
+            id: "message_1",
+            actor: "assistant",
+            body: "Sensitive transcript",
+            state: "answered",
+            actions: [],
+            citations: [],
+            createdAt: NOW,
+          },
+        ],
+        expiresAt: new Date("2026-08-12T23:00:00.000Z"),
+      },
+    };
+    const serialized = serializePublicChatCommandResult(result, "metadata_only");
+    const json = JSON.parse(JSON.stringify(serialized)) as unknown;
+    expect(JSON.stringify(json)).not.toContain("Sensitive transcript");
+    const decoded = deserializePublicChatCommandResult(json);
+    expect(decoded.ok && decoded.projection.expiresAt).toBeInstanceOf(Date);
+    expect(decoded.ok && decoded.projection.messages[0]?.createdAt).toBeInstanceOf(Date);
+    expect(() =>
+      deserializePublicChatCommandResult({ schemaVersion: 1, result: { ok: true } }),
+    ).toThrowError("PUBLIC_CHAT_COMMAND_RESULT_INVALID");
   });
 });

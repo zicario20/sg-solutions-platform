@@ -109,22 +109,31 @@ function cloneConversation(conversation: PublicChatConversation): PublicChatConv
   return structuredClone(conversation);
 }
 
+function durableConversation(
+  conversation: PublicChatConversation,
+  transcriptPersistence: TranscriptPersistence,
+): PublicChatConversation {
+  const cloned = cloneConversation(conversation);
+  if (transcriptPersistence === "metadata_only") {
+    cloned.messages = cloned.messages.map((message) => ({ ...message, body: null }));
+  }
+  return cloned;
+}
+
 function normalizeRows(
   store: Pick<MemoryPublicChatStore, "messages" | "citations" | "handoffs">,
   conversation: PublicChatConversation,
   transcriptPersistence: TranscriptPersistence,
 ): void {
+  const removedMessageIds = new Set(
+    store.messages
+      .filter((message) => message.conversationId === conversation.id)
+      .map((message) => message.id),
+  );
   store.messages.splice(
     0,
     store.messages.length,
     ...store.messages.filter((row) => row.conversationId !== conversation.id),
-  );
-  const removedMessageIds = new Set(
-    store.citations
-      .filter((citation) =>
-        conversation.messages.some((message) => message.id === citation.messageId),
-      )
-      .map((citation) => citation.messageId),
   );
   store.citations.splice(
     0,
@@ -170,7 +179,7 @@ function normalizeRows(
       id: `handoff:${conversation.id}`,
       conversationId: conversation.id,
       status: conversation.status,
-      reason: "visitor_requested",
+      reason: conversation.handoffReason ?? "policy_required",
       receiptId: conversation.handoffReceiptId ?? null,
       requestedAt: conversation.updatedAt,
       queuedAt: conversation.handoffReceiptId ? conversation.updatedAt : null,
@@ -254,13 +263,18 @@ export function createMemoryPublicChatStore(): MemoryPublicChatStore {
       if (
         stored?.state !== "in_progress" ||
         stored.leaseTokenHash !== leaseTokenHash ||
+        stored.expectedVersion !== command.expectedVersion ||
         !current ||
         current.version !== command.expectedVersion ||
         command.conversation.version !== command.expectedVersion + 1
       ) {
         return "conflict";
       }
-      conversations.set(command.conversation.id, cloneConversation(command.conversation));
+      conversations.set(
+        command.conversation.id,
+        durableConversation(command.conversation, transcriptPersistence),
+      );
+      stored.expectedVersion = command.conversation.version;
       normalizeRows({ messages, citations, handoffs }, command.conversation, transcriptPersistence);
       return "advanced";
     },
@@ -274,13 +288,17 @@ export function createMemoryPublicChatStore(): MemoryPublicChatStore {
       if (
         stored?.state !== "in_progress" ||
         stored.leaseTokenHash !== leaseTokenHash ||
+        stored.expectedVersion !== command.expectedVersion ||
         !current ||
         current.version !== command.expectedVersion ||
         (!versionIsUnchanged && !versionAdvancedOne)
       ) {
         return "conflict";
       }
-      conversations.set(command.conversation.id, cloneConversation(command.conversation));
+      conversations.set(
+        command.conversation.id,
+        durableConversation(command.conversation, transcriptPersistence),
+      );
       normalizeRows({ messages, citations, handoffs }, command.conversation, transcriptPersistence);
       stored.state = "completed";
       stored.result = structuredClone(command.result);

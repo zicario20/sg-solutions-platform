@@ -16,13 +16,13 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-const denyDirectAccess = (name: string) =>
+const gatewayAccess = (name: string) =>
   pgPolicy(`${name}_server_gateway_only`, {
-    as: "restrictive",
+    as: "permissive",
     for: "all",
-    to: "public",
-    using: sql`false`,
-    withCheck: sql`false`,
+    to: "atlas_public_chat_gateway",
+    using: sql`true`,
+    withCheck: sql`true`,
   });
 
 const timestamps = {
@@ -36,13 +36,34 @@ export const publicChatSessions = pgTable(
     id: text("id").primaryKey(),
     sessionHash: char("session_hash", { length: 64 }).notNull().unique(),
     csrfHash: char("csrf_hash", { length: 64 }).notNull(),
+    correlationId: text("correlation_id").notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
     revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),
     ...timestamps,
   },
   (table) => [
     index("public_chat_sessions_expiry_idx").on(table.expiresAt),
-    denyDirectAccess("public_chat_sessions"),
+    gatewayAccess("public_chat_sessions"),
+  ],
+).enableRLS();
+
+export const publicChatRateLimits = pgTable(
+  "public_chat_rate_limits",
+  {
+    bucketHash: char("bucket_hash", { length: 64 }).primaryKey(),
+    count: integer("count").notNull(),
+    windowStartedAt: timestamp("window_started_at", { withTimezone: true, mode: "date" }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (table) => [
+    index("public_chat_rate_limits_expiry_idx").on(table.expiresAt),
+    check("public_chat_rate_limits_count_positive", sql`${table.count} > 0`),
+    check(
+      "public_chat_rate_limits_window_valid",
+      sql`${table.expiresAt} > ${table.windowStartedAt}`,
+    ),
+    gatewayAccess("public_chat_rate_limits"),
   ],
 ).enableRLS();
 
@@ -62,6 +83,7 @@ export const publicChatConversations = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
     closedAt: timestamp("closed_at", { withTimezone: true, mode: "date" }),
     handoffReceiptId: text("handoff_receipt_id"),
+    handoffReason: varchar("handoff_reason", { length: 48 }),
     reconciliationRequired: boolean("reconciliation_required").notNull().default(false),
     ...timestamps,
   },
@@ -73,12 +95,20 @@ export const publicChatConversations = pgTable(
       sql`${table.status} in ('new', 'ai_active', 'human_requested', 'waiting_for_human', 'human_active', 'returned_to_ai', 'closed', 'expired', 'restricted')`,
     ),
     check("public_chat_conversations_expiry_valid", sql`${table.expiresAt} > ${table.createdAt}`),
+    check(
+      "public_chat_conversations_handoff_reason_valid",
+      sql`${table.handoffReason} is null or ${table.handoffReason} in ('visitor_requested', 'complaint', 'safety', 'policy_required', 'assistant_unavailable')`,
+    ),
+    check(
+      "public_chat_conversations_handoff_state_valid",
+      sql`(${table.status} in ('human_requested', 'waiting_for_human') and ${table.handoffReason} is not null) or (${table.status} not in ('human_requested', 'waiting_for_human'))`,
+    ),
     index("public_chat_conversations_expiry_idx").on(table.expiresAt),
     index("public_chat_conversations_reconciliation_idx").on(
       table.reconciliationRequired,
       table.updatedAt,
     ),
-    denyDirectAccess("public_chat_conversations"),
+    gatewayAccess("public_chat_conversations"),
   ],
 ).enableRLS();
 
@@ -116,7 +146,7 @@ export const publicChatMessages = pgTable(
       "public_chat_messages_body_retention_valid",
       sql`(${table.bodyStored} = true and ${table.body} is not null) or (${table.bodyStored} = false and ${table.body} is null)`,
     ),
-    denyDirectAccess("public_chat_messages"),
+    gatewayAccess("public_chat_messages"),
   ],
 ).enableRLS();
 
@@ -143,7 +173,7 @@ export const publicChatCitations = pgTable(
       "public_chat_citations_source_kind_valid",
       sql`${table.sourceKind} is null or ${table.sourceKind} = 'provider'`,
     ),
-    denyDirectAccess("public_chat_citations"),
+    gatewayAccess("public_chat_citations"),
   ],
 ).enableRLS();
 
@@ -167,7 +197,7 @@ export const publicChatHandoffs = pgTable(
       "public_chat_handoffs_status_valid",
       sql`${table.status} in ('human_requested', 'waiting_for_human')`,
     ),
-    denyDirectAccess("public_chat_handoffs"),
+    gatewayAccess("public_chat_handoffs"),
   ],
 ).enableRLS();
 
@@ -201,7 +231,7 @@ export const publicChatIdempotency = pgTable(
       "public_chat_idempotency_completion_valid",
       sql`(${table.state} = 'completed' and ${table.result} is not null and ${table.completedAt} is not null) or (${table.state} = 'in_progress' and ${table.completedAt} is null)`,
     ),
-    denyDirectAccess("public_chat_idempotency"),
+    gatewayAccess("public_chat_idempotency"),
   ],
 ).enableRLS();
 
@@ -223,7 +253,7 @@ export const publicChatAuditEvents = pgTable(
   (table) => [
     unique("public_chat_audit_sequence_unique").on(table.conversationId, table.sequence),
     check("public_chat_audit_locale_valid", sql`${table.locale} in ('es', 'en')`),
-    denyDirectAccess("public_chat_audit_events"),
+    gatewayAccess("public_chat_audit_events"),
   ],
 ).enableRLS();
 

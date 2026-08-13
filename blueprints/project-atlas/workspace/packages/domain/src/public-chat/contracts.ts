@@ -32,7 +32,7 @@ export type PublicChatAction = {
 export type PublicChatMessage = {
   id: string;
   actor: ChatActor;
-  body: string;
+  body: string | null;
   state: MessageState;
   citations: PublicCitation[];
   actions: PublicChatAction[];
@@ -54,6 +54,12 @@ export type PublicChatConversation = {
   revokedAt?: Date;
   closedAt?: Date;
   handoffReceiptId?: string;
+  handoffReason?:
+    | "visitor_requested"
+    | "complaint"
+    | "safety"
+    | "policy_required"
+    | "assistant_unavailable";
   messages: PublicChatMessage[];
 };
 

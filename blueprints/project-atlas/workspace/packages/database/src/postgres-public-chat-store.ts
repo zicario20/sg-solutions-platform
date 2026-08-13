@@ -10,13 +10,49 @@ import type {
   PublicChatMessage,
   PublicCitation,
 } from "@atlas/domain";
-import type postgres from "postgres";
+import postgres from "postgres";
+import { z } from "zod";
 import type {
   PublicChatTransactionalStore,
   TranscriptPersistence,
 } from "./public-chat-repository.ts";
 
 type TransactionSql = postgres.TransactionSql<Record<string, never>>;
+export type PublicChatSql = postgres.Sql<Record<string, never>>;
+
+export function createPublicChatSql(databaseUrl: string): PublicChatSql {
+  return postgres(databaseUrl, {
+    max: 4,
+    idle_timeout: 20,
+    connect_timeout: 10,
+    prepare: false,
+  });
+}
+
+async function withGatewayTransaction<T>(
+  sql: postgres.Sql<Record<string, never>>,
+  work: (tx: TransactionSql) => Promise<T>,
+): Promise<T> {
+  return sql.begin(async (tx) => {
+    const principals = await tx<
+      Array<{ is_member: boolean; rolbypassrls: boolean; rolsuper: boolean }>
+    >`
+      select
+        pg_has_role(session_user, 'atlas_public_chat_gateway', 'member') as is_member,
+        roles.rolbypassrls,
+        roles.rolsuper
+      from pg_roles roles
+      where roles.rolname = session_user
+      limit 1
+    `;
+    const principal = principals[0];
+    if (!principal?.is_member || principal.rolbypassrls || principal.rolsuper) {
+      throw new Error("PUBLIC_CHAT_DATABASE_PRINCIPAL_UNSAFE");
+    }
+    await tx.unsafe("set local role atlas_public_chat_gateway");
+    return work(tx);
+  }) as Promise<T>;
+}
 
 type ConversationRow = {
   id: string;
@@ -33,6 +69,7 @@ type ConversationRow = {
   revoked_at: Date | null;
   closed_at: Date | null;
   handoff_receipt_id: string | null;
+  handoff_reason: PublicChatConversation["handoffReason"] | null;
 };
 
 type MessageRow = {
@@ -60,30 +97,143 @@ type CommandRow = {
   state: "in_progress" | "completed";
   lease_token_hash: string;
   lease_expires_at: Date;
-  result: ChatCommandResult | null;
+  result: unknown;
   lease_active: boolean;
+  expected_version: number;
 };
 
 function commandId(conversationId: string, idempotencyKey: string): string {
   return `command:${conversationId}:${idempotencyKey}`;
 }
 
-function persistedResult(
+async function sha256(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+const actionSchema = z
+  .object({
+    key: z.enum(["help_center", "human_support"]),
+    path: z.string().startsWith("/").max(240),
+  })
+  .strict();
+const citationSchema = z
+  .object({
+    sourceId: z.string().min(1).max(240),
+    title: z.string().min(1).max(500),
+    path: z.string().startsWith("/").max(240),
+    locale: z.enum(["es", "en"]),
+    summary: z.string().max(2_000),
+    disclosure: z.string().max(2_000),
+    sourceKind: z.literal("provider").nullable(),
+  })
+  .strict();
+const messageSchema = z
+  .object({
+    id: z.string().min(1).max(240),
+    actor: z.enum(["visitor", "assistant", "human", "system"]),
+    body: z.string().max(4_000).nullable(),
+    state: z.enum(["accepted", "answered", "failed", "handoff_required"]),
+    citations: z.array(citationSchema).max(10),
+    actions: z.array(actionSchema).max(4),
+    createdAt: z.iso.datetime().transform((value) => new Date(value)),
+  })
+  .strict();
+const projectionSchema = z
+  .object({
+    id: z.string().min(1).max(240),
+    version: z.number().int().positive().max(2_147_483_647),
+    locale: z.enum(["es", "en"]),
+    status: z.enum([
+      "new",
+      "ai_active",
+      "human_requested",
+      "waiting_for_human",
+      "human_active",
+      "returned_to_ai",
+      "closed",
+      "expired",
+      "restricted",
+    ]),
+    messages: z.array(messageSchema).max(200),
+    expiresAt: z.iso.datetime().transform((value) => new Date(value)),
+  })
+  .strict();
+const reasonSchema = z.enum([
+  "ambiguous",
+  "government_identifier",
+  "payment_card",
+  "bank_account",
+  "credential",
+  "markup",
+  "abuse",
+  "safety",
+  "policy_required",
+  "visitor_requested",
+  "complaint",
+  "assistant_unavailable",
+  "disabled",
+  "timeout",
+  "provider_error",
+  "response_invalid",
+  "response_rejected",
+  "unknown",
+]);
+const commandResultSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), projection: projectionSchema, replayed: z.boolean() }).strict(),
+  z
+    .object({
+      ok: z.literal(false),
+      code: z.enum([
+        "not_found",
+        "expired",
+        "revoked",
+        "conflict",
+        "command_in_progress",
+        "invalid_transition",
+        "human_active",
+        "content_rejected",
+        "moderation_unavailable",
+        "knowledge_unavailable",
+        "assistant_unavailable",
+        "clarification_required",
+        "handoff_required",
+        "handoff_unavailable",
+      ]),
+      reason: reasonSchema.optional(),
+      projection: projectionSchema.optional(),
+    })
+    .strict(),
+]);
+const persistedCommandResultSchema = z
+  .object({ schemaVersion: z.literal(1), result: commandResultSchema })
+  .strict();
+
+export function serializePublicChatCommandResult(
   result: ChatCommandResult,
   transcriptPersistence: TranscriptPersistence,
-): ChatCommandResult {
-  if (transcriptPersistence === "approved" || !result.projection) return result;
-  return {
-    ...result,
-    projection: {
-      ...result.projection,
-      messages: result.projection.messages.map((message) => ({ ...message, body: "" })),
-    },
-  };
+): { schemaVersion: 1; result: ChatCommandResult } {
+  const durable =
+    transcriptPersistence === "approved" || !result.projection
+      ? result
+      : {
+          ...result,
+          projection: {
+            ...result.projection,
+            messages: result.projection.messages.map((message) => ({ ...message, body: null })),
+          },
+        };
+  return { schemaVersion: 1, result: durable };
+}
+
+export function deserializePublicChatCommandResult(value: unknown): ChatCommandResult {
+  const parsed = persistedCommandResultSchema.safeParse(value);
+  if (!parsed.success) throw new Error("PUBLIC_CHAT_COMMAND_RESULT_INVALID");
+  return parsed.data.result;
 }
 
 async function loadConversation(
-  sql: postgres.Sql<Record<string, never>>,
+  sql: TransactionSql,
   conversationId: string,
   sessionHash: string,
 ): Promise<PublicChatConversation | null> {
@@ -102,7 +252,8 @@ async function loadConversation(
       c.expires_at,
       s.revoked_at,
       c.closed_at,
-      c.handoff_receipt_id
+      c.handoff_receipt_id,
+      c.handoff_reason
     from public_chat_conversations c
     inner join public_chat_sessions s on s.id = c.session_id
     where c.id = ${conversationId} and s.session_hash = ${sessionHash}
@@ -117,8 +268,7 @@ async function loadConversation(
     where conversation_id = ${conversationId}
     order by ordinal asc
   `;
-  const retainedMessages = messageRows.filter((message) => message.body_stored && message.body);
-  const messageIds = retainedMessages.map((message) => message.id);
+  const messageIds = messageRows.map((message) => message.id);
   const citationRows =
     messageIds.length === 0
       ? []
@@ -159,10 +309,11 @@ async function loadConversation(
     ...(row.revoked_at ? { revokedAt: row.revoked_at } : {}),
     ...(row.closed_at ? { closedAt: row.closed_at } : {}),
     ...(row.handoff_receipt_id ? { handoffReceiptId: row.handoff_receipt_id } : {}),
-    messages: retainedMessages.map((message) => ({
+    ...(row.handoff_reason ? { handoffReason: row.handoff_reason } : {}),
+    messages: messageRows.map((message) => ({
       id: message.id,
       actor: message.actor,
-      body: message.body ?? "",
+      body: message.body_stored ? message.body : null,
       state: message.state,
       citations: citationsByMessage.get(message.id) ?? [],
       actions: Array.isArray(message.actions) ? message.actions : [],
@@ -188,22 +339,17 @@ async function persistConversation(
       last_activity_at = ${conversation.lastActivityAt},
       expires_at = ${conversation.expiresAt},
       closed_at = ${conversation.closedAt ?? null},
-      handoff_receipt_id = ${conversation.handoffReceiptId ?? null}
+      handoff_receipt_id = ${conversation.handoffReceiptId ?? null},
+      handoff_reason = ${conversation.handoffReason ?? null}
     where id = ${conversation.id}
   `;
   await tx`
     update public_chat_sessions
-    set expires_at = greatest(expires_at, ${conversation.expiresAt}), updated_at = ${conversation.updatedAt}
+    set expires_at = greatest(expires_at, ${conversation.expiresAt}),
+        revoked_at = coalesce(revoked_at, ${conversation.revokedAt ?? null}),
+        updated_at = ${conversation.updatedAt}
     where id = (select session_id from public_chat_conversations where id = ${conversation.id})
   `;
-  await tx`
-    delete from public_chat_citations
-    where message_id in (
-      select id from public_chat_messages where conversation_id = ${conversation.id}
-    )
-  `;
-  await tx`delete from public_chat_messages where conversation_id = ${conversation.id}`;
-  await tx`delete from public_chat_handoffs where conversation_id = ${conversation.id}`;
 
   for (const [ordinal, message] of conversation.messages.entries()) {
     const bodyStored = transcriptPersistence === "approved";
@@ -221,6 +367,13 @@ async function persistConversation(
         ${tx.json(message.actions)},
         ${message.createdAt}
       )
+      on conflict (id) do update
+      set ordinal = excluded.ordinal,
+          actor = excluded.actor,
+          state = excluded.state,
+          body = excluded.body,
+          body_stored = excluded.body_stored,
+          actions = excluded.actions
     `;
     for (const citation of message.citations) {
       await tx`
@@ -238,6 +391,13 @@ async function persistConversation(
           ${citation.sourceKind},
           ${message.createdAt}
         )
+        on conflict (id) do update
+        set title = excluded.title,
+            path = excluded.path,
+            locale = excluded.locale,
+            summary = excluded.summary,
+            disclosure = excluded.disclosure,
+            source_kind = excluded.source_kind
       `;
     }
   }
@@ -250,12 +410,18 @@ async function persistConversation(
         ${`handoff:${conversation.id}`},
         ${conversation.id},
         ${conversation.status},
-        'visitor_requested',
+        ${conversation.handoffReason ?? "policy_required"},
         ${conversation.handoffReceiptId ?? null},
         ${conversation.updatedAt},
         ${conversation.handoffReceiptId ? conversation.updatedAt : null},
         ${conversation.updatedAt}
       )
+      on conflict (id) do update
+      set status = excluded.status,
+          reason = excluded.reason,
+          receipt_id = excluded.receipt_id,
+          queued_at = excluded.queued_at,
+          updated_at = excluded.updated_at
     `;
   }
 }
@@ -300,7 +466,10 @@ function completionAuditEvent(command: CommandCompletion): {
   reason?: ChatReasonCode;
 } {
   if (command.conversation.status === "waiting_for_human") {
-    return { eventName: "chat_handoff_queued" };
+    return {
+      eventName: "chat_handoff_queued",
+      ...(command.conversation.handoffReason ? { reason: command.conversation.handoffReason } : {}),
+    };
   }
   if (command.conversation.status === "closed") {
     return { eventName: "chat_conversation_closed" };
@@ -333,11 +502,10 @@ function validVersion(
 
 export function createPostgresPublicChatStore(
   sql: postgres.Sql<Record<string, never>>,
-  options: { transcriptPersistence: TranscriptPersistence },
 ): PublicChatTransactionalStore {
   return {
     async createConversation(conversation) {
-      await sql.begin(async (tx) => {
+      await withGatewayTransaction(sql, async (tx) => {
         const sessions = await tx<{ id: string }[]>`
           select id
           from public_chat_sessions
@@ -352,13 +520,14 @@ export function createPostgresPublicChatStore(
         await tx`
           insert into public_chat_conversations (
             id, session_id, version, locale, status, notice_version, correlation_id,
-            last_activity_at, expires_at, closed_at, handoff_receipt_id,
+            last_activity_at, expires_at, closed_at, handoff_receipt_id, handoff_reason,
             reconciliation_required, created_at, updated_at
           ) values (
             ${conversation.id}, ${session.id}, ${conversation.version}, ${conversation.locale},
             ${conversation.status}, ${conversation.noticeVersion}, ${conversation.correlationId},
             ${conversation.lastActivityAt}, ${conversation.expiresAt},
-            ${conversation.closedAt ?? null}, ${conversation.handoffReceiptId ?? null}, false,
+            ${conversation.closedAt ?? null}, ${conversation.handoffReceiptId ?? null},
+            ${conversation.handoffReason ?? null}, false,
             ${conversation.createdAt}, ${conversation.updatedAt}
           )
         `;
@@ -367,34 +536,24 @@ export function createPostgresPublicChatStore(
     },
 
     findOwnedConversation: (conversationId, sessionHash) =>
-      loadConversation(sql, conversationId, sessionHash),
+      withGatewayTransaction(sql, (tx) => loadConversation(tx, conversationId, sessionHash)),
 
     async findCommandResult(conversationId, idempotencyKey) {
-      const rows = await sql<Array<Pick<CommandRow, "state" | "result">>>`
-        select state, result
-        from public_chat_idempotency
-        where conversation_id = ${conversationId} and idempotency_key = ${idempotencyKey}
-        limit 1
-      `;
-      return rows[0]?.state === "completed" ? rows[0].result : null;
+      return withGatewayTransaction(sql, async (tx) => {
+        const rows = await tx<Array<Pick<CommandRow, "state" | "result">>>`
+          select state, result
+          from public_chat_idempotency
+          where conversation_id = ${conversationId} and idempotency_key = ${idempotencyKey}
+          limit 1
+        `;
+        return rows[0]?.state === "completed"
+          ? deserializePublicChatCommandResult(rows[0].result)
+          : null;
+      });
     },
 
     async claimCommand(command, _leaseToken, leaseTokenHash) {
-      return sql.begin(async (tx) => {
-        const existingRows = await tx<CommandRow[]>`
-          select state, lease_token_hash, lease_expires_at, result,
-                 lease_expires_at > current_timestamp as lease_active
-          from public_chat_idempotency
-          where conversation_id = ${command.conversationId}
-            and idempotency_key = ${command.idempotencyKey}
-          limit 1
-          for update
-        `;
-        const existing = existingRows[0];
-        if (existing?.state === "completed" && existing.result) {
-          return { status: "completed" as const, result: existing.result };
-        }
-
+      return withGatewayTransaction(sql, async (tx) => {
         const versions = await tx<{ version: number }[]>`
           select version
           from public_chat_conversations
@@ -404,6 +563,22 @@ export function createPostgresPublicChatStore(
         `;
         if (versions[0]?.version !== command.expectedVersion) {
           return { status: "conflict" as const };
+        }
+        const existingRows = await tx<CommandRow[]>`
+          select state, lease_token_hash, lease_expires_at, result, expected_version,
+                 lease_expires_at > current_timestamp as lease_active
+          from public_chat_idempotency
+          where conversation_id = ${command.conversationId}
+            and idempotency_key = ${command.idempotencyKey}
+          limit 1
+          for update
+        `;
+        const existing = existingRows[0];
+        if (existing?.state === "completed" && existing.result) {
+          return {
+            status: "completed" as const,
+            result: deserializePublicChatCommandResult(existing.result),
+          };
         }
         if (existing?.lease_active) {
           return { status: "in_progress" as const };
@@ -435,22 +610,27 @@ export function createPostgresPublicChatStore(
 
     async waitForCommandResult(conversationId, idempotencyKey, waitUntil) {
       while (Date.now() < waitUntil.getTime()) {
-        const rows = await sql<Array<Pick<CommandRow, "state" | "result">>>`
-          select state, result
-          from public_chat_idempotency
-          where conversation_id = ${conversationId} and idempotency_key = ${idempotencyKey}
-          limit 1
-        `;
-        if (rows[0]?.state === "completed") return rows[0].result;
+        const completed = await withGatewayTransaction(sql, async (tx) => {
+          const rows = await tx<Array<Pick<CommandRow, "state" | "result">>>`
+            select state, result
+            from public_chat_idempotency
+            where conversation_id = ${conversationId} and idempotency_key = ${idempotencyKey}
+            limit 1
+          `;
+          return rows[0]?.state === "completed"
+            ? deserializePublicChatCommandResult(rows[0].result)
+            : null;
+        });
+        if (completed) return completed;
         await new Promise((resolve) => setTimeout(resolve, 50));
       }
       return null;
     },
 
     async advanceCommand(command, leaseTokenHash, transcriptPersistence) {
-      return sql.begin(async (tx) => {
+      return withGatewayTransaction(sql, async (tx) => {
         const claims = await tx<CommandRow[]>`
-          select state, lease_token_hash, lease_expires_at, result,
+          select state, lease_token_hash, lease_expires_at, result, expected_version,
                  lease_expires_at > current_timestamp as lease_active
           from public_chat_idempotency
           where conversation_id = ${command.conversation.id}
@@ -469,21 +649,33 @@ export function createPostgresPublicChatStore(
           claim?.state !== "in_progress" ||
           claim.lease_token_hash !== leaseTokenHash ||
           !claim.lease_active ||
+          claim.expected_version !== command.expectedVersion ||
           currentVersion === undefined ||
           !validVersion(currentVersion, command)
         ) {
           return "conflict" as const;
         }
         await persistConversation(tx, command.conversation, transcriptPersistence);
-        await appendAuditEvent(tx, command.conversation, "chat_handoff_requested");
+        await tx`
+          update public_chat_idempotency
+          set expected_version = ${command.conversation.version}, updated_at = current_timestamp
+          where conversation_id = ${command.conversation.id}
+            and idempotency_key = ${command.idempotencyKey}
+        `;
+        await appendAuditEvent(
+          tx,
+          command.conversation,
+          "chat_handoff_requested",
+          command.conversation.handoffReason,
+        );
         return "advanced" as const;
       });
     },
 
     async completeCommand(command, leaseTokenHash, transcriptPersistence) {
-      return sql.begin(async (tx) => {
+      return withGatewayTransaction(sql, async (tx) => {
         const claims = await tx<CommandRow[]>`
-          select state, lease_token_hash, lease_expires_at, result,
+          select state, lease_token_hash, lease_expires_at, result, expected_version,
                  lease_expires_at > current_timestamp as lease_active
           from public_chat_idempotency
           where conversation_id = ${command.conversation.id}
@@ -498,13 +690,13 @@ export function createPostgresPublicChatStore(
         `;
         const claim = claims[0];
         const currentVersion = versions[0]?.version;
-        const continuingAdvancedCommand = currentVersion === command.expectedVersion;
         if (
           claim?.state !== "in_progress" ||
           claim.lease_token_hash !== leaseTokenHash ||
           !claim.lease_active ||
+          claim.expected_version !== command.expectedVersion ||
           currentVersion === undefined ||
-          (!validVersion(currentVersion, command) && !continuingAdvancedCommand)
+          !validVersion(currentVersion, command)
         ) {
           return "conflict" as const;
         }
@@ -514,7 +706,9 @@ export function createPostgresPublicChatStore(
         await tx`
           update public_chat_idempotency
           set state = 'completed',
-              result = ${tx.json(persistedResult(command.result, options.transcriptPersistence))},
+              result = ${tx.json(
+                serializePublicChatCommandResult(command.result, transcriptPersistence),
+              )},
               completed_at = current_timestamp,
               updated_at = current_timestamp
           where conversation_id = ${command.conversation.id}
@@ -532,17 +726,112 @@ export async function registerPublicChatSession(
     id: string;
     sessionHash: string;
     csrfHash: string;
+    correlationId: string;
     expiresAt: Date;
     now: Date;
   },
 ): Promise<void> {
-  await sql`
-    insert into public_chat_sessions (
-      id, session_hash, csrf_hash, expires_at, revoked_at, created_at, updated_at
-    ) values (
-      ${session.id}, ${session.sessionHash}, ${session.csrfHash}, ${session.expiresAt},
-      null, ${session.now}, ${session.now}
-    )
-    on conflict (session_hash) do nothing
-  `;
+  await withGatewayTransaction(sql, async (tx) => {
+    await tx`
+      insert into public_chat_sessions (
+        id, session_hash, csrf_hash, correlation_id, expires_at, revoked_at, created_at, updated_at
+      ) values (
+        ${session.id}, ${session.sessionHash}, ${session.csrfHash}, ${session.correlationId}, ${session.expiresAt},
+        null, ${session.now}, ${session.now}
+      )
+      on conflict (session_hash) do nothing
+    `;
+  });
+}
+
+export async function findPublicChatSessionByHash(
+  sql: postgres.Sql<Record<string, never>>,
+  sessionHash: string,
+): Promise<{
+  id: string;
+  sessionHash: string;
+  csrfHash: string;
+  correlationId: string;
+  expiresAt: Date;
+  revokedAt: Date | null;
+  createdAt: Date;
+} | null> {
+  return withGatewayTransaction(sql, async (tx) => {
+    const rows = await tx<
+      Array<{
+        id: string;
+        session_hash: string;
+        csrf_hash: string;
+        correlation_id: string;
+        expires_at: Date;
+        revoked_at: Date | null;
+        created_at: Date;
+      }>
+    >`
+      select id, session_hash, csrf_hash, correlation_id, expires_at, revoked_at, created_at
+      from public_chat_sessions
+      where session_hash = ${sessionHash}
+      limit 1
+    `;
+    const row = rows[0];
+    return row
+      ? {
+          id: row.id,
+          sessionHash: row.session_hash,
+          csrfHash: row.csrf_hash,
+          correlationId: row.correlation_id,
+          expiresAt: row.expires_at,
+          revokedAt: row.revoked_at,
+          createdAt: row.created_at,
+        }
+      : null;
+  });
+}
+
+export function createPostgresPublicChatRateLimiter(
+  sql: postgres.Sql<Record<string, never>>,
+  input: { limit: number; windowSeconds: number },
+): {
+  consume(key: string): Promise<{ allowed: true } | { allowed: false; retryAfterSeconds: number }>;
+} {
+  return {
+    async consume(key) {
+      const bucketHash = await sha256(key);
+      return withGatewayTransaction(sql, async (tx) => {
+        const rows = await tx<{ count: number; retry_after_seconds: number }[]>`
+          insert into public_chat_rate_limits (
+            bucket_hash, count, window_started_at, expires_at, updated_at
+          ) values (
+            ${bucketHash}, 1, current_timestamp,
+            current_timestamp + (${input.windowSeconds} * interval '1 second'), current_timestamp
+          )
+          on conflict (bucket_hash) do update
+          set
+            count = case
+              when public_chat_rate_limits.expires_at <= current_timestamp then 1
+              else public_chat_rate_limits.count + 1
+            end,
+            window_started_at = case
+              when public_chat_rate_limits.expires_at <= current_timestamp then current_timestamp
+              else public_chat_rate_limits.window_started_at
+            end,
+            expires_at = case
+              when public_chat_rate_limits.expires_at <= current_timestamp
+                then current_timestamp + (${input.windowSeconds} * interval '1 second')
+              else public_chat_rate_limits.expires_at
+            end,
+            updated_at = current_timestamp
+          returning count,
+            greatest(1, ceil(extract(epoch from (expires_at - current_timestamp))))::integer
+              as retry_after_seconds
+        `;
+        const row = rows[0];
+        if (!row || row.count <= input.limit) return { allowed: true };
+        return {
+          allowed: false,
+          retryAfterSeconds: Math.max(1, Math.min(input.windowSeconds, row.retry_after_seconds)),
+        };
+      });
+    },
+  };
 }

@@ -597,7 +597,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
 
       const now = dependencies.clock.now();
       const requested = withActivity(
-        { ...previous, status: "human_requested" },
+        { ...previous, status: "human_requested", handoffReason: reason },
         now,
         dependencies.sessionTtlSeconds,
       );
