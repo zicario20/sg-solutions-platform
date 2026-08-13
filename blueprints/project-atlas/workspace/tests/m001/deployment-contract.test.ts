@@ -33,9 +33,9 @@ describe("M001 public deployment contract", () => {
 
   it("does not grant third-party script, frame, form or network access", () => {
     const config = JSON.parse(readFileSync("apps/www/vercel.json", "utf8")) as VercelConfig;
-    const csp = config.headers[0]?.headers.find(
-      (header) => header.key === "Content-Security-Policy",
-    )?.value;
+    const csp = config.headers
+      .find((entry) => entry.source === "/(.*)")
+      ?.headers.find((header) => header.key === "Content-Security-Policy")?.value;
     expect(csp).toContain("script-src 'self'");
     expect(csp).toContain("connect-src 'self'");
     expect(csp).toContain("frame-src 'none'");
