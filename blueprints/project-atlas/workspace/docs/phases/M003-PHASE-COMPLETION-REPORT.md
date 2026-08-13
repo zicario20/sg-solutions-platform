@@ -85,6 +85,21 @@ Fresh focused evidence on 2026-08-13:
 - `pnpm audit --json`: `0` vulnerabilities across `943` dependencies.
 - Final full repository gates and audit results are recorded in the linked build-review documents.
 
+Completion-audit follow-up on 2026-08-13:
+
+- A fresh execution of the repository's exact `format:check` gate identified one import-order assist
+  in `apps/www/astro.config.mjs`. The two imports were reordered without changing the exported Astro
+  configuration, adapter or Vite plugins; independent review classified the correction as
+  mechanical and passed it with no material finding.
+- After that correction, frozen install twice, Biome lint/format over `203` files, all `11` package
+  typechecks, import contracts, the provider-disabled Vitest suite (`344` passed, `4` deliberately
+  skipped), the Astro/Vercel Build plus M003 E2E (`28/28`), and the M001/M002 regression (`74/74`)
+  all passed again. The fourth Vitest skip is the real PostgreSQL integration because its temporary
+  runtime was securely removed after the fresh/upgrade evidence above was captured; it does not
+  supersede that executed database proof.
+- A fresh supply-chain query again reported `0` vulnerabilities across `943` dependencies, and the
+  lockfile hash remained unchanged.
+
 PostgreSQL 17.11 was executed locally from a temporary loopback-only validation runtime. A fresh
 database applied Drizzle migrations `0000` through `0005`, reported eight `public_chat_*` tables and
 validated `atlas_public_chat_runtime` as a non-superuser/non-`BYPASSRLS` principal with access only

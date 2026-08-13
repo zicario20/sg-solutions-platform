@@ -11,6 +11,9 @@
   M002-grounded deterministic orientation, metadata-only persistence, Drizzle/RLS, HMAC-bound
   idempotency and safe handoff/fallback behavior. External activation, deployment and release remain
   deferred pending Product Owner decisions.
+- Closed the exact M003 completion gates after a follow-up audit corrected one behavior-neutral
+  Astro import-order assist; independent review and the complete quality/build/browser regressions
+  pass with the approved architecture and provider-disabled scope unchanged.
 
 - Recorded Decision 028: bounded sequential `GENERATE` for M003–M005 with provider activation,
   credentials, live traffic and production release still deferred.

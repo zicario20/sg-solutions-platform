@@ -1,5 +1,5 @@
-import tailwindcss from "@tailwindcss/vite";
 import vercel from "@astrojs/vercel";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import { PUBLIC_REDIRECTS } from "./public-redirects.mjs";
 

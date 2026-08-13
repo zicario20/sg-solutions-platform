@@ -559,3 +559,19 @@
 - The superseding evidence set reached 345 passed/3 deliberately skipped Vitest tests, 28/28 M003
   browser tests and 74/74 M001/M002 regression tests before final documentation synchronization.
   Final frozen counts are authoritative only in the M003 PCR and build reviews.
+
+## 2026-08-13 — M003 completion-audit supplement
+
+- A new requirement-by-requirement completion audit reran the repository's exact gates rather than
+  relying on the previous closure report. `format:check` exposed one omitted import-order assist in
+  the public Astro configuration; only the two import declarations were reordered.
+- Independent read-only review classified that follow-up as mechanical, behavior-neutral and
+  `PASS`. Frozen install twice, lint/format over 203 files, all 11 typechecks, import contracts,
+  344 passing provider-disabled Vitest tests with four deliberate skips, 28/28 M003 browser tests,
+  74/74 M001/M002 browser regressions and the Astro/Vercel build all passed afterward.
+- The fourth current Vitest skip is the real PostgreSQL integration because the temporary validation
+  runtime was removed after its earlier executed fresh/upgrade proof. The captured 345-test database
+  evidence remains authoritative and was not replaced by a mock or an unexecuted claim.
+- A fresh pnpm audit again reported zero vulnerabilities across 943 dependencies; the frozen
+  lockfile SHA-256 remained
+  `EC8CF9C5D8E6078B32445819DBBD84FC34E06FCAF30F103F154732C39DD97FC1`.

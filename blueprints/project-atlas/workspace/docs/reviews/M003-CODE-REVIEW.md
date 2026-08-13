@@ -47,3 +47,12 @@ read-only; the auditor did not modify or self-approve implementation work.
 External providers, transcript-body retention, staffed human destination, production database,
 deployment, merge and public activation remain separate Product Owner/security gates. These are not
 code-review defects because the provider-disabled implementation reports them honestly.
+
+## Completion-audit supplement
+
+The final completion audit ran the repository's exact `format:check` command and found one
+import-order assist in `apps/www/astro.config.mjs`. Codex reordered only the `@astrojs/vercel` and
+`@tailwindcss/vite` import declarations. A separate reviewer inspected the complete follow-up diff
+after the full quality/build/browser gates passed and returned `PASS`: configuration values,
+adapter/plugin calls and behavior were unchanged, with no functional, architectural or security
+impact and no active material finding.
