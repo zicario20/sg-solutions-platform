@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 
 type Locale = "es" | "en";
+const INITIAL_CSRF = `csrf_${"a".repeat(44)}`;
 
 const projection = (version: number, locale: Locale, status = "ai_active") => ({
   id: "conversation_1",
@@ -41,7 +42,10 @@ const projection = (version: number, locale: Locale, status = "ai_active") => ({
         ],
 });
 
-async function mockPublicChat(page: Page, options?: { slowClose?: boolean }): Promise<void> {
+async function mockPublicChat(
+  page: Page,
+  options?: { slowClose?: boolean; slowMessage?: boolean },
+): Promise<void> {
   let current = projection(1, "es", "new");
   await page.route("**/api/public/chat/**", async (route) => {
     const request = route.request();
@@ -51,11 +55,13 @@ async function mockPublicChat(page: Page, options?: { slowClose?: boolean }): Pr
       await route.fulfill({
         status: 200,
         headers,
-        body: JSON.stringify({ ok: true, csrfToken: "csrf_token_1", correlationId: "corr_1" }),
+        body: JSON.stringify({ ok: true, csrfToken: INITIAL_CSRF, correlationId: "corr_1" }),
       });
       return;
     }
     if (path.endsWith("/resume")) {
+      expect(request.method()).toBe("POST");
+      expect(request.headers()["x-atlas-chat-csrf"]).toBe(INITIAL_CSRF);
       await route.fulfill({
         status: 200,
         headers,
@@ -70,6 +76,9 @@ async function mockPublicChat(page: Page, options?: { slowClose?: boolean }): Pr
     }
     if (path.endsWith("/close") && options?.slowClose) {
       await new Promise((resolveWait) => setTimeout(resolveWait, 4_000));
+    }
+    if (path.endsWith("/messages") && options?.slowMessage) {
+      await new Promise((resolveWait) => setTimeout(resolveWait, 600));
     }
     const body = request.postDataJSON() as {
       expectedVersion?: number;
@@ -190,6 +199,25 @@ test.describe("M003 Public Chat", () => {
     await expect(page.getByRole("log")).toContainText("Hola.");
   });
 
+  test("ignores a delayed message response after the visitor closes the chat", async ({ page }) => {
+    await mockPublicChat(page, { slowMessage: true });
+    await page.goto("/");
+    const launcher = page.getByRole("button", { name: "Abrir asistente de SG Solutions" });
+    await launcher.click();
+    await page.getByRole("checkbox").check();
+    await page.getByRole("button", { name: "Empezar conversaciÃ³n" }).click();
+    await page
+      .getByPlaceholder("Escribe tu pregunta sin informaciÃ³n sensible")
+      .fill("Mensaje que no debe reaparecer");
+    await page.getByRole("button", { name: "Enviar" }).click();
+    await page.getByRole("button", { name: "Cerrar chat" }).click();
+    await expect(page.getByRole("dialog", { name: "Asistente de SG Solutions" })).toBeHidden();
+    await page.waitForTimeout(800);
+    await launcher.click();
+    await expect(page.getByRole("log")).not.toContainText("Mensaje que no debe reaparecer");
+    await expect(page.getByRole("log")).toContainText("Hola.");
+  });
+
   test("announces answers politely, blocking errors assertively, and traps visible focus only", async ({
     page,
   }) => {
@@ -229,6 +257,12 @@ test.describe("M003 Public Chat", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 2 });
+    expect(await page.evaluate(() => window.visualViewport?.scale ?? 1)).toBeGreaterThanOrEqual(
+      1.9,
+    );
+    await expect(page.getByRole("button", { name: "Cerrar chat" })).toBeVisible();
   });
 
   test("has no automatically detectable WCAG A/AA violations", async ({ page }) => {

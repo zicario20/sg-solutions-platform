@@ -358,6 +358,7 @@ describe("M003 same-origin public chat gateway", () => {
           origin: ORIGIN,
           "sec-fetch-site": "same-origin",
           "content-type": "application/json",
+          "x-atlas-chat-csrf": boot.json.csrfToken,
         },
         body: JSON.stringify({ resume: true }),
       }),
@@ -389,6 +390,31 @@ describe("M003 same-origin public chat gateway", () => {
     expect(fixture.calls).not.toContainEqual(expect.objectContaining({ name: "get" }));
   });
 
+  it.each([
+    ["missing", null],
+    ["wrong", "opaque_wrong_csrf_value"],
+  ])("rejects a resume command with a %s CSRF token", async (_label, csrf) => {
+    const fixture = dependencies();
+    const boot = await bootstrap(fixture);
+    const headers = new Headers({
+      cookie: boot.cookie,
+      origin: ORIGIN,
+      "sec-fetch-site": "same-origin",
+      "content-type": "application/json",
+    });
+    if (csrf) headers.set("x-atlas-chat-csrf", csrf);
+    const response = await fixture.handlers.resume(
+      "conversation_1",
+      new Request(`${ORIGIN}/api/public/chat/conversations/conversation_1/resume`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ resume: true }),
+      }),
+    );
+    expect(response.status).toBe(403);
+    expect(fixture.calls).not.toContainEqual(expect.objectContaining({ name: "get" }));
+  });
+
   it("rejects a resume command without the explicit bounded JSON intent", async () => {
     const fixture = dependencies();
     const boot = await bootstrap(fixture);
@@ -401,6 +427,7 @@ describe("M003 same-origin public chat gateway", () => {
           origin: ORIGIN,
           "sec-fetch-site": "same-origin",
           "content-type": "application/json",
+          "x-atlas-chat-csrf": boot.json.csrfToken,
         },
         body: JSON.stringify({ resume: false }),
       }),

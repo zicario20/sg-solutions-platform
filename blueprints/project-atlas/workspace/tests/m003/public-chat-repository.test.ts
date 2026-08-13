@@ -3,6 +3,7 @@ import {
   deserializePublicChatCommandResult,
   isValidPublicChatAdvanceVersion,
   isValidPublicChatCompletionVersion,
+  resolvePublicChatCompletionAuditEvent,
   serializePublicChatCommandResult,
 } from "../../packages/database/src/postgres-public-chat-store.ts";
 import {
@@ -91,6 +92,7 @@ describe("M003 Postgres repository behavior", () => {
     };
     await expect(
       fixture.repository.completeCommand({
+        kind: "message",
         conversation: next,
         expectedVersion: 1,
         idempotencyKey: "message_key_0001",
@@ -117,6 +119,7 @@ describe("M003 Postgres repository behavior", () => {
 
     await expect(
       fixture.repository.completeCommand({
+        kind: "message",
         conversation: conversation({ version: 3 }),
         expectedVersion: 2,
         idempotencyKey: "message_key_0002",
@@ -168,6 +171,7 @@ describe("M003 Postgres repository behavior", () => {
     });
 
     await fixture.repository.completeCommand({
+      kind: "handoff",
       conversation: next,
       expectedVersion: 1,
       idempotencyKey: "message_key_0003",
@@ -218,6 +222,7 @@ describe("M003 Postgres repository behavior", () => {
       ],
     });
     await fixture.repository.completeCommand({
+      kind: "message",
       conversation: next,
       expectedVersion: 1,
       idempotencyKey: "message_key_first",
@@ -260,6 +265,7 @@ describe("M003 Postgres repository behavior", () => {
       handoffReason: reason,
     });
     await fixture.repository.advanceClaimedCommand({
+      kind: "handoff",
       conversation: requested,
       expectedVersion: 1,
       idempotencyKey: `handoff_${reason}`,
@@ -305,6 +311,7 @@ describe("M003 Postgres repository behavior", () => {
   it("requires exactly one version advance while completion permits unchanged failure results", () => {
     const base = conversation({ version: 2 });
     const command = {
+      kind: "message" as const,
       conversation: base,
       expectedVersion: 1,
       idempotencyKey: "message_key_version",
@@ -332,5 +339,44 @@ describe("M003 Postgres repository behavior", () => {
         result: { ok: false, code: "conflict" },
       }),
     ).toBe(true);
+  });
+
+  it("classifies a changed locale as a durable locale audit event and omits a no-op", () => {
+    const changed = conversation({ version: 2, locale: "en" });
+    const result: ChatCommandResult = {
+      ok: true,
+      replayed: false,
+      projection: {
+        id: changed.id,
+        version: changed.version,
+        locale: changed.locale,
+        status: changed.status,
+        messages: [],
+        expiresAt: changed.expiresAt,
+      },
+    };
+    expect(
+      resolvePublicChatCompletionAuditEvent({
+        kind: "locale",
+        conversation: changed,
+        expectedVersion: 1,
+        idempotencyKey: "locale_key_changed",
+        leaseToken: "lease_locale_changed",
+        result,
+      }),
+    ).toEqual({ eventName: "chat_locale_changed" });
+    expect(
+      resolvePublicChatCompletionAuditEvent({
+        kind: "locale",
+        conversation: conversation({ version: 1 }),
+        expectedVersion: 1,
+        idempotencyKey: "locale_key_unchanged",
+        leaseToken: "lease_locale_unchanged",
+        result: {
+          ...result,
+          projection: { ...result.projection, version: 1, locale: "es" },
+        },
+      }),
+    ).toBeNull();
   });
 });

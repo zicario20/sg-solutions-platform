@@ -388,7 +388,7 @@ export function createConversationHandlers(
       if (request.method !== "POST") {
         return errorResponse("method_not_allowed", 405, correlationId(), { allow: "POST" });
       }
-      const authenticated = await requireSession(dependencies, request, false);
+      const authenticated = await requireSession(dependencies, request, true);
       if (!authenticated.ok) return authenticated.response;
       const invalid = validConversationId(conversationId, authenticated.session.correlationId);
       if (invalid) return invalid;
@@ -414,7 +414,7 @@ export function createConversationHandlers(
           sessionHash: authenticated.session.sessionHash,
         });
         if (!result.ok) return domainResponse(result, authenticated.session.correlationId);
-        const rotated = await dependencies.sessions.rotate(request, { requireCsrf: false });
+        const rotated = await dependencies.sessions.rotate(request);
         if (!rotated.ok) {
           return errorResponse("session_invalid", 401, authenticated.session.correlationId);
         }

@@ -334,6 +334,7 @@ async function claimCommand(
 async function completeCommand(
   dependencies: ConversationServiceDependencies,
   input: {
+    kind: "message" | "handoff" | "locale" | "close";
     previous: PublicChatConversation;
     next: PublicChatConversation;
     idempotencyKey: string;
@@ -342,6 +343,7 @@ async function completeCommand(
   },
 ): Promise<ChatCommandResult> {
   const outcome = await dependencies.repository.completeCommand({
+    kind: input.kind,
     conversation: input.next,
     expectedVersion: input.previous.version,
     idempotencyKey: input.idempotencyKey,
@@ -357,8 +359,10 @@ export function createConversationService(dependencies: ConversationServiceDepen
     leaseToken: string,
     idempotencyKey: string,
     result: ChatCommandFailure,
+    kind: "message" | "handoff" | "locale" | "close",
   ): Promise<ChatCommandResult> {
     return completeCommand(dependencies, {
+      kind,
       previous: conversation,
       next: conversation,
       idempotencyKey,
@@ -417,7 +421,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
       if (claimed.kind === "result") return claimed.result;
       const previous = claimed.conversation;
       const finish = (result: ChatCommandFailure) =>
-        finishUnchanged(previous, claimed.leaseToken, input.idempotencyKey, result);
+        finishUnchanged(previous, claimed.leaseToken, input.idempotencyKey, result, "message");
 
       if (previous.status === "human_active" || previous.status === "waiting_for_human") {
         return finish({ ok: false, code: "human_active" });
@@ -498,6 +502,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
           projection: project(next),
         };
         return completeCommand(dependencies, {
+          kind: "message",
           previous,
           next,
           idempotencyKey: input.idempotencyKey,
@@ -526,6 +531,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
           projection: project(next),
         };
         return completeCommand(dependencies, {
+          kind: "message",
           previous,
           next,
           idempotencyKey: input.idempotencyKey,
@@ -559,6 +565,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
         replayed: false,
       };
       const completed = await completeCommand(dependencies, {
+        kind: "message",
         previous,
         next,
         idempotencyKey: input.idempotencyKey,
@@ -589,10 +596,16 @@ export function createConversationService(dependencies: ConversationServiceDepen
       const previous = claimed.conversation;
       const reason = normalizeHandoffReason(input.reason);
       if (!canTransitionConversation(previous.status, "human_requested")) {
-        return finishUnchanged(previous, claimed.leaseToken, input.idempotencyKey, {
-          ok: false,
-          code: "invalid_transition",
-        });
+        return finishUnchanged(
+          previous,
+          claimed.leaseToken,
+          input.idempotencyKey,
+          {
+            ok: false,
+            code: "invalid_transition",
+          },
+          "handoff",
+        );
       }
 
       const now = dependencies.clock.now();
@@ -602,6 +615,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
         dependencies.sessionTtlSeconds,
       );
       const advanced = await dependencies.repository.advanceClaimedCommand({
+        kind: "handoff",
         conversation: requested,
         expectedVersion: previous.version,
         idempotencyKey: input.idempotencyKey,
@@ -632,6 +646,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
           projection: project(requested),
         };
         return completeCommand(dependencies, {
+          kind: "handoff",
           previous: requested,
           next: requested,
           idempotencyKey: input.idempotencyKey,
@@ -642,6 +657,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
 
       if (!canTransitionConversation(requested.status, "waiting_for_human")) {
         return completeCommand(dependencies, {
+          kind: "handoff",
           previous: requested,
           next: requested,
           idempotencyKey: input.idempotencyKey,
@@ -660,6 +676,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
         replayed: false,
       };
       const completed = await completeCommand(dependencies, {
+        kind: "handoff",
         previous: requested,
         next: waiting,
         idempotencyKey: input.idempotencyKey,
@@ -694,10 +711,16 @@ export function createConversationService(dependencies: ConversationServiceDepen
         previous.status === "expired" ||
         previous.status === "restricted"
       ) {
-        return finishUnchanged(previous, claimed.leaseToken, input.idempotencyKey, {
-          ok: false,
-          code: "invalid_transition",
-        });
+        return finishUnchanged(
+          previous,
+          claimed.leaseToken,
+          input.idempotencyKey,
+          {
+            ok: false,
+            code: "invalid_transition",
+          },
+          "locale",
+        );
       }
       const now = dependencies.clock.now();
       const next =
@@ -714,6 +737,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
         replayed: false,
       };
       const completed = await completeCommand(dependencies, {
+        kind: "locale",
         previous,
         next,
         idempotencyKey: input.idempotencyKey,
@@ -742,10 +766,16 @@ export function createConversationService(dependencies: ConversationServiceDepen
       if (claimed.kind === "result") return claimed.result;
       const previous = claimed.conversation;
       if (!canTransitionConversation(previous.status, "closed")) {
-        return finishUnchanged(previous, claimed.leaseToken, input.idempotencyKey, {
-          ok: false,
-          code: "invalid_transition",
-        });
+        return finishUnchanged(
+          previous,
+          claimed.leaseToken,
+          input.idempotencyKey,
+          {
+            ok: false,
+            code: "invalid_transition",
+          },
+          "close",
+        );
       }
       const now = dependencies.clock.now();
       const next = withActivity(
@@ -759,6 +789,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
         replayed: false,
       };
       const completed = await completeCommand(dependencies, {
+        kind: "close",
         previous,
         next,
         idempotencyKey: input.idempotencyKey,

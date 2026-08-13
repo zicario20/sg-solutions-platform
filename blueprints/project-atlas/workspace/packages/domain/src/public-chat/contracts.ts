@@ -141,7 +141,10 @@ export type CommandClaimResult =
   | { status: "in_progress" }
   | { status: "conflict" };
 
+export type ChatCommandKind = "message" | "handoff" | "locale" | "close";
+
 export type ClaimedCommandAdvance = {
+  kind: ChatCommandKind;
   conversation: PublicChatConversation;
   expectedVersion: number;
   idempotencyKey: string;

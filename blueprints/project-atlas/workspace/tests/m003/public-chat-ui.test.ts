@@ -43,8 +43,14 @@ describe("M003 bilingual public chat UI contract", () => {
     expect(controller).toContain("resetConversationUi");
     expect(controller).toContain("resumeConversation");
     expect(controller).toContain("{ resume: true }");
+    expect(controller).toContain("new URLSearchParams");
+    expect(controller).toContain("history.replaceState");
+    expect(controller).toContain("csrfToken = transferToken");
     expect(controller).toContain("changeConversationLocale");
     expect(controller).toContain("AbortController");
+    expect(controller).toContain("conversationGeneration += 1");
+    expect(controller).toContain("activeCommandController?.abort()");
+    expect(controller).toContain("operationGeneration !== conversationGeneration");
     expect(controller).not.toContain("approvedTransport");
     expect(resumeRoute).toContain("export const POST");
     expect(resumeRoute).not.toContain("export const GET");
@@ -53,6 +59,23 @@ describe("M003 bilingual public chat UI contract", () => {
   it("does not expose a permanently clipped focus target inside the modal trap", () => {
     const panel = read("apps/www/src/components/chat/ChatPanel.astro");
     expect(panel).not.toContain('<a class="sr-only"');
+  });
+
+  it("appends transcript deltas instead of rebuilding the live log", () => {
+    const controller = read("apps/www/src/scripts/public-chat.ts");
+    expect(controller).toContain("data-public-chat-message-id");
+    expect(controller).toContain("renderedMessageIds");
+    expect(controller).not.toContain(
+      "transcript.replaceChildren();\n    for (const message of next.messages)",
+    );
+  });
+
+  it("never lets a busy language link bypass the governed transfer flow", () => {
+    const controller = read("apps/www/src/scripts/public-chat.ts");
+    const handler = controller.slice(controller.indexOf("async function changeConversationLocale"));
+    expect(handler.indexOf("event.preventDefault()")).toBeLessThan(
+      handler.indexOf("if (!projection || pending) return"),
+    );
   });
 
   it("meets minimum target, narrow-screen, zoom and reduced-motion contracts", () => {

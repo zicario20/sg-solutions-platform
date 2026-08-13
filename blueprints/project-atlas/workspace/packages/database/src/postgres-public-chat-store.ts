@@ -1,4 +1,5 @@
 import type {
+  AuditEvent,
   ChatCommandResult,
   ChatLocale,
   ChatReasonCode,
@@ -429,14 +430,7 @@ async function persistConversation(
 async function appendAuditEvent(
   tx: TransactionSql,
   conversation: PublicChatConversation,
-  eventName:
-    | "chat_conversation_started"
-    | "chat_message_accepted"
-    | "chat_message_rejected"
-    | "chat_response_failed"
-    | "chat_handoff_requested"
-    | "chat_handoff_queued"
-    | "chat_conversation_closed",
+  eventName: AuditEvent["name"],
   reason?: ChatReasonCode,
 ): Promise<void> {
   const sequenceRows = await tx<{ sequence: number }[]>`
@@ -456,24 +450,10 @@ async function appendAuditEvent(
   `;
 }
 
-function completionAuditEvent(command: CommandCompletion): {
-  eventName:
-    | "chat_message_accepted"
-    | "chat_message_rejected"
-    | "chat_response_failed"
-    | "chat_handoff_queued"
-    | "chat_conversation_closed";
+export function resolvePublicChatCompletionAuditEvent(command: CommandCompletion): {
+  eventName: AuditEvent["name"];
   reason?: ChatReasonCode;
-} {
-  if (command.conversation.status === "waiting_for_human") {
-    return {
-      eventName: "chat_handoff_queued",
-      ...(command.conversation.handoffReason ? { reason: command.conversation.handoffReason } : {}),
-    };
-  }
-  if (command.conversation.status === "closed") {
-    return { eventName: "chat_conversation_closed" };
-  }
+} | null {
   if (!command.result.ok) {
     if (command.result.code === "content_rejected") {
       return {
@@ -485,6 +465,20 @@ function completionAuditEvent(command: CommandCompletion): {
       eventName: "chat_response_failed",
       ...(command.result.reason ? { reason: command.result.reason } : {}),
     };
+  }
+  if (command.kind === "handoff" && command.conversation.status === "waiting_for_human") {
+    return {
+      eventName: "chat_handoff_queued",
+      ...(command.conversation.handoffReason ? { reason: command.conversation.handoffReason } : {}),
+    };
+  }
+  if (command.kind === "close" && command.conversation.status === "closed") {
+    return { eventName: "chat_conversation_closed" };
+  }
+  if (command.kind === "locale") {
+    return command.conversation.version === command.expectedVersion + 1
+      ? { eventName: "chat_locale_changed" }
+      : null;
   }
   return { eventName: "chat_message_accepted" };
 }
@@ -711,8 +705,10 @@ export function createPostgresPublicChatStore(
           return "conflict" as const;
         }
         await persistConversation(tx, command.conversation, transcriptPersistence);
-        const audit = completionAuditEvent(command);
-        await appendAuditEvent(tx, command.conversation, audit.eventName, audit.reason);
+        const audit = resolvePublicChatCompletionAuditEvent(command);
+        if (audit) {
+          await appendAuditEvent(tx, command.conversation, audit.eventName, audit.reason);
+        }
         await tx`
           update public_chat_idempotency
           set state = 'completed',

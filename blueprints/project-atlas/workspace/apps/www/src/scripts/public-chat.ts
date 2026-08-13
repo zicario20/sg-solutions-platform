@@ -129,6 +129,10 @@ function initExperience(root: HTMLElement): void {
   let returnFocus: HTMLElement | null = null;
   let closeController: AbortController | null = null;
   let closingRequest: Promise<void> | null = null;
+  let conversationGeneration = 0;
+  let activeCommandController: AbortController | null = null;
+  let renderedConversationId: string | null = null;
+  const renderedMessageIds = new Set<string>();
 
   const announce = (message: string) => {
     alert.hidden = true;
@@ -149,6 +153,19 @@ function initExperience(root: HTMLElement): void {
     human.disabled = value;
     send.textContent = value ? config.copy.ui.sending : config.copy.ui.send;
   };
+
+  function beginCommand(): { controller: AbortController; operationGeneration: number } {
+    activeCommandController?.abort();
+    const controller = new AbortController();
+    activeCommandController = controller;
+    return { controller, operationGeneration: conversationGeneration };
+  }
+
+  function finishCommand(controller: AbortController, operationGeneration: number): boolean {
+    if (operationGeneration !== conversationGeneration) return false;
+    if (activeCommandController === controller) activeCommandController = null;
+    return true;
+  }
 
   async function request(
     path: string,
@@ -207,11 +224,16 @@ function initExperience(root: HTMLElement): void {
 
   function renderProjection(next: Projection): void {
     projection = next;
-    transcript.replaceChildren();
+    if (renderedConversationId !== next.id) {
+      transcript.replaceChildren();
+      renderedMessageIds.clear();
+      renderedConversationId = next.id;
+    }
     for (const message of next.messages) {
-      if (!message.body) continue;
+      if (!message.body || renderedMessageIds.has(message.id)) continue;
       const article = document.createElement("article");
       article.className = `public-chat-message public-chat-message--${message.actor}`;
+      article.setAttribute("data-public-chat-message-id", message.id);
       const actor = document.createElement("p");
       actor.className = "public-chat-message__actor";
       actor.textContent =
@@ -236,6 +258,7 @@ function initExperience(root: HTMLElement): void {
         article.append(link);
       }
       transcript.append(article);
+      renderedMessageIds.add(message.id);
     }
     renderSources(next.messages);
     transcript.scrollTop = transcript.scrollHeight;
@@ -256,6 +279,8 @@ function initExperience(root: HTMLElement): void {
     actions.hidden = true;
     sources.hidden = true;
     sourceList.replaceChildren();
+    renderedConversationId = null;
+    renderedMessageIds.clear();
     input.value = "";
     input.disabled = false;
     send.disabled = false;
@@ -276,14 +301,28 @@ function initExperience(root: HTMLElement): void {
   }
 
   async function resumeConversation(): Promise<void> {
-    const match = window.location.hash.match(/^#conversation=([a-z][a-z0-9_-]{1,127})$/u);
-    if (!match?.[1]) {
+    if (!window.location.hash.startsWith("#conversation=")) {
       await ensureBootstrap();
       return;
     }
+    const transfer = new URLSearchParams(window.location.hash.slice(1));
+    const conversationId = transfer.get("conversation");
+    const transferToken = transfer.get("csrf");
+    history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    if (
+      transfer.size !== 2 ||
+      !conversationId ||
+      !/^[a-z][a-z0-9_-]{1,127}$/u.test(conversationId) ||
+      !transferToken ||
+      !/^[A-Za-z0-9_-]{32,128}$/u.test(transferToken)
+    ) {
+      await ensureBootstrap();
+      return;
+    }
+    csrfToken = transferToken;
     try {
       const value = await request(
-        `/api/public/chat/conversations/${encodeURIComponent(match[1])}/resume`,
+        `/api/public/chat/conversations/${encodeURIComponent(conversationId)}/resume`,
         { resume: true },
       );
       if (!value.ok || !value.csrfToken) {
@@ -296,7 +335,6 @@ function initExperience(root: HTMLElement): void {
       csrfToken = value.csrfToken;
       renderProjection(value.data);
       announce(config.copy.ui.statusReady);
-      history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
     } catch {
       resetConversationUi();
       announceError(config.copy.errors.temporarilyUnavailable);
@@ -307,12 +345,18 @@ function initExperience(root: HTMLElement): void {
   async function startConversation(): Promise<void> {
     if (pending || !acknowledge.checked || !(await ensureBootstrap())) return;
     setPending(true);
+    const { controller, operationGeneration } = beginCommand();
     try {
-      const value = await request("/api/public/chat/conversations", {
-        locale: config.locale,
-        noticeVersion: "public-chat-notice.v1",
-        noticeAcknowledged: true,
-      });
+      const value = await request(
+        "/api/public/chat/conversations",
+        {
+          locale: config.locale,
+          noticeVersion: "public-chat-notice.v1",
+          noticeAcknowledged: true,
+        },
+        controller.signal,
+      );
+      if (operationGeneration !== conversationGeneration) return;
       if (value.ok) {
         renderProjection(value.data);
         announce(config.copy.ui.statusReady);
@@ -321,9 +365,11 @@ function initExperience(root: HTMLElement): void {
         announceError(errorText(config.copy, value.code));
       }
     } catch {
-      announceError(config.copy.errors.temporarilyUnavailable);
+      if (operationGeneration === conversationGeneration) {
+        announceError(config.copy.errors.temporarilyUnavailable);
+      }
     } finally {
-      setPending(false);
+      if (finishCommand(controller, operationGeneration)) setPending(false);
     }
   }
 
@@ -334,6 +380,7 @@ function initExperience(root: HTMLElement): void {
       return;
     }
     setPending(true);
+    const { controller, operationGeneration } = beginCommand();
     try {
       const value = await request(
         `/api/public/chat/conversations/${encodeURIComponent(projection.id)}/messages`,
@@ -342,7 +389,9 @@ function initExperience(root: HTMLElement): void {
           idempotencyKey: idempotencyKey("message"),
           expectedVersion: projection.version,
         },
+        controller.signal,
       );
+      if (operationGeneration !== conversationGeneration) return;
       if (value.ok) {
         input.value = "";
         count.textContent = `${MESSAGE_LIMIT} ${config.copy.ui.characterCount}`;
@@ -352,10 +401,14 @@ function initExperience(root: HTMLElement): void {
         announceError(errorText(config.copy, value.code));
       }
     } catch {
-      announceError(config.copy.errors.temporarilyUnavailable);
+      if (operationGeneration === conversationGeneration) {
+        announceError(config.copy.errors.temporarilyUnavailable);
+      }
     } finally {
-      setPending(false);
-      input.focus();
+      if (finishCommand(controller, operationGeneration)) {
+        setPending(false);
+        input.focus();
+      }
     }
   }
 
@@ -366,6 +419,7 @@ function initExperience(root: HTMLElement): void {
     }
     setPending(true);
     announce(config.copy.handoff.requested);
+    const { controller, operationGeneration } = beginCommand();
     try {
       const value = await request(
         `/api/public/chat/conversations/${encodeURIComponent(projection.id)}/handoff`,
@@ -374,7 +428,9 @@ function initExperience(root: HTMLElement): void {
           idempotencyKey: idempotencyKey("handoff"),
           expectedVersion: projection.version,
         },
+        controller.signal,
       );
+      if (operationGeneration !== conversationGeneration) return;
       if (value.ok) {
         if (value.csrfToken) csrfToken = value.csrfToken;
         renderProjection(value.data);
@@ -383,15 +439,21 @@ function initExperience(root: HTMLElement): void {
         announceError(config.copy.handoff.unavailable);
       }
     } catch {
-      announceError(config.copy.handoff.unavailable);
+      if (operationGeneration === conversationGeneration) {
+        announceError(config.copy.handoff.unavailable);
+      }
     } finally {
-      setPending(false);
+      if (finishCommand(controller, operationGeneration)) setPending(false);
     }
   }
 
   function closePanel(): void {
     const active = projection;
-    if (active && csrfToken) {
+    const closingCsrfToken = csrfToken;
+    conversationGeneration += 1;
+    activeCommandController?.abort();
+    activeCommandController = null;
+    if (active && closingCsrfToken) {
       closeController?.abort();
       closeController = new AbortController();
       const controller = closeController;
@@ -428,10 +490,11 @@ function initExperience(root: HTMLElement): void {
   }
 
   async function changeConversationLocale(event: MouseEvent): Promise<void> {
-    if (!projection || pending) return;
     event.preventDefault();
+    if (!projection || pending) return;
     const active = projection;
     setPending(true);
+    const { controller, operationGeneration } = beginCommand();
     try {
       const value = await request(
         `/api/public/chat/conversations/${encodeURIComponent(active.id)}/language`,
@@ -440,18 +503,29 @@ function initExperience(root: HTMLElement): void {
           idempotencyKey: idempotencyKey("locale"),
           expectedVersion: active.version,
         },
+        controller.signal,
       );
+      if (operationGeneration !== conversationGeneration) return;
       if (!value.ok) {
         announceError(errorText(config.copy, value.code));
         return;
       }
       const target = new URL(config.paths.alternate, window.location.origin);
-      target.hash = `conversation=${encodeURIComponent(value.data.id)}`;
+      if (!csrfToken) {
+        announceError(config.copy.errors.sessionExpired);
+        return;
+      }
+      target.hash = new URLSearchParams({
+        conversation: value.data.id,
+        csrf: csrfToken,
+      }).toString();
       window.location.assign(target.href);
     } catch {
-      announceError(config.copy.errors.temporarilyUnavailable);
+      if (operationGeneration === conversationGeneration) {
+        announceError(config.copy.errors.temporarilyUnavailable);
+      }
     } finally {
-      setPending(false);
+      if (finishCommand(controller, operationGeneration)) setPending(false);
     }
   }
 
