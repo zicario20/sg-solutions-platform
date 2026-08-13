@@ -1,6 +1,6 @@
 # ADR 007: Same-origin Astro runtime for the Public Chat Gateway
 
-- Status: Proposed for Product Owner approval
+- Status: Accepted — Decision 029
 - Date: 2026-08-09
 - Owner: Codex Architecture Agent
 - Scope: M003 public gateway only
@@ -13,7 +13,7 @@ moderation, knowledge retrieval, rate limiting and provider calls. Leaving owner
 deployments unresolved would make cookie scope, CSRF, CORS, deployment and failure ownership
 ambiguous.
 
-## Proposed decision
+## Decision
 
 The canonical M003 Public Chat Gateway will be implemented as Astro on-demand server routes under
 `apps/www` at `/api/public/chat/**`, deployed on the same Vercel project and origin as the public
@@ -45,7 +45,9 @@ identity claims as authorization.
 
 - The public site remains content-first and static for normal pages while M003 gains a narrowly
   scoped server runtime.
-- A future Build gate may add the official Astro Vercel adapter; this is not authorized by this ADR.
+- The bounded M003 Build gate may add the official Astro Vercel adapter for the approved same-origin
+  runtime; adapter installation and configuration remain subject to the applicable implementation
+  task and verification evidence.
 - No cross-project rewrite or subdomain cookie is required for public chat.
 - The authenticated Next application remains the only gateway for portal/client/admin identity.
 
@@ -59,5 +61,7 @@ identity claims as authorization.
 
 ## Approval effect
 
-Product Owner approval fixes runtime ownership for implementation planning. It does not authorize
-`GENERATE`, add the adapter dependency, select a provider or activate production.
+Decision 029 accepts the persisted M003 specification and fixes same-origin runtime ownership for
+the bounded M003 Build. It does not select or activate a provider, authorize credentials, model
+traffic, real client data, public channel activation, deployment, production release or
+`Operational` status.

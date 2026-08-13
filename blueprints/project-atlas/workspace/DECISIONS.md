@@ -409,3 +409,17 @@ invent or approve unresolved business/legal policy; activate Meta/Twilio/model p
 real accounts, credentials, numbers, templates, webhooks, live traffic, real client data,
 production deployment, default-branch merge or `Operational` status. Unresolved affected behavior
 must remain disabled or fail closed. No M006 or later Build is authorized by this decision.
+
+## 2026-08-12 — Decision 029
+
+Decision: the Product Owner’s “Si todo está aprobado” accepts the persisted M003 Public Chat written
+specification and ADR 007 same-origin Astro runtime.
+
+Reason: M003 requires one approved first-party runtime boundary before the public chat gateway can
+be built and tested without introducing cross-origin cookie, CORS or CSRF ambiguity.
+
+Impact: the bounded M003 Build may configure the approved Astro/Vercel runtime and provider-neutral,
+fail-closed local/staging code under Decision 028. This decision does not select or activate a model
+or other provider, authorize credentials, model traffic, real client data, public channel
+activation, deployment, production release or `Operational` status. All external-activation
+exclusions in Decision 028 and `EXTERNAL_ACTIVATION_REGISTER.md` remain in force.
