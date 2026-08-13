@@ -1,0 +1,89 @@
+const sharedKeys = {
+  quickActions: {
+    services: "",
+    credit: "",
+    taxes: "",
+    business: "",
+    homeBuying: "",
+    human: "",
+  },
+  errors: {
+    invalidMessage: "",
+    sensitiveData: "",
+    temporarilyUnavailable: "",
+    sessionExpired: "",
+    conflict: "",
+  },
+};
+
+type PublicChatCopy = {
+  notice: string;
+  greeting: string;
+  quickActions: Record<keyof typeof sharedKeys.quickActions, string>;
+  errors: Record<keyof typeof sharedKeys.errors, string>;
+  handoff: { requested: string; queued: string; unavailable: string };
+  orientation: { matches: string; noMatch: string };
+};
+
+export const PUBLIC_CHAT_COPY: Record<"es" | "en", PublicChatCopy> = {
+  es: {
+    notice:
+      "Soy un asistente automatizado de orientación general. No envíes números de identificación, tarjetas, cuentas, contraseñas ni documentos. El chat no sustituye asesoría profesional ni garantiza resultados.",
+    greeting: "Hola. Puedo ayudarte a encontrar servicios y recursos públicos de SG Solutions.",
+    quickActions: {
+      services: "Ver servicios",
+      credit: "Orientación sobre crédito",
+      taxes: "Información sobre taxes",
+      business: "Formación y financiamiento empresarial",
+      homeBuying: "Preparación para comprar vivienda",
+      human: "Hablar con una persona",
+    },
+    errors: {
+      invalidMessage: "Revisa el mensaje e inténtalo de nuevo.",
+      sensitiveData: "No envíes información sensible por este chat.",
+      temporarilyUnavailable: "La orientación automática no está disponible temporalmente.",
+      sessionExpired: "Esta sesión terminó. Puedes iniciar una conversación nueva.",
+      conflict: "La conversación cambió. Actualízala antes de continuar.",
+    },
+    handoff: {
+      requested: "Tu solicitud de atención humana está pendiente de confirmación.",
+      queued: "La solicitud fue recibida. Esto no confirma una hora de respuesta.",
+      unavailable: "No pudimos confirmar la solicitud. Usa la página de contacto.",
+    },
+    orientation: {
+      matches: "Encontré estos recursos públicos que pueden orientarte:",
+      noMatch:
+        "No encontré una respuesta pública vigente para esa pregunta. Puedes explorar el Centro de Ayuda o solicitar atención humana.",
+    },
+  },
+  en: {
+    notice:
+      "I am an automated general-orientation assistant. Do not send identification, card, account, password, or document data. Chat does not replace professional advice or guarantee results.",
+    greeting: "Hello. I can help you find SG Solutions services and public resources.",
+    quickActions: {
+      services: "View services",
+      credit: "Credit orientation",
+      taxes: "Tax information",
+      business: "Business formation and funding",
+      homeBuying: "Home-buying preparation",
+      human: "Talk to a person",
+    },
+    errors: {
+      invalidMessage: "Review the message and try again.",
+      sensitiveData: "Do not send sensitive information through this chat.",
+      temporarilyUnavailable: "Automated orientation is temporarily unavailable.",
+      sessionExpired: "This session ended. You can start a new conversation.",
+      conflict: "The conversation changed. Refresh it before continuing.",
+    },
+    handoff: {
+      requested: "Your human-support request is awaiting confirmation.",
+      queued: "The request was received. This does not confirm a response time.",
+      unavailable: "We could not confirm the request. Use the contact page.",
+    },
+    orientation: {
+      matches: "I found these public resources that may help orient you:",
+      noMatch:
+        "I could not find a current public answer for that question. You can explore the Help Center or request human support.",
+    },
+  },
+};
