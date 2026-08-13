@@ -54,6 +54,9 @@ describe("public chat validation", () => {
   it.each([
     { text: "", label: "blank" },
     { text: "\u0000hello", label: "NUL" },
+    { text: "hello\u0085world", label: "C1 next-line control" },
+    { text: "hello\u200Eworld", label: "left-to-right mark" },
+    { text: "hello\u061Cworld", label: "Arabic letter mark" },
     { text: "hello\u202Eworld", label: "bidirectional override" },
     { text: "a".repeat(2_001), label: "more than 2,000 Unicode characters" },
   ])("rejects $label message input", ({ text }) => {
@@ -98,6 +101,11 @@ describe("public chat validation", () => {
       reason: "credential",
       label: "password",
     },
+    {
+      text: "<script>example()</script>",
+      reason: "markup",
+      label: "script markup",
+    },
   ])("rejects a $label without returning its value", ({ text, reason }) => {
     const result = inspectProhibitedChatContent(text);
     expect(result).toEqual({ allowed: false, reason });
@@ -131,4 +139,17 @@ describe("public chat validation", () => {
       }),
     ).toThrow();
   });
+
+  it.each([2_147_483_648, Number.MAX_SAFE_INTEGER + 1])(
+    "rejects optimistic version %s outside the Postgres integer boundary",
+    (expectedVersion) => {
+      expect(() =>
+        parseChatMessage({
+          text: "Hello",
+          idempotencyKey: "msg_1234567890",
+          expectedVersion,
+        }),
+      ).toThrow();
+    },
+  );
 });

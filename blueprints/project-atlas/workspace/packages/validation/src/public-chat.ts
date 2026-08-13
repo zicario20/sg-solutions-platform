@@ -10,12 +10,16 @@ const idempotencyKeySchema = z
   .min(10)
   .max(128)
   .regex(/^[a-z][a-z0-9_-]+$/);
-const expectedVersionSchema = z.number().int().positive();
+const expectedVersionSchema = z.number().int().positive().max(2_147_483_647);
 
 const startConversationSchema = z
   .object({
     locale: chatLocaleSchema,
-    noticeVersion: z.string().min(3).max(80).regex(/^[a-z0-9][a-z0-9._-]+$/),
+    noticeVersion: z
+      .string()
+      .min(3)
+      .max(80)
+      .regex(/^[a-z0-9][a-z0-9._-]+$/),
     noticeAcknowledged: z.literal(true),
   })
   .strict();
@@ -54,19 +58,19 @@ export type SensitiveReason =
   | "government_identifier"
   | "payment_card"
   | "bank_account"
-  | "credential";
+  | "credential"
+  | "markup";
 
 export type ChatContentInspection =
   | { allowed: true; normalized: string }
   | { allowed: false; reason: SensitiveReason };
 
-const BIDI_CONTROL_CHARACTERS = /[\u202A-\u202E\u2066-\u2069]/u;
 const GOVERNMENT_IDENTIFIER = /\b\d{3}-\d{2}-\d{4}\b/u;
 const PAYMENT_CARD = /\b(?:\d[ -]*?){13,19}\b/u;
-const BANK_ACCOUNT =
-  /\b(?:routing|aba|account|cuenta|ruta)\b[^\d\n]{0,16}(?:\d[ -]?){6,17}\b/iu;
+const BANK_ACCOUNT = /\b(?:routing|aba|account|cuenta|ruta)\b[^\d\n]{0,16}(?:\d[ -]?){6,17}\b/iu;
 const CREDENTIAL =
   /(?:\b(?:api[ _-]?key|password|contrase(?:ñ|n)a|secret|token)\b\s*[:=]\s*\S{8,}|\bsk_[a-z0-9_-]{16,})/iu;
+const MARKUP = /(?:<\/?[a-z][^>]{0,512}>|<!--|<!doctype\b|<\?xml\b)/iu;
 
 function normalizePlainText(value: string): string {
   return value.replace(/\r\n?/gu, "\n").normalize("NFC").trim();
@@ -81,7 +85,20 @@ function hasProhibitedControlCharacter(value: string): boolean {
         codePoint === 11 ||
         codePoint === 12 ||
         (codePoint >= 14 && codePoint <= 31) ||
-        codePoint === 127)
+        (codePoint >= 127 && codePoint <= 159))
+    );
+  });
+}
+
+function hasBidirectionalControlCharacter(value: string): boolean {
+  return [...value].some((character) => {
+    const codePoint = character.codePointAt(0);
+    return (
+      codePoint === 0x061c ||
+      codePoint === 0x200e ||
+      codePoint === 0x200f ||
+      (codePoint !== undefined && codePoint >= 0x202a && codePoint <= 0x202e) ||
+      (codePoint !== undefined && codePoint >= 0x2066 && codePoint <= 0x2069)
     );
   });
 }
@@ -92,14 +109,13 @@ function validatePlainText(value: string): string {
   if (!normalized) {
     throw new Error("CHAT_MESSAGE_TEXT is required");
   }
-  if (
-    hasProhibitedControlCharacter(normalized) ||
-    BIDI_CONTROL_CHARACTERS.test(normalized)
-  ) {
+  if (hasProhibitedControlCharacter(normalized) || hasBidirectionalControlCharacter(normalized)) {
     throw new Error("CHAT_MESSAGE_TEXT contains prohibited control characters");
   }
   if ([...normalized].length > CHAT_MESSAGE_MAX_CHARACTERS) {
-    throw new Error(`CHAT_MESSAGE_TEXT must contain at most ${CHAT_MESSAGE_MAX_CHARACTERS} characters`);
+    throw new Error(
+      `CHAT_MESSAGE_TEXT must contain at most ${CHAT_MESSAGE_MAX_CHARACTERS} characters`,
+    );
   }
 
   return normalized;
@@ -121,6 +137,9 @@ export function parseHandoffRequest(input: unknown): HandoffInput {
 export function inspectProhibitedChatContent(text: string): ChatContentInspection {
   const normalized = validatePlainText(text);
 
+  if (MARKUP.test(normalized)) {
+    return { allowed: false, reason: "markup" };
+  }
   if (GOVERNMENT_IDENTIFIER.test(normalized)) {
     return { allowed: false, reason: "government_identifier" };
   }
