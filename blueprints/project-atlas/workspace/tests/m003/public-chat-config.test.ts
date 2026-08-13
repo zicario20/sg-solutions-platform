@@ -42,15 +42,18 @@ describe("public chat runtime configuration", () => {
   it.each([
     ["activation_ready", "PUBLIC_CHAT_ACTIVATION_READY_APPROVAL"],
     ["operational", "PUBLIC_CHAT_OPERATIONAL_APPROVAL"],
-  ] as const)("keeps the approved %s state disabled under Decision 028", (runtimeState, approval) => {
-    expect(
-      readPublicChatConfig({
-        PUBLIC_CHAT_STATE: runtimeState,
-        PUBLIC_CHAT_ENABLED: "true",
-        [approval]: "true",
-      }),
-    ).toMatchObject({ enabled: false, runtimeState, modelMode: "disabled" });
-  });
+  ] as const)(
+    "keeps the approved %s state disabled under Decision 028",
+    (runtimeState, approval) => {
+      expect(
+        readPublicChatConfig({
+          PUBLIC_CHAT_STATE: runtimeState,
+          PUBLIC_CHAT_ENABLED: "true",
+          [approval]: "true",
+        }),
+      ).toMatchObject({ enabled: false, runtimeState, modelMode: "disabled" });
+    },
+  );
 
   it("rejects runtime states outside the explicit allowlist", () => {
     expect(() => readPublicChatConfig({ PUBLIC_CHAT_STATE: "production" })).toThrowError(
