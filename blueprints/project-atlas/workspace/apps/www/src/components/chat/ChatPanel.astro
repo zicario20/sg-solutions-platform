@@ -8,8 +8,9 @@ import ChatTranscript from "./ChatTranscript.astro";
 interface Props {
   locale: ChatLocale;
   mode: "floating" | "page";
+  maxMessageCharacters: number;
 }
-const { locale, mode } = Astro.props;
+const { locale, mode, maxMessageCharacters } = Astro.props;
 const copy = PUBLIC_CHAT_COPY[locale];
 const helpPath = locale === "es" ? "/recursos/" : "/en/resources/";
 const contactPath = locale === "es" ? "/contacto/" : "/en/contact/";
@@ -30,8 +31,8 @@ const fullPagePath = locale === "es" ? "/chat/" : "/en/chat/";
   <header class="public-chat-header">
     <div class="public-chat-identity" aria-hidden="true">SG</div>
     <div>
-      <p class="public-chat-kicker">{copy.ui.automated}</p>
-      <h2 id="public-chat-title">{copy.ui.title}</h2>
+      <p class="public-chat-kicker" data-public-chat-kicker>{copy.ui.automated}</p>
+      <h2 id="public-chat-title" data-public-chat-title>{copy.ui.title}</h2>
     </div>
     <a class="public-chat-language" href={alternatePath} hreflang={locale === "es" ? "en" : "es"} data-public-chat-language>
       {copy.ui.language}
@@ -53,13 +54,13 @@ const fullPagePath = locale === "es" ? "/chat/" : "/en/chat/";
   <div class="public-chat-body">
     <div class="public-chat-notice" data-public-chat-notice>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.8 19h18.4L12 3Zm0 5.2v5.2m0 3.2h.01"></path></svg>
-      <p>{copy.notice}</p>
+      <p data-public-chat-notice-copy>{copy.notice}</p>
     </div>
 
     <div class="public-chat-consent" data-public-chat-consent>
       <label>
         <input type="checkbox" data-public-chat-acknowledge />
-        <span>{copy.ui.acknowledge}</span>
+        <span data-public-chat-acknowledge-copy>{copy.ui.acknowledge}</span>
       </label>
       <button type="button" data-public-chat-start disabled>{copy.ui.start}</button>
     </div>
@@ -67,9 +68,9 @@ const fullPagePath = locale === "es" ? "/chat/" : "/en/chat/";
     <ChatTranscript greeting={copy.greeting} automated={copy.ui.automated} />
 
     <div class="public-chat-quick-actions" data-public-chat-actions hidden>
-      <button type="button" data-public-chat-prompt={copy.quickActions.services}>{copy.quickActions.services}</button>
-      <button type="button" data-public-chat-prompt={copy.quickActions.credit}>{copy.quickActions.credit}</button>
-      <button type="button" data-public-chat-prompt={copy.quickActions.taxes}>{copy.quickActions.taxes}</button>
+      <button type="button" data-public-chat-prompt={copy.quickActions.services} data-public-chat-prompt-key="services">{copy.quickActions.services}</button>
+      <button type="button" data-public-chat-prompt={copy.quickActions.credit} data-public-chat-prompt-key="credit">{copy.quickActions.credit}</button>
+      <button type="button" data-public-chat-prompt={copy.quickActions.taxes} data-public-chat-prompt-key="taxes">{copy.quickActions.taxes}</button>
     </div>
 
     <ChatSources heading={copy.ui.sources} />
@@ -77,6 +78,7 @@ const fullPagePath = locale === "es" ? "/chat/" : "/en/chat/";
       placeholder={copy.ui.placeholder}
       send={copy.ui.send}
       characterCount={copy.ui.characterCount}
+      maxMessageCharacters={maxMessageCharacters}
     />
   </div>
 
@@ -84,13 +86,24 @@ const fullPagePath = locale === "es" ? "/chat/" : "/en/chat/";
     <button type="button" class="public-chat-human" data-public-chat-human>
       {copy.quickActions.human}
     </button>
-    <a href={helpPath}>{copy.ui.helpCenter}</a>
-    {mode === "floating" && <a href={fullPagePath}>{copy.ui.fullPage}</a>}
+    <a href={helpPath} data-public-chat-help>{copy.ui.helpCenter}</a>
+    {mode === "floating" && <a href={fullPagePath} data-public-chat-full-page>{copy.ui.fullPage}</a>}
   </footer>
 
   <script type="application/json" data-public-chat-copy set:html={JSON.stringify({
     locale,
     copy,
     paths: { help: helpPath, contact: contactPath, alternate: alternatePath },
+    localizations: {
+      es: {
+        copy: PUBLIC_CHAT_COPY.es,
+        paths: { help: "/recursos/", contact: "/contacto/", alternate: "/en/chat/", fullPage: "/chat/" },
+      },
+      en: {
+        copy: PUBLIC_CHAT_COPY.en,
+        paths: { help: "/en/resources/", contact: "/en/contact/", alternate: "/chat/", fullPage: "/en/chat/" },
+      },
+    },
+    messageLimit: maxMessageCharacters,
   })}></script>
 </section>

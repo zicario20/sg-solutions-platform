@@ -17,39 +17,66 @@ type Projection = {
   messages: Message[];
 };
 type Copy = {
+  notice: string;
   greeting: string;
-  quickActions: { human: string };
+  quickActions: {
+    services: string;
+    credit: string;
+    taxes: string;
+    business: string;
+    homeBuying: string;
+    human: string;
+  };
   errors: {
     invalidMessage: string;
     sensitiveData: string;
     temporarilyUnavailable: string;
     sessionExpired: string;
     conflict: string;
+    responseNotRetained: string;
   };
   handoff: { requested: string; queued: string; unavailable: string };
   ui: {
+    launcher: string;
+    title: string;
     automated: string;
+    close: string;
+    language: string;
+    acknowledge: string;
+    start: string;
+    placeholder: string;
     send: string;
     sending: string;
     statusReady: string;
+    sources: string;
     helpCenter: string;
+    fullPage: string;
+    newConversation: string;
     characterCount: string;
   };
 };
 type ExperienceConfig = {
   locale: Locale;
   copy: Copy;
-  paths: { help: string; contact: string; alternate: string };
+  paths: { help: string; contact: string; alternate: string; fullPage?: string };
+  localizations: Record<
+    Locale,
+    {
+      copy: Copy;
+      paths: { help: string; contact: string; alternate: string; fullPage: string };
+    }
+  >;
+  messageLimit: number;
 };
 type SuccessEnvelope = {
   ok: true;
   data: Projection;
+  replayed: boolean;
   correlationId: string;
   csrfToken?: string;
 };
-type FailureEnvelope = { ok: false; code: string; correlationId: string };
+type FailureEnvelope = { ok: false; code: string; data?: Projection; correlationId: string };
 
-const MESSAGE_LIMIT = 2_000;
 const ROOT_SELECTOR = "[data-public-chat-root]";
 
 function element<T extends Element>(root: ParentNode, selector: string): T | null {
@@ -78,7 +105,11 @@ function readConfig(root: HTMLElement): ExperienceConfig | null {
   const node = element<HTMLScriptElement>(root, "[data-public-chat-copy]");
   try {
     const value = JSON.parse(node?.textContent ?? "") as ExperienceConfig;
-    return value.locale === "es" || value.locale === "en" ? value : null;
+    return (value.locale === "es" || value.locale === "en") &&
+      Number.isSafeInteger(value.messageLimit) &&
+      value.messageLimit > 0
+      ? value
+      : null;
   } catch {
     return null;
   }
@@ -104,6 +135,7 @@ function initExperience(root: HTMLElement): void {
   const parsedConfig = readConfig(root);
   if (!parsedConfig) return;
   const config: ExperienceConfig = parsedConfig;
+  const messageLimit = config.messageLimit;
   const panel = required<HTMLElement>(root, "[data-public-chat-panel]");
   const launcher = element<HTMLButtonElement>(root, "[data-public-chat-launcher]");
   const dismiss = element<HTMLButtonElement>(root, "[data-public-chat-dismiss]");
@@ -122,6 +154,14 @@ function initExperience(root: HTMLElement): void {
   const human = required<HTMLButtonElement>(root, "[data-public-chat-human]");
   const sources = required<HTMLElement>(root, "[data-public-chat-sources]");
   const sourceList = required<HTMLUListElement>(root, "[data-public-chat-source-list]");
+  const title = required<HTMLElement>(root, "[data-public-chat-title]");
+  const kicker = required<HTMLElement>(root, "[data-public-chat-kicker]");
+  const noticeCopy = required<HTMLElement>(root, "[data-public-chat-notice-copy]");
+  const acknowledgeCopy = required<HTMLElement>(root, "[data-public-chat-acknowledge-copy]");
+  const inputLabel = required<HTMLElement>(root, "[data-public-chat-input-label]");
+  const sourcesHeading = required<HTMLElement>(root, "[data-public-chat-sources-heading]");
+  const help = required<HTMLAnchorElement>(root, "[data-public-chat-help]");
+  const fullPage = element<HTMLAnchorElement>(root, "[data-public-chat-full-page]");
 
   let csrfToken: string | null = null;
   let projection: Projection | null = null;
@@ -132,7 +172,68 @@ function initExperience(root: HTMLElement): void {
   let conversationGeneration = 0;
   let activeCommandController: AbortController | null = null;
   let renderedConversationId: string | null = null;
+  let pendingStart: { key: string; locale: Locale; noticeVersion: string } | null = null;
+  let pendingMessage: { text: string; key: string; version: number } | null = null;
+  let pendingHandoff: { reason: string; key: string; version: number } | null = null;
+  let pendingLocale: { locale: Locale; key: string; version: number } | null = null;
   const renderedMessageIds = new Set<string>();
+
+  function updateFullPageTransfer(): void {
+    if (!fullPage) return;
+    const target = new URL(config.paths.fullPage ?? "/chat/", window.location.origin);
+    if (projection && csrfToken) {
+      target.hash = new URLSearchParams({
+        conversation: projection.id,
+        csrf: csrfToken,
+      }).toString();
+    }
+    fullPage.href = `${target.pathname}${target.search}${target.hash}`;
+  }
+
+  function applyLocalization(locale: Locale): void {
+    const localized = config.localizations[locale];
+    config.locale = locale;
+    config.copy = localized.copy;
+    config.paths = localized.paths;
+    root.lang = locale;
+    title.textContent = localized.copy.ui.title;
+    kicker.textContent = localized.copy.ui.automated;
+    noticeCopy.textContent = localized.copy.notice;
+    acknowledgeCopy.textContent = localized.copy.ui.acknowledge;
+    start.textContent = localized.copy.ui.start;
+    language.textContent = localized.copy.ui.language;
+    language.href = localized.paths.alternate;
+    language.hreflang = locale === "es" ? "en" : "es";
+    input.placeholder = localized.copy.ui.placeholder;
+    inputLabel.textContent = localized.copy.ui.placeholder;
+    send.textContent = pending ? localized.copy.ui.sending : localized.copy.ui.send;
+    count.textContent = `${Math.max(0, messageLimit - [...input.value].length)} ${localized.copy.ui.characterCount}`;
+    human.textContent = localized.copy.quickActions.human;
+    help.textContent = localized.copy.ui.helpCenter;
+    help.href = localized.paths.help;
+    sourcesHeading.textContent = localized.copy.ui.sources;
+    if (fullPage) {
+      fullPage.textContent = localized.copy.ui.fullPage;
+      updateFullPageTransfer();
+    }
+    for (const quickAction of root.querySelectorAll<HTMLButtonElement>(
+      "[data-public-chat-prompt-key]",
+    )) {
+      const key = quickAction.dataset.publicChatPromptKey as "services" | "credit" | "taxes";
+      const text = localized.copy.quickActions[key];
+      quickAction.textContent = text;
+      quickAction.dataset.publicChatPrompt = text;
+    }
+    for (const actor of root.querySelectorAll<HTMLElement>("[data-public-chat-actor]")) {
+      actor.textContent =
+        actor.dataset.publicChatActor === "visitor"
+          ? locale === "es"
+            ? "Tú"
+            : "You"
+          : localized.copy.ui.automated;
+    }
+    transcript.setAttribute("aria-label", localized.copy.ui.automated);
+  }
 
   const announce = (message: string) => {
     alert.hidden = true;
@@ -147,10 +248,19 @@ function initExperience(root: HTMLElement): void {
 
   const setPending = (value: boolean) => {
     pending = value;
+    const terminal =
+      projection?.status === "restricted" ||
+      projection?.status === "closed" ||
+      projection?.status === "expired";
+    const handoffPending =
+      projection?.status === "human_requested" ||
+      projection?.status === "waiting_for_human" ||
+      projection?.status === "human_active";
+    const unavailable = terminal || handoffPending;
     start.disabled = value || !acknowledge.checked;
-    input.disabled = value;
-    send.disabled = value;
-    human.disabled = value;
+    input.disabled = value || unavailable;
+    send.disabled = value || unavailable;
+    human.disabled = value || terminal;
     send.textContent = value ? config.copy.ui.sending : config.copy.ui.send;
   };
 
@@ -171,13 +281,15 @@ function initExperience(root: HTMLElement): void {
     path: string,
     body?: unknown,
     signal?: AbortSignal,
+    csrfOverride?: string,
   ): Promise<SuccessEnvelope | FailureEnvelope> {
     const headers = new Headers({ accept: "application/json" });
     const init: RequestInit = { credentials: "same-origin", headers, signal };
     if (body !== undefined) {
       init.method = "POST";
       headers.set("content-type", "application/json");
-      if (csrfToken) headers.set("x-atlas-chat-csrf", csrfToken);
+      const requestCsrfToken = csrfOverride ?? csrfToken;
+      if (requestCsrfToken) headers.set("x-atlas-chat-csrf", requestCsrfToken);
       init.body = JSON.stringify(body);
     }
     const response = await fetch(path, init);
@@ -224,6 +336,7 @@ function initExperience(root: HTMLElement): void {
 
   function renderProjection(next: Projection): void {
     projection = next;
+    updateFullPageTransfer();
     if (renderedConversationId !== next.id) {
       transcript.replaceChildren();
       renderedMessageIds.clear();
@@ -236,6 +349,7 @@ function initExperience(root: HTMLElement): void {
       article.setAttribute("data-public-chat-message-id", message.id);
       const actor = document.createElement("p");
       actor.className = "public-chat-message__actor";
+      actor.dataset.publicChatActor = message.actor;
       actor.textContent =
         message.actor === "visitor"
           ? config.locale === "es"
@@ -263,9 +377,15 @@ function initExperience(root: HTMLElement): void {
     renderSources(next.messages);
     transcript.scrollTop = transcript.scrollHeight;
     consent.hidden = true;
-    composer.hidden = false;
-    actions.hidden = false;
-    human.disabled = false;
+    const terminal =
+      next.status === "restricted" || next.status === "closed" || next.status === "expired";
+    const handoffPending =
+      next.status === "human_requested" ||
+      next.status === "waiting_for_human" ||
+      next.status === "human_active";
+    composer.hidden = terminal || handoffPending;
+    actions.hidden = terminal || handoffPending;
+    human.disabled = terminal;
   }
 
   function resetConversationUi(): void {
@@ -280,13 +400,18 @@ function initExperience(root: HTMLElement): void {
     sources.hidden = true;
     sourceList.replaceChildren();
     renderedConversationId = null;
+    pendingStart = null;
+    pendingMessage = null;
+    pendingHandoff = null;
+    pendingLocale = null;
+    updateFullPageTransfer();
     renderedMessageIds.clear();
     input.value = "";
     input.disabled = false;
     send.disabled = false;
     send.textContent = config.copy.ui.send;
     human.disabled = false;
-    count.textContent = `${MESSAGE_LIMIT} ${config.copy.ui.characterCount}`;
+    count.textContent = `${messageLimit} ${config.copy.ui.characterCount}`;
     transcript.replaceChildren();
     const greeting = document.createElement("article");
     greeting.className = "public-chat-message public-chat-message--assistant";
@@ -346,22 +471,31 @@ function initExperience(root: HTMLElement): void {
     if (pending || !acknowledge.checked || !(await ensureBootstrap())) return;
     setPending(true);
     const { controller, operationGeneration } = beginCommand();
+    pendingStart ??= {
+      key: idempotencyKey("start"),
+      locale: config.locale,
+      noticeVersion: "public-chat-notice.v1",
+    };
+    const command = pendingStart;
     try {
       const value = await request(
         "/api/public/chat/conversations",
         {
-          locale: config.locale,
-          noticeVersion: "public-chat-notice.v1",
+          locale: command.locale,
+          noticeVersion: command.noticeVersion,
           noticeAcknowledged: true,
+          idempotencyKey: command.key,
         },
         controller.signal,
       );
       if (operationGeneration !== conversationGeneration) return;
       if (value.ok) {
+        pendingStart = null;
         renderProjection(value.data);
         announce(config.copy.ui.statusReady);
         input.focus();
       } else {
+        if (value.code !== "command_in_progress") pendingStart = null;
         announceError(errorText(config.copy, value.code));
       }
     } catch {
@@ -375,29 +509,44 @@ function initExperience(root: HTMLElement): void {
 
   async function sendMessage(text: string): Promise<void> {
     const normalized = text.normalize("NFC").trim();
-    if (pending || !projection || !normalized || [...normalized].length > MESSAGE_LIMIT) {
+    if (pending || !projection || !normalized || [...normalized].length > messageLimit) {
       announceError(config.copy.errors.invalidMessage);
       return;
     }
     setPending(true);
     const { controller, operationGeneration } = beginCommand();
+    const command =
+      pendingMessage?.text === normalized && pendingMessage.version === projection.version
+        ? pendingMessage
+        : { text: normalized, key: idempotencyKey("message"), version: projection.version };
+    pendingMessage = command;
     try {
       const value = await request(
         `/api/public/chat/conversations/${encodeURIComponent(projection.id)}/messages`,
         {
           text: normalized,
-          idempotencyKey: idempotencyKey("message"),
-          expectedVersion: projection.version,
+          idempotencyKey: command.key,
+          expectedVersion: command.version,
         },
         controller.signal,
       );
       if (operationGeneration !== conversationGeneration) return;
       if (value.ok) {
-        input.value = "";
-        count.textContent = `${MESSAGE_LIMIT} ${config.copy.ui.characterCount}`;
+        const recoveredBody = value.data.messages.some(
+          (message) => message.body && !renderedMessageIds.has(message.id),
+        );
         renderProjection(value.data);
-        announce(config.copy.ui.statusReady);
+        pendingMessage = null;
+        if (value.replayed && !recoveredBody) {
+          announceError(config.copy.errors.responseNotRetained);
+        } else {
+          input.value = "";
+          count.textContent = `${messageLimit} ${config.copy.ui.characterCount}`;
+          announce(config.copy.ui.statusReady);
+        }
       } else {
+        if (value.code !== "command_in_progress") pendingMessage = null;
+        if (value.data) renderProjection(value.data);
         announceError(errorText(config.copy, value.code));
       }
     } catch {
@@ -417,25 +566,41 @@ function initExperience(root: HTMLElement): void {
       window.location.assign(config.paths.contact);
       return;
     }
+    if (
+      projection.status === "human_requested" ||
+      projection.status === "waiting_for_human" ||
+      projection.status === "human_active"
+    ) {
+      window.location.assign(config.paths.contact);
+      return;
+    }
     setPending(true);
     announce(config.copy.handoff.requested);
     const { controller, operationGeneration } = beginCommand();
+    const reason = "visitor_requested";
+    const command =
+      pendingHandoff?.reason === reason && pendingHandoff.version === projection.version
+        ? pendingHandoff
+        : { reason, key: idempotencyKey("handoff"), version: projection.version };
+    pendingHandoff = command;
     try {
       const value = await request(
         `/api/public/chat/conversations/${encodeURIComponent(projection.id)}/handoff`,
         {
-          reason: "visitor_requested",
-          idempotencyKey: idempotencyKey("handoff"),
-          expectedVersion: projection.version,
+          reason: command.reason,
+          idempotencyKey: command.key,
+          expectedVersion: command.version,
         },
         controller.signal,
       );
       if (operationGeneration !== conversationGeneration) return;
       if (value.ok) {
-        if (value.csrfToken) csrfToken = value.csrfToken;
+        pendingHandoff = null;
         renderProjection(value.data);
         announce(config.copy.handoff.queued);
       } else {
+        if (value.code !== "command_in_progress") pendingHandoff = null;
+        if (value.data) renderProjection(value.data);
         announceError(config.copy.handoff.unavailable);
       }
     } catch {
@@ -444,6 +609,53 @@ function initExperience(root: HTMLElement): void {
       }
     } finally {
       if (finishCommand(controller, operationGeneration)) setPending(false);
+    }
+  }
+
+  const delay = (milliseconds: number) =>
+    new Promise<void>((resolveDelay) => window.setTimeout(resolveDelay, milliseconds));
+
+  async function closeConversation(
+    active: Projection,
+    closingCsrfToken: string,
+    controller: AbortController,
+  ): Promise<void> {
+    let command = {
+      key: idempotencyKey("close"),
+      version: active.version,
+    };
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      try {
+        const value = await request(
+          `/api/public/chat/conversations/${encodeURIComponent(active.id)}/close`,
+          {
+            idempotencyKey: command.key,
+            expectedVersion: command.version,
+          },
+          controller.signal,
+          closingCsrfToken,
+        );
+        if (value.ok || value.code === "revoked" || value.code === "expired") return;
+        if (value.code === "conflict") {
+          let currentProjection = value.data;
+          if (!currentProjection) {
+            const current = await request(
+              `/api/public/chat/conversations/${encodeURIComponent(active.id)}`,
+              undefined,
+              controller.signal,
+              closingCsrfToken,
+            );
+            if (!current.ok) return;
+            currentProjection = current.data;
+          }
+          command = { key: idempotencyKey("close"), version: currentProjection.version };
+        } else if (value.code !== "command_in_progress") {
+          return;
+        }
+      } catch {
+        if (controller.signal.aborted) return;
+      }
+      await delay(75 * (attempt + 1));
     }
   }
 
@@ -457,22 +669,12 @@ function initExperience(root: HTMLElement): void {
       closeController?.abort();
       closeController = new AbortController();
       const controller = closeController;
-      const timer = window.setTimeout(() => controller.abort(), 1_500);
-      closingRequest = request(
-        `/api/public/chat/conversations/${encodeURIComponent(active.id)}/close`,
-        {
-          idempotencyKey: idempotencyKey("close"),
-          expectedVersion: active.version,
-        },
-        controller.signal,
-      )
-        .then(() => undefined)
-        .catch(() => undefined)
-        .finally(() => {
-          window.clearTimeout(timer);
-          if (closeController === controller) closeController = null;
-          closingRequest = null;
-        });
+      const timer = window.setTimeout(() => controller.abort(), 3_000);
+      closingRequest = closeConversation(active, closingCsrfToken, controller).finally(() => {
+        window.clearTimeout(timer);
+        if (closeController === controller) closeController = null;
+        closingRequest = null;
+      });
     }
     resetConversationUi();
     if (panel.dataset.publicChatMode === "floating") panel.hidden = true;
@@ -491,35 +693,47 @@ function initExperience(root: HTMLElement): void {
 
   async function changeConversationLocale(event: MouseEvent): Promise<void> {
     event.preventDefault();
-    if (!projection || pending) return;
+    if (pending) return;
+    const targetLocale: Locale = config.locale === "es" ? "en" : "es";
+    if (!projection) {
+      if (pendingStart) {
+        await startConversation();
+        if (!projection) return;
+      } else {
+        applyLocalization(targetLocale);
+        announce(config.copy.ui.statusReady);
+        return;
+      }
+    }
     const active = projection;
     setPending(true);
     const { controller, operationGeneration } = beginCommand();
+    const command =
+      pendingLocale?.locale === targetLocale && pendingLocale.version === active.version
+        ? pendingLocale
+        : { locale: targetLocale, key: idempotencyKey("locale"), version: active.version };
+    pendingLocale = command;
     try {
       const value = await request(
         `/api/public/chat/conversations/${encodeURIComponent(active.id)}/language`,
         {
-          locale: config.locale === "es" ? "en" : "es",
-          idempotencyKey: idempotencyKey("locale"),
-          expectedVersion: active.version,
+          locale: command.locale,
+          idempotencyKey: command.key,
+          expectedVersion: command.version,
         },
         controller.signal,
       );
       if (operationGeneration !== conversationGeneration) return;
       if (!value.ok) {
+        if (value.code !== "command_in_progress") pendingLocale = null;
+        if (value.data) renderProjection(value.data);
         announceError(errorText(config.copy, value.code));
         return;
       }
-      const target = new URL(config.paths.alternate, window.location.origin);
-      if (!csrfToken) {
-        announceError(config.copy.errors.sessionExpired);
-        return;
-      }
-      target.hash = new URLSearchParams({
-        conversation: value.data.id,
-        csrf: csrfToken,
-      }).toString();
-      window.location.assign(target.href);
+      pendingLocale = null;
+      applyLocalization(value.data.locale);
+      renderProjection(value.data);
+      announce(config.copy.ui.statusReady);
     } catch {
       if (operationGeneration === conversationGeneration) {
         announceError(config.copy.errors.temporarilyUnavailable);
@@ -541,7 +755,7 @@ function initExperience(root: HTMLElement): void {
     void sendMessage(input.value);
   });
   input.addEventListener("input", () => {
-    count.textContent = `${Math.max(0, MESSAGE_LIMIT - [...input.value].length)} ${config.copy.ui.characterCount}`;
+    count.textContent = `${Math.max(0, messageLimit - [...input.value].length)} ${config.copy.ui.characterCount}`;
   });
   for (const quickAction of root.querySelectorAll<HTMLButtonElement>("[data-public-chat-prompt]")) {
     quickAction.addEventListener(

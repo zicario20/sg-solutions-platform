@@ -31,8 +31,14 @@ describe("public chat validation", () => {
         locale,
         noticeVersion: "public-chat-notice-v1",
         noticeAcknowledged: true,
+        idempotencyKey: "start_request_0001",
       }),
-    ).toEqual({ locale, noticeVersion: "public-chat-notice-v1", noticeAcknowledged: true });
+    ).toEqual({
+      locale,
+      noticeVersion: "public-chat-notice-v1",
+      noticeAcknowledged: true,
+      idempotencyKey: "start_request_0001",
+    });
   });
 
   it("rejects an unsupported locale instead of silently defaulting", () => {
@@ -41,6 +47,7 @@ describe("public chat validation", () => {
         locale: "fr",
         noticeVersion: "public-chat-notice-v1",
         noticeAcknowledged: true,
+        idempotencyKey: "start_request_0001",
       }),
     ).toThrow();
   });
@@ -51,6 +58,7 @@ describe("public chat validation", () => {
         locale: "es",
         noticeVersion: "public-chat-notice-v1",
         noticeAcknowledged: false,
+        idempotencyKey: "start_request_0001",
       }),
     ).toThrow();
   });
@@ -93,6 +101,29 @@ describe("public chat validation", () => {
     ).toHaveLength(4_000);
   });
 
+  it("enforces the configured server-side message limit", () => {
+    expect(
+      parseChatMessage(
+        {
+          text: "a".repeat(1_600),
+          idempotencyKey: "msg_1234567890",
+          expectedVersion: 1,
+        },
+        1_600,
+      ).text,
+    ).toHaveLength(1_600);
+    expect(() =>
+      parseChatMessage(
+        {
+          text: "a".repeat(1_601),
+          idempotencyKey: "msg_1234567890",
+          expectedVersion: 1,
+        },
+        1_600,
+      ),
+    ).toThrowError("CHAT_MESSAGE_TEXT must contain at most 1600 characters");
+  });
+
   it.each([
     {
       text: ["000", "12", "3456"].join("-"),
@@ -129,6 +160,33 @@ describe("public chat validation", () => {
     expect(result).toEqual({ allowed: false, reason });
     expect(JSON.stringify(result)).not.toContain(text);
   });
+
+  it.each(["123-45-6789", "123 45 6789", "123456789", "１２３－４５－６７８９", "١٢٣ ٤٥ ٦٧٨٩"])(
+    "rejects the SSN/ITIN-shaped variant %s",
+    (text) => {
+      const result = inspectProhibitedChatContent(`Identifier: ${text}`);
+      expect(result).toEqual({ allowed: false, reason: "government_identifier" });
+      expect(JSON.stringify(result)).not.toContain(text);
+    },
+  );
+
+  it.each([
+    ["fullwidth payment card", "４１１１ １１１１ １１１１ １１１１", "payment_card"],
+    ["Arabic-Indic payment card", "٤١١١ ١١١١ ١١١١ ١١١١", "payment_card"],
+    ["fullwidth routing number", "routing ０２１００００２１", "bank_account"],
+    ["Arabic-Indic account number", "account ١٢٣٤٥٦٧٨٩", "bank_account"],
+  ])("rejects a %s before any provider can receive it", (_label, text, reason) => {
+    const result = inspectProhibitedChatContent(text);
+    expect(result).toEqual({ allowed: false, reason });
+    expect(JSON.stringify(result)).not.toContain(text);
+  });
+
+  it.each(["Order 12345678", "Phone 3125550199", "Years 1234 and 56789"])(
+    "does not classify the legitimate numeric text %s as a nine-digit identifier",
+    (text) => {
+      expect(inspectProhibitedChatContent(text)).toEqual({ allowed: true, normalized: text });
+    },
+  );
 
   it("returns normalized safe text for allowed public questions", () => {
     expect(inspectProhibitedChatContent("  ¿Qué servicios ofrecen?\r\n")).toEqual({

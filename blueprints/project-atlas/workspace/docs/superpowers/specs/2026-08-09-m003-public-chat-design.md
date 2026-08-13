@@ -3,8 +3,8 @@
 - Date: 2026-08-09
 - Owner: Product Owner
 - Architect: Codex Architecture Agent
-- Status: Draft for Product Owner review
-- Build authorization: None
+- Status: Accepted design implemented in provider-disabled local/staging Build
+- Build authorization: Decision 028; external activation/deployment remain unauthorized
 
 ## Decision summary
 

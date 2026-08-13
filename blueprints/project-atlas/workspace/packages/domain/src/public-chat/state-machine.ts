@@ -1,7 +1,7 @@
 import type { ConversationStatus } from "./contracts.ts";
 
 const TRANSITIONS: Readonly<Record<ConversationStatus, readonly ConversationStatus[]>> = {
-  new: ["ai_active", "closed", "expired", "restricted"],
+  new: ["ai_active", "human_requested", "closed", "expired", "restricted"],
   ai_active: ["human_requested", "closed", "expired", "restricted"],
   human_requested: ["waiting_for_human", "closed", "expired", "restricted"],
   waiting_for_human: ["human_active", "closed", "expired", "restricted"],

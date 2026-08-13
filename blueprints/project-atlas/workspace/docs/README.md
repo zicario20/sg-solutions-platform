@@ -53,12 +53,16 @@ M002 delivery evidence:
 - [M002 Help Center Runbook](runbooks/M002-help-center.md)
 - [M002 Phase Completion Report](phases/M002_PHASE_COMPLETION_REPORT.md)
 
-M003 architecture evidence:
+M003 architecture and provider-disabled Build evidence:
 
 - [M003 Independent Architecture Review](reviews/M003-ARCHITECTURE-REVIEW.md)
 - [M003 Security Architecture Review](reviews/M003-SECURITY-REVIEW.md)
 - [M003 Public Chat PRD](modules/m003-public-chat.md)
 - [M003 Public Chat Design](superpowers/specs/2026-08-09-m003-public-chat-design.md)
+- [M003 Build Code Review](reviews/M003-CODE-REVIEW.md)
+- [M003 Build Security Review](reviews/M003-SECURITY-BUILD-REVIEW.md)
+- [M003 Public Chat Runbook](runbooks/M003-public-chat.md)
+- [M003 Phase Completion Report](phases/M003-PHASE-COMPLETION-REPORT.md)
 
 M004 architecture evidence:
 

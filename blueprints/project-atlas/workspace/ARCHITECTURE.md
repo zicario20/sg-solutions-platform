@@ -72,11 +72,12 @@ Architecture, local implementation and external activation are separate gates un
 non-sensitive activation evidence. An interface, disabled adapter, mock or local contract test never
 proves a provider is active or a module is `Operational`.
 
-M003 proposes a same-origin Public Chat Gateway as Astro on-demand server routes inside `apps/www`,
+M003 implements a same-origin Public Chat Gateway as Astro on-demand server routes inside `apps/www`
+for the provider-disabled local/staging Build,
 while existing marketing/content pages remain prerendered. Shared conversation/domain services stay
 in workspace packages; later authenticated client/admin adapters enter through `apps/app` and never
-turn a claimed public identity into authorization. ADR 007 records the proposed runtime decision for
-Product Owner approval before Build.
+turn a claimed public identity into authorization. ADR 007 records the accepted runtime decision.
+This local implementation is neither external activation nor production/Operational evidence.
 
 M004 proposes an official provider-neutral WhatsApp adapter over the same conversation/handoff
 kernel. Provider-to-server callbacks enter through a narrowly scoped Next.js integration ingress in

@@ -20,11 +20,39 @@ export interface PublicChatRateLimiter {
   consume(key: string): Promise<{ allowed: true } | { allowed: false; retryAfterSeconds: number }>;
 }
 
+export type PublicChatSecurityEvent = {
+  reason:
+    | "origin_rejected"
+    | "csrf_rejected"
+    | "session_rejected"
+    | "network_rate_limited"
+    | "session_rate_limited"
+    | "dependency_failed";
+  route:
+    | "bootstrap"
+    | "conversations"
+    | "messages"
+    | "language"
+    | "resume"
+    | "handoff"
+    | "close"
+    | "conversation"
+    | "unknown";
+  method: "GET" | "POST" | "OPTIONS" | "OTHER";
+  correlationId: string;
+  bucket?: string;
+};
+
+export interface PublicChatSecurityTelemetry {
+  record(event: PublicChatSecurityEvent): Promise<void>;
+}
+
 export type PublicChatGatewayService = {
   start(input: {
     context: { sessionHash: string; correlationId: string };
     locale: "es" | "en";
     noticeVersion: string;
+    idempotencyKey: string;
   }): Promise<ChatCommandResult>;
   get(input: { conversationId: string; sessionHash: string }): Promise<ChatCommandResult>;
   acceptMessage(input: {
@@ -89,7 +117,41 @@ function correlationId(): string {
   return crypto.randomUUID();
 }
 
-function requestGuard(request: Request, canonicalOrigin: string): Response | null {
+function routeClass(request: Request): PublicChatSecurityEvent["route"] {
+  const path = new URL(request.url).pathname;
+  if (path.endsWith("/bootstrap")) return "bootstrap";
+  if (path.endsWith("/messages")) return "messages";
+  if (path.endsWith("/language")) return "language";
+  if (path.endsWith("/resume")) return "resume";
+  if (path.endsWith("/handoff")) return "handoff";
+  if (path.endsWith("/close")) return "close";
+  if (path.endsWith("/conversations")) return "conversations";
+  if (path.includes("/conversations/")) return "conversation";
+  return "unknown";
+}
+
+function methodClass(request: Request): PublicChatSecurityEvent["method"] {
+  if (request.method === "GET" || request.method === "POST" || request.method === "OPTIONS") {
+    return request.method;
+  }
+  return "OTHER";
+}
+
+async function recordSecuritySafely(
+  dependencies: CommonDependencies,
+  event: PublicChatSecurityEvent,
+): Promise<void> {
+  try {
+    await dependencies.securityTelemetry?.record(event);
+  } catch {
+    // Security telemetry must never change the fail-closed gateway response.
+  }
+}
+
+async function requestGuard(
+  request: Request,
+  dependencies: CommonDependencies,
+): Promise<Response | null> {
   if (request.method === "OPTIONS") {
     return errorResponse("method_not_allowed", 405, correlationId(), { allow: "GET, POST" });
   }
@@ -104,28 +166,38 @@ function requestGuard(request: Request, canonicalOrigin: string): Response | nul
       }
     }
     if (
-      new URL(request.url).origin !== canonicalOrigin ||
-      initiatorOrigin !== canonicalOrigin ||
+      new URL(request.url).origin !== dependencies.canonicalOrigin ||
+      initiatorOrigin !== dependencies.canonicalOrigin ||
       (fetchSite && fetchSite !== "same-origin")
     ) {
-      return errorResponse("request_forbidden", 403, correlationId());
+      const correlation = correlationId();
+      await recordSecuritySafely(dependencies, {
+        reason: "origin_rejected",
+        route: routeClass(request),
+        method: methodClass(request),
+        correlationId: correlation,
+      });
+      return errorResponse("request_forbidden", 403, correlation);
     }
     return null;
   }
   if (
-    request.headers.get("origin") !== canonicalOrigin ||
+    request.headers.get("origin") !== dependencies.canonicalOrigin ||
     (fetchSite && fetchSite !== "same-origin")
   ) {
-    return errorResponse("request_forbidden", 403, correlationId());
+    const correlation = correlationId();
+    await recordSecuritySafely(dependencies, {
+      reason: "origin_rejected",
+      route: routeClass(request),
+      method: methodClass(request),
+      correlationId: correlation,
+    });
+    return errorResponse("request_forbidden", 403, correlation);
   }
   return null;
 }
 
-async function requestBucket(request: Request, secret: string): Promise<string> {
-  // Vercel overwrites this header at the trusted deployment boundary. Do not trust
-  // x-forwarded-for or arbitrary vendor headers supplied by the browser.
-  const address =
-    request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() ?? "unidentified";
+async function hmacBucket(value: string, secret: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -133,8 +205,16 @@ async function requestBucket(request: Request, secret: string): Promise<string> 
     false,
     ["sign"],
   );
-  const digest = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(address));
+  const digest = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value));
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function requestBucket(request: Request, secret: string): Promise<string> {
+  // Vercel overwrites this header at the trusted deployment boundary. Do not trust
+  // x-forwarded-for or arbitrary vendor headers supplied by the browser.
+  const address =
+    request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() ?? "unidentified";
+  return hmacBucket(address, secret);
 }
 
 async function parseJson(
@@ -180,21 +260,39 @@ type CommonDependencies = {
   sessions: PublicChatSessionSecurity;
   rateLimiter: PublicChatRateLimiter;
   sessionTtlSeconds?: number;
+  maxMessageCharacters?: number;
   networkBucketSecret: string;
+  securityTelemetry?: PublicChatSecurityTelemetry;
 };
 
 async function consumeNetworkRate(
   dependencies: CommonDependencies,
   request: Request,
 ): Promise<Response | null> {
-  const rate = await dependencies.rateLimiter.consume(
-    `network:${await requestBucket(request, dependencies.networkBucketSecret)}`,
-  );
-  return rate.allowed
-    ? null
-    : errorResponse("rate_limited", 429, correlationId(), {
-        "retry-after": String(rate.retryAfterSeconds),
-      });
+  const correlation = correlationId();
+  try {
+    const bucket = await requestBucket(request, dependencies.networkBucketSecret);
+    const rate = await dependencies.rateLimiter.consume(`network:${bucket}`);
+    if (rate.allowed) return null;
+    await recordSecuritySafely(dependencies, {
+      reason: "network_rate_limited",
+      route: routeClass(request),
+      method: methodClass(request),
+      correlationId: correlation,
+      bucket: bucket.slice(0, 16),
+    });
+    return errorResponse("rate_limited", 429, correlation, {
+      "retry-after": String(rate.retryAfterSeconds),
+    });
+  } catch {
+    await recordSecuritySafely(dependencies, {
+      reason: "dependency_failed",
+      route: routeClass(request),
+      method: methodClass(request),
+      correlationId: correlation,
+    });
+    return errorResponse("assistant_unavailable", 503, correlation);
+  }
 }
 
 async function requireSession(
@@ -205,26 +303,84 @@ async function requireSession(
   | { ok: true; session: { sessionHash: string; correlationId: string } }
   | { ok: false; response: Response }
 > {
-  const guarded = requestGuard(request, dependencies.canonicalOrigin);
+  const guarded = await requestGuard(request, dependencies);
   if (guarded) return { ok: false, response: guarded };
   if (!dependencies.enabled) {
     return { ok: false, response: errorResponse("chat_disabled", 503, correlationId()) };
   }
   const networkLimited = await consumeNetworkRate(dependencies, request);
   if (networkLimited) return { ok: false, response: networkLimited };
-  const auth = await dependencies.sessions.authenticate(request, { requireCsrf });
+  let auth: Awaited<ReturnType<PublicChatSessionSecurity["authenticate"]>>;
+  try {
+    auth = await dependencies.sessions.authenticate(request, { requireCsrf });
+  } catch {
+    const correlation = correlationId();
+    await recordSecuritySafely(dependencies, {
+      reason: "dependency_failed",
+      route: routeClass(request),
+      method: methodClass(request),
+      correlationId: correlation,
+    });
+    return {
+      ok: false,
+      response: errorResponse("assistant_unavailable", 503, correlation),
+    };
+  }
   if (!auth.ok) {
+    const correlation = correlationId();
+    await recordSecuritySafely(dependencies, {
+      reason: auth.code === "csrf_invalid" ? "csrf_rejected" : "session_rejected",
+      route: routeClass(request),
+      method: methodClass(request),
+      correlationId: correlation,
+    });
     return {
       ok: false,
       response: errorResponse(
         "session_invalid",
         auth.code === "csrf_invalid" ? 403 : 401,
-        correlationId(),
+        correlation,
       ),
     };
   }
-  const rate = await dependencies.rateLimiter.consume(`session:${auth.session.sessionHash}`);
+  let rate: Awaited<ReturnType<PublicChatRateLimiter["consume"]>>;
+  try {
+    rate = await dependencies.rateLimiter.consume(`session:${auth.session.sessionHash}`);
+  } catch {
+    await recordSecuritySafely(dependencies, {
+      reason: "dependency_failed",
+      route: routeClass(request),
+      method: methodClass(request),
+      correlationId: auth.session.correlationId,
+    });
+    return {
+      ok: false,
+      response: errorResponse("assistant_unavailable", 503, auth.session.correlationId),
+    };
+  }
   if (!rate.allowed) {
+    let bucket: string;
+    try {
+      bucket = await hmacBucket(auth.session.sessionHash, dependencies.networkBucketSecret);
+    } catch {
+      await recordSecuritySafely(dependencies, {
+        reason: "dependency_failed",
+        route: routeClass(request),
+        method: methodClass(request),
+        correlationId: auth.session.correlationId,
+      });
+      return {
+        ok: false,
+        response: errorResponse("assistant_unavailable", 503, auth.session.correlationId),
+      };
+    }
+    await recordSecuritySafely(dependencies, {
+      reason: "session_rate_limited",
+      route: routeClass(request),
+      method: methodClass(request),
+      correlationId: auth.session.correlationId,
+      bucket: bucket.slice(0, 16),
+    });
     return {
       ok: false,
       response: errorResponse("rate_limited", 429, auth.session.correlationId, {
@@ -277,13 +433,49 @@ function validConversationId(id: string, correlation: string): Response | null {
 }
 
 async function executeDomain(
+  dependencies: CommonDependencies,
+  request: Request,
   operation: () => Promise<ChatCommandResult>,
   correlation: string,
   successStatus = 200,
 ): Promise<Response> {
   try {
-    return domainResponse(await operation(), correlation, successStatus);
+    const result = await operation();
+    let headers: HeadersInit | undefined;
+    if (result.projection) {
+      if (
+        result.projection.status === "restricted" ||
+        result.projection.status === "closed" ||
+        result.projection.status === "expired"
+      ) {
+        headers = { "set-cookie": expirePublicChatCookie() };
+      } else {
+        const refreshed = await dependencies.sessions.refresh(request);
+        if (!refreshed.ok) {
+          await recordSecuritySafely(dependencies, {
+            reason: "dependency_failed",
+            route: routeClass(request),
+            method: methodClass(request),
+            correlationId: correlation,
+          });
+          return errorResponse("assistant_unavailable", 503, correlation);
+        }
+        headers = {
+          "set-cookie": serializePublicChatCookie(
+            refreshed.cookieValue,
+            dependencies.sessionTtlSeconds ?? 1_800,
+          ),
+        };
+      }
+    }
+    return domainResponse(result, correlation, successStatus, headers);
   } catch {
+    await recordSecuritySafely(dependencies, {
+      reason: "dependency_failed",
+      route: routeClass(request),
+      method: methodClass(request),
+      correlationId: correlation,
+    });
     return errorResponse("assistant_unavailable", 503, correlation);
   }
 }
@@ -293,22 +485,33 @@ export function createBootstrapHandler(dependencies: CommonDependencies) {
     if (request.method !== "GET" && request.method !== "OPTIONS") {
       return errorResponse("method_not_allowed", 405, correlationId(), { allow: "GET" });
     }
-    const guarded = requestGuard(request, dependencies.canonicalOrigin);
+    const guarded = await requestGuard(request, dependencies);
     if (guarded) return guarded;
     if (!dependencies.enabled) return errorResponse("chat_disabled", 503, correlationId());
     const networkLimited = await consumeNetworkRate(dependencies, request);
     if (networkLimited) return networkLimited;
-    const session = await dependencies.sessions.bootstrap();
-    return jsonResponse(
-      { ok: true, csrfToken: session.csrfToken, correlationId: session.correlationId },
-      200,
-      {
-        "set-cookie": serializePublicChatCookie(
-          session.cookieValue,
-          dependencies.sessionTtlSeconds ?? 1_800,
-        ),
-      },
-    );
+    try {
+      const session = await dependencies.sessions.bootstrap();
+      return jsonResponse(
+        { ok: true, csrfToken: session.csrfToken, correlationId: session.correlationId },
+        200,
+        {
+          "set-cookie": serializePublicChatCookie(
+            session.cookieValue,
+            dependencies.sessionTtlSeconds ?? 1_800,
+          ),
+        },
+      );
+    } catch {
+      const correlation = correlationId();
+      await recordSecuritySafely(dependencies, {
+        reason: "dependency_failed",
+        route: "bootstrap",
+        method: methodClass(request),
+        correlationId: correlation,
+      });
+      return errorResponse("assistant_unavailable", 503, correlation);
+    }
   };
 }
 
@@ -320,11 +523,14 @@ export function createConversationHandlers(
       const validated = await validatedMutation(dependencies, request, parseStartConversation);
       if (!validated.ok) return validated.response;
       return executeDomain(
+        dependencies,
+        request,
         () =>
           dependencies.service.start({
             context: validated.session,
             locale: validated.input.locale,
             noticeVersion: validated.input.noticeVersion,
+            idempotencyKey: validated.input.idempotencyKey,
           }),
         validated.session.correlationId,
         201,
@@ -340,6 +546,8 @@ export function createConversationHandlers(
       const invalid = validConversationId(conversationId, authenticated.session.correlationId);
       if (invalid) return invalid;
       return executeDomain(
+        dependencies,
+        request,
         () =>
           dependencies.service.get({
             conversationId,
@@ -350,11 +558,15 @@ export function createConversationHandlers(
     },
 
     async message(conversationId: string, request: Request): Promise<Response> {
-      const validated = await validatedMutation(dependencies, request, parseChatMessage);
+      const validated = await validatedMutation(dependencies, request, (value) =>
+        parseChatMessage(value, dependencies.maxMessageCharacters),
+      );
       if (!validated.ok) return validated.response;
       const invalid = validConversationId(conversationId, validated.session.correlationId);
       if (invalid) return invalid;
       return executeDomain(
+        dependencies,
+        request,
         () =>
           dependencies.service.acceptMessage({
             context: validated.session,
@@ -374,6 +586,8 @@ export function createConversationHandlers(
         return errorResponse("assistant_unavailable", 503, validated.session.correlationId);
       }
       return executeDomain(
+        dependencies,
+        request,
         () =>
           dependencies.service.changeLocale?.({
             context: validated.session,
@@ -434,6 +648,12 @@ export function createConversationHandlers(
           },
         );
       } catch {
+        await recordSecuritySafely(dependencies, {
+          reason: "dependency_failed",
+          route: "resume",
+          method: methodClass(request),
+          correlationId: authenticated.session.correlationId,
+        });
         return errorResponse("assistant_unavailable", 503, authenticated.session.correlationId);
       }
     },
@@ -443,35 +663,17 @@ export function createConversationHandlers(
       if (!validated.ok) return validated.response;
       const invalid = validConversationId(conversationId, validated.session.correlationId);
       if (invalid) return invalid;
-      try {
-        const result = await dependencies.service.requestHandoff({
-          context: validated.session,
-          conversationId,
-          ...validated.input,
-        });
-        if (!result.ok) return domainResponse(result, validated.session.correlationId);
-        const rotated = await dependencies.sessions.rotate(request);
-        if (!rotated.ok) {
-          return errorResponse("session_invalid", 401, validated.session.correlationId);
-        }
-        return jsonResponse(
-          {
-            ok: true,
-            data: result.projection,
-            correlationId: rotated.correlationId,
-            csrfToken: rotated.csrfToken,
-          },
-          200,
-          {
-            "set-cookie": serializePublicChatCookie(
-              rotated.cookieValue,
-              dependencies.sessionTtlSeconds ?? 1_800,
-            ),
-          },
-        );
-      } catch {
-        return errorResponse("assistant_unavailable", 503, validated.session.correlationId);
-      }
+      return executeDomain(
+        dependencies,
+        request,
+        () =>
+          dependencies.service.requestHandoff({
+            context: validated.session,
+            conversationId,
+            ...validated.input,
+          }),
+        validated.session.correlationId,
+      );
     },
 
     async close(conversationId: string, request: Request): Promise<Response> {
@@ -486,13 +688,30 @@ export function createConversationHandlers(
           ...validated.input,
         });
         if (!result.ok) return domainResponse(result, validated.session.correlationId);
-        await dependencies.sessions.terminate(request);
+        const terminated = await dependencies.sessions.terminate(validated.session.sessionHash);
+        if (!terminated) {
+          await recordSecuritySafely(dependencies, {
+            reason: "dependency_failed",
+            route: "close",
+            method: methodClass(request),
+            correlationId: validated.session.correlationId,
+          });
+          return errorResponse("assistant_unavailable", 503, validated.session.correlationId, {
+            "set-cookie": expirePublicChatCookie(),
+          });
+        }
         return jsonResponse(
           { ok: true, data: result.projection, correlationId: validated.session.correlationId },
           200,
           { "set-cookie": expirePublicChatCookie() },
         );
       } catch {
+        await recordSecuritySafely(dependencies, {
+          reason: "dependency_failed",
+          route: "close",
+          method: methodClass(request),
+          correlationId: validated.session.correlationId,
+        });
         return errorResponse("assistant_unavailable", 503, validated.session.correlationId);
       }
     },

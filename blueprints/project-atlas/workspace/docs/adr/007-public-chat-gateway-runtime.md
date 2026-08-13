@@ -65,3 +65,10 @@ Decision 029 accepts the persisted M003 specification and fixes same-origin runt
 the bounded M003 Build. It does not select or activate a provider, authorize credentials, model
 traffic, real client data, public channel activation, deployment, production release or
 `Operational` status.
+
+## Build evidence
+
+The provider-disabled local/staging implementation was validated on 2026-08-13 under Decision 028.
+It uses metadata-only transcript persistence, same-document locale changes, HMAC-bound idempotency,
+forced RLS and disabled external adapters. See the M003 PCR and build reviews. This evidence does
+not change the external-activation boundary above.

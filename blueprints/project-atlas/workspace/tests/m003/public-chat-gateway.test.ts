@@ -24,6 +24,7 @@ function dependencies() {
     randomId: () => `opaque_${++sequence}_${"a".repeat(44)}`,
   });
   const calls: Array<{ name: string; input: unknown }> = [];
+  const securityEvents: Array<Record<string, unknown>> = [];
   let nextResult: ChatCommandResult = {
     ok: true,
     replayed: false,
@@ -68,11 +69,15 @@ function dependencies() {
     sessions,
     rateLimiter: createMemoryRateLimiter({ limit: 20, windowSeconds: 60, now: () => now }),
     networkBucketSecret: "test-only-network-bucket-secret-32-bytes",
+    securityTelemetry: {
+      record: async (event: Record<string, unknown>) => void securityEvents.push(event),
+    },
   };
   return {
     store,
     sessions,
     calls,
+    securityEvents,
     setNow: (value: Date) => {
       now = value;
     },
@@ -153,6 +158,15 @@ describe("M003 same-origin public chat gateway", () => {
       code: "request_forbidden",
       correlationId: expect.any(String),
     });
+    expect(fixture.securityEvents).toContainEqual(
+      expect.objectContaining({
+        reason: "origin_rejected",
+        route: "bootstrap",
+        method: "GET",
+        correlationId: expect.any(String),
+      }),
+    );
+    expect(JSON.stringify(fixture.securityEvents)).not.toContain(origin);
   });
 
   it("accepts a same-origin request when Fetch Metadata is unavailable", async () => {
@@ -184,13 +198,27 @@ describe("M003 same-origin public chat gateway", () => {
     const response = await fixture.handlers.start(
       mutationRequest(
         "/api/public/chat/conversations",
-        { locale: "es", noticeVersion: "notice.v1", noticeAcknowledged: true },
+        {
+          locale: "es",
+          noticeVersion: "notice.v1",
+          noticeAcknowledged: true,
+          idempotencyKey: "start_gateway_0001",
+        },
         { cookie: boot.cookie, csrfToken: boot.json.csrfToken },
         { csrf },
       ),
     );
     expect(response.status).toBe(403);
     expect(fixture.calls).toHaveLength(0);
+    expect(fixture.securityEvents).toContainEqual(
+      expect.objectContaining({
+        reason: "csrf_rejected",
+        route: "conversations",
+        method: "POST",
+        correlationId: expect.any(String),
+      }),
+    );
+    expect(JSON.stringify(fixture.securityEvents)).not.toContain(csrf ?? boot.json.csrfToken);
   });
 
   it("starts a conversation with a validated session context", async () => {
@@ -199,7 +227,12 @@ describe("M003 same-origin public chat gateway", () => {
     const response = await fixture.handlers.start(
       mutationRequest(
         "/api/public/chat/conversations",
-        { locale: "es", noticeVersion: "notice.v1", noticeAcknowledged: true },
+        {
+          locale: "es",
+          noticeVersion: "notice.v1",
+          noticeAcknowledged: true,
+          idempotencyKey: "start_gateway_0001",
+        },
         { cookie: boot.cookie, csrfToken: boot.json.csrfToken },
       ),
     );
@@ -214,6 +247,7 @@ describe("M003 same-origin public chat gateway", () => {
           },
           locale: "es",
           noticeVersion: "notice.v1",
+          idempotencyKey: "start_gateway_0001",
         },
       },
     ]);
@@ -274,7 +308,12 @@ describe("M003 same-origin public chat gateway", () => {
     const response = await fixture.handlers.start(
       mutationRequest(
         "/api/public/chat/conversations",
-        { locale: "es", noticeVersion: "notice.v1", noticeAcknowledged: true },
+        {
+          locale: "es",
+          noticeVersion: "notice.v1",
+          noticeAcknowledged: true,
+          idempotencyKey: "start_gateway_0001",
+        },
         { cookie: duplicateCookie, csrfToken: boot.json.csrfToken },
       ),
     );
@@ -290,7 +329,7 @@ describe("M003 same-origin public chat gateway", () => {
     expect(fixture.calls).toHaveLength(0);
   });
 
-  it("rotates the session and CSRF credentials after a successful handoff", async () => {
+  it("keeps credentials stable when handoff is only queued and refreshes the cookie TTL", async () => {
     const fixture = dependencies();
     const boot = await bootstrap(fixture);
     const response = await fixture.handlers.handoff(
@@ -305,30 +344,51 @@ describe("M003 same-origin public chat gateway", () => {
         { cookie: boot.cookie, csrfToken: boot.json.csrfToken },
       ),
     );
-    const result = (await response.json()) as { ok: true; csrfToken: string };
+    const result = (await response.json()) as { ok: true; csrfToken?: string };
     const nextCookie = response.headers.get("set-cookie")?.split(";")[0] ?? "";
     expect(response.status).toBe(200);
-    expect(result.csrfToken).toMatch(/^opaque_/u);
-    expect(result.csrfToken).not.toBe(boot.json.csrfToken);
-    expect(nextCookie).not.toBe(boot.cookie);
+    expect(result.csrfToken).toBeUndefined();
+    expect(nextCookie).toBe(boot.cookie);
+    expect(response.headers.get("set-cookie")).toContain("Max-Age=1800");
 
-    const oldCredential = await fixture.handlers.start(
+    const sameCredential = await fixture.handlers.start(
       mutationRequest(
         "/api/public/chat/conversations",
-        { locale: "es", noticeVersion: "notice.v1", noticeAcknowledged: true },
+        {
+          locale: "es",
+          noticeVersion: "notice.v1",
+          noticeAcknowledged: true,
+          idempotencyKey: "start_gateway_0001",
+        },
         { cookie: boot.cookie, csrfToken: boot.json.csrfToken },
       ),
     );
-    expect(oldCredential.status).toBe(401);
+    expect(sameCredential.status).toBe(201);
+  });
 
-    const newCredential = await fixture.handlers.start(
+  it("extends both the server session and browser cookie after active conversation work", async () => {
+    const fixture = dependencies();
+    const boot = await bootstrap(fixture);
+    fixture.setNow(new Date("2026-08-12T22:20:00.000Z"));
+    const response = await fixture.handlers.message(
+      "conversation_1",
       mutationRequest(
-        "/api/public/chat/conversations",
-        { locale: "es", noticeVersion: "notice.v1", noticeAcknowledged: true },
-        { cookie: nextCookie, csrfToken: result.csrfToken },
+        "/api/public/chat/conversations/conversation_1/messages",
+        { text: "Hello", idempotencyKey: "message_refresh_ttl", expectedVersion: 1 },
+        { cookie: boot.cookie, csrfToken: boot.json.csrfToken },
       ),
     );
-    expect(newCredential.status).toBe(201);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("set-cookie")?.split(";")[0]).toBe(boot.cookie);
+
+    fixture.setNow(new Date("2026-08-12T22:40:00.000Z"));
+    const stillActive = await fixture.handlers.get(
+      "conversation_1",
+      new Request(`${ORIGIN}/api/public/chat/conversations/conversation_1`, {
+        headers: { origin: ORIGIN, cookie: boot.cookie },
+      }),
+    );
+    expect(stillActive.status).toBe(200);
   });
 
   it("changes locale through an authenticated command and resumes by rotating credentials", async () => {
@@ -453,7 +513,12 @@ describe("M003 same-origin public chat gateway", () => {
     const replay = await fixture.handlers.start(
       mutationRequest(
         "/api/public/chat/conversations",
-        { locale: "es", noticeVersion: "notice.v1", noticeAcknowledged: true },
+        {
+          locale: "es",
+          noticeVersion: "notice.v1",
+          noticeAcknowledged: true,
+          idempotencyKey: "start_gateway_0001",
+        },
         { cookie: boot.cookie, csrfToken: boot.json.csrfToken },
       ),
     );
@@ -499,7 +564,12 @@ describe("M003 same-origin public chat gateway", () => {
     let response = await fixture.handlers.start(
       mutationRequest(
         "/api/public/chat/conversations",
-        { locale: "es", noticeVersion: "notice.v1", noticeAcknowledged: true },
+        {
+          locale: "es",
+          noticeVersion: "notice.v1",
+          noticeAcknowledged: true,
+          idempotencyKey: "start_gateway_0001",
+        },
         { cookie: revoked.cookie, csrfToken: revoked.json.csrfToken },
       ),
     );
@@ -510,7 +580,12 @@ describe("M003 same-origin public chat gateway", () => {
     response = await fixture.handlers.start(
       mutationRequest(
         "/api/public/chat/conversations",
-        { locale: "es", noticeVersion: "notice.v1", noticeAcknowledged: true },
+        {
+          locale: "es",
+          noticeVersion: "notice.v1",
+          noticeAcknowledged: true,
+          idempotencyKey: "start_gateway_0001",
+        },
         { cookie: expired.cookie, csrfToken: expired.json.csrfToken },
       ),
     );
@@ -542,6 +617,277 @@ describe("M003 same-origin public chat gateway", () => {
     });
   });
 
+  it("returns a visitor-safe failure projection when a failed command advanced state", async () => {
+    const fixture = dependencies();
+    fixture.setResult({
+      ok: false,
+      code: "conversation_limit_reached",
+      projection: {
+        id: "conversation_1",
+        version: 2,
+        locale: "es",
+        status: "restricted",
+        messages: [],
+        expiresAt: new Date("2026-08-12T22:30:00.000Z"),
+      },
+    });
+    const boot = await bootstrap(fixture);
+    const response = await fixture.handlers.message(
+      "conversation_1",
+      mutationRequest(
+        "/api/public/chat/conversations/conversation_1/messages",
+        { text: "Necesito ayuda", idempotencyKey: "message_limit_http", expectedVersion: 1 },
+        { cookie: boot.cookie, csrfToken: boot.json.csrfToken },
+      ),
+    );
+    expect(response.status).toBe(409);
+    expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
+    expect(await response.json()).toEqual({
+      ok: false,
+      code: "conversation_limit_reached",
+      data: expect.objectContaining({ version: 2, status: "restricted" }),
+      correlationId: boot.json.correlationId,
+    });
+  });
+
+  it("enforces the configured message limit before invoking the domain", async () => {
+    const fixture = dependencies();
+    const handlers = createConversationHandlers({
+      canonicalOrigin: ORIGIN,
+      enabled: true,
+      sessions: fixture.sessions,
+      rateLimiter: createMemoryRateLimiter({ limit: 20, windowSeconds: 60, now: () => NOW }),
+      networkBucketSecret: "test-only-network-bucket-secret-32-bytes",
+      maxMessageCharacters: 1_600,
+      service: {
+        start: async () => ({ ok: false, code: "conflict" as const }),
+        get: async () => ({ ok: false, code: "not_found" as const }),
+        acceptMessage: async () => {
+          throw new Error("domain must not run");
+        },
+        requestHandoff: async () => ({ ok: false, code: "conflict" as const }),
+        close: async () => ({ ok: false, code: "conflict" as const }),
+      },
+    });
+    const boot = await bootstrap(fixture);
+    const response = await handlers.message(
+      "conversation_1",
+      mutationRequest(
+        "/api/public/chat/conversations/conversation_1/messages",
+        { text: "a".repeat(1_601), idempotencyKey: "message_limit_1600", expectedVersion: 1 },
+        { cookie: boot.cookie, csrfToken: boot.json.csrfToken },
+      ),
+    );
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ ok: false, code: "invalid_request" });
+  });
+
+  it("fails closed when session bootstrap or authentication dependencies throw", async () => {
+    const fixture = dependencies();
+    const common = {
+      canonicalOrigin: ORIGIN,
+      enabled: true,
+      sessions: {
+        ...fixture.sessions,
+        async bootstrap() {
+          throw new Error("private session bootstrap detail");
+        },
+        async authenticate() {
+          throw new Error("private authentication detail");
+        },
+      },
+      rateLimiter: createMemoryRateLimiter({ limit: 20, windowSeconds: 60, now: () => NOW }),
+      networkBucketSecret: "test-only-network-bucket-secret-32-bytes",
+      securityTelemetry: { async record() {} },
+    };
+    const bootstrapResponse = await createBootstrapHandler(common)(
+      new Request(`${ORIGIN}/api/public/chat/bootstrap`, {
+        headers: { origin: ORIGIN, "sec-fetch-site": "same-origin" },
+      }),
+    );
+    expect(bootstrapResponse.status).toBe(503);
+    expect(await bootstrapResponse.json()).toMatchObject({
+      ok: false,
+      code: "assistant_unavailable",
+    });
+    const handlers = createConversationHandlers({
+      ...common,
+      service: {
+        start: async () => ({ ok: false, code: "conflict" as const }),
+        get: async () => ({ ok: false, code: "not_found" as const }),
+        acceptMessage: async () => ({ ok: false, code: "conflict" as const }),
+        requestHandoff: async () => ({ ok: false, code: "conflict" as const }),
+        close: async () => ({ ok: false, code: "conflict" as const }),
+      },
+    });
+    const authResponse = await handlers.get(
+      "conversation_1",
+      new Request(`${ORIGIN}/api/public/chat/conversations/conversation_1`, {
+        headers: { origin: ORIGIN, "sec-fetch-site": "same-origin" },
+      }),
+    );
+    expect(authResponse.status).toBe(503);
+    expect(await authResponse.json()).toMatchObject({
+      ok: false,
+      code: "assistant_unavailable",
+    });
+  });
+
+  it("keeps the bounded 503 response when security telemetry itself fails", async () => {
+    const fixture = dependencies();
+    const handler = createBootstrapHandler({
+      canonicalOrigin: ORIGIN,
+      enabled: true,
+      sessions: fixture.sessions,
+      rateLimiter: {
+        async consume() {
+          throw new Error("private limiter detail");
+        },
+      },
+      networkBucketSecret: "test-only-network-bucket-secret-32-bytes",
+      securityTelemetry: {
+        async record() {
+          throw new Error("private telemetry detail");
+        },
+      },
+    });
+    const response = await handler(
+      new Request(`${ORIGIN}/api/public/chat/bootstrap`, {
+        headers: { origin: ORIGIN, "sec-fetch-site": "same-origin" },
+      }),
+    );
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({ ok: false, code: "assistant_unavailable" });
+  });
+
+  it("fails closed and expires the browser cookie when server-side termination fails", async () => {
+    const fixture = dependencies();
+    const boot = await bootstrap(fixture);
+    const handlers = createConversationHandlers({
+      canonicalOrigin: ORIGIN,
+      enabled: true,
+      sessions: { ...fixture.sessions, terminate: async () => false },
+      rateLimiter: createMemoryRateLimiter({ limit: 20, windowSeconds: 60, now: () => NOW }),
+      networkBucketSecret: "test-only-network-bucket-secret-32-bytes",
+      service: {
+        start: async () => ({ ok: false, code: "conflict" as const }),
+        get: async () => ({ ok: false, code: "not_found" as const }),
+        acceptMessage: async () => ({ ok: false, code: "conflict" as const }),
+        requestHandoff: async () => ({ ok: false, code: "conflict" as const }),
+        close: async () => ({
+          ok: true as const,
+          replayed: false,
+          projection: {
+            id: "conversation_1",
+            version: 2,
+            locale: "es" as const,
+            status: "closed" as const,
+            messages: [],
+            expiresAt: new Date("2026-08-12T22:30:00.000Z"),
+          },
+        }),
+      },
+    });
+    const response = await handlers.close(
+      "conversation_1",
+      mutationRequest(
+        "/api/public/chat/conversations/conversation_1/close",
+        { idempotencyKey: "close_terminate_fail", expectedVersion: 1 },
+        { cookie: boot.cookie, csrfToken: boot.json.csrfToken },
+      ),
+    );
+    expect(response.status).toBe(503);
+    expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
+    expect(await response.json()).toMatchObject({ ok: false, code: "assistant_unavailable" });
+  });
+
+  it("treats termination as idempotent when the domain transaction already revoked the session", async () => {
+    const fixture = dependencies();
+    const boot = await bootstrap(fixture);
+    const handlers = createConversationHandlers({
+      canonicalOrigin: ORIGIN,
+      enabled: true,
+      sessions: fixture.sessions,
+      rateLimiter: createMemoryRateLimiter({ limit: 20, windowSeconds: 60, now: () => NOW }),
+      networkBucketSecret: "test-only-network-bucket-secret-32-bytes",
+      service: {
+        start: async () => ({ ok: false, code: "conflict" as const }),
+        get: async () => ({ ok: false, code: "not_found" as const }),
+        acceptMessage: async () => ({ ok: false, code: "conflict" as const }),
+        requestHandoff: async () => ({ ok: false, code: "conflict" as const }),
+        close: async () => {
+          await fixture.store.revokeByCookieValue(boot.cookie.split("=")[1] ?? "", NOW);
+          return {
+            ok: true as const,
+            replayed: false,
+            projection: {
+              id: "conversation_1",
+              version: 2,
+              locale: "es" as const,
+              status: "closed" as const,
+              messages: [],
+              expiresAt: new Date("2026-08-12T22:30:00.000Z"),
+            },
+          };
+        },
+      },
+    });
+    const response = await handlers.close(
+      "conversation_1",
+      mutationRequest(
+        "/api/public/chat/conversations/conversation_1/close",
+        { idempotencyKey: "close_already_revoked", expectedVersion: 1 },
+        { cookie: boot.cookie, csrfToken: boot.json.csrfToken },
+      ),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
+  });
+
+  it("treats a revoked session as terminated even when its TTL elapses during close", async () => {
+    const fixture = dependencies();
+    const boot = await bootstrap(fixture);
+    const handlers = createConversationHandlers({
+      canonicalOrigin: ORIGIN,
+      enabled: true,
+      sessions: fixture.sessions,
+      rateLimiter: createMemoryRateLimiter({ limit: 20, windowSeconds: 60, now: () => NOW }),
+      networkBucketSecret: "test-only-network-bucket-secret-32-bytes",
+      service: {
+        start: async () => ({ ok: false, code: "conflict" as const }),
+        get: async () => ({ ok: false, code: "not_found" as const }),
+        acceptMessage: async () => ({ ok: false, code: "conflict" as const }),
+        requestHandoff: async () => ({ ok: false, code: "conflict" as const }),
+        close: async () => {
+          await fixture.store.revokeByCookieValue(boot.cookie.split("=")[1] ?? "", NOW);
+          fixture.setNow(new Date("2026-08-12T22:31:00.000Z"));
+          return {
+            ok: true as const,
+            replayed: false,
+            projection: {
+              id: "conversation_1",
+              version: 2,
+              locale: "es" as const,
+              status: "closed" as const,
+              messages: [],
+              expiresAt: new Date("2026-08-12T22:30:00.000Z"),
+            },
+          };
+        },
+      },
+    });
+    const response = await handlers.close(
+      "conversation_1",
+      mutationRequest(
+        "/api/public/chat/conversations/conversation_1/close",
+        { idempotencyKey: "close_revoked_after_ttl", expectedVersion: 1 },
+        { cookie: boot.cookie, csrfToken: boot.json.csrfToken },
+      ),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
+  });
+
   it("returns a bounded 429 with Retry-After and no stored network identifier", async () => {
     const fixture = dependencies();
     const boot = await bootstrap(fixture);
@@ -559,7 +905,12 @@ describe("M003 same-origin public chat gateway", () => {
         close: async () => ({ ok: false, code: "conflict" as const }),
       },
     });
-    const input = { locale: "es", noticeVersion: "notice.v1", noticeAcknowledged: true };
+    const input = {
+      locale: "es",
+      noticeVersion: "notice.v1",
+      noticeAcknowledged: true,
+      idempotencyKey: "start_gateway_0001",
+    };
     const session = { cookie: boot.cookie, csrfToken: boot.json.csrfToken };
     await limited.start(mutationRequest("/api/public/chat/conversations", input, session));
     const response = await limited.start(
@@ -592,7 +943,12 @@ describe("M003 same-origin public chat gateway", () => {
     const response = await failing.start(
       mutationRequest(
         "/api/public/chat/conversations",
-        { locale: "es", noticeVersion: "notice.v1", noticeAcknowledged: true },
+        {
+          locale: "es",
+          noticeVersion: "notice.v1",
+          noticeAcknowledged: true,
+          idempotencyKey: "start_gateway_0001",
+        },
         { cookie: boot.cookie, csrfToken: boot.json.csrfToken },
       ),
     );
@@ -604,5 +960,45 @@ describe("M003 same-origin public chat gateway", () => {
       code: "assistant_unavailable",
       correlationId: boot.json.correlationId,
     });
+  });
+
+  it("fails closed and records bounded telemetry when the rate limiter is unavailable", async () => {
+    const fixture = dependencies();
+    const securityEvents: Array<Record<string, unknown>> = [];
+    const bootstrapHandler = createBootstrapHandler({
+      canonicalOrigin: ORIGIN,
+      enabled: true,
+      sessions: fixture.sessions,
+      rateLimiter: {
+        async consume() {
+          throw new Error("redis://private-host.example/secret");
+        },
+      },
+      networkBucketSecret: "test-only-network-bucket-secret-32-bytes",
+      securityTelemetry: {
+        record: async (event) => void securityEvents.push(event),
+      },
+    });
+
+    const response = await bootstrapHandler(
+      new Request(`${ORIGIN}/api/public/chat/bootstrap`, {
+        headers: { origin: ORIGIN, "sec-fetch-site": "same-origin" },
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      ok: false,
+      code: "assistant_unavailable",
+      correlationId: expect.any(String),
+    });
+    expect(securityEvents).toContainEqual(
+      expect.objectContaining({
+        reason: "dependency_failed",
+        route: "bootstrap",
+        method: "GET",
+      }),
+    );
+    expect(JSON.stringify(securityEvents)).not.toContain("private-host");
   });
 });

@@ -41,22 +41,24 @@ function toCitation(record: KnowledgeRecord, now: Date): PublicCitation | null {
 
 export function createM002KnowledgeProvider(
   records: KnowledgeRecord[],
-  now: Date,
+  clock: Date | (() => Date),
 ): PublicKnowledgeProvider {
-  const current = (locale: "es" | "en") => selectCurrentRecords(records, locale, now);
-  const citationsById = (locale: "es" | "en") =>
+  const now = () => (clock instanceof Date ? new Date(clock) : clock());
+  const current = (locale: "es" | "en", at: Date) => selectCurrentRecords(records, locale, at);
+  const citationsById = (locale: "es" | "en", at: Date) =>
     new Map(
-      current(locale).flatMap((record) => {
-        const citation = toCitation(record, now);
+      current(locale, at).flatMap((record) => {
+        const citation = toCitation(record, at);
         return citation ? [[citation.sourceId, citation] as const] : [];
       }),
     );
 
   return {
     async search({ locale, query }) {
-      const eligibleRecords = current(locale);
-      const ranked = searchHelp(buildSearchIndex(eligibleRecords, locale, now), query, {});
-      const byId = citationsById(locale);
+      const at = now();
+      const eligibleRecords = current(locale, at);
+      const ranked = searchHelp(buildSearchIndex(eligibleRecords, locale, at), query, {});
+      const byId = citationsById(locale, at);
       return ranked.slice(0, SEARCH_RESULT_LIMIT).flatMap((document) => {
         const citation = byId.get(document.id);
         return citation ? [citation] : [];
@@ -64,7 +66,7 @@ export function createM002KnowledgeProvider(
     },
 
     async getByIds({ locale, ids }) {
-      const byId = citationsById(locale);
+      const byId = citationsById(locale, now());
       const seen = new Set<string>();
       return ids.flatMap((id) => {
         if (seen.has(id)) return [];

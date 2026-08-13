@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Documentary capability index; M001/M002 are at PO Acceptance and M003–M016 await Product Owner architecture decisions after independent review
+- Status: Capability index; M001/M002 are at PO Acceptance, M003 provider-disabled Build is verified pending PO acceptance, M004 is Build ready, and later modules retain their recorded documentary states
 - Update rule: every future implementation unit maps to an approved module PRD and ADRs
 
 The canonical catalog remains `../roadmap/MODULE_CATALOG.md`. The PRDs below specify bounded

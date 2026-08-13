@@ -16,7 +16,7 @@ const { greeting, automated } = Astro.props;
   aria-relevant="additions text"
 >
   <article class="public-chat-message public-chat-message--assistant" data-chat-initial-message>
-    <p class="public-chat-message__actor">{automated}</p>
-    <p>{greeting}</p>
+    <p class="public-chat-message__actor" data-public-chat-actor="assistant">{automated}</p>
+    <p data-public-chat-greeting>{greeting}</p>
   </article>
 </div>

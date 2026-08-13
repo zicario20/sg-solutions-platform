@@ -39,7 +39,18 @@ CREATE POLICY "public_chat_sessions_server_gateway_only" ON "public_chat_session
 CREATE POLICY "public_chat_rate_limits_server_gateway_only" ON "public_chat_rate_limits" AS PERMISSIVE FOR ALL TO "atlas_public_chat_gateway" USING (true) WITH CHECK (true);
 --> statement-breakpoint
 ALTER TABLE "public_chat_rate_limits" FORCE ROW LEVEL SECURITY;--> statement-breakpoint
-REVOKE ALL ON TABLE "public_chat_rate_limits" FROM PUBLIC, anon, authenticated;--> statement-breakpoint
+REVOKE ALL ON TABLE "public_chat_rate_limits" FROM PUBLIC;--> statement-breakpoint
+DO $$
+DECLARE
+  browser_role text;
+BEGIN
+  FOREACH browser_role IN ARRAY ARRAY['anon', 'authenticated'] LOOP
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = browser_role) THEN
+      EXECUTE format('REVOKE ALL ON TABLE public_chat_rate_limits FROM %I', browser_role);
+    END IF;
+  END LOOP;
+END
+$$;--> statement-breakpoint
 GRANT USAGE ON SCHEMA public TO atlas_public_chat_gateway;--> statement-breakpoint
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
   "public_chat_sessions",

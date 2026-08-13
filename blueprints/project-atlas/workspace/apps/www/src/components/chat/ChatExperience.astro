@@ -7,15 +7,16 @@ import ChatPanel from "./ChatPanel.astro";
 interface Props {
   locale: ChatLocale;
   mode?: "floating" | "page";
+  maxMessageCharacters?: number;
 }
-const { locale, mode = "floating" } = Astro.props;
+const { locale, mode = "floating", maxMessageCharacters = 2_000 } = Astro.props;
 const launcherLabel =
   locale === "es" ? "Abrir asistente de SG Solutions" : "Open the SG Solutions assistant";
 ---
 
 <div class:list={["public-chat", { "public-chat--page": mode === "page" }]} data-public-chat-root data-locale={locale}>
   {mode === "floating" && <ChatLauncher label={launcherLabel} />}
-  <ChatPanel locale={locale} mode={mode} />
+  <ChatPanel locale={locale} mode={mode} maxMessageCharacters={maxMessageCharacters} />
 </div>
 
 <script src="../../scripts/public-chat.ts"></script>

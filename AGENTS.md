@@ -17,7 +17,9 @@ Project Atlas has a **bounded Phase 1 construction gate for M003–M005** under 
 - Repository and tooling scaffold exists; M001/M002 have verified local implementations.
 - The Product Owner explicitly authorized `GENERATE` for M003, then M004, then M005 only.
 - Construction must be sequential, use isolated worktrees, TDD, independent review, Cyber Neo and
-  separate validated commits. M004 may start only after M003 closes; M005 only after M004 closes.
+  separate validated commits. M003 is at PO Acceptance after a provider-disabled local/staging
+  Build; M004 is the next gate after its exact closure commit, and M005 remains blocked until M004
+  closes.
 - Local/staging product code, Drizzle migrations, RLS policies, synthetic provider-contract tests,
   provider adapters and inactive feature flags/configuration are authorized within each approved
   module PRD.

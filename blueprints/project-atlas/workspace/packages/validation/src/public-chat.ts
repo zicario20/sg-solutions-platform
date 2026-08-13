@@ -21,6 +21,7 @@ const startConversationSchema = z
       .max(80)
       .regex(/^[a-z0-9][a-z0-9._-]+$/),
     noticeAcknowledged: z.literal(true),
+    idempotencyKey: idempotencyKeySchema,
   })
   .strict();
 
@@ -82,9 +83,11 @@ export type ChatContentInspection =
   | { allowed: true; normalized: string }
   | { allowed: false; reason: SensitiveReason };
 
-const GOVERNMENT_IDENTIFIER = /\b\d{3}-\d{2}-\d{4}\b/u;
-const PAYMENT_CARD = /\b(?:\d[ -]*?){13,19}\b/u;
-const BANK_ACCOUNT = /\b(?:routing|aba|account|cuenta|ruta)\b[^\d\n]{0,16}(?:\d[ -]?){6,17}\b/iu;
+const GOVERNMENT_IDENTIFIER =
+  /(?<!\p{N})\p{Nd}{3}[\p{Zs}\p{Pd}]?\p{Nd}{2}[\p{Zs}\p{Pd}]?\p{Nd}{4}(?!\p{N})/u;
+const PAYMENT_CARD = /(?<!\p{Nd})(?:\p{Nd}[\p{Zs}\p{Pd}-]*?){13,19}(?!\p{Nd})/u;
+const BANK_ACCOUNT =
+  /\b(?:routing|aba|account|cuenta|ruta)\b[^\p{Nd}\n]{0,16}(?:\p{Nd}[\p{Zs}\p{Pd}-]?){6,17}(?!\p{Nd})/iu;
 const CREDENTIAL =
   /(?:\b(?:api[ _-]?key|password|contrase(?:ñ|n)a|secret|token)\b\s*[:=]\s*\S{8,}|\bsk_[a-z0-9_-]{16,})/iu;
 const MARKUP = /(?:<\/?[a-z][^>]{0,512}>|<!--|<!doctype\b|<\?xml\b)/iu;
@@ -120,7 +123,7 @@ function hasBidirectionalControlCharacter(value: string): boolean {
   });
 }
 
-function validatePlainText(value: string): string {
+function validatePlainText(value: string, maxCharacters = CHAT_MESSAGE_MAX_CHARACTERS): string {
   const normalized = normalizePlainText(value);
 
   if (!normalized) {
@@ -129,10 +132,11 @@ function validatePlainText(value: string): string {
   if (hasProhibitedControlCharacter(normalized) || hasBidirectionalControlCharacter(normalized)) {
     throw new Error("CHAT_MESSAGE_TEXT contains prohibited control characters");
   }
-  if ([...normalized].length > CHAT_MESSAGE_MAX_CHARACTERS) {
-    throw new Error(
-      `CHAT_MESSAGE_TEXT must contain at most ${CHAT_MESSAGE_MAX_CHARACTERS} characters`,
-    );
+  if (!Number.isSafeInteger(maxCharacters) || maxCharacters < 1) {
+    throw new Error("CHAT_MESSAGE_MAX_CHARACTERS must be a positive integer");
+  }
+  if ([...normalized].length > maxCharacters) {
+    throw new Error(`CHAT_MESSAGE_TEXT must contain at most ${maxCharacters} characters`);
   }
 
   return normalized;
@@ -142,9 +146,12 @@ export function parseStartConversation(input: unknown): StartConversationInput {
   return startConversationSchema.parse(input);
 }
 
-export function parseChatMessage(input: unknown): AcceptMessageInput {
+export function parseChatMessage(
+  input: unknown,
+  maxCharacters = CHAT_MESSAGE_MAX_CHARACTERS,
+): AcceptMessageInput {
   const envelope = messageEnvelopeSchema.parse(input);
-  return { ...envelope, text: validatePlainText(envelope.text) };
+  return { ...envelope, text: validatePlainText(envelope.text, maxCharacters) };
 }
 
 export function parseHandoffRequest(input: unknown): HandoffInput {
@@ -165,14 +172,14 @@ export function inspectProhibitedChatContent(text: string): ChatContentInspectio
   if (MARKUP.test(normalized)) {
     return { allowed: false, reason: "markup" };
   }
+  if (BANK_ACCOUNT.test(normalized)) {
+    return { allowed: false, reason: "bank_account" };
+  }
   if (GOVERNMENT_IDENTIFIER.test(normalized)) {
     return { allowed: false, reason: "government_identifier" };
   }
   if (CREDENTIAL.test(normalized)) {
     return { allowed: false, reason: "credential" };
-  }
-  if (BANK_ACCOUNT.test(normalized)) {
-    return { allowed: false, reason: "bank_account" };
   }
   if (PAYMENT_CARD.test(normalized)) {
     return { allowed: false, reason: "payment_card" };

@@ -22,6 +22,27 @@
       "when": 1786595722135,
       "tag": "0002_green_tempest",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786635907453,
+      "tag": "0003_clean_the_hood",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786636914096,
+      "tag": "0004_lazy_gressill",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786637266730,
+      "tag": "0005_greedy_proudstar",
+      "breakpoints": true
     }
   ]
 }

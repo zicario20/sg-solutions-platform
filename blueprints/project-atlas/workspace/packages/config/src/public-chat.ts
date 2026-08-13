@@ -10,6 +10,8 @@ export type PublicChatConfig = {
   runtimeState: ChatRuntimeState;
   canonicalOrigin: string;
   sessionTtlSeconds: number;
+  absoluteLifetimeSeconds: number;
+  maxConversationMessages: number;
   maxMessageCharacters: number;
   transcriptPersistence: "metadata_only";
   modelMode: "disabled" | "deterministic";
@@ -28,6 +30,9 @@ const RUNTIME_STATES = new Set<ChatRuntimeState>([
 const DEFAULT_CANONICAL_ORIGIN = "https://www.sgsllc.com";
 const DEFAULT_SESSION_TTL_SECONDS = 1_800;
 const MAX_SESSION_TTL_SECONDS = 86_400;
+const DEFAULT_ABSOLUTE_LIFETIME_SECONDS = 86_400;
+const MAX_ABSOLUTE_LIFETIME_SECONDS = 86_400;
+const DEFAULT_MAX_CONVERSATION_MESSAGES = 200;
 const DEFAULT_MAX_MESSAGE_CHARACTERS = 2_000;
 
 function readBoolean(env: PublicChatEnvironment, name: string, fallback = false): boolean {
@@ -138,6 +143,18 @@ export function readPublicChatConfig(env: PublicChatEnvironment): PublicChatConf
       "PUBLIC_CHAT_SESSION_TTL_SECONDS",
       DEFAULT_SESSION_TTL_SECONDS,
       MAX_SESSION_TTL_SECONDS,
+    ),
+    absoluteLifetimeSeconds: readPositiveBoundedInteger(
+      env,
+      "PUBLIC_CHAT_ABSOLUTE_LIFETIME_SECONDS",
+      DEFAULT_ABSOLUTE_LIFETIME_SECONDS,
+      MAX_ABSOLUTE_LIFETIME_SECONDS,
+    ),
+    maxConversationMessages: readPositiveBoundedInteger(
+      env,
+      "PUBLIC_CHAT_MAX_CONVERSATION_MESSAGES",
+      DEFAULT_MAX_CONVERSATION_MESSAGES,
+      DEFAULT_MAX_CONVERSATION_MESSAGES,
     ),
     maxMessageCharacters: readPositiveBoundedInteger(
       env,

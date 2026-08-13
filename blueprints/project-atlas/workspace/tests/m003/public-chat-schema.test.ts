@@ -57,6 +57,18 @@ describe("M003 Drizzle schema contract", () => {
     );
   });
 
+  it("bounds cleanup of expired distributed rate-limit buckets", () => {
+    const store = readFileSync(
+      fileURLToPath(
+        new URL("../../packages/database/src/postgres-public-chat-store.ts", import.meta.url),
+      ),
+      "utf8",
+    );
+    expect(store).toContain("delete from public_chat_rate_limits");
+    expect(store).toContain("limit 100");
+    expect(store).toContain("where expires_at <= current_timestamp");
+  });
+
   it("exposes version, expiry, reconciliation, and nullable body columns", () => {
     const conversation = getPublicChatTableConfig(publicChatConversations);
     expect(conversation.columns.find((column) => column.name === "version")?.notNull).toBe(true);
@@ -78,6 +90,16 @@ describe("M003 Drizzle schema contract", () => {
     expect(idempotency.uniqueConstraints.map((constraint) => constraint.name)).toContain(
       "public_chat_idempotency_conversation_key_unique",
     );
+    expect(idempotency.columns.find((column) => column.name === "command_kind")?.notNull).toBe(
+      true,
+    );
+    expect(
+      idempotency.columns.find((column) => column.name === "command_fingerprint")?.notNull,
+    ).toBe(true);
+    const conversation = getPublicChatTableConfig(publicChatConversations);
+    expect(conversation.uniqueConstraints.map((constraint) => constraint.name)).toContain(
+      "public_chat_conversations_session_start_key_unique",
+    );
     expect(idempotency.indexes.map((index) => index.config.name)).toContain(
       "public_chat_idempotency_lease_idx",
     );
@@ -90,11 +112,14 @@ describe("M003 Drizzle schema contract", () => {
     for (const column of reasonColumns) expect(column.dataType).toBe("string");
   });
 
-  it("forces RLS and revokes direct browser roles in the migration", () => {
+  it("forces RLS and portably revokes direct browser roles in the migration", () => {
     const migration = [
       "0000_abnormal_orphan.sql",
       "0001_thick_riptide.sql",
       "0002_green_tempest.sql",
+      "0003_clean_the_hood.sql",
+      "0004_lazy_gressill.sql",
+      "0005_greedy_proudstar.sql",
     ]
       .map((file) =>
         readFileSync(fileURLToPath(new URL(`../../drizzle/${file}`, import.meta.url)), "utf8"),
@@ -111,13 +136,39 @@ describe("M003 Drizzle schema contract", () => {
       "public_chat_rate_limits",
     ]) {
       expect(migration).toContain(`ALTER TABLE "${table}" FORCE ROW LEVEL SECURITY`);
-      expect(migration).toContain(
-        `REVOKE ALL ON TABLE "${table}" FROM PUBLIC, anon, authenticated`,
-      );
+      expect(migration).toContain(`REVOKE ALL ON TABLE "${table}" FROM PUBLIC`);
     }
+    expect(migration).not.toContain("FROM PUBLIC, anon, authenticated");
+    expect(migration).toContain("ARRAY['anon', 'authenticated']");
+    expect(migration).toContain("WHERE rolname = browser_role");
     expect(migration).toContain("CREATE ROLE atlas_public_chat_gateway");
     expect(migration).toContain("NOBYPASSRLS");
     expect(migration).toContain("NOLOGIN");
     expect(migration).toContain('TO "atlas_public_chat_gateway" USING (true) WITH CHECK (true)');
+  });
+
+  it("provisions and validates a distinct least-privilege local runtime principal", () => {
+    const provision = readFileSync(
+      fileURLToPath(
+        new URL(
+          "../../packages/database/scripts/provision-public-chat-runtime.ts",
+          import.meta.url,
+        ),
+      ),
+      "utf8",
+    );
+    const validate = readFileSync(
+      fileURLToPath(
+        new URL("../../packages/database/scripts/validate-public-chat-runtime.ts", import.meta.url),
+      ),
+      "utf8",
+    );
+    expect(provision).toContain("atlas_public_chat_runtime");
+    expect(provision).toContain("atlas_public_chat_gateway");
+    expect(provision).toContain("NOBYPASSRLS");
+    expect(provision).toContain("assertLoopbackDatabaseUrl");
+    expect(validate).toContain("pg_has_role");
+    expect(validate).toContain("set local role atlas_public_chat_gateway");
+    expect(validate).toContain("PUBLIC_CHAT_RUNTIME_PRINCIPAL_VALID");
   });
 });

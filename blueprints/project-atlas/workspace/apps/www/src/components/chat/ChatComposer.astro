@@ -3,24 +3,25 @@ interface Props {
   placeholder: string;
   send: string;
   characterCount: string;
+  maxMessageCharacters: number;
 }
-const { placeholder, send, characterCount } = Astro.props;
+const { placeholder, send, characterCount, maxMessageCharacters } = Astro.props;
 ---
 
 <form class="public-chat-composer" data-public-chat-composer hidden novalidate>
-  <label class="sr-only" for="public-chat-message">{placeholder}</label>
+  <label class="sr-only" for="public-chat-message" data-public-chat-input-label>{placeholder}</label>
   <textarea
     id="public-chat-message"
     name="message"
     rows="2"
-    maxlength="2000"
+    maxlength={maxMessageCharacters}
     placeholder={placeholder}
     autocomplete="off"
     enterkeyhint="send"
     data-public-chat-input
   ></textarea>
   <div class="public-chat-composer__footer">
-    <span class="public-chat-count" data-public-chat-count>2000 {characterCount}</span>
+    <span class="public-chat-count" data-public-chat-count>{maxMessageCharacters} {characterCount}</span>
     <button class="public-chat-send" type="submit" data-public-chat-send>{send}</button>
   </div>
 </form>

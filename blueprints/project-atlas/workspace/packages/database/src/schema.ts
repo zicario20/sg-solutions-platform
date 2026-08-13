@@ -79,6 +79,8 @@ export const publicChatConversations = pgTable(
     status: varchar("status", { length: 32 }).notNull(),
     noticeVersion: varchar("notice_version", { length: 80 }).notNull(),
     correlationId: text("correlation_id").notNull(),
+    startIdempotencyKey: varchar("start_idempotency_key", { length: 128 }).notNull(),
+    startFingerprint: char("start_fingerprint", { length: 64 }).notNull(),
     lastActivityAt: timestamp("last_activity_at", { withTimezone: true, mode: "date" }).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
     closedAt: timestamp("closed_at", { withTimezone: true, mode: "date" }),
@@ -89,6 +91,10 @@ export const publicChatConversations = pgTable(
   },
   (table) => [
     check("public_chat_conversations_version_positive", sql`${table.version} > 0`),
+    unique("public_chat_conversations_session_start_key_unique").on(
+      table.sessionId,
+      table.startIdempotencyKey,
+    ),
     check("public_chat_conversations_locale_valid", sql`${table.locale} in ('es', 'en')`),
     check(
       "public_chat_conversations_status_valid",
@@ -209,6 +215,8 @@ export const publicChatIdempotency = pgTable(
       .notNull()
       .references(() => publicChatConversations.id, { onDelete: "cascade" }),
     idempotencyKey: varchar("idempotency_key", { length: 128 }).notNull(),
+    commandKind: varchar("command_kind", { length: 16 }).notNull(),
+    commandFingerprint: varchar("command_fingerprint", { length: 64 }).notNull(),
     state: varchar("state", { length: 16 }).notNull(),
     expectedVersion: integer("expected_version").notNull(),
     leaseTokenHash: char("lease_token_hash", { length: 64 }).notNull(),
@@ -226,6 +234,10 @@ export const publicChatIdempotency = pgTable(
     check(
       "public_chat_idempotency_state_valid",
       sql`${table.state} in ('in_progress', 'completed')`,
+    ),
+    check(
+      "public_chat_idempotency_command_kind_valid",
+      sql`${table.commandKind} in ('message', 'handoff', 'locale', 'close')`,
     ),
     check(
       "public_chat_idempotency_completion_valid",

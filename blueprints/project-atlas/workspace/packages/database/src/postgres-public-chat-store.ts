@@ -63,6 +63,8 @@ type ConversationRow = {
   session_hash: string;
   notice_version: string;
   correlation_id: string;
+  start_idempotency_key: string;
+  start_fingerprint: string;
   created_at: Date;
   updated_at: Date;
   last_activity_at: Date;
@@ -71,6 +73,7 @@ type ConversationRow = {
   closed_at: Date | null;
   handoff_receipt_id: string | null;
   handoff_reason: PublicChatConversation["handoffReason"] | null;
+  handoff_queued_at: Date | null;
 };
 
 type MessageRow = {
@@ -101,6 +104,8 @@ type CommandRow = {
   result: unknown;
   lease_active: boolean;
   expected_version: number;
+  command_kind: "message" | "handoff" | "locale" | "close";
+  command_fingerprint: string;
 };
 
 function commandId(conversationId: string, idempotencyKey: string): string {
@@ -191,6 +196,7 @@ const commandResultSchema = z.discriminatedUnion("ok", [
         "revoked",
         "conflict",
         "command_in_progress",
+        "conversation_limit_reached",
         "invalid_transition",
         "human_active",
         "content_rejected",
@@ -247,6 +253,8 @@ async function loadConversation(
       s.session_hash,
       c.notice_version,
       c.correlation_id,
+      c.start_idempotency_key,
+      c.start_fingerprint,
       c.created_at,
       c.updated_at,
       c.last_activity_at,
@@ -254,7 +262,14 @@ async function loadConversation(
       s.revoked_at,
       c.closed_at,
       c.handoff_receipt_id,
-      c.handoff_reason
+      c.handoff_reason,
+      (
+        select h.queued_at
+        from public_chat_handoffs h
+        where h.conversation_id = c.id
+        order by h.updated_at desc
+        limit 1
+      ) as handoff_queued_at
     from public_chat_conversations c
     inner join public_chat_sessions s on s.id = c.session_id
     where c.id = ${conversationId} and s.session_hash = ${sessionHash}
@@ -303,6 +318,8 @@ async function loadConversation(
     sessionHash: row.session_hash,
     noticeVersion: row.notice_version,
     correlationId: row.correlation_id,
+    startIdempotencyKey: row.start_idempotency_key,
+    startFingerprint: row.start_fingerprint,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     lastActivityAt: row.last_activity_at,
@@ -311,6 +328,7 @@ async function loadConversation(
     ...(row.closed_at ? { closedAt: row.closed_at } : {}),
     ...(row.handoff_receipt_id ? { handoffReceiptId: row.handoff_receipt_id } : {}),
     ...(row.handoff_reason ? { handoffReason: row.handoff_reason } : {}),
+    ...(row.handoff_queued_at ? { handoffQueuedAt: row.handoff_queued_at } : {}),
     messages: messageRows.map((message) => ({
       id: message.id,
       actor: message.actor,
@@ -414,7 +432,7 @@ async function persistConversation(
         ${conversation.handoffReason ?? "policy_required"},
         ${conversation.handoffReceiptId ?? null},
         ${conversation.updatedAt},
-        ${conversation.handoffReceiptId ? conversation.updatedAt : null},
+        ${conversation.handoffQueuedAt ?? null},
         ${conversation.updatedAt}
       )
       on conflict (id) do update
@@ -509,7 +527,7 @@ export function createPostgresPublicChatStore(
 ): PublicChatTransactionalStore {
   return {
     async createConversation(conversation) {
-      await withGatewayTransaction(sql, async (tx) => {
+      return withGatewayTransaction(sql, async (tx) => {
         const sessions = await tx<{ id: string }[]>`
           select id
           from public_chat_sessions
@@ -521,38 +539,64 @@ export function createPostgresPublicChatStore(
         `;
         const session = sessions[0];
         if (!session) throw new Error("PUBLIC_CHAT_SESSION_NOT_FOUND");
-        await tx`
+        const inserted = await tx<{ id: string }[]>`
           insert into public_chat_conversations (
             id, session_id, version, locale, status, notice_version, correlation_id,
+            start_idempotency_key, start_fingerprint,
             last_activity_at, expires_at, closed_at, handoff_receipt_id, handoff_reason,
             reconciliation_required, created_at, updated_at
           ) values (
             ${conversation.id}, ${session.id}, ${conversation.version}, ${conversation.locale},
             ${conversation.status}, ${conversation.noticeVersion}, ${conversation.correlationId},
+            ${conversation.startIdempotencyKey}, ${conversation.startFingerprint},
             ${conversation.lastActivityAt}, ${conversation.expiresAt},
             ${conversation.closedAt ?? null}, ${conversation.handoffReceiptId ?? null},
             ${conversation.handoffReason ?? null}, false,
             ${conversation.createdAt}, ${conversation.updatedAt}
           )
+          on conflict (session_id, start_idempotency_key) do nothing
+          returning id
         `;
-        await appendAuditEvent(tx, conversation, "chat_conversation_started");
+        if (inserted[0]) {
+          await appendAuditEvent(tx, conversation, "chat_conversation_started");
+          return "created" as const;
+        }
+        const existing = await tx<Array<{ id: string; start_fingerprint: string }>>`
+          select id, start_fingerprint
+          from public_chat_conversations
+          where session_id = ${session.id}
+            and start_idempotency_key = ${conversation.startIdempotencyKey}
+          limit 1
+          for update
+        `;
+        const row = existing[0];
+        if (!row || row.start_fingerprint !== conversation.startFingerprint) {
+          return "conflict" as const;
+        }
+        const replayed = await loadConversation(tx, row.id, conversation.sessionHash);
+        if (!replayed) throw new Error("PUBLIC_CHAT_START_REPLAY_UNAVAILABLE");
+        return { replayed } as const;
       });
     },
 
     findOwnedConversation: (conversationId, sessionHash) =>
       withGatewayTransaction(sql, (tx) => loadConversation(tx, conversationId, sessionHash)),
 
-    async findCommandResult(conversationId, idempotencyKey) {
+    async findCommandResult(conversationId, idempotencyKey, kind, fingerprint) {
       return withGatewayTransaction(sql, async (tx) => {
-        const rows = await tx<Array<Pick<CommandRow, "state" | "result">>>`
-          select state, result
+        const rows = await tx<
+          Array<Pick<CommandRow, "state" | "result" | "command_kind" | "command_fingerprint">>
+        >`
+          select state, result, command_kind, command_fingerprint
           from public_chat_idempotency
           where conversation_id = ${conversationId} and idempotency_key = ${idempotencyKey}
           limit 1
         `;
-        return rows[0]?.state === "completed"
-          ? deserializePublicChatCommandResult(rows[0].result)
-          : null;
+        const row = rows[0];
+        if (row && (row.command_kind !== kind || row.command_fingerprint !== fingerprint)) {
+          return "command_mismatch";
+        }
+        return row?.state === "completed" ? deserializePublicChatCommandResult(row.result) : null;
       });
     },
 
@@ -566,7 +610,8 @@ export function createPostgresPublicChatStore(
           for update
         `;
         const existingRows = await tx<CommandRow[]>`
-          select state, lease_token_hash, lease_expires_at, result, expected_version,
+          select state, lease_token_hash, lease_expires_at, result, expected_version, command_kind,
+                 command_fingerprint,
                  lease_expires_at > current_timestamp as lease_active
           from public_chat_idempotency
           where conversation_id = ${command.conversationId}
@@ -575,6 +620,13 @@ export function createPostgresPublicChatStore(
           for update
         `;
         const existing = existingRows[0];
+        if (
+          existing &&
+          (existing.command_kind !== command.kind ||
+            existing.command_fingerprint !== command.fingerprint)
+        ) {
+          return { status: "conflict" as const };
+        }
         if (existing?.state === "completed" && existing.result) {
           return {
             status: "completed" as const,
@@ -598,11 +650,12 @@ export function createPostgresPublicChatStore(
         } else {
           await tx`
             insert into public_chat_idempotency (
-              id, conversation_id, idempotency_key, state, expected_version,
+              id, conversation_id, idempotency_key, command_kind, command_fingerprint, state, expected_version,
               lease_token_hash, lease_expires_at, result, completed_at, created_at, updated_at
             ) values (
               ${commandId(command.conversationId, command.idempotencyKey)},
-              ${command.conversationId}, ${command.idempotencyKey}, 'in_progress',
+              ${command.conversationId}, ${command.idempotencyKey}, ${command.kind},
+              ${command.fingerprint}, 'in_progress',
               ${command.expectedVersion}, ${leaseTokenHash}, ${command.leaseExpiresAt},
               null, null, current_timestamp, current_timestamp
             )
@@ -612,18 +665,22 @@ export function createPostgresPublicChatStore(
       });
     },
 
-    async waitForCommandResult(conversationId, idempotencyKey, waitUntil) {
+    async waitForCommandResult(conversationId, idempotencyKey, kind, fingerprint, waitUntil) {
       while (Date.now() < waitUntil.getTime()) {
         const completed = await withGatewayTransaction(sql, async (tx) => {
-          const rows = await tx<Array<Pick<CommandRow, "state" | "result">>>`
-            select state, result
+          const rows = await tx<
+            Array<Pick<CommandRow, "state" | "result" | "command_kind" | "command_fingerprint">>
+          >`
+            select state, result, command_kind, command_fingerprint
             from public_chat_idempotency
             where conversation_id = ${conversationId} and idempotency_key = ${idempotencyKey}
             limit 1
           `;
-          return rows[0]?.state === "completed"
-            ? deserializePublicChatCommandResult(rows[0].result)
-            : null;
+          const row = rows[0];
+          if (row && (row.command_kind !== kind || row.command_fingerprint !== fingerprint)) {
+            return null;
+          }
+          return row?.state === "completed" ? deserializePublicChatCommandResult(row.result) : null;
         });
         if (completed) return completed;
         await new Promise((resolve) => setTimeout(resolve, 50));
@@ -639,7 +696,8 @@ export function createPostgresPublicChatStore(
           limit 1 for update
         `;
         const claims = await tx<CommandRow[]>`
-          select state, lease_token_hash, lease_expires_at, result, expected_version,
+           select state, lease_token_hash, lease_expires_at, result, expected_version, command_kind,
+                 command_fingerprint,
                  lease_expires_at > current_timestamp as lease_active
           from public_chat_idempotency
           where conversation_id = ${command.conversation.id}
@@ -651,6 +709,7 @@ export function createPostgresPublicChatStore(
         const currentVersion = versions[0]?.version;
         if (
           claim?.state !== "in_progress" ||
+          claim.command_kind !== command.kind ||
           claim.lease_token_hash !== leaseTokenHash ||
           !claim.lease_active ||
           claim.expected_version !== command.expectedVersion ||
@@ -665,6 +724,7 @@ export function createPostgresPublicChatStore(
           set expected_version = ${command.conversation.version}, updated_at = current_timestamp
           where conversation_id = ${command.conversation.id}
             and idempotency_key = ${command.idempotencyKey}
+            and command_kind = ${command.kind}
         `;
         await appendAuditEvent(
           tx,
@@ -684,7 +744,8 @@ export function createPostgresPublicChatStore(
           limit 1 for update
         `;
         const claims = await tx<CommandRow[]>`
-          select state, lease_token_hash, lease_expires_at, result, expected_version,
+          select state, lease_token_hash, lease_expires_at, result, expected_version, command_kind,
+                 command_fingerprint,
                  lease_expires_at > current_timestamp as lease_active
           from public_chat_idempotency
           where conversation_id = ${command.conversation.id}
@@ -696,6 +757,7 @@ export function createPostgresPublicChatStore(
         const currentVersion = versions[0]?.version;
         if (
           claim?.state !== "in_progress" ||
+          claim.command_kind !== command.kind ||
           claim.lease_token_hash !== leaseTokenHash ||
           !claim.lease_active ||
           claim.expected_version !== command.expectedVersion ||
@@ -719,6 +781,7 @@ export function createPostgresPublicChatStore(
               updated_at = current_timestamp
           where conversation_id = ${command.conversation.id}
             and idempotency_key = ${command.idempotencyKey}
+            and command_kind = ${command.kind}
         `;
         return "completed" as const;
       });
@@ -849,6 +912,25 @@ export async function rotatePublicChatSessionSecrets(
   });
 }
 
+export async function extendPublicChatSession(
+  sql: PublicChatSql,
+  sessionHash: string,
+  expiresAt: Date,
+  updatedAt: Date,
+): Promise<boolean> {
+  return withGatewayTransaction(sql, async (tx) => {
+    const rows = await tx<{ id: string }[]>`
+      update public_chat_sessions
+      set expires_at = ${expiresAt}, updated_at = ${updatedAt}
+      where session_hash = ${sessionHash}
+        and revoked_at is null
+        and expires_at > current_timestamp
+      returning id
+    `;
+    return rows.length === 1;
+  });
+}
+
 export async function revokePublicChatSession(
   sql: PublicChatSql,
   sessionHash: string,
@@ -876,6 +958,16 @@ export function createPostgresPublicChatRateLimiter(
     async consume(key) {
       const bucketHash = await sha256(key);
       return withGatewayTransaction(sql, async (tx) => {
+        await tx`
+          delete from public_chat_rate_limits
+          where ctid in (
+            select ctid
+            from public_chat_rate_limits
+            where expires_at <= current_timestamp
+            order by expires_at asc
+            limit 100
+          )
+        `;
         const rows = await tx<{ count: number; retry_after_seconds: number }[]>`
           insert into public_chat_rate_limits (
             bucket_hash, count, window_started_at, expires_at, updated_at

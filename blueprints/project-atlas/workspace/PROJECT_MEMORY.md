@@ -524,3 +524,38 @@
   governance and security corrections are inherited. Baseline lint, typecheck, 131 tests and import
   contracts passed before product changes; online dependency installation was unavailable, so the
   existing validated workspace toolchain is used until frozen-install verification can be repeated.
+
+## 2026-08-13 — M003 provider-disabled Build closure candidate
+
+- M003 was implemented in `codex/m003-public-chat-build` under Decision 028 with TDD, independent
+  review and Cyber Neo. The slice adds the bilingual accessible chat UI, same-origin Astro gateway,
+  provider-neutral conversation domain, M002-grounded deterministic orientation, metadata-only
+  Postgres persistence, Drizzle/RLS and safe handoff/fallback behavior.
+- Review remediation bound start and every command idempotency key to kind plus a canonical-payload
+  HMAC using a distinct server-only secret; cross-kind/payload reuse now conflicts. Start retries
+  create one conversation, command retries avoid duplicate work and lost response bodies are
+  handled honestly while retention remains disabled.
+- Security remediation added absolute lifetime/message caps, durable restriction revocation,
+  dependency-failure envelopes, bounded telemetry, configurable server/UI message limits, bounded
+  rate-limit cleanup, SSN/ITIN variant detection, close/TTL idempotence and same-document locale
+  changes that preserve only in-memory visible text.
+- Drizzle migrations 0003–0005 add command kind/fingerprint and start key/fingerprint. They fail
+  closed if preactivation tables contain rows because historical command payload semantics cannot
+  be inferred safely. Docker/local PostgreSQL is not installed on this workstation, so actual
+  fresh/upgrade migration execution remains explicit staging evidence rather than a claimed pass.
+- Focused frozen evidence reached 202/202 M003 tests, direct domain/database/public-app TypeScript
+  checks and an Astro build plus 18/18 desktop/mobile Playwright/axe journeys. External providers,
+  credentials, real data, deployment, merge, public activation and `Operational` status remain absent.
+
+## 2026-08-13 — M003 final remediation and database proof
+
+- The earlier closure-candidate evidence was superseded after independent review found retry,
+  provider-lease and migration-proof gaps. Start retries now bind key, locale and notice version;
+  provider command leases are rejected unless they cover all four sequential provider deadlines
+  plus completion margin. Dedicated regressions passed.
+- PostgreSQL 17.11 loopback rehearsals proved both fresh Drizzle `0000→0005` and upgrade
+  `0002→0005` paths. Both validated the dedicated runtime principal as non-superuser,
+  non-`BYPASSRLS`, denied direct table access and allowed only the scoped gateway role.
+- The superseding evidence set reached 345 passed/3 deliberately skipped Vitest tests, 28/28 M003
+  browser tests and 74/74 M001/M002 regression tests before final documentation synchronization.
+  Final frozen counts are authoritative only in the M003 PCR and build reviews.

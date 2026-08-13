@@ -47,6 +47,8 @@ export type PublicChatConversation = {
   sessionHash: string;
   noticeVersion: string;
   correlationId: string;
+  startIdempotencyKey: string;
+  startFingerprint: string;
   createdAt: Date;
   updatedAt: Date;
   lastActivityAt: Date;
@@ -54,6 +56,7 @@ export type PublicChatConversation = {
   revokedAt?: Date;
   closedAt?: Date;
   handoffReceiptId?: string;
+  handoffQueuedAt?: Date;
   handoffReason?:
     | "visitor_requested"
     | "complaint"
@@ -78,6 +81,7 @@ export type ChatFailureCode =
   | "revoked"
   | "conflict"
   | "command_in_progress"
+  | "conversation_limit_reached"
   | "invalid_transition"
   | "human_active"
   | "content_rejected"
@@ -129,6 +133,8 @@ export type PublicSessionContext = {
 };
 
 export type CommandReservation = {
+  kind: ChatCommandKind;
+  fingerprint: string;
   conversationId: string;
   expectedVersion: number;
   idempotencyKey: string;
@@ -156,16 +162,22 @@ export type CommandCompletion = ClaimedCommandAdvance & {
 };
 
 export interface ConversationRepository {
-  create(conversation: PublicChatConversation): Promise<void>;
+  create(
+    conversation: PublicChatConversation,
+  ): Promise<"created" | "conflict" | { replayed: PublicChatConversation }>;
   findOwned(conversationId: string, sessionHash: string): Promise<PublicChatConversation | null>;
   findCommandResult(
     conversationId: string,
     idempotencyKey: string,
-  ): Promise<ChatCommandResult | null>;
+    kind: ChatCommandKind,
+    fingerprint: string,
+  ): Promise<ChatCommandResult | "command_mismatch" | null>;
   claimCommand(command: CommandReservation): Promise<CommandClaimResult>;
   waitForCommandResult(
     conversationId: string,
     idempotencyKey: string,
+    kind: ChatCommandKind,
+    fingerprint: string,
     waitUntil: Date,
   ): Promise<ChatCommandResult | null>;
   advanceClaimedCommand(command: ClaimedCommandAdvance): Promise<"advanced" | "conflict">;
@@ -199,4 +211,8 @@ export interface Clock {
 
 export interface IdFactory {
   next(prefix: "conversation" | "message"): string;
+}
+
+export interface CommandFingerprintPort {
+  digest(canonicalPayload: string): string;
 }

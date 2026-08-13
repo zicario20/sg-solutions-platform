@@ -18,6 +18,7 @@ export interface PublicChatSessionStore {
     currentSessionHash: string,
     next: { sessionHash: string; csrfHash: string; expiresAt: Date; updatedAt: Date },
   ): Promise<PublicChatSessionRecord | null>;
+  extend(sessionHash: string, expiresAt: Date, updatedAt: Date): Promise<boolean>;
   revoke(sessionHash: string, revokedAt: Date): Promise<boolean>;
 }
 
@@ -58,7 +59,11 @@ export type PublicChatSessionSecurity = {
       }
     | { ok: false }
   >;
-  terminate(request: Request): Promise<boolean>;
+  refresh(
+    request: Request,
+  ): Promise<{ ok: true; cookieValue: string; expiresAt: Date } | { ok: false }>;
+  /** Idempotently revoke a session that the gateway already authenticated for this request. */
+  terminate(sessionHash: string): Promise<boolean>;
 };
 
 async function sha256(value: string): Promise<string> {
@@ -120,6 +125,12 @@ export function createMemoryPublicChatSessionStore(): MemoryPublicChatSessionSto
       const record = records.get(sessionHash);
       if (!record || record.revokedAt) return false;
       records.set(sessionHash, { ...record, revokedAt });
+      return true;
+    },
+    async extend(sessionHash, expiresAt) {
+      const record = records.get(sessionHash);
+      if (!record || record.revokedAt) return false;
+      records.set(sessionHash, { ...record, expiresAt });
       return true;
     },
     async snapshot() {
@@ -208,11 +219,27 @@ export function createPublicChatSessionSecurity(input: {
         : { ok: false };
     },
 
-    async terminate(request) {
-      const authenticated = await authenticate(request, { requireCsrf: true });
-      return authenticated.ok
-        ? input.store.revoke(authenticated.session.sessionHash, now())
-        : false;
+    async refresh(request) {
+      const cookieValue = readCookie(request);
+      if (!cookieValue) return { ok: false };
+      const authenticated = await authenticate(request, { requireCsrf: false });
+      if (!authenticated.ok) return { ok: false };
+      const updatedAt = now();
+      const expiresAt = new Date(updatedAt.getTime() + input.ttlSeconds * 1_000);
+      const extended = await input.store.extend(
+        authenticated.session.sessionHash,
+        expiresAt,
+        updatedAt,
+      );
+      return extended ? { ok: true, cookieValue, expiresAt } : { ok: false };
+    },
+
+    async terminate(sessionHash) {
+      const record = await input.store.findBySessionHash(sessionHash);
+      if (!record) return false;
+      if (record.revokedAt) return true;
+      if (record.expiresAt.getTime() <= now().getTime()) return false;
+      return input.store.revoke(sessionHash, now());
     },
   };
 }

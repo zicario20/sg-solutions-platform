@@ -69,7 +69,7 @@ const chat = readPublicChatConfig({
     <SiteHeader page={page} alternatePath={alternatePath} />
     <main id="main-content"><slot /></main>
     <SiteFooter locale={page.locale} />
-    {chat.enabled && !suppressFloatingChat && <ChatExperience locale={page.locale} />}
+    {chat.enabled && !suppressFloatingChat && <ChatExperience locale={page.locale} maxMessageCharacters={chat.maxMessageCharacters} />}
     <script is:inline src="/scripts/mobile-navigation.js" defer></script>
   </body>
 </html>

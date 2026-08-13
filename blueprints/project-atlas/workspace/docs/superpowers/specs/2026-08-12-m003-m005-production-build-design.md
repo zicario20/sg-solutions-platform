@@ -3,7 +3,7 @@
 - Owner: Product Owner
 - Architect: Codex Architecture Agent
 - Authorization: Decision 028
-- Status: Approved conversational direction; persisted specification awaiting Product Owner review
+- Status: Approved by Decision 028; M003 implemented, M004 next and M005 sequentially queued
 - Scope: M003 Public Chat, then M004 WhatsApp Business, then M005 Voice Agent
 
 ## Outcome

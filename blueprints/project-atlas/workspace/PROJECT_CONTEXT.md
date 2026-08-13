@@ -52,6 +52,7 @@ coordinates work but owns no business state. AI is assistive, permission-bound a
 Release 1 is the Production Foundation, delivered compatibly as Release 1A and Release 1B. The 110
 catalog entries are conceptual capabilities; registration does not authorize implementation.
 
-The repository/tooling scaffold exists. Architecture and documentation are in progress. No
-production product behavior has been implemented, and feature implementation remains unauthorized
-until the Product Owner explicitly authorizes `GENERATE`.
+The repository/tooling scaffold exists. M001–M003 have locally verified product slices and remain
+undeployed at Product Owner acceptance; no module is `Operational`. Decision 028 authorizes the
+bounded sequential M003–M005 Build only. External providers, credentials, real client data,
+production release and all other feature implementation require their own Product Owner gates.

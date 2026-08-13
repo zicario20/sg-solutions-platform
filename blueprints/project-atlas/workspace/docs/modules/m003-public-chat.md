@@ -5,8 +5,8 @@
 - Surface: Public; shared conversation kernel prepared for later Client/Admin adapters
 - Domain: Public Acquisition / Communications
 - Release: R7 target capability with an architecture slice prepared during current discovery
-- Status: Build authorized by Decision 028 — written specification review in progress
-- Last updated: 2026-08-12
+- Status: Provider-disabled local/staging Build verified — Product Owner acceptance pending
+- Last updated: 2026-08-13
 - External readiness: `External activation deferred` in `EXTERNAL_ACTIVATION_REGISTER.md`
 
 This PRD normalizes the Product Owner-supplied M003 source requirements to the approved Project
@@ -69,9 +69,10 @@ records.
 
 ### Current authorized slice
 
-- PRD, UX/architecture design, contracts, states, threats, acceptance criteria and deferred
-  activation record.
-- No M003 application code until the Product Owner separately approves `GENERATE` and a Build gate.
+- Decision 028 authorized and the isolated M003 branch now contains the provider-disabled local/
+  staging implementation, Drizzle migrations, security controls, tests, runbook and review evidence.
+- External credentials, provider traffic, public activation, production deployment, merge and
+  `Operational` status remain unauthorized.
 
 ## 4. Explicit out of scope
 
@@ -199,9 +200,13 @@ Approved preliminary fields are:
 
 `new → ai_active → human_requested → waiting_for_human → human_active → returned_to_ai → closed`
 
+The persistent human-support CTA also permits `new → human_requested`; a visitor does not need to
+send a message before requesting a person.
+
 Additional terminal/control states are `expired` and `restricted`.
 
 - `new → ai_active`: notice acknowledged and the first valid message is accepted.
+- `new → human_requested`: visitor requests a person before sending a message.
 - `ai_active → human_requested`: visitor or policy requests human review.
 - `human_requested → waiting_for_human`: handoff service returns a durable receipt.
 - `waiting_for_human → human_active`: an authorized operator accepts the handoff.
@@ -298,6 +303,15 @@ Intent is routing metadata, not evidence of eligibility or permission.
 
 ## 10. Data requirements
 
+### Current provider-disabled physical projection
+
+Drizzle owns eight `public_chat_*` tables: sessions, conversations, messages, citations, handoffs,
+idempotency reservations/results, minimized audit events and privacy-preserving rate-limit buckets.
+The runtime principal has no direct table access; it enters only through the forced-RLS gateway role.
+`metadata_only` constrains persisted message/result bodies to `NULL`, and bounded cleanup removes
+expired rate-limit rows. Future richer records below remain target contracts, not authority to
+retain transcript bodies or activate providers.
+
 ### Conversation
 
 Opaque ID, version, surface, actor context, locale, status, selected intent, consent-snapshot
@@ -386,13 +400,19 @@ provider errors.
 ### Public gateway
 
 - `POST /api/public/chat/conversations` creates a bounded session after notice acknowledgment.
+- `GET /api/public/chat/bootstrap` creates an opaque, bounded anonymous session and returns the
+  synchronizer CSRF token with `no-store` semantics.
 - `POST /api/public/chat/conversations/{id}/messages` validates, moderates and routes one message.
 - `GET /api/public/chat/conversations/{id}` returns the visitor-safe transcript projection.
+- `POST /api/public/chat/conversations/{id}/language` changes the active locale idempotently.
+- `POST /api/public/chat/conversations/{id}/resume` rotates session/CSRF material for an explicitly
+  transferred same-tab navigation only; it does not promise browser-close transcript recovery.
 - `POST /api/public/chat/conversations/{id}/handoff` requests human assistance idempotently.
 - `POST /api/public/chat/conversations/{id}/close` closes the visitor's session idempotently.
 
 The gateway is implemented by Astro on-demand server routes in `apps/www` under the same public
-origin, as proposed by ADR 007. Marketing/Help Center pages remain prerendered. It rejects
+origin, as accepted by ADR 007 and verified by the M003 PCR. Marketing/Help Center pages remain
+prerendered. It rejects
 credentialed cross-origin calls and stores the session token in a host-only
 `__Host-atlas_public_chat` cookie with `Secure`, `HttpOnly`, `Path=/`, no `Domain` and explicit
 `SameSite=Lax`. Every unsafe method validates the exact canonical `Origin`, Fetch Metadata when
@@ -406,7 +426,7 @@ versions and revoked cookies.
 
 ### Domain ports
 
-- `ConversationService.start(context, noticeVersion, locale)`.
+- `ConversationService.start(context, noticeVersion, locale, idempotencyKey)`.
 - `ConversationService.acceptMessage(context, conversationId, text, idempotencyKey)`.
 - `ConversationService.requestHandoff(context, conversationId, reason, idempotencyKey)`.
 - `ConversationService.close(context, conversationId, idempotencyKey)`.
@@ -524,8 +544,10 @@ Manual recovery must never require editing production tables from the Supabase d
   Vitals budgets.
 - Opening the panel immediately renders a local accessible state; network/model work never blocks
   the page thread.
-- Every provider call has a bounded timeout, circuit-breaker/readiness state and deterministic
-  fallback. A timeout never holds the composer indefinitely.
+- Every provider call has a bounded timeout and deterministic fallback. A timeout never holds the
+  composer indefinitely. Provider-disabled Build treats unavailable ports as not ready; each future
+  live adapter must add and independently test its circuit-breaker/readiness policy before its
+  activation gate.
 - A bounded queue preserves accepted work without duplicate messages. Session recovery uses the
   opaque session credential and last confirmed version.
 - Safe progressive rendering is permitted only after the response contract and output policy can
@@ -584,6 +606,9 @@ Manual recovery must never require editing production tables from the Supabase d
 - Spanish and English have complete UI strings, notices, validation, errors, fallbacks, quick
   actions, citations and handoff states.
 - The visitor may change language at any time; the choice persists for that conversation.
+- Language changes occur within the active document so visible transcript bodies remain in memory
+  while durable `metadata_only` storage continues to omit them. Reload/browser-close recovery never
+  promises message bodies before the Product Owner approves transcript retention.
 - Automatic detection only suggests or initializes locale. It never overrides an explicit choice.
 - A response uses one locale; source records must match it or show an explicit unavailable state.
 - High-risk or policy copy cannot use raw machine translation in production.
@@ -602,7 +627,7 @@ Manual recovery must never require editing production tables from the Supabase d
 - M002 is the sole public knowledge source; no private RAG or arbitrary web retrieval is implied.
 - Every missing account/agreement is represented in `EXTERNAL_ACTIVATION_REGISTER.md`.
 
-### Future Build acceptance
+### Build acceptance
 
 - Both locales can start, use, close and safely recover a chat session on desktop/mobile.
 - The assistant is clearly automated and constrained to orientation.
@@ -610,6 +635,10 @@ Manual recovery must never require editing production tables from the Supabase d
 - Low-confidence, sensitive, prohibited, complaint and human-request cases take their defined safe
   paths.
 - Duplicate submissions and retries produce one durable visible result.
+- Start and command idempotency bind each key to an HMAC fingerprint of its canonical payload;
+  payload/kind mismatch conflicts and no message text is stored in the fingerprint.
+- If a response is lost while body retention is disabled, retry uses the same key and truthfully
+  explains that the prior body cannot be recovered rather than duplicating provider work.
 - No handoff, lead or booking success is displayed without an owning-service receipt.
 - Session isolation, authorization, rate limiting, injection tests, PII/secret rejection, audit
   minimization, accessibility and reduced motion pass.
@@ -653,7 +682,8 @@ Manual recovery must never require editing production tables from the Supabase d
 - No preliminary-intake value or raw conversation body is ever sent in an external model-comparison
   payload under M003; those comparisons use only approved public/synthetic or policy-verified
   de-identified material.
-- No M003 code or external connection is inferred from architecture approval alone.
+- No local Build evidence implies an external connection, production readiness, deployment or
+  `Operational` status.
 
 ## 19. Dependencies
 
@@ -666,10 +696,10 @@ governance, M075 human-in-the-loop, M077 audit, M078 consent, M080/M081 IAM/RBAC
 protection, M084 integration security, M085 retention, M037–M041 Marketplace, M043–M045 payment
 projection and M097 observability.
 
-### Required before future local Build behavior
+### Local Build prerequisites satisfied
 
-Approved M003 PRD/design, explicit `GENERATE`/Build gate, accepted retention interim, conversation
-data/RLS design, UI handoff, threat model and executable plan.
+Decision 028, the approved M003 PRD/design, metadata-only retention interim, conversation/RLS
+design, UI handoff, threat model and executable plan. Executed evidence is recorded in the M003 PCR.
 
 ### Required only for external activation
 
@@ -708,6 +738,9 @@ are tracked in `EXTERNAL_ACTIVATION_REGISTER.md` and do not block architecture c
   same device after closing the browser; cross-device resume is excluded without authentication.]
 - [NEEDS PRODUCT OWNER DECISION: approve which authenticated client status questions enter the first
   portal-chat release after M007/client-portal authorization is available.]
+- [NEEDS PRODUCT OWNER DECISION: approve the first secure payment-link/receipt use cases, policy and
+  bilingual copy only after M043–M045 provide an authorized payable, verified Stripe state,
+  expiring/idempotent links and authenticated receipt projections.]
 
 These questions block only the affected live behavior or activation. They do not block approval of
 the provider-neutral architecture in this PRD.
@@ -715,6 +748,7 @@ the provider-neutral architecture in this PRD.
 ## Delivery and activation record
 
 - Architecture: independently reviewed candidate completed on 2026-08-09.
-- Local implementation: authorized by Decision 028; written-specification review precedes TDD.
+- Local implementation: provider-disabled Build verified in the isolated branch under Decision 028;
+  independent final acceptance remains the Product Owner's decision.
 - External activation: deferred; see `EXTERNAL_ACTIVATION_REGISTER.md`.
 - Operational status: not eligible.

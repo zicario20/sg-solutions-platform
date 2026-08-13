@@ -1,4 +1,10 @@
 import { describe, expect, it } from "vitest";
+import {
+  createPublicChatCommandFingerprint,
+  publicChatGatewayConfiguration,
+  resolvePublicChatCommandFingerprintSecret,
+  resolvePublicChatNetworkBucketSecret,
+} from "../../apps/www/src/lib/public-chat/runtime.ts";
 import { readPublicChatConfig } from "../../packages/config/src/index.ts";
 
 describe("public chat runtime configuration", () => {
@@ -8,6 +14,8 @@ describe("public chat runtime configuration", () => {
       runtimeState: "disabled",
       canonicalOrigin: "https://www.sgsllc.com",
       sessionTtlSeconds: 1_800,
+      absoluteLifetimeSeconds: 86_400,
+      maxConversationMessages: 200,
       maxMessageCharacters: 2_000,
       modelMode: "disabled",
       transcriptPersistence: "metadata_only",
@@ -87,13 +95,26 @@ describe("public chat runtime configuration", () => {
       readPublicChatConfig({
         PUBLIC_CHAT_CANONICAL_ORIGIN: "https://staging.sgsllc.com",
         PUBLIC_CHAT_SESSION_TTL_SECONDS: "3600",
+        PUBLIC_CHAT_ABSOLUTE_LIFETIME_SECONDS: "7200",
+        PUBLIC_CHAT_MAX_CONVERSATION_MESSAGES: "100",
         PUBLIC_CHAT_MAX_MESSAGE_CHARACTERS: "1600",
       }),
     ).toMatchObject({
       canonicalOrigin: "https://staging.sgsllc.com",
       sessionTtlSeconds: 3_600,
+      absoluteLifetimeSeconds: 7_200,
+      maxConversationMessages: 100,
       maxMessageCharacters: 1_600,
     });
+  });
+
+  it("propagates configured gateway limits without falling back to build-time defaults", () => {
+    expect(
+      publicChatGatewayConfiguration({
+        sessionTtlSeconds: 3_600,
+        maxMessageCharacters: 1_600,
+      }),
+    ).toEqual({ sessionTtlSeconds: 3_600, maxMessageCharacters: 1_600 });
   });
 
   it.each([
@@ -120,10 +141,77 @@ describe("public chat runtime configuration", () => {
     ["PUBLIC_CHAT_SESSION_TTL_SECONDS", "0", "must be a positive integer"],
     ["PUBLIC_CHAT_SESSION_TTL_SECONDS", "1.5", "must be a positive integer"],
     ["PUBLIC_CHAT_SESSION_TTL_SECONDS", "86401", "must be at most 86400"],
+    ["PUBLIC_CHAT_ABSOLUTE_LIFETIME_SECONDS", "0", "must be a positive integer"],
+    ["PUBLIC_CHAT_ABSOLUTE_LIFETIME_SECONDS", "86401", "must be at most 86400"],
+    ["PUBLIC_CHAT_MAX_CONVERSATION_MESSAGES", "0", "must be a positive integer"],
+    ["PUBLIC_CHAT_MAX_CONVERSATION_MESSAGES", "201", "must be at most 200"],
     ["PUBLIC_CHAT_MAX_MESSAGE_CHARACTERS", "0", "must be a positive integer"],
     ["PUBLIC_CHAT_MAX_MESSAGE_CHARACTERS", "1.5", "must be a positive integer"],
     ["PUBLIC_CHAT_MAX_MESSAGE_CHARACTERS", "2001", "must be at most 2000"],
   ])("rejects %s=%s when it is outside its positive bound", (name, value, message) => {
     expect(() => readPublicChatConfig({ [name]: value })).toThrowError(`${name} ${message}`);
+  });
+
+  it("requires a stable rate-limit secret when chat is enabled outside local development", () => {
+    expect(() =>
+      resolvePublicChatNetworkBucketSecret({
+        enabled: true,
+        runtimeState: "staging",
+        configuredSecret: undefined,
+        randomSecret: () => "random-local-secret-that-is-long-enough",
+      }),
+    ).toThrowError("CHAT_RATE_LIMIT_SECRET_INVALID");
+    expect(() =>
+      resolvePublicChatNetworkBucketSecret({
+        enabled: true,
+        runtimeState: "staging",
+        configuredSecret: "too-short",
+        randomSecret: () => "random-local-secret-that-is-long-enough",
+      }),
+    ).toThrowError("CHAT_RATE_LIMIT_SECRET_INVALID");
+  });
+
+  it("uses an ephemeral fallback only for local development", () => {
+    expect(
+      resolvePublicChatNetworkBucketSecret({
+        enabled: true,
+        runtimeState: "local",
+        configuredSecret: undefined,
+        randomSecret: () => "local-only-random-secret-that-is-long-enough",
+      }),
+    ).toBe("local-only-random-secret-that-is-long-enough");
+  });
+
+  it("requires a separate stable command-fingerprint secret outside local development", () => {
+    expect(() =>
+      resolvePublicChatCommandFingerprintSecret({
+        enabled: true,
+        runtimeState: "staging",
+        configuredSecret: undefined,
+      }),
+    ).toThrowError("CHAT_COMMAND_FINGERPRINT_SECRET_INVALID");
+    expect(() =>
+      resolvePublicChatCommandFingerprintSecret({
+        enabled: true,
+        runtimeState: "staging",
+        configuredSecret: "too-short",
+      }),
+    ).toThrowError("CHAT_COMMAND_FINGERPRINT_SECRET_INVALID");
+  });
+
+  it("uses keyed non-reconstructible command fingerprints", async () => {
+    const payload = JSON.stringify(["message", "123 45 6789"]);
+    const first = createPublicChatCommandFingerprint("a".repeat(32)).digest(payload);
+    const second = createPublicChatCommandFingerprint("b".repeat(32)).digest(payload);
+    const unkeyed = [
+      ...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(payload))),
+    ]
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+
+    expect(first).toMatch(/^[a-f0-9]{64}$/u);
+    expect(first).not.toBe(second);
+    expect(first).not.toBe(unkeyed);
+    expect(first).not.toContain("123456789");
   });
 });

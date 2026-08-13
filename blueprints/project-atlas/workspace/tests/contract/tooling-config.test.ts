@@ -114,4 +114,12 @@ describe("tooling configuration", () => {
     expect(compose).toContain("ATLAS_POSTGRES_PASSWORD");
     expect(compose).not.toContain("POSTGRES_PASSWORD: atlas");
   });
+
+  it("binds the local development database to loopback only", () => {
+    const compose = readFileSync("docker-compose.yml", "utf8");
+    const portExpression = "${" + "ATLAS_POSTGRES_PORT:-55432}";
+
+    expect(compose).toContain(`127.0.0.1:${portExpression}:5432`);
+    expect(compose).not.toContain(`- "${portExpression}:5432"`);
+  });
 });

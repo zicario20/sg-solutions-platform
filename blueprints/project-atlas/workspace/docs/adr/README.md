@@ -12,7 +12,7 @@
 | [004](004-authorization-inheritance.md) | Secure case-based client authorization inheritance. |
 | [005](005-encryption.md) | Application-level envelope encryption boundaries and key custody. |
 | [006](006-architecture-first-external-activation.md) | Complete durable architecture first and track external activation separately. |
-| [007](007-public-chat-gateway-runtime.md) | Proposed same-origin Astro runtime and hardened session boundary for M003. |
+| [007](007-public-chat-gateway-runtime.md) | Accepted same-origin Astro runtime and hardened session boundary for M003; local Build verified. |
 | [008](008-whatsapp-channel-adapter.md) | Proposed official provider-neutral WhatsApp adapter, durable ingress/outbox and secure identity boundary for M004. |
 | [009](009-voice-gateway-runtime-boundary.md) | Proposed specialized real-time Voice Gateway with business state and authorization retained in the modular monolith. |
 | [010](010-public-form-schema-and-submission-boundary.md) | Proposed immutable form registry and narrow same-origin Astro submission gateway with domain-owned durable acceptance. |

@@ -19,11 +19,11 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   live CMS credentials and unapproved analytics transport.
 - Exit: Product Owner acceptance and merge/deployment decision. No next module is authorized by this
   completion.
-- **M003 Public Chat:** Build active under Decision 028 after its independently reviewed
-  architecture candidate. Implement the bilingual public UI, secure conversation kernel, M002
-  grounding, consent, moderation, lead/handoff boundaries, deterministic disabled mode, Drizzle/RLS
-  controls and automated tests. Live model traffic and public production activation remain deferred.
-- **M004 WhatsApp Business:** Build queued after clean M003 closure. Implement the direct Meta Cloud
+- **M003 Public Chat:** provider-disabled local/staging Build verified in its isolated branch under
+  Decision 028; Product Owner acceptance is pending. Bilingual UI, secure conversation kernel, M002
+  grounding, sensitive-input rejection, handoff boundaries, deterministic mode, Drizzle/RLS and
+  automated/browser evidence exist. Live model traffic, deployment and public activation remain deferred.
+- **M004 WhatsApp Business:** Build ready after the clean audited M003 closure commit. Implement the direct Meta Cloud
   API adapter, verified durable webhook inbox/outbox, consent/opt-out, bilingual templates,
   idempotency, reconciliation, handoff and tests. Meta account, number, credentials, template
   submission and live messages remain deferred; its public entry point stays hidden.

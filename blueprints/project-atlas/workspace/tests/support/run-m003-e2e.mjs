@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const appRoot = resolve(workspaceRoot, "apps/www");
 const staticRoot = resolve(appRoot, "dist/client");
+const astroCli = resolve(appRoot, "node_modules/astro/bin/astro.mjs");
 const playwrightCli = resolve(workspaceRoot, "node_modules/@playwright/test/cli.js");
 const contentTypes = new Map([
   [".css", "text/css; charset=utf-8"],
@@ -27,15 +28,14 @@ function waitForExit(child) {
   });
 }
 
-const corepackCli = resolve(dirname(process.execPath), "node_modules/corepack/dist/corepack.js");
-const build = spawn(process.execPath, [corepackCli, "pnpm", "--filter", "@atlas/www", "build"], {
-  cwd: workspaceRoot,
+const build = spawn(process.execPath, [astroCli, "build"], {
+  cwd: appRoot,
   env: {
     ...process.env,
     PUBLIC_CHAT_STATE: "local",
     PUBLIC_CHAT_ENABLED: "true",
     PUBLIC_CHAT_CANONICAL_ORIGIN: "http://127.0.0.1:4322",
-    PUBLIC_CHAT_RATE_LIMIT_SECRET: "test-only-rate-limit-secret-32-bytes",
+    CHAT_RATE_LIMIT_SECRET: "test-only-rate-limit-secret-32-bytes",
   },
   stdio: "inherit",
   windowsHide: true,

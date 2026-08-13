@@ -1,36 +1,26 @@
 import { spawn } from "node:child_process";
-import { dirname, resolve } from "node:path";
+import { readFile, stat } from "node:fs/promises";
+import { createServer } from "node:http";
+import { dirname, extname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const appRoot = resolve(workspaceRoot, "apps/www");
+const staticRoot = resolve(appRoot, "dist/client");
 const astroCli = resolve(appRoot, "node_modules/astro/bin/astro.mjs");
 const playwrightCli = resolve(workspaceRoot, "node_modules/@playwright/test/cli.js");
-const healthUrl = "http://127.0.0.1:4321/health/";
-
-const delay = (milliseconds) =>
-  new Promise((resolveDelay) => setTimeout(resolveDelay, milliseconds));
-
-async function isPreviewReady(timeout = 1_000) {
-  try {
-    const response = await fetch(healthUrl, { signal: AbortSignal.timeout(timeout) });
-    return response.ok;
-  } catch {
-    return false;
-  }
-}
-
-async function waitForPreview(server) {
-  const deadline = Date.now() + 60_000;
-  while (Date.now() < deadline) {
-    if (server.exitCode !== null) {
-      throw new Error(`Astro preview exited before becoming ready (exit ${server.exitCode}).`);
-    }
-    if (await isPreviewReady()) return;
-    await delay(250);
-  }
-  throw new Error("Astro preview did not become ready within 60 seconds.");
-}
+const contentTypes = new Map([
+  [".css", "text/css; charset=utf-8"],
+  [".html", "text/html; charset=utf-8"],
+  [".js", "text/javascript; charset=utf-8"],
+  [".json", "application/json; charset=utf-8"],
+  [".jpg", "image/jpeg"],
+  [".png", "image/png"],
+  [".svg", "image/svg+xml"],
+  [".webmanifest", "application/manifest+json"],
+  [".woff2", "font/woff2"],
+  [".xml", "application/xml; charset=utf-8"],
+]);
 
 function waitForExit(child) {
   if (child.exitCode !== null) return Promise.resolve(child.exitCode);
@@ -40,56 +30,87 @@ function waitForExit(child) {
   });
 }
 
-async function stopPreview(server) {
-  if (server.exitCode !== null) return;
-  const gracefulExit = waitForExit(server);
-  server.kill();
-  const stoppedGracefully = await Promise.race([
-    gracefulExit.then(() => true),
-    delay(5_000).then(() => false),
-  ]);
-  if (stoppedGracefully) return;
-
-  const forcedExit = waitForExit(server);
-  server.kill("SIGKILL");
-  const stoppedForcibly = await Promise.race([
-    forcedExit.then(() => true),
-    delay(5_000).then(() => false),
-  ]);
-  if (!stoppedForcibly) throw new Error("Astro preview could not be stopped.");
-}
-
-if (await isPreviewReady(500)) {
-  throw new Error(`Port 4321 is already serving ${healthUrl}; stop that process before testing.`);
-}
-
-const preview = spawn(
-  process.execPath,
-  [astroCli, "preview", "--host", "127.0.0.1", "--port", "4321"],
-  {
-    cwd: appRoot,
-    env: { ...process.env, ASTRO_TELEMETRY_DISABLED: "1" },
-    stdio: ["ignore", "inherit", "inherit"],
-    windowsHide: true,
+const build = spawn(process.execPath, [astroCli, "build"], {
+  cwd: appRoot,
+  env: {
+    ...process.env,
+    ASTRO_TELEMETRY_DISABLED: "1",
+    PUBLIC_CHAT_ENABLED: "false",
+    PUBLIC_CHAT_STATE: "disabled",
   },
-);
+  stdio: "inherit",
+  windowsHide: true,
+});
+if ((await waitForExit(build)) !== 0) throw new Error("WWW_FRESH_BUILD_FAILED");
+await stat(resolve(staticRoot, "index.html"));
+
+const server = createServer(async (request, response) => {
+  try {
+    const pathname = decodeURIComponent(new URL(request.url ?? "/", "http://127.0.0.1").pathname);
+    const redirects = new Map([
+      ["/preguntas-frecuentes/", "/recursos/preguntas-frecuentes/"],
+      ["/en/faq/", "/en/resources/faq/"],
+    ]);
+    const redirect = redirects.get(pathname);
+    if (redirect) {
+      response.writeHead(308, { location: redirect });
+      response.end();
+      return;
+    }
+    const relativeRequest =
+      pathname === "/health/"
+        ? "/health"
+        : pathname.endsWith("/")
+          ? `${pathname}index.html`
+          : pathname;
+    let file = resolve(staticRoot, `.${relativeRequest}`);
+    const containment = relative(staticRoot, file);
+    if (
+      containment === ".." ||
+      containment.startsWith(`..${sep}`) ||
+      resolve(file) === staticRoot
+    ) {
+      throw new Error("PATH_OUTSIDE_STATIC_ROOT");
+    }
+    if ((await stat(file)).isDirectory()) file = resolve(file, "index.html");
+    const body = await readFile(file);
+    response.writeHead(200, {
+      "cache-control": "no-store",
+      "content-type": contentTypes.get(extname(file)) ?? "application/octet-stream",
+    });
+    response.end(body);
+  } catch {
+    const pathname = decodeURIComponent(new URL(request.url ?? "/", "http://127.0.0.1").pathname);
+    const notFoundFile = resolve(
+      staticRoot,
+      pathname === "/en" || pathname.startsWith("/en/") ? "en/404/index.html" : "404.html",
+    );
+    const body = await readFile(notFoundFile);
+    response.writeHead(404, {
+      "cache-control": "no-store",
+      "content-type": "text/html; charset=utf-8",
+    });
+    response.end(body);
+  }
+});
+
+await new Promise((resolveListen, rejectListen) => {
+  server.once("error", rejectListen);
+  server.listen(4321, "127.0.0.1", resolveListen);
+});
 
 let exitCode = 1;
 try {
-  await waitForPreview(preview);
   const playwright = spawn(
     process.execPath,
     [playwrightCli, "test", "--config=playwright.www.config.ts", ...process.argv.slice(2)],
-    {
-      cwd: workspaceRoot,
-      env: process.env,
-      stdio: "inherit",
-      windowsHide: true,
-    },
+    { cwd: workspaceRoot, env: process.env, stdio: "inherit", windowsHide: true },
   );
   exitCode = (await waitForExit(playwright)) ?? 1;
 } finally {
-  await stopPreview(preview);
+  await new Promise((resolveClose, rejectClose) => {
+    server.close((error) => (error ? rejectClose(error) : resolveClose()));
+  });
 }
 
 process.exitCode = exitCode;

@@ -29,7 +29,7 @@ describe("M003 bilingual public chat UI contract", () => {
     expect(transcript).toContain('aria-relevant="additions text"');
     expect(panel).toContain("data-public-chat-human");
     expect(panel).toContain("data-public-chat-notice");
-    expect(composer).toContain('maxlength="2000"');
+    expect(composer).toContain("maxlength={maxMessageCharacters}");
   });
 
   it("uses safe dynamic rendering and never persists chat state in browser storage", () => {
@@ -74,8 +74,32 @@ describe("M003 bilingual public chat UI contract", () => {
     const controller = read("apps/www/src/scripts/public-chat.ts");
     const handler = controller.slice(controller.indexOf("async function changeConversationLocale"));
     expect(handler.indexOf("event.preventDefault()")).toBeLessThan(
-      handler.indexOf("if (!projection || pending) return"),
+      handler.indexOf("if (pending) return"),
     );
+    expect(handler).toContain("if (!projection)");
+    expect(handler).toContain("applyLocalization(targetLocale)");
+  });
+
+  it("applies failure projections and disables terminal conversation actions", () => {
+    const controller = read("apps/www/src/scripts/public-chat.ts");
+    expect(controller).toContain("data?: Projection");
+    expect(controller).toContain("if (value.data) renderProjection(value.data)");
+    expect(controller).toContain('next.status === "restricted"');
+    expect(controller).toContain("composer.hidden = terminal");
+    expect(controller).toContain("human.disabled = terminal");
+    expect(controller).toContain("const unavailable = terminal || handoffPending");
+    expect(controller).toContain("input.disabled = value || unavailable");
+  });
+
+  it("uses the configured message limit in markup, browser validation and counter", () => {
+    const experience = read("apps/www/src/components/chat/ChatExperience.astro");
+    const panel = read("apps/www/src/components/chat/ChatPanel.astro");
+    const controller = read("apps/www/src/scripts/public-chat.ts");
+    expect(experience).toContain("maxMessageCharacters");
+    expect(panel).toContain("maxMessageCharacters");
+    expect(panel).toContain("messageLimit: maxMessageCharacters");
+    expect(controller).toContain("config.messageLimit");
+    expect(controller).not.toContain("const MESSAGE_LIMIT = 2_000");
   });
 
   it("meets minimum target, narrow-screen, zoom and reduced-motion contracts", () => {

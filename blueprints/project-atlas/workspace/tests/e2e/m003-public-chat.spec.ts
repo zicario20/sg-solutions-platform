@@ -44,9 +44,32 @@ const projection = (version: number, locale: Locale, status = "ai_active") => ({
 
 async function mockPublicChat(
   page: Page,
-  options?: { slowClose?: boolean; slowMessage?: boolean },
-): Promise<void> {
+  options?: {
+    slowClose?: boolean;
+    slowMessage?: boolean;
+    loseFirstStartResponse?: boolean;
+    loseFirstMessageResponse?: boolean;
+    messageInProgressOnce?: boolean;
+    loseFirstHandoffResponse?: boolean;
+    loseFirstLocaleResponse?: boolean;
+  },
+): Promise<{
+  startKeys: string[];
+  startLocales: Locale[];
+  messageKeys: string[];
+  handoffKeys: string[];
+  localeKeys: string[];
+  closeKeys: string[];
+  closeVersions: number[];
+}> {
   let current = projection(1, "es", "new");
+  const startKeys: string[] = [];
+  const startLocales: Locale[] = [];
+  const messageKeys: string[] = [];
+  const handoffKeys: string[] = [];
+  const localeKeys: string[] = [];
+  const closeKeys: string[] = [];
+  const closeVersions: number[] = [];
   await page.route("**/api/public/chat/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
@@ -77,13 +100,11 @@ async function mockPublicChat(
     if (path.endsWith("/close") && options?.slowClose) {
       await new Promise((resolveWait) => setTimeout(resolveWait, 4_000));
     }
-    if (path.endsWith("/messages") && options?.slowMessage) {
-      await new Promise((resolveWait) => setTimeout(resolveWait, 600));
-    }
     const body = request.postDataJSON() as {
       expectedVersion?: number;
       locale?: Locale;
       text?: string;
+      idempotencyKey?: string;
     } | null;
     if (path.endsWith("/messages") && body?.text === "blocked-test-message") {
       await route.fulfill({
@@ -94,18 +115,81 @@ async function mockPublicChat(
       return;
     }
     if (path.endsWith("/language")) {
-      current = projection((body?.expectedVersion ?? current.version) + 1, body?.locale ?? "en");
+      localeKeys.push(body?.idempotencyKey ?? "");
+      const duplicate = localeKeys.slice(0, -1).includes(body?.idempotencyKey ?? "");
+      if (!duplicate) {
+        current = {
+          ...projection((body?.expectedVersion ?? current.version) + 1, body?.locale ?? "en"),
+          messages: projection(
+            (body?.expectedVersion ?? current.version) + 1,
+            body?.locale ?? "en",
+          ).messages.map((message) => ({ ...message, body: null })),
+        };
+      }
+      if (options?.loseFirstLocaleResponse && localeKeys.length === 1) {
+        await route.abort("failed");
+        return;
+      }
     } else if (path.endsWith("/messages")) {
-      current = projection(2, current.locale);
+      messageKeys.push(body?.idempotencyKey ?? "");
+      if (options?.messageInProgressOnce && messageKeys.length === 1) {
+        await route.fulfill({
+          status: 409,
+          headers,
+          body: JSON.stringify({ ok: false, code: "command_in_progress", correlationId: "corr_1" }),
+        });
+        return;
+      }
+      const duplicate = messageKeys.slice(0, -1).includes(body?.idempotencyKey ?? "");
+      if (!duplicate) current = projection(2, current.locale);
+      if (options?.slowMessage) {
+        await new Promise((resolveWait) => setTimeout(resolveWait, 600));
+      }
+      if (options?.loseFirstMessageResponse && messageKeys.length === 1) {
+        current = {
+          ...current,
+          messages: current.messages.map((message) => ({ ...message, body: null })),
+        };
+        await route.abort("failed");
+        return;
+      }
     } else if (path.endsWith("/handoff")) {
-      current = projection(
-        (body?.expectedVersion ?? current.version) + 1,
-        current.locale,
-        "waiting_human",
-      );
+      handoffKeys.push(body?.idempotencyKey ?? "");
+      const duplicate = handoffKeys.slice(0, -1).includes(body?.idempotencyKey ?? "");
+      if (!duplicate) {
+        current = projection(
+          (body?.expectedVersion ?? current.version) + 1,
+          current.locale,
+          "waiting_for_human",
+        );
+      }
+      if (options?.loseFirstHandoffResponse && handoffKeys.length === 1) {
+        await route.abort("failed");
+        return;
+      }
     } else if (path.endsWith("/conversations")) {
+      startKeys.push(body?.idempotencyKey ?? "");
+      startLocales.push(body?.locale ?? "es");
       current = projection(1, body?.locale ?? "es", "new");
+      if (options?.loseFirstStartResponse && startKeys.length === 1) {
+        await route.abort("failed");
+        return;
+      }
     } else if (path.endsWith("/close")) {
+      closeKeys.push(body?.idempotencyKey ?? "");
+      closeVersions.push(body?.expectedVersion ?? -1);
+      if (body?.expectedVersion !== current.version) {
+        await route.fulfill({
+          status: 409,
+          headers,
+          body: JSON.stringify({
+            ok: false,
+            code: "conflict",
+            correlationId: "corr_1",
+          }),
+        });
+        return;
+      }
       current = projection(
         (body?.expectedVersion ?? current.version) + 1,
         current.locale,
@@ -118,11 +202,22 @@ async function mockPublicChat(
       body: JSON.stringify({
         ok: true,
         data: current,
+        replayed:
+          path.endsWith("/messages") &&
+          messageKeys.slice(0, -1).includes(body?.idempotencyKey ?? ""),
         correlationId: "corr_1",
-        ...(path.endsWith("/handoff") ? { csrfToken: "csrf_token_2" } : {}),
       }),
     });
   });
+  return {
+    startKeys,
+    startLocales,
+    messageKeys,
+    handoffKeys,
+    localeKeys,
+    closeKeys,
+    closeVersions,
+  };
 }
 
 async function startAndSend(page: Page, locale: Locale): Promise<void> {
@@ -176,7 +271,115 @@ test.describe("M003 Public Chat", () => {
       .click();
     await expect(page.getByRole("log")).toContainText("Necesito orientación sobre crédito");
     await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
-    await expect(page).toHaveURL(/\/en\/chat\/$/u);
+    await expect(page.locator("[data-public-chat-root]")).toHaveAttribute("lang", "en");
+    await expect(page).toHaveURL(/\/chat\/$/u);
+  });
+
+  test("reuses the start idempotency key after a lost response", async ({ page }) => {
+    const controls = await mockPublicChat(page, { loseFirstStartResponse: true });
+    await page.goto("/chat/");
+    await page.getByRole("checkbox").check();
+    const start = page.getByRole("button", { name: "Empezar conversación" });
+    await start.click();
+    await expect(page.getByRole("alert")).toBeVisible();
+    await start.click();
+    await expect(page.getByRole("button", { name: "Enviar" })).toBeVisible();
+    expect(controls.startKeys).toHaveLength(2);
+    expect(controls.startKeys[0]).toMatch(/^start_[a-f0-9]{32}$/u);
+    expect(controls.startKeys[1]).toBe(controls.startKeys[0]);
+  });
+
+  test("recovers a lost start before applying a requested language change", async ({ page }) => {
+    const controls = await mockPublicChat(page, { loseFirstStartResponse: true });
+    await page.goto("/chat/");
+    await page.getByRole("checkbox").check();
+    await page.getByRole("button", { name: /^Empezar/u }).click();
+    await expect(page.getByRole("alert")).toBeVisible();
+
+    await page.locator("[data-public-chat-language]").click();
+
+    await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
+    expect(controls.startKeys).toHaveLength(2);
+    expect(controls.startKeys[1]).toBe(controls.startKeys[0]);
+    expect(controls.startLocales).toEqual(["es", "es"]);
+    expect(controls.localeKeys).toHaveLength(1);
+  });
+
+  test("retries a lost message safely and explains metadata-only recovery", async ({ page }) => {
+    const controls = await mockPublicChat(page, { loseFirstMessageResponse: true });
+    await page.goto("/chat/");
+    await page.getByRole("checkbox").check();
+    await page.getByRole("button", { name: "Empezar conversación" }).click();
+    const input = page.getByPlaceholder("Escribe tu pregunta sin información sensible");
+    await input.fill("Necesito orientación sobre crédito");
+    await page.getByRole("button", { name: "Enviar" }).click();
+    await expect(page.getByRole("alert")).toBeVisible();
+    await page.getByRole("button", { name: "Enviar" }).click();
+
+    await expect(page.getByRole("alert")).toContainText(
+      "La respuesta anterior no se conserva por privacidad",
+    );
+    await expect(input).toHaveValue("Necesito orientación sobre crédito");
+    expect(controls.messageKeys).toHaveLength(2);
+    expect(controls.messageKeys[1]).toBe(controls.messageKeys[0]);
+  });
+
+  test("reuses the same message key while the original command is still in progress", async ({
+    page,
+  }) => {
+    const controls = await mockPublicChat(page, { messageInProgressOnce: true });
+    await page.goto("/chat/");
+    await page.getByRole("checkbox").check();
+    await page.getByRole("button", { name: /^Empezar/u }).click();
+    const input = page.getByPlaceholder(/^Escribe tu pregunta/u);
+    await input.fill("Necesito orientacion sobre credito");
+    await page.getByRole("button", { name: "Enviar" }).click();
+    await expect(page.getByRole("alert")).toBeVisible();
+    await page.getByRole("button", { name: "Enviar" }).click();
+    expect(controls.messageKeys[1]).toBe(controls.messageKeys[0]);
+  });
+
+  test("keeps handoff and locale idempotency keys across lost responses", async ({ page }) => {
+    const controls = await mockPublicChat(page, {
+      loseFirstHandoffResponse: true,
+      loseFirstLocaleResponse: true,
+    });
+    await page.goto("/chat/");
+    await page.getByRole("checkbox").check();
+    await page.getByRole("button", { name: /^Empezar/u }).click();
+    const language = page.locator("[data-public-chat-language]");
+    await language.click();
+    await expect(page.getByRole("alert")).toBeVisible();
+    await language.click();
+    expect(controls.localeKeys[1]).toBe(controls.localeKeys[0]);
+
+    const human = page.getByRole("button", { name: "Talk to a person" });
+    await human.click();
+    await expect(page.getByRole("alert")).toBeVisible();
+    await human.click();
+    expect(controls.handoffKeys[1]).toBe(controls.handoffKeys[0]);
+  });
+
+  test("switches language before consent and starts with the selected locale", async ({ page }) => {
+    await mockPublicChat(page);
+    await page.goto("/chat/");
+    await page.locator("[data-public-chat-language]").click();
+    await expect(page.getByRole("button", { name: "Start conversation" })).toBeVisible();
+    await page.getByRole("checkbox").check();
+    await page.getByRole("button", { name: "Start conversation" }).click();
+    await expect(page.locator("[data-public-chat-root]")).toHaveAttribute("lang", "en");
+  });
+
+  test("transfers a floating conversation to the full-page chat without losing continuity", async ({
+    page,
+  }) => {
+    await mockPublicChat(page);
+    await page.goto("/");
+    await page.getByRole("button", { name: "Abrir asistente de SG Solutions" }).click();
+    await startAndSend(page, "es");
+    await page.locator("[data-public-chat-full-page]").click();
+    await expect(page).toHaveURL(/\/chat\/$/u);
+    await expect(page.getByRole("log")).toContainText(/Necesito orientaci/u);
   });
 
   test("closes immediately during a slow request and reopens as a fresh usable chat", async ({
@@ -200,7 +403,7 @@ test.describe("M003 Public Chat", () => {
   });
 
   test("ignores a delayed message response after the visitor closes the chat", async ({ page }) => {
-    await mockPublicChat(page, { slowMessage: true });
+    const controls = await mockPublicChat(page, { slowMessage: true });
     await page.goto("/");
     const launcher = page.getByRole("button", { name: "Abrir asistente de SG Solutions" });
     await launcher.click();
@@ -214,6 +417,9 @@ test.describe("M003 Public Chat", () => {
     await launcher.click();
     await expect(page.getByRole("log")).not.toContainText("Mensaje que no debe reaparecer");
     await expect(page.getByRole("log")).toContainText("Hola.");
+    expect(controls.closeKeys).toHaveLength(2);
+    expect(controls.closeKeys[1]).not.toBe(controls.closeKeys[0]);
+    expect(controls.closeVersions).toEqual([1, 2]);
   });
 
   test("announces answers politely, blocking errors assertively, and traps visible focus only", async ({

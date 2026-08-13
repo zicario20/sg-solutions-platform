@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   type AuditEvent,
@@ -14,6 +15,7 @@ import {
   type PublicChatConversation,
   type PublicKnowledgeProvider,
 } from "../../packages/domain/src/public-chat/index.ts";
+import { inspectProhibitedChatContent } from "../../packages/validation/src/public-chat.ts";
 
 const NOW = new Date("2026-08-12T18:00:00.000Z");
 
@@ -22,13 +24,30 @@ class MemoryConversationRepository implements ConversationRepository {
   readonly results = new Map<string, ChatCommandResult>();
   readonly reservations = new Map<
     string,
-    { leaseToken: string; waiters: Array<(result: ChatCommandResult) => void> }
+    {
+      kind: CommandReservation["kind"];
+      leaseToken: string;
+      waiters: Array<(result: ChatCommandResult) => void>;
+    }
   >();
+  readonly commandKinds = new Map<string, CommandReservation["kind"]>();
+  readonly commandFingerprints = new Map<string, string>();
   readonly statusWrites: Array<{ status: string; version: number }> = [];
   commitCount = 0;
 
-  async create(conversation: PublicChatConversation): Promise<void> {
+  async create(conversation: PublicChatConversation) {
+    const existing = [...this.records.values()].find(
+      (record) =>
+        record.sessionHash === conversation.sessionHash &&
+        record.startIdempotencyKey === conversation.startIdempotencyKey,
+    );
+    if (existing) {
+      return existing.startFingerprint === conversation.startFingerprint
+        ? ({ replayed: structuredClone(existing) } as const)
+        : ("conflict" as const);
+    }
     this.records.set(conversation.id, structuredClone(conversation));
+    return "created" as const;
   }
 
   async findOwned(
@@ -42,12 +61,30 @@ class MemoryConversationRepository implements ConversationRepository {
   async findCommandResult(
     conversationId: string,
     idempotencyKey: string,
-  ): Promise<ChatCommandResult | null> {
-    return structuredClone(this.results.get(`${conversationId}:${idempotencyKey}`) ?? null);
+    kind: CommandReservation["kind"],
+    fingerprint: string,
+  ): Promise<ChatCommandResult | "command_mismatch" | null> {
+    const resultKey = `${conversationId}:${idempotencyKey}`;
+    const storedKind = this.commandKinds.get(resultKey);
+    if (
+      storedKind &&
+      (storedKind !== kind || this.commandFingerprints.get(resultKey) !== fingerprint)
+    ) {
+      return "command_mismatch";
+    }
+    return structuredClone(this.results.get(resultKey) ?? null);
   }
 
   async claimCommand(command: CommandReservation) {
     const resultKey = `${command.conversationId}:${command.idempotencyKey}`;
+    const storedKind = this.commandKinds.get(resultKey);
+    if (
+      storedKind &&
+      (storedKind !== command.kind ||
+        this.commandFingerprints.get(resultKey) !== command.fingerprint)
+    ) {
+      return { status: "conflict" } as const;
+    }
     const result = this.results.get(resultKey);
     if (result) return { status: "completed", result: structuredClone(result) } as const;
     if (this.reservations.has(resultKey)) return { status: "in_progress" } as const;
@@ -56,12 +93,25 @@ class MemoryConversationRepository implements ConversationRepository {
     if (!current || current.version !== command.expectedVersion)
       return { status: "conflict" } as const;
     const leaseToken = `lease:${resultKey}`;
-    this.reservations.set(resultKey, { leaseToken, waiters: [] });
+    this.commandKinds.set(resultKey, command.kind);
+    this.commandFingerprints.set(resultKey, command.fingerprint);
+    this.reservations.set(resultKey, { kind: command.kind, leaseToken, waiters: [] });
     return { status: "claimed", leaseToken } as const;
   }
 
-  async waitForCommandResult(conversationId: string, idempotencyKey: string) {
+  async waitForCommandResult(
+    conversationId: string,
+    idempotencyKey: string,
+    kind: CommandReservation["kind"],
+    fingerprint: string,
+  ) {
     const resultKey = `${conversationId}:${idempotencyKey}`;
+    if (
+      this.commandKinds.get(resultKey) !== kind ||
+      this.commandFingerprints.get(resultKey) !== fingerprint
+    ) {
+      return null;
+    }
     const completed = this.results.get(resultKey);
     if (completed) return structuredClone(completed);
     const reservation = this.reservations.get(resultKey);
@@ -75,6 +125,7 @@ class MemoryConversationRepository implements ConversationRepository {
     const current = this.records.get(command.conversation.id);
     if (
       !reservation ||
+      reservation.kind !== command.kind ||
       reservation.leaseToken !== command.leaseToken ||
       !current ||
       current.version !== command.expectedVersion
@@ -96,6 +147,7 @@ class MemoryConversationRepository implements ConversationRepository {
     const current = this.records.get(command.conversation.id);
     if (
       !reservation ||
+      reservation.kind !== command.kind ||
       reservation.leaseToken !== command.leaseToken ||
       !current ||
       current.version !== command.expectedVersion
@@ -120,6 +172,12 @@ function createFixture(overrides?: {
   moderation?: ModerationProvider;
   model?: ChatModelProvider;
   handoff?: HumanHandoffPort;
+  sessionTtlSeconds?: number;
+  absoluteLifetimeSeconds?: number;
+  maxConversationMessages?: number;
+  providerTimeoutMilliseconds?: number;
+  commandLeaseSeconds?: number;
+  commandWaitMilliseconds?: number;
 }) {
   const repository = new MemoryConversationRepository();
   const auditEvents: AuditEvent[] = [];
@@ -179,9 +237,15 @@ function createFixture(overrides?: {
     audit: { record: async (event) => void auditEvents.push(structuredClone(event)) },
     clock: { now: () => new Date(currentNow) },
     ids: { next: (prefix) => `${prefix}_${++sequence}` },
-    sessionTtlSeconds: 1_800,
-    commandLeaseSeconds: 30,
-    commandWaitMilliseconds: 5_000,
+    commandFingerprint: {
+      digest: (payload) => createHash("sha256").update(`test-only:${payload}`).digest("hex"),
+    },
+    sessionTtlSeconds: overrides?.sessionTtlSeconds ?? 1_800,
+    absoluteLifetimeSeconds: overrides?.absoluteLifetimeSeconds ?? 86_400,
+    maxConversationMessages: overrides?.maxConversationMessages ?? 200,
+    commandLeaseSeconds: overrides?.commandLeaseSeconds ?? 30,
+    commandWaitMilliseconds: overrides?.commandWaitMilliseconds ?? 5_000,
+    providerTimeoutMilliseconds: overrides?.providerTimeoutMilliseconds ?? 5_000,
   });
 
   return {
@@ -206,6 +270,7 @@ async function startConversation(fixture: ReturnType<typeof createFixture>) {
     context: { sessionHash: "session_hash_a", correlationId: "correlation_1" },
     locale: "es",
     noticeVersion: "public-chat-notice.v1",
+    idempotencyKey: "start_conversation_0001",
   });
   if (!result.ok) throw new Error(`Unexpected start failure: ${result.code}`);
   return result.projection;
@@ -226,12 +291,50 @@ describe("M003 conversation state machine", () => {
 });
 
 describe("M003 conversation service", () => {
+  it("rejects a lease that cannot cover four provider deadlines plus completion margin", () => {
+    expect(() =>
+      createFixture({
+        providerTimeoutMilliseconds: 8_000,
+        commandLeaseSeconds: 30,
+        commandWaitMilliseconds: 1_500,
+      }),
+    ).toThrowError("PUBLIC_CHAT_COMMAND_LEASE_BUDGET_INVALID");
+
+    expect(() =>
+      createFixture({
+        providerTimeoutMilliseconds: 8_000,
+        commandLeaseSeconds: 45,
+        commandWaitMilliseconds: 1_500,
+      }),
+    ).not.toThrow();
+  });
   it("creates a notice-bound anonymous conversation without exposing its session hash", async () => {
     const fixture = createFixture();
     const projection = await startConversation(fixture);
 
     expect(projection).toMatchObject({ locale: "es", status: "new", version: 1, messages: [] });
     expect(JSON.stringify(projection)).not.toContain("session_hash_a");
+  });
+
+  it("replays one durable start request and conflicts when its payload changes", async () => {
+    const fixture = createFixture();
+    const input = {
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_start_replay" },
+      locale: "es" as const,
+      noticeVersion: "public-chat-notice.v1",
+      idempotencyKey: "start_replay_key_0001",
+    };
+    const first = await fixture.service.start(input);
+    const replayed = await fixture.service.start(input);
+    const mismatch = await fixture.service.start({ ...input, locale: "en" });
+
+    expect(first.ok).toBe(true);
+    expect(replayed).toEqual(first.ok ? { ...first, replayed: true } : first);
+    expect(mismatch).toEqual({ ok: false, code: "conflict" });
+    expect(fixture.repository.records).toHaveLength(1);
+    expect(
+      fixture.auditEvents.filter((event) => event.name === "chat_conversation_started"),
+    ).toHaveLength(1);
   });
 
   it("changes the explicit conversation locale idempotently without losing its transcript", async () => {
@@ -386,6 +489,51 @@ describe("M003 conversation service", () => {
     expect(fixture.repository.records.get(started.id)?.messages).toEqual([]);
     expect(JSON.stringify(fixture.auditEvents)).not.toContain(secret);
   });
+
+  it.each(["123456789", "123 45 6789", "１２３－４５－６７８９"])(
+    "rejects the SSN-shaped variant before knowledge or model access: %s",
+    async (identifier) => {
+      let knowledgeCalls = 0;
+      const fixture = createFixture({
+        moderation: {
+          classify: async ({ text }) => {
+            const inspection = inspectProhibitedChatContent(text);
+            return inspection.allowed
+              ? { decision: "allow" as const }
+              : { decision: "reject" as const, reason: inspection.reason };
+          },
+        },
+        knowledge: {
+          search: async () => {
+            knowledgeCalls += 1;
+            return [];
+          },
+          getByIds: async () => [],
+        },
+      });
+      const started = await startConversation(fixture);
+      const result = await fixture.service.acceptMessage({
+        context: { sessionHash: "session_hash_a", correlationId: "correlation_ssn" },
+        conversationId: started.id,
+        text: `Identifier: ${identifier}`,
+        idempotencyKey: `message_ssn_${identifier.length}`,
+        expectedVersion: started.version,
+      });
+
+      expect(result).toEqual({
+        ok: false,
+        code: "content_rejected",
+        reason: "government_identifier",
+      });
+      expect(knowledgeCalls).toBe(0);
+      expect(fixture.getModelCalls()).toBe(0);
+      expect(requireRecord(fixture.repository, started.id).messages).toEqual([]);
+      expect(JSON.stringify(fixture.auditEvents)).not.toContain(identifier);
+      expect(JSON.stringify([...fixture.repository.commandFingerprints.values()])).not.toContain(
+        identifier,
+      );
+    },
+  );
 
   it("fails closed when moderation is unavailable and never calls the model", async () => {
     const fixture = createFixture({
@@ -604,10 +752,53 @@ describe("M003 conversation service", () => {
     expect(JSON.stringify(requireRecord(fixture.repository, started.id))).not.toContain(text);
   });
 
-  it("renews expiry from the last confirmed activity instead of using an absolute start deadline", async () => {
-    const fixture = createFixture();
+  it("preserves prior transcript entries when a later model response is rejected", async () => {
+    let calls = 0;
+    const fixture = createFixture({
+      model: {
+        respond: async ({ sources }) => {
+          calls += 1;
+          return calls === 1
+            ? { status: "answered" as const, text: "Safe first answer", citations: sources }
+            : { status: "answered" as const, text: "<script>unsafe()</script>", citations: [] };
+        },
+      },
+    });
     const started = await startConversation(fixture);
-    fixture.setNow(new Date("2026-08-12T18:29:00.000Z"));
+    const first = await fixture.service.acceptMessage({
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_history_1" },
+      conversationId: started.id,
+      text: "First question",
+      idempotencyKey: "message_history_key_1",
+      expectedVersion: 1,
+    });
+    expect(first.ok).toBe(true);
+
+    const second = await fixture.service.acceptMessage({
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_history_2" },
+      conversationId: started.id,
+      text: "Second question",
+      idempotencyKey: "message_history_key_2",
+      expectedVersion: 2,
+    });
+
+    expect(second).toMatchObject({
+      ok: false,
+      code: "assistant_unavailable",
+      reason: "response_invalid",
+    });
+    const persisted = requireRecord(fixture.repository, started.id);
+    expect(persisted.messages.map(({ body, state }) => ({ body, state }))).toEqual([
+      { body: "First question", state: "accepted" },
+      { body: "Safe first answer", state: "answered" },
+      { body: "Second question", state: "failed" },
+    ]);
+  });
+
+  it("renews expiry only until the absolute conversation deadline", async () => {
+    const fixture = createFixture({ sessionTtlSeconds: 3_600, absoluteLifetimeSeconds: 3_600 });
+    const started = await startConversation(fixture);
+    fixture.setNow(new Date("2026-08-12T18:45:00.000Z"));
 
     const accepted = await fixture.service.acceptMessage({
       context: { sessionHash: "session_hash_a", correlationId: "correlation_5g" },
@@ -617,7 +808,7 @@ describe("M003 conversation service", () => {
       expectedVersion: 1,
     });
     expect(accepted.ok && accepted.projection.expiresAt.toISOString()).toBe(
-      "2026-08-12T18:59:00.000Z",
+      "2026-08-12T19:00:00.000Z",
     );
 
     fixture.setNow(new Date("2026-08-12T18:31:00.000Z"));
@@ -628,6 +819,153 @@ describe("M003 conversation service", () => {
     expect(
       await fixture.service.get({ conversationId: started.id, sessionHash: "session_hash_a" }),
     ).toEqual({ ok: false, code: "expired" });
+  });
+
+  it("caps the transcript before provider work without replaying it after revocation", async () => {
+    const fixture = createFixture({ maxConversationMessages: 200 });
+    const started = await startConversation(fixture);
+    const record = requireRecord(fixture.repository, started.id);
+    fixture.repository.records.set(started.id, {
+      ...record,
+      status: "ai_active",
+      messages: Array.from({ length: 199 }, (_, index) => ({
+        id: `existing_message_${index}`,
+        actor: index % 2 === 0 ? ("visitor" as const) : ("assistant" as const),
+        body: `Existing ${index}`,
+        state: index % 2 === 0 ? ("accepted" as const) : ("answered" as const),
+        citations: [],
+        actions: [],
+        createdAt: NOW,
+      })),
+    });
+    const command = {
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_limit" },
+      conversationId: started.id,
+      text: "One more question",
+      idempotencyKey: "message_limit_key_1",
+      expectedVersion: 1,
+    };
+
+    const first = await fixture.service.acceptMessage(command);
+    const replayed = await fixture.service.acceptMessage(command);
+
+    expect(first).toMatchObject({
+      ok: false,
+      code: "conversation_limit_reached",
+      projection: { status: "restricted", messages: expect.arrayContaining([]) },
+    });
+    expect(first.ok || first.projection?.messages).toHaveLength(199);
+    expect(replayed).toEqual({ ok: false, code: "revoked" });
+    expect(fixture.getModelCalls()).toBe(0);
+    expect(requireRecord(fixture.repository, started.id)).toMatchObject({
+      status: "restricted",
+      revokedAt: NOW,
+    });
+    await expect(
+      fixture.service.acceptMessage({
+        ...command,
+        idempotencyKey: "message_limit_key_new",
+        expectedVersion: 2,
+      }),
+    ).resolves.toEqual({ ok: false, code: "revoked" });
+  });
+
+  it("does not replay a completed projection after the conversation expires", async () => {
+    const fixture = createFixture({ sessionTtlSeconds: 60 });
+    const started = await startConversation(fixture);
+    const command = {
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_expired_replay" },
+      conversationId: started.id,
+      text: "Can you help?",
+      idempotencyKey: "message_expired_replay_1",
+      expectedVersion: 1,
+    };
+    expect((await fixture.service.acceptMessage(command)).ok).toBe(true);
+    fixture.setNow(new Date("2026-08-12T18:01:01.000Z"));
+    await expect(fixture.service.acceptMessage(command)).resolves.toEqual({
+      ok: false,
+      code: "expired",
+    });
+  });
+
+  it("bounds knowledge, model and handoff providers that never resolve", async () => {
+    const never = new Promise<never>(() => undefined);
+
+    const knowledgeFixture = createFixture({
+      providerTimeoutMilliseconds: 10,
+      knowledge: { search: async () => never, getByIds: async () => [] },
+    });
+    const knowledgeStarted = await startConversation(knowledgeFixture);
+    await expect(
+      knowledgeFixture.service.acceptMessage({
+        context: { sessionHash: "session_hash_a", correlationId: "correlation_timeout_knowledge" },
+        conversationId: knowledgeStarted.id,
+        text: "Knowledge timeout",
+        idempotencyKey: "message_timeout_knowledge",
+        expectedVersion: 1,
+      }),
+    ).resolves.toMatchObject({ ok: false, code: "knowledge_unavailable" });
+
+    const modelFixture = createFixture({
+      providerTimeoutMilliseconds: 10,
+      model: { respond: async () => never },
+    });
+    const modelStarted = await startConversation(modelFixture);
+    await expect(
+      modelFixture.service.acceptMessage({
+        context: { sessionHash: "session_hash_a", correlationId: "correlation_timeout_model" },
+        conversationId: modelStarted.id,
+        text: "Model timeout",
+        idempotencyKey: "message_timeout_model",
+        expectedVersion: 1,
+      }),
+    ).resolves.toMatchObject({ ok: false, code: "assistant_unavailable", reason: "timeout" });
+
+    const handoffFixture = createFixture({
+      providerTimeoutMilliseconds: 10,
+      handoff: { enqueue: async () => never },
+    });
+    const handoffStarted = await startConversation(handoffFixture);
+    await expect(
+      handoffFixture.service.requestHandoff({
+        context: { sessionHash: "session_hash_a", correlationId: "correlation_timeout_handoff" },
+        conversationId: handoffStarted.id,
+        reason: "visitor_requested",
+        idempotencyKey: "handoff_timeout_provider",
+        expectedVersion: 1,
+      }),
+    ).resolves.toMatchObject({ ok: false, code: "handoff_unavailable" });
+  });
+
+  it("allows the final exchange when exactly two transcript slots remain", async () => {
+    const fixture = createFixture({ maxConversationMessages: 200 });
+    const started = await startConversation(fixture);
+    const record = requireRecord(fixture.repository, started.id);
+    fixture.repository.records.set(started.id, {
+      ...record,
+      status: "ai_active",
+      messages: Array.from({ length: 198 }, (_, index) => ({
+        id: `existing_message_${index}`,
+        actor: index % 2 === 0 ? ("visitor" as const) : ("assistant" as const),
+        body: `Existing ${index}`,
+        state: index % 2 === 0 ? ("accepted" as const) : ("answered" as const),
+        citations: [],
+        actions: [],
+        createdAt: NOW,
+      })),
+    });
+
+    const result = await fixture.service.acceptMessage({
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_limit_edge" },
+      conversationId: started.id,
+      text: "Final bounded question",
+      idempotencyKey: "message_limit_key_2",
+      expectedVersion: 1,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.projection.messages).toHaveLength(200);
+    expect(fixture.getModelCalls()).toBe(1);
   });
 
   it("reserves an idempotency key before model work so concurrent duplicates share one result", async () => {
@@ -670,8 +1008,107 @@ describe("M003 conversation service", () => {
     expect(second).toEqual(first.ok ? { ...first, replayed: true } : first);
   });
 
-  it("claims a queued handoff only after receiving a durable receipt", async () => {
+  it("rejects reuse of a message idempotency key for handoff or close", async () => {
     const fixture = createFixture();
+    const started = await startConversation(fixture);
+    const idempotencyKey = "cross_kind_command_key";
+    const accepted = await fixture.service.acceptMessage({
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_cross_kind" },
+      conversationId: started.id,
+      text: "What services are available?",
+      idempotencyKey,
+      expectedVersion: started.version,
+    });
+    if (!accepted.ok) throw new Error(`Unexpected message failure: ${accepted.code}`);
+
+    await expect(
+      fixture.service.requestHandoff({
+        context: { sessionHash: "session_hash_a", correlationId: "correlation_cross_kind" },
+        conversationId: started.id,
+        reason: "visitor_requested",
+        idempotencyKey,
+        expectedVersion: accepted.projection.version,
+      }),
+    ).resolves.toEqual({ ok: false, code: "conflict" });
+    await expect(
+      fixture.service.close({
+        context: { sessionHash: "session_hash_a", correlationId: "correlation_cross_kind" },
+        conversationId: started.id,
+        idempotencyKey,
+        expectedVersion: accepted.projection.version,
+      }),
+    ).resolves.toEqual({ ok: false, code: "conflict" });
+    const persisted = requireRecord(fixture.repository, started.id);
+    expect(persisted.status).toBe("ai_active");
+    expect(persisted).not.toHaveProperty("revokedAt");
+    expect(persisted).not.toHaveProperty("closedAt");
+  });
+
+  it("rejects same-kind idempotency reuse when the canonical payload changes", async () => {
+    const fixture = createFixture();
+    const started = await startConversation(fixture);
+    const idempotencyKey = "same_kind_payload_key";
+    const accepted = await fixture.service.acceptMessage({
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_same_kind" },
+      conversationId: started.id,
+      text: "First public question",
+      idempotencyKey,
+      expectedVersion: started.version,
+    });
+    if (!accepted.ok) throw new Error(`Unexpected message failure: ${accepted.code}`);
+
+    await expect(
+      fixture.service.acceptMessage({
+        context: { sessionHash: "session_hash_a", correlationId: "correlation_same_kind" },
+        conversationId: started.id,
+        text: "Different public question",
+        idempotencyKey,
+        expectedVersion: accepted.projection.version,
+      }),
+    ).resolves.toEqual({ ok: false, code: "conflict" });
+    const storedFingerprint = fixture.repository.commandFingerprints.get(
+      `${started.id}:${idempotencyKey}`,
+    );
+    expect(storedFingerprint).toMatch(/^[a-f0-9]{64}$/u);
+    expect(storedFingerprint).not.toContain("First public question");
+    expect(fixture.getModelCalls()).toBe(1);
+  });
+
+  it("does not replay one handoff reason as another", async () => {
+    const fixture = createFixture();
+    const started = await startConversation(fixture);
+    const idempotencyKey = "handoff_reason_payload_key";
+    const first = await fixture.service.requestHandoff({
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_reason" },
+      conversationId: started.id,
+      reason: "visitor_requested",
+      idempotencyKey,
+      expectedVersion: started.version,
+    });
+    if (!first.ok) throw new Error(`Unexpected handoff failure: ${first.code}`);
+
+    await expect(
+      fixture.service.requestHandoff({
+        context: { sessionHash: "session_hash_a", correlationId: "correlation_reason" },
+        conversationId: started.id,
+        reason: "safety",
+        idempotencyKey,
+        expectedVersion: first.projection.version,
+      }),
+    ).resolves.toEqual({ ok: false, code: "conflict" });
+  });
+
+  it("claims a queued handoff only after receiving a durable receipt", async () => {
+    const providerQueuedAt = new Date("2026-08-12T18:00:17.000Z");
+    const fixture = createFixture({
+      handoff: {
+        enqueue: async () => ({
+          status: "queued",
+          receiptId: "handoff_receipt_1",
+          queuedAt: providerQueuedAt,
+        }),
+      },
+    });
     const started = await startConversation(fixture);
     const record = requireRecord(fixture.repository, started.id);
     fixture.repository.records.set(started.id, { ...record, status: "ai_active" });
@@ -686,10 +1123,29 @@ describe("M003 conversation service", () => {
 
     expect(result.ok && result.projection.status).toBe("waiting_for_human");
     expect(fixture.repository.records.get(started.id)?.handoffReceiptId).toBe("handoff_receipt_1");
+    expect(fixture.repository.records.get(started.id)?.handoffQueuedAt).toEqual(providerQueuedAt);
     expect(fixture.repository.statusWrites).toEqual([
       { status: "human_requested", version: 2 },
       { status: "waiting_for_human", version: 3 },
     ]);
+  });
+
+  it("accepts a human-support request immediately after conversation start", async () => {
+    const fixture = createFixture();
+    const started = await startConversation(fixture);
+
+    const result = await fixture.service.requestHandoff({
+      context: { sessionHash: "session_hash_a", correlationId: "correlation_human_first" },
+      conversationId: started.id,
+      reason: "visitor_requested",
+      idempotencyKey: "handoff_first_action",
+      expectedVersion: started.version,
+    });
+
+    expect(result.ok && result.projection.status).toBe("waiting_for_human");
+    expect(requireRecord(fixture.repository, started.id).handoffReceiptId).toBe(
+      "handoff_receipt_1",
+    );
   });
 
   it("keeps handoff unconfirmed when no durable receipt exists", async () => {
@@ -795,7 +1251,7 @@ describe("M003 conversation service", () => {
     const replay = await fixture.service.close(command);
 
     expect(first.ok && first.projection.status).toBe("closed");
-    expect(replay).toEqual(first.ok ? { ...first, replayed: true } : first);
+    expect(replay).toEqual({ ok: false, code: "revoked" });
     expect(fixture.repository.commitCount).toBe(1);
   });
 });

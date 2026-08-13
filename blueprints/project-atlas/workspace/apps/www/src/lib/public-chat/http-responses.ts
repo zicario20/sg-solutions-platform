@@ -16,6 +16,7 @@ const DOMAIN_STATUS: Record<string, number> = {
   revoked: 401,
   conflict: 409,
   command_in_progress: 409,
+  conversation_limit_reached: 409,
   invalid_transition: 409,
   human_active: 409,
   content_rejected: 422,
@@ -52,8 +53,22 @@ export function domainResponse(
   result: ChatCommandResult,
   correlationId: string,
   successStatus = 200,
+  headers?: HeadersInit,
 ): Response {
   if (result.ok)
-    return jsonResponse({ ok: true, data: result.projection, correlationId }, successStatus);
-  return errorResponse(result.code, DOMAIN_STATUS[result.code] ?? 500, correlationId);
+    return jsonResponse(
+      { ok: true, data: result.projection, replayed: result.replayed, correlationId },
+      successStatus,
+      headers,
+    );
+  return jsonResponse(
+    {
+      ok: false,
+      code: result.code,
+      ...(result.projection ? { data: result.projection } : {}),
+      correlationId,
+    },
+    DOMAIN_STATUS[result.code] ?? 500,
+    headers,
+  );
 }

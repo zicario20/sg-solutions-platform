@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["PLAYWRIGHT_BASE_URL", "RELEASE_GATE"],
+  "globalEnv": ["M003_POSTGRES_INTEGRATION_URL", "PLAYWRIGHT_BASE_URL", "RELEASE_GATE"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

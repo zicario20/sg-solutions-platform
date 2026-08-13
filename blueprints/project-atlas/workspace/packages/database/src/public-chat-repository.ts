@@ -13,6 +13,8 @@ export type TranscriptPersistence = "metadata_only" | "approved";
 type StoredCommand = {
   conversationId: string;
   idempotencyKey: string;
+  kind: CommandReservation["kind"];
+  fingerprint: string;
   state: "in_progress" | "completed";
   expectedVersion: number;
   leaseTokenHash: string;
@@ -57,7 +59,9 @@ export type StoredHandoffRow = {
 };
 
 export interface PublicChatTransactionalStore {
-  createConversation(conversation: PublicChatConversation): Promise<void>;
+  createConversation(
+    conversation: PublicChatConversation,
+  ): Promise<"created" | "conflict" | { replayed: PublicChatConversation }>;
   findOwnedConversation(
     conversationId: string,
     sessionHash: string,
@@ -65,7 +69,9 @@ export interface PublicChatTransactionalStore {
   findCommandResult(
     conversationId: string,
     idempotencyKey: string,
-  ): Promise<ChatCommandResult | null>;
+    kind: CommandReservation["kind"],
+    fingerprint: string,
+  ): Promise<ChatCommandResult | "command_mismatch" | null>;
   claimCommand(
     command: CommandReservation,
     leaseToken: string,
@@ -79,6 +85,8 @@ export interface PublicChatTransactionalStore {
   waitForCommandResult(
     conversationId: string,
     idempotencyKey: string,
+    kind: CommandReservation["kind"],
+    fingerprint: string,
     waitUntil: Date,
   ): Promise<ChatCommandResult | null>;
   advanceCommand(
@@ -182,7 +190,7 @@ function normalizeRows(
       reason: conversation.handoffReason ?? "policy_required",
       receiptId: conversation.handoffReceiptId ?? null,
       requestedAt: conversation.updatedAt,
-      queuedAt: conversation.handoffReceiptId ? conversation.updatedAt : null,
+      queuedAt: conversation.handoffQueuedAt ?? null,
       updatedAt: conversation.updatedAt,
     });
   }
@@ -203,8 +211,19 @@ export function createMemoryPublicChatStore(): MemoryPublicChatStore {
     handoffs,
 
     async createConversation(conversation) {
+      const existing = [...conversations.values()].find(
+        (record) =>
+          record.sessionHash === conversation.sessionHash &&
+          record.startIdempotencyKey === conversation.startIdempotencyKey,
+      );
+      if (existing) {
+        return existing.startFingerprint === conversation.startFingerprint
+          ? ({ replayed: cloneConversation(existing) } as const)
+          : ("conflict" as const);
+      }
       if (conversations.has(conversation.id)) throw new Error("CONVERSATION_ALREADY_EXISTS");
       conversations.set(conversation.id, cloneConversation(conversation));
+      return "created" as const;
     },
 
     async findOwnedConversation(conversationId, sessionHash) {
@@ -212,8 +231,11 @@ export function createMemoryPublicChatStore(): MemoryPublicChatStore {
       return conversation?.sessionHash === sessionHash ? cloneConversation(conversation) : null;
     },
 
-    async findCommandResult(conversationId, idempotencyKey) {
+    async findCommandResult(conversationId, idempotencyKey, kind, fingerprint) {
       const command = commands.get(commandKey(conversationId, idempotencyKey));
+      if (command && (command.kind !== kind || command.fingerprint !== fingerprint)) {
+        return "command_mismatch";
+      }
       return command?.state === "completed" && command.result
         ? structuredClone(command.result)
         : null;
@@ -222,6 +244,12 @@ export function createMemoryPublicChatStore(): MemoryPublicChatStore {
     async claimCommand(command, _leaseToken, leaseTokenHash) {
       const key = commandKey(command.conversationId, command.idempotencyKey);
       const existing = commands.get(key);
+      if (
+        existing &&
+        (existing.kind !== command.kind || existing.fingerprint !== command.fingerprint)
+      ) {
+        return { status: "conflict" };
+      }
       if (existing?.state === "completed" && existing.result) {
         return { status: "completed", result: structuredClone(existing.result) };
       }
@@ -233,6 +261,8 @@ export function createMemoryPublicChatStore(): MemoryPublicChatStore {
       commands.set(key, {
         conversationId: command.conversationId,
         idempotencyKey: command.idempotencyKey,
+        kind: command.kind,
+        fingerprint: command.fingerprint,
         state: "in_progress",
         expectedVersion: command.expectedVersion,
         leaseTokenHash,
@@ -243,9 +273,10 @@ export function createMemoryPublicChatStore(): MemoryPublicChatStore {
       return { status: "claimed" };
     },
 
-    async waitForCommandResult(conversationId, idempotencyKey, waitUntil) {
+    async waitForCommandResult(conversationId, idempotencyKey, kind, fingerprint, waitUntil) {
       const command = commands.get(commandKey(conversationId, idempotencyKey));
       if (!command) return null;
+      if (command.kind !== kind || command.fingerprint !== fingerprint) return null;
       if (command.state === "completed" && command.result) return structuredClone(command.result);
       const remaining = Math.max(0, waitUntil.getTime() - Date.now());
       return new Promise<ChatCommandResult | null>((resolve) => {
@@ -328,8 +359,8 @@ export function createPostgresConversationRepository(
     create: (conversation) => store.createConversation(cloneConversation(conversation)),
     findOwned: (conversationId, sessionHash) =>
       store.findOwnedConversation(conversationId, sessionHash),
-    findCommandResult: (conversationId, idempotencyKey) =>
-      store.findCommandResult(conversationId, idempotencyKey),
+    findCommandResult: (conversationId, idempotencyKey, kind, fingerprint) =>
+      store.findCommandResult(conversationId, idempotencyKey, kind, fingerprint),
 
     async claimCommand(command) {
       const leaseToken = createLeaseToken();
@@ -338,8 +369,8 @@ export function createPostgresConversationRepository(
       return claimed.status === "claimed" ? { status: "claimed", leaseToken } : claimed;
     },
 
-    waitForCommandResult: (conversationId, idempotencyKey, waitUntil) =>
-      store.waitForCommandResult(conversationId, idempotencyKey, waitUntil),
+    waitForCommandResult: (conversationId, idempotencyKey, kind, fingerprint, waitUntil) =>
+      store.waitForCommandResult(conversationId, idempotencyKey, kind, fingerprint, waitUntil),
 
     async advanceClaimedCommand(command) {
       return store.advanceCommand(

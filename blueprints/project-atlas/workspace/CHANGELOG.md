@@ -6,6 +6,12 @@
 
 ## Unreleased
 
+- Built and locally verified the provider-disabled M003 Public Chat on its isolated branch: bilingual
+  accessible UI, same-origin Astro gateway, hardened anonymous session/CSRF/rate-limit boundary,
+  M002-grounded deterministic orientation, metadata-only persistence, Drizzle/RLS, HMAC-bound
+  idempotency and safe handoff/fallback behavior. External activation, deployment and release remain
+  deferred pending Product Owner decisions.
+
 - Recorded Decision 028: bounded sequential `GENERATE` for M003–M005 with provider activation,
   credentials, live traffic and production release still deferred.
 - Documentary architecture baseline prepared.

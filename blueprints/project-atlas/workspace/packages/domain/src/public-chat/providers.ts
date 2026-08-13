@@ -3,6 +3,7 @@ import type { ChatLocale, PublicChatAction, PublicCitation } from "./contracts.t
 export type KnowledgeSearchInput = {
   locale: ChatLocale;
   query: string;
+  signal?: AbortSignal;
 };
 
 export interface PublicKnowledgeProvider {
@@ -31,7 +32,11 @@ export type ModerationResult =
   | { decision: "unavailable" };
 
 export interface ModerationProvider {
-  classify(input: { text: string; locale: ChatLocale }): Promise<ModerationResult>;
+  classify(input: {
+    text: string;
+    locale: ChatLocale;
+    signal?: AbortSignal;
+  }): Promise<ModerationResult>;
 }
 
 export type ModelResponse =
@@ -48,6 +53,7 @@ export interface ChatModelProvider {
     locale: ChatLocale;
     message: string;
     sources: PublicCitation[];
+    signal?: AbortSignal;
   }): Promise<ModelResponse>;
 }
 
@@ -69,6 +75,7 @@ export interface HumanHandoffPort {
     reason: HandoffReason;
     correlationId: string;
     idempotencyKey: string;
+    signal?: AbortSignal;
   }): Promise<HandoffResult>;
 }
 

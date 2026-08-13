@@ -18,10 +18,32 @@ ALTER TABLE "public_chat_citations" FORCE ROW LEVEL SECURITY;--> statement-break
 ALTER TABLE "public_chat_handoffs" FORCE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "public_chat_idempotency" FORCE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "public_chat_audit_events" FORCE ROW LEVEL SECURITY;--> statement-breakpoint
-REVOKE ALL ON TABLE "public_chat_sessions" FROM PUBLIC, anon, authenticated;--> statement-breakpoint
-REVOKE ALL ON TABLE "public_chat_conversations" FROM PUBLIC, anon, authenticated;--> statement-breakpoint
-REVOKE ALL ON TABLE "public_chat_messages" FROM PUBLIC, anon, authenticated;--> statement-breakpoint
-REVOKE ALL ON TABLE "public_chat_citations" FROM PUBLIC, anon, authenticated;--> statement-breakpoint
-REVOKE ALL ON TABLE "public_chat_handoffs" FROM PUBLIC, anon, authenticated;--> statement-breakpoint
-REVOKE ALL ON TABLE "public_chat_idempotency" FROM PUBLIC, anon, authenticated;--> statement-breakpoint
-REVOKE ALL ON TABLE "public_chat_audit_events" FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE "public_chat_sessions" FROM PUBLIC;--> statement-breakpoint
+REVOKE ALL ON TABLE "public_chat_conversations" FROM PUBLIC;--> statement-breakpoint
+REVOKE ALL ON TABLE "public_chat_messages" FROM PUBLIC;--> statement-breakpoint
+REVOKE ALL ON TABLE "public_chat_citations" FROM PUBLIC;--> statement-breakpoint
+REVOKE ALL ON TABLE "public_chat_handoffs" FROM PUBLIC;--> statement-breakpoint
+REVOKE ALL ON TABLE "public_chat_idempotency" FROM PUBLIC;--> statement-breakpoint
+REVOKE ALL ON TABLE "public_chat_audit_events" FROM PUBLIC;--> statement-breakpoint
+DO $$
+DECLARE
+  browser_role text;
+  chat_table text;
+BEGIN
+  FOREACH browser_role IN ARRAY ARRAY['anon', 'authenticated'] LOOP
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = browser_role) THEN
+      FOREACH chat_table IN ARRAY ARRAY[
+        'public_chat_sessions',
+        'public_chat_conversations',
+        'public_chat_messages',
+        'public_chat_citations',
+        'public_chat_handoffs',
+        'public_chat_idempotency',
+        'public_chat_audit_events'
+      ] LOOP
+        EXECUTE format('REVOKE ALL ON TABLE %I FROM %I', chat_table, browser_role);
+      END LOOP;
+    END IF;
+  END LOOP;
+END
+$$;

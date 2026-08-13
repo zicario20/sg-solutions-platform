@@ -1,6 +1,6 @@
 {
-  "id": "83e85bcb-35d9-489c-b114-adbc4f7203b1",
-  "prevId": "6d9092cd-25f8-44bb-982f-6eb14c0a296f",
+  "id": "2dda01e5-3e92-4d83-ab75-a87021227c27",
+  "prevId": "51c70496-edeb-4f94-9d8a-83f00aa2d79a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -86,11 +86,11 @@
       "policies": {
         "public_chat_audit_events_server_gateway_only": {
           "name": "public_chat_audit_events_server_gateway_only",
-          "as": "RESTRICTIVE",
+          "as": "PERMISSIVE",
           "for": "ALL",
-          "to": ["public"],
-          "using": "false",
-          "withCheck": "false"
+          "to": ["atlas_public_chat_gateway"],
+          "using": "true",
+          "withCheck": "true"
         }
       },
       "checkConstraints": {
@@ -189,11 +189,11 @@
       "policies": {
         "public_chat_citations_server_gateway_only": {
           "name": "public_chat_citations_server_gateway_only",
-          "as": "RESTRICTIVE",
+          "as": "PERMISSIVE",
           "for": "ALL",
-          "to": ["public"],
-          "using": "false",
-          "withCheck": "false"
+          "to": ["atlas_public_chat_gateway"],
+          "using": "true",
+          "withCheck": "true"
         }
       },
       "checkConstraints": {
@@ -254,6 +254,18 @@
           "primaryKey": false,
           "notNull": true
         },
+        "start_idempotency_key": {
+          "name": "start_idempotency_key",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_fingerprint": {
+          "name": "start_fingerprint",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
         "last_activity_at": {
           "name": "last_activity_at",
           "type": "timestamp with time zone",
@@ -275,6 +287,12 @@
         "handoff_receipt_id": {
           "name": "handoff_receipt_id",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "handoff_reason": {
+          "name": "handoff_reason",
+          "type": "varchar(48)",
           "primaryKey": false,
           "notNull": false
         },
@@ -348,15 +366,21 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "public_chat_conversations_session_start_key_unique": {
+          "name": "public_chat_conversations_session_start_key_unique",
+          "nullsNotDistinct": false,
+          "columns": ["session_id", "start_idempotency_key"]
+        }
+      },
       "policies": {
         "public_chat_conversations_server_gateway_only": {
           "name": "public_chat_conversations_server_gateway_only",
-          "as": "RESTRICTIVE",
+          "as": "PERMISSIVE",
           "for": "ALL",
-          "to": ["public"],
-          "using": "false",
-          "withCheck": "false"
+          "to": ["atlas_public_chat_gateway"],
+          "using": "true",
+          "withCheck": "true"
         }
       },
       "checkConstraints": {
@@ -375,6 +399,14 @@
         "public_chat_conversations_expiry_valid": {
           "name": "public_chat_conversations_expiry_valid",
           "value": "\"public_chat_conversations\".\"expires_at\" > \"public_chat_conversations\".\"created_at\""
+        },
+        "public_chat_conversations_handoff_reason_valid": {
+          "name": "public_chat_conversations_handoff_reason_valid",
+          "value": "\"public_chat_conversations\".\"handoff_reason\" is null or \"public_chat_conversations\".\"handoff_reason\" in ('visitor_requested', 'complaint', 'safety', 'policy_required', 'assistant_unavailable')"
+        },
+        "public_chat_conversations_handoff_state_valid": {
+          "name": "public_chat_conversations_handoff_state_valid",
+          "value": "(\"public_chat_conversations\".\"status\" in ('human_requested', 'waiting_for_human') and \"public_chat_conversations\".\"handoff_reason\" is not null) or (\"public_chat_conversations\".\"status\" not in ('human_requested', 'waiting_for_human'))"
         }
       },
       "isRLSEnabled": true
@@ -471,11 +503,11 @@
       "policies": {
         "public_chat_handoffs_server_gateway_only": {
           "name": "public_chat_handoffs_server_gateway_only",
-          "as": "RESTRICTIVE",
+          "as": "PERMISSIVE",
           "for": "ALL",
-          "to": ["public"],
-          "using": "false",
-          "withCheck": "false"
+          "to": ["atlas_public_chat_gateway"],
+          "using": "true",
+          "withCheck": "true"
         }
       },
       "checkConstraints": {
@@ -505,6 +537,18 @@
         "idempotency_key": {
           "name": "idempotency_key",
           "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "command_kind": {
+          "name": "command_kind",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "command_fingerprint": {
+          "name": "command_fingerprint",
+          "type": "varchar(64)",
           "primaryKey": false,
           "notNull": true
         },
@@ -602,17 +646,21 @@
       "policies": {
         "public_chat_idempotency_server_gateway_only": {
           "name": "public_chat_idempotency_server_gateway_only",
-          "as": "RESTRICTIVE",
+          "as": "PERMISSIVE",
           "for": "ALL",
-          "to": ["public"],
-          "using": "false",
-          "withCheck": "false"
+          "to": ["atlas_public_chat_gateway"],
+          "using": "true",
+          "withCheck": "true"
         }
       },
       "checkConstraints": {
         "public_chat_idempotency_state_valid": {
           "name": "public_chat_idempotency_state_valid",
           "value": "\"public_chat_idempotency\".\"state\" in ('in_progress', 'completed')"
+        },
+        "public_chat_idempotency_command_kind_valid": {
+          "name": "public_chat_idempotency_command_kind_valid",
+          "value": "\"public_chat_idempotency\".\"command_kind\" in ('message', 'handoff', 'locale', 'close')"
         },
         "public_chat_idempotency_completion_valid": {
           "name": "public_chat_idempotency_completion_valid",
@@ -733,11 +781,11 @@
       "policies": {
         "public_chat_messages_server_gateway_only": {
           "name": "public_chat_messages_server_gateway_only",
-          "as": "RESTRICTIVE",
+          "as": "PERMISSIVE",
           "for": "ALL",
-          "to": ["public"],
-          "using": "false",
-          "withCheck": "false"
+          "to": ["atlas_public_chat_gateway"],
+          "using": "true",
+          "withCheck": "true"
         }
       },
       "checkConstraints": {
@@ -752,6 +800,83 @@
         "public_chat_messages_body_retention_valid": {
           "name": "public_chat_messages_body_retention_valid",
           "value": "(\"public_chat_messages\".\"body_stored\" = true and \"public_chat_messages\".\"body\" is not null) or (\"public_chat_messages\".\"body_stored\" = false and \"public_chat_messages\".\"body\" is null)"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.public_chat_rate_limits": {
+      "name": "public_chat_rate_limits",
+      "schema": "",
+      "columns": {
+        "bucket_hash": {
+          "name": "bucket_hash",
+          "type": "char(64)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "window_started_at": {
+          "name": "window_started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "public_chat_rate_limits_expiry_idx": {
+          "name": "public_chat_rate_limits_expiry_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "public_chat_rate_limits_server_gateway_only": {
+          "name": "public_chat_rate_limits_server_gateway_only",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["atlas_public_chat_gateway"],
+          "using": "true",
+          "withCheck": "true"
+        }
+      },
+      "checkConstraints": {
+        "public_chat_rate_limits_count_positive": {
+          "name": "public_chat_rate_limits_count_positive",
+          "value": "\"public_chat_rate_limits\".\"count\" > 0"
+        },
+        "public_chat_rate_limits_window_valid": {
+          "name": "public_chat_rate_limits_window_valid",
+          "value": "\"public_chat_rate_limits\".\"expires_at\" > \"public_chat_rate_limits\".\"window_started_at\""
         }
       },
       "isRLSEnabled": true
@@ -775,6 +900,12 @@
         "csrf_hash": {
           "name": "csrf_hash",
           "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "correlation_id": {
+          "name": "correlation_id",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -832,11 +963,11 @@
       "policies": {
         "public_chat_sessions_server_gateway_only": {
           "name": "public_chat_sessions_server_gateway_only",
-          "as": "RESTRICTIVE",
+          "as": "PERMISSIVE",
           "for": "ALL",
-          "to": ["public"],
-          "using": "false",
-          "withCheck": "false"
+          "to": ["atlas_public_chat_gateway"],
+          "using": "true",
+          "withCheck": "true"
         }
       },
       "checkConstraints": {},

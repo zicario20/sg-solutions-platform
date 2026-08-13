@@ -144,6 +144,18 @@ describe("M003 M002 public knowledge adapter", () => {
     const results = await provider.search({ locale: "es", query: "crédito" });
     expect(results).toHaveLength(3);
   });
+
+  it("re-evaluates freshness on every search in a warm runtime", async () => {
+    let now = new Date("2026-08-31T23:59:59.000Z");
+    const provider = createM002KnowledgeProvider(
+      [record("expires-during-runtime", { nextReviewAt: "2026-09-01" })],
+      () => now,
+    );
+
+    await expect(provider.search({ locale: "es", query: "crÃ©dito" })).resolves.toHaveLength(1);
+    now = new Date("2026-09-02T00:00:00.000Z");
+    await expect(provider.search({ locale: "es", query: "crÃ©dito" })).resolves.toEqual([]);
+  });
 });
 
 describe("M003 deterministic orientation", () => {

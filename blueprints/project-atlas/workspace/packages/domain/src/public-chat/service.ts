@@ -6,6 +6,7 @@ import type {
   ChatCommandSuccess,
   ChatLocale,
   Clock,
+  CommandFingerprintPort,
   ConversationRepository,
   IdFactory,
   PublicChatAction,
@@ -37,9 +38,13 @@ export type ConversationServiceDependencies = {
   audit: AuditPort;
   clock: Clock;
   ids: IdFactory;
+  commandFingerprint: CommandFingerprintPort;
   sessionTtlSeconds: number;
+  absoluteLifetimeSeconds: number;
+  maxConversationMessages: number;
   commandLeaseSeconds: number;
   commandWaitMilliseconds: number;
+  providerTimeoutMilliseconds: number;
 };
 
 type OwnedConversationResult =
@@ -72,6 +77,30 @@ const HANDOFF_REASONS = new Set<HandoffReason>([
   "policy_required",
   "assistant_unavailable",
 ]);
+const PROVIDER_TIMEOUT = Symbol("provider_timeout");
+const PROVIDER_CALLS_PER_MESSAGE = 4;
+const COMMAND_COMPLETION_MARGIN_MILLISECONDS = 5_000;
+
+async function withProviderTimeout<T>(
+  timeoutMilliseconds: number,
+  operation: (signal: AbortSignal) => Promise<T>,
+): Promise<T | typeof PROVIDER_TIMEOUT> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      operation(controller.signal),
+      new Promise<typeof PROVIDER_TIMEOUT>((resolve) => {
+        timer = setTimeout(() => {
+          controller.abort();
+          resolve(PROVIDER_TIMEOUT);
+        }, timeoutMilliseconds);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 function project(conversation: PublicChatConversation): PublicChatProjection {
   return {
@@ -95,13 +124,16 @@ function withActivity(
   conversation: PublicChatConversation,
   now: Date,
   sessionTtlSeconds: number,
+  absoluteLifetimeSeconds: number,
 ): PublicChatConversation {
+  const slidingDeadline = now.getTime() + sessionTtlSeconds * 1_000;
+  const absoluteDeadline = conversation.createdAt.getTime() + absoluteLifetimeSeconds * 1_000;
   return {
     ...conversation,
     version: conversation.version + 1,
     updatedAt: now,
     lastActivityAt: now,
-    expiresAt: new Date(now.getTime() + sessionTtlSeconds * 1_000),
+    expiresAt: new Date(Math.min(slidingDeadline, absoluteDeadline)),
   };
 }
 
@@ -174,9 +206,13 @@ function resolvePublicActions(
 async function classifySafely(
   provider: ModerationProvider,
   input: { text: string; locale: ChatLocale },
+  timeoutMilliseconds: number,
 ): Promise<ModerationResult> {
   try {
-    const result: ModerationResult = await provider.classify(input);
+    const result = await withProviderTimeout(timeoutMilliseconds, (signal) =>
+      provider.classify({ ...input, signal }),
+    );
+    if (result === PROVIDER_TIMEOUT) return { decision: "unavailable" };
     switch (result.decision) {
       case "allow":
       case "unavailable":
@@ -196,9 +232,13 @@ async function classifySafely(
 async function searchSafely(
   provider: PublicKnowledgeProvider,
   input: { locale: ChatLocale; query: string },
+  timeoutMilliseconds: number,
 ) {
   try {
-    return await provider.search(input);
+    const result = await withProviderTimeout(timeoutMilliseconds, (signal) =>
+      provider.search({ ...input, signal }),
+    );
+    return result === PROVIDER_TIMEOUT ? ({ status: "unavailable" } as const) : result;
   } catch {
     return { status: "unavailable" } as const;
   }
@@ -207,9 +247,13 @@ async function searchSafely(
 async function respondSafely(
   provider: ChatModelProvider,
   input: { locale: ChatLocale; message: string; sources: PublicCitation[] },
+  timeoutMilliseconds: number,
 ): Promise<ModelResponse> {
   try {
-    const result: ModelResponse = await provider.respond(input);
+    const result = await withProviderTimeout(timeoutMilliseconds, (signal) =>
+      provider.respond({ ...input, signal }),
+    );
+    if (result === PROVIDER_TIMEOUT) return { status: "unavailable", reason: "timeout" };
     if (result.status === "unavailable") {
       return { status: "unavailable", reason: normalizeModelReason(result.reason) };
     }
@@ -236,9 +280,13 @@ async function respondSafely(
 async function enqueueSafely(
   provider: HumanHandoffPort,
   input: Parameters<HumanHandoffPort["enqueue"]>[0],
+  timeoutMilliseconds: number,
 ): Promise<HandoffResult> {
   try {
-    const result = await provider.enqueue(input);
+    const result = await withProviderTimeout(timeoutMilliseconds, (signal) =>
+      provider.enqueue({ ...input, signal }),
+    );
+    if (result === PROVIDER_TIMEOUT) return { status: "unavailable" };
     if (
       result.status === "queued" &&
       typeof result.receiptId === "string" &&
@@ -287,25 +335,35 @@ async function claimCommand(
     conversationId: string;
     idempotencyKey: string;
     expectedVersion: number;
+    kind: "message" | "handoff" | "locale" | "close";
+    fingerprintPayload: string;
   },
 ): Promise<ClaimedConversationResult> {
+  const fingerprint = dependencies.commandFingerprint.digest(input.fingerprintPayload);
   const conversation = await dependencies.repository.findOwned(
     input.conversationId,
     input.context.sessionHash,
   );
   if (!conversation) return { kind: "result", result: { ok: false, code: "not_found" } };
-
-  const prior = await dependencies.repository.findCommandResult(
-    input.conversationId,
-    input.idempotencyKey,
-  );
-  if (prior) return { kind: "result", result: replay(prior) };
   if (conversation.revokedAt) return { kind: "result", result: { ok: false, code: "revoked" } };
   if (conversation.expiresAt.getTime() <= dependencies.clock.now().getTime()) {
     return { kind: "result", result: { ok: false, code: "expired" } };
   }
 
+  const prior = await dependencies.repository.findCommandResult(
+    input.conversationId,
+    input.idempotencyKey,
+    input.kind,
+    fingerprint,
+  );
+  if (prior === "command_mismatch") {
+    return { kind: "result", result: { ok: false, code: "conflict" } };
+  }
+  if (prior) return { kind: "result", result: replay(prior) };
+
   const claim = await dependencies.repository.claimCommand({
+    kind: input.kind,
+    fingerprint,
     conversationId: input.conversationId,
     idempotencyKey: input.idempotencyKey,
     expectedVersion: input.expectedVersion,
@@ -321,6 +379,8 @@ async function claimCommand(
     const completed = await dependencies.repository.waitForCommandResult(
       input.conversationId,
       input.idempotencyKey,
+      input.kind,
+      fingerprint,
       new Date(dependencies.clock.now().getTime() + dependencies.commandWaitMilliseconds),
     );
     return {
@@ -354,6 +414,13 @@ async function completeCommand(
 }
 
 export function createConversationService(dependencies: ConversationServiceDependencies) {
+  const minimumLeaseMilliseconds =
+    dependencies.providerTimeoutMilliseconds * PROVIDER_CALLS_PER_MESSAGE +
+    Math.max(COMMAND_COMPLETION_MARGIN_MILLISECONDS, dependencies.commandWaitMilliseconds);
+  if (dependencies.commandLeaseSeconds * 1_000 <= minimumLeaseMilliseconds) {
+    throw new Error("PUBLIC_CHAT_COMMAND_LEASE_BUDGET_INVALID");
+  }
+
   async function finishUnchanged(
     conversation: PublicChatConversation,
     leaseToken: string,
@@ -376,8 +443,12 @@ export function createConversationService(dependencies: ConversationServiceDepen
       context: PublicSessionContext;
       locale: ChatLocale;
       noticeVersion: string;
+      idempotencyKey: string;
     }): Promise<ChatCommandResult> {
       const now = dependencies.clock.now();
+      const startFingerprint = dependencies.commandFingerprint.digest(
+        JSON.stringify(["start", input.locale, input.noticeVersion]),
+      );
       const conversation: PublicChatConversation = {
         id: dependencies.ids.next("conversation"),
         version: 1,
@@ -386,13 +457,22 @@ export function createConversationService(dependencies: ConversationServiceDepen
         sessionHash: input.context.sessionHash,
         noticeVersion: input.noticeVersion,
         correlationId: input.context.correlationId,
+        startIdempotencyKey: input.idempotencyKey,
+        startFingerprint,
         createdAt: now,
         updatedAt: now,
         lastActivityAt: now,
-        expiresAt: new Date(now.getTime() + dependencies.sessionTtlSeconds * 1_000),
+        expiresAt: new Date(
+          now.getTime() +
+            Math.min(dependencies.sessionTtlSeconds, dependencies.absoluteLifetimeSeconds) * 1_000,
+        ),
         messages: [],
       };
-      await dependencies.repository.create(conversation);
+      const created = await dependencies.repository.create(conversation);
+      if (created === "conflict") return { ok: false, code: "conflict" };
+      if (created !== "created") {
+        return { ok: true, projection: project(created.replayed), replayed: true };
+      }
       await recordAuditSafely(dependencies.audit, {
         name: "chat_conversation_started",
         conversationId: conversation.id,
@@ -417,7 +497,11 @@ export function createConversationService(dependencies: ConversationServiceDepen
       idempotencyKey: string;
       expectedVersion: number;
     }): Promise<ChatCommandResult> {
-      const claimed = await claimCommand(dependencies, input);
+      const claimed = await claimCommand(dependencies, {
+        ...input,
+        kind: "message",
+        fingerprintPayload: JSON.stringify(["message", input.text]),
+      });
       if (claimed.kind === "result") return claimed.result;
       const previous = claimed.conversation;
       const finish = (result: ChatCommandFailure) =>
@@ -436,10 +520,34 @@ export function createConversationService(dependencies: ConversationServiceDepen
         return finish({ ok: false, code: "invalid_transition" });
       }
 
-      const moderation = await classifySafely(dependencies.moderation, {
-        text: input.text,
-        locale: previous.locale,
-      });
+      if (previous.messages.length + 2 > dependencies.maxConversationMessages) {
+        const now = dependencies.clock.now();
+        const next = withActivity(
+          { ...previous, status: "restricted", revokedAt: now },
+          now,
+          dependencies.sessionTtlSeconds,
+          dependencies.absoluteLifetimeSeconds,
+        );
+        const result: ChatCommandFailure = {
+          ok: false,
+          code: "conversation_limit_reached",
+          projection: project(next),
+        };
+        return completeCommand(dependencies, {
+          kind: "message",
+          previous,
+          next,
+          idempotencyKey: input.idempotencyKey,
+          leaseToken: claimed.leaseToken,
+          result,
+        });
+      }
+
+      const moderation = await classifySafely(
+        dependencies.moderation,
+        { text: input.text, locale: previous.locale },
+        dependencies.providerTimeoutMilliseconds,
+      );
       if (moderation.decision === "unavailable") {
         return finish({ ok: false, code: "moderation_unavailable" });
       }
@@ -470,17 +578,18 @@ export function createConversationService(dependencies: ConversationServiceDepen
         return finish({ ok: false, code: "handoff_required", reason: moderation.reason });
       }
 
-      const sources = await searchSafely(dependencies.knowledge, {
-        locale: previous.locale,
-        query: input.text,
-      });
+      const sources = await searchSafely(
+        dependencies.knowledge,
+        { locale: previous.locale, query: input.text },
+        dependencies.providerTimeoutMilliseconds,
+      );
       if (!Array.isArray(sources)) return finish({ ok: false, code: "knowledge_unavailable" });
 
-      const response = await respondSafely(dependencies.model, {
-        locale: previous.locale,
-        message: input.text,
-        sources,
-      });
+      const response = await respondSafely(
+        dependencies.model,
+        { locale: previous.locale, message: input.text, sources },
+        dependencies.providerTimeoutMilliseconds,
+      );
       const now = dependencies.clock.now();
       const visitorMessage: PublicChatMessage = {
         id: dependencies.ids.next("message"),
@@ -494,7 +603,12 @@ export function createConversationService(dependencies: ConversationServiceDepen
       let next = appendMessage(previous, visitorMessage);
 
       if (response.status === "unavailable") {
-        next = withActivity(next, now, dependencies.sessionTtlSeconds);
+        next = withActivity(
+          next,
+          now,
+          dependencies.sessionTtlSeconds,
+          dependencies.absoluteLifetimeSeconds,
+        );
         const result: ChatCommandFailure = {
           ok: false,
           code: "assistant_unavailable",
@@ -513,16 +627,21 @@ export function createConversationService(dependencies: ConversationServiceDepen
 
       const safeResponse = validateModelText(response.text);
       const outputModeration = safeResponse
-        ? await classifySafely(dependencies.moderation, {
-            text: safeResponse,
-            locale: previous.locale,
-          })
+        ? await classifySafely(
+            dependencies.moderation,
+            { text: safeResponse, locale: previous.locale },
+            dependencies.providerTimeoutMilliseconds,
+          )
         : { decision: "reject" as const, reason: "markup" as const };
       if (!safeResponse || outputModeration.decision !== "allow") {
         next = withActivity(
-          { ...next, messages: [{ ...visitorMessage, state: "failed" }] },
+          {
+            ...next,
+            messages: [...previous.messages, { ...visitorMessage, state: "failed" }],
+          },
           now,
           dependencies.sessionTtlSeconds,
+          dependencies.absoluteLifetimeSeconds,
         );
         const result: ChatCommandFailure = {
           ok: false,
@@ -558,7 +677,12 @@ export function createConversationService(dependencies: ConversationServiceDepen
       ) {
         return finish({ ok: false, code: "invalid_transition" });
       }
-      next = withActivity({ ...next, status: targetStatus }, now, dependencies.sessionTtlSeconds);
+      next = withActivity(
+        { ...next, status: targetStatus },
+        now,
+        dependencies.sessionTtlSeconds,
+        dependencies.absoluteLifetimeSeconds,
+      );
       const result: ChatCommandSuccess = {
         ok: true,
         projection: project(next),
@@ -591,7 +715,11 @@ export function createConversationService(dependencies: ConversationServiceDepen
       idempotencyKey: string;
       expectedVersion: number;
     }): Promise<ChatCommandResult> {
-      const claimed = await claimCommand(dependencies, input);
+      const claimed = await claimCommand(dependencies, {
+        ...input,
+        kind: "handoff",
+        fingerprintPayload: JSON.stringify(["handoff", input.reason]),
+      });
       if (claimed.kind === "result") return claimed.result;
       const previous = claimed.conversation;
       const reason = normalizeHandoffReason(input.reason);
@@ -613,6 +741,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
         { ...previous, status: "human_requested", handoffReason: reason },
         now,
         dependencies.sessionTtlSeconds,
+        dependencies.absoluteLifetimeSeconds,
       );
       const advanced = await dependencies.repository.advanceClaimedCommand({
         kind: "handoff",
@@ -631,13 +760,17 @@ export function createConversationService(dependencies: ConversationServiceDepen
         locale: previous.locale,
         reason,
       });
-      const receipt = await enqueueSafely(dependencies.handoff, {
-        conversationId: previous.id,
-        locale: previous.locale,
-        reason,
-        correlationId: input.context.correlationId,
-        idempotencyKey: input.idempotencyKey,
-      });
+      const receipt = await enqueueSafely(
+        dependencies.handoff,
+        {
+          conversationId: previous.id,
+          locale: previous.locale,
+          reason,
+          correlationId: input.context.correlationId,
+          idempotencyKey: input.idempotencyKey,
+        },
+        dependencies.providerTimeoutMilliseconds,
+      );
 
       if (receipt.status === "unavailable") {
         const result: ChatCommandFailure = {
@@ -666,9 +799,15 @@ export function createConversationService(dependencies: ConversationServiceDepen
         });
       }
       const waiting = withActivity(
-        { ...requested, status: "waiting_for_human", handoffReceiptId: receipt.receiptId },
+        {
+          ...requested,
+          status: "waiting_for_human",
+          handoffReceiptId: receipt.receiptId,
+          handoffQueuedAt: receipt.queuedAt,
+        },
         dependencies.clock.now(),
         dependencies.sessionTtlSeconds,
+        dependencies.absoluteLifetimeSeconds,
       );
       const result: ChatCommandSuccess = {
         ok: true,
@@ -703,7 +842,11 @@ export function createConversationService(dependencies: ConversationServiceDepen
       idempotencyKey: string;
       expectedVersion: number;
     }): Promise<ChatCommandResult> {
-      const claimed = await claimCommand(dependencies, input);
+      const claimed = await claimCommand(dependencies, {
+        ...input,
+        kind: "locale",
+        fingerprintPayload: JSON.stringify(["locale", input.locale]),
+      });
       if (claimed.kind === "result") return claimed.result;
       const previous = claimed.conversation;
       if (
@@ -730,6 +873,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
               { ...previous, locale: input.locale },
               now,
               dependencies.sessionTtlSeconds,
+              dependencies.absoluteLifetimeSeconds,
             );
       const result: ChatCommandSuccess = {
         ok: true,
@@ -762,7 +906,11 @@ export function createConversationService(dependencies: ConversationServiceDepen
       idempotencyKey: string;
       expectedVersion: number;
     }): Promise<ChatCommandResult> {
-      const claimed = await claimCommand(dependencies, input);
+      const claimed = await claimCommand(dependencies, {
+        ...input,
+        kind: "close",
+        fingerprintPayload: JSON.stringify(["close"]),
+      });
       if (claimed.kind === "result") return claimed.result;
       const previous = claimed.conversation;
       if (!canTransitionConversation(previous.status, "closed")) {
@@ -782,6 +930,7 @@ export function createConversationService(dependencies: ConversationServiceDepen
         { ...previous, status: "closed", closedAt: now, revokedAt: now },
         now,
         dependencies.sessionTtlSeconds,
+        dependencies.absoluteLifetimeSeconds,
       );
       const result: ChatCommandSuccess = {
         ok: true,

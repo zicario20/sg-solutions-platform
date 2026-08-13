@@ -39,7 +39,7 @@ const chat = readPublicChatConfig({
     </div>
     {
       chat.enabled ? (
-        <ChatExperience locale="en" mode="page" />
+        <ChatExperience locale="en" mode="page" maxMessageCharacters={chat.maxMessageCharacters} />
       ) : (
         <div class="site-container standard-panel">
           <h2>The assistant is not active yet</h2>

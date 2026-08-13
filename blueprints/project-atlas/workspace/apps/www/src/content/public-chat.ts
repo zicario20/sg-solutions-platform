@@ -13,6 +13,7 @@ const sharedKeys = {
     temporarilyUnavailable: "",
     sessionExpired: "",
     conflict: "",
+    responseNotRetained: "",
   },
 };
 
@@ -62,6 +63,8 @@ export const PUBLIC_CHAT_COPY: Record<"es" | "en", PublicChatCopy> = {
       temporarilyUnavailable: "La orientación automática no está disponible temporalmente.",
       sessionExpired: "Esta sesión terminó. Puedes iniciar una conversación nueva.",
       conflict: "La conversación cambió. Actualízala antes de continuar.",
+      responseNotRetained:
+        "La respuesta anterior no se conserva por privacidad y no pudo recuperarse. Puedes enviar la pregunta de nuevo.",
     },
     handoff: {
       requested: "Tu solicitud de atención humana está pendiente de confirmación.",
@@ -110,6 +113,8 @@ export const PUBLIC_CHAT_COPY: Record<"es" | "en", PublicChatCopy> = {
       temporarilyUnavailable: "Automated orientation is temporarily unavailable.",
       sessionExpired: "This session ended. You can start a new conversation.",
       conflict: "The conversation changed. Refresh it before continuing.",
+      responseNotRetained:
+        "For privacy, the previous answer is not retained and could not be recovered. You can send the question again.",
     },
     handoff: {
       requested: "Your human-support request is awaiting confirmation.",

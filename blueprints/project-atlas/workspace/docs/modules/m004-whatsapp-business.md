@@ -5,7 +5,7 @@
 - Surface: External messaging channel; Public acquisition with future Client/Admin projections
 - Domain: Communications / Public Acquisition
 - Release: R7 target capability; architecture prepared during Phase 0
-- Status: Build authorized by Decision 028 — queued after clean M003 closure
+- Status: Build ready under Decision 028 after clean audited M003 closure; not started
 - Last updated: 2026-08-12
 - External readiness: `External activation deferred` in `EXTERNAL_ACTIVATION_REGISTER.md`
 
@@ -70,7 +70,8 @@ communications without duplicating people, leads, clients, cases, consent, messa
 
 - PRD, architecture/UX design, proposed ADR, data and provider contracts, threat controls,
   acceptance criteria and external-activation checklist.
-- No M004 product implementation or provider activation is authorized.
+- M004 provider-disabled local/staging implementation is authorized only after the clean M003
+  closure commit; no M004 code exists yet and provider activation remains unauthorized.
 
 ## 4. Explicit out of scope
 
@@ -864,8 +865,9 @@ are tracked in `EXTERNAL_ACTIVATION_REGISTER.md` and do not block architecture a
 
 ## 21. Open questions
 
-- [NEEDS PRODUCT OWNER DECISION: choose direct Meta Cloud API or an approved Business Solution
-  Provider for first activation after account, cost, support, portability and data-term review.]
+- Decision 028 selects direct Meta Cloud API for the first adapter. Account ownership, costs,
+  support, portability, data terms, credentials and controlled traffic remain activation decisions;
+  this selection does not activate Meta or prohibit a future approved BSP adapter.
 - [NEEDS PRODUCT OWNER DECISION: approve the institutional WhatsApp number, display name, ownership,
   recovery and coexistence plan with M005/M096 voice/SMS before registration.]
 - [NEEDS PRODUCT OWNER DECISION: approve WhatsApp contact, service and marketing consent/disclosure
