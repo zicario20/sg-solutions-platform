@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@atlas/config": "workspace:*",
+    "@atlas/domain": "workspace:*",
     "@atlas/ui": "workspace:*",
     "@tailwindcss/postcss": "4.3.3",
     "next": "16.2.12",

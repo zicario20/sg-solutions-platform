@@ -55,6 +55,9 @@ importers:
       '@atlas/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@atlas/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@atlas/ui':
         specifier: workspace:*
         version: link:../../packages/ui
