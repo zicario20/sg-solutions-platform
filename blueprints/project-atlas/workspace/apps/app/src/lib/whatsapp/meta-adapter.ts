@@ -1,4 +1,7 @@
-import type { MetaCredentialResolver } from "./credentials.ts";
+import type {
+  MetaCredentialResolver,
+  MetaTemplateConnectionAuthority,
+} from "./credentials.ts";
 import {
   type CanonicalProviderEnvelope,
   META_SUPPORTED_INBOUND_KINDS,
@@ -47,6 +50,7 @@ const MAX_JSON_STRING_CODE_UNITS = 8_192;
 // while five minutes of forward skew permits ordinary clock drift without accepting future events.
 const MIN_PROVIDER_UNIX_SECONDS = 1_577_836_800;
 const MAX_PROVIDER_FUTURE_SKEW_SECONDS = 300;
+const MAX_TEMPLATE_AUTHORITY_LIFETIME_MS = 24 * 60 * 60 * 1_000;
 // These statuses prove the provider rejected the request before accepting a message. Timeouts,
 // throttling, conflict, redirects, informational responses and server failures remain ambiguous.
 const PRE_ACCEPTANCE_REJECTION_STATUSES = new Set([
@@ -210,6 +214,11 @@ function isRecord(value: unknown): value is JsonRecord {
 
 function hasOnlyKeys(value: JsonRecord, allowed: readonly string[]): boolean {
   return Object.keys(value).every((key) => allowed.includes(key));
+}
+
+function hasExactOwnKeys(value: JsonRecord, expected: readonly string[]): boolean {
+  const keys = Reflect.ownKeys(value);
+  return keys.length === expected.length && expected.every((key) => Object.hasOwn(value, key));
 }
 
 function hasUnsafeControl(value: string): boolean {
@@ -506,22 +515,73 @@ function normalizeMessage(
   return unsupported(context, "unsupported_event");
 }
 
-function normalizeTemplate(
+type SupportedTemplateStatus = "disabled" | "paused" | "provider_approved" | "provider_rejected";
+type SupportedTemplateCategory = "authentication" | "marketing" | "utility";
+
+const STATUS_BY_TEMPLATE_EVENT = new Map<string, SupportedTemplateStatus>([
+  ["APPROVED", "provider_approved"],
+  ["DISABLED", "disabled"],
+  ["PAUSED", "paused"],
+  ["REJECTED", "provider_rejected"],
+]);
+const CATEGORY_BY_PROVIDER = new Map<string, SupportedTemplateCategory>([
+  ["AUTHENTICATION", "authentication"],
+  ["MARKETING", "marketing"],
+  ["UTILITY", "utility"],
+]);
+
+function validTemplateConnectionAuthority(
+  authority: unknown,
+  context: ResolvedVerifiedWebhookContext,
+): authority is MetaTemplateConnectionAuthority {
+  if (
+    !isRecord(authority) ||
+    !hasExactOwnKeys(authority, [
+      "connectionId",
+      "businessAccountId",
+      "authorityReceiptId",
+      "authorityVersion",
+      "correlationId",
+      "issuedAt",
+      "expiresAt",
+      "templateOwningConnectionCount",
+    ]) ||
+    authority.connectionId !== context.connectionId ||
+    authority.businessAccountId !== context.businessAccountId ||
+    authority.correlationId !== context.correlationId ||
+    typeof authority.authorityReceiptId !== "string" ||
+    !IDENTIFIER.test(authority.authorityReceiptId) ||
+    !Number.isSafeInteger(authority.authorityVersion) ||
+    (authority.authorityVersion as number) < 1 ||
+    (authority.authorityVersion as number) > 1_000_000 ||
+    authority.templateOwningConnectionCount !== 1 ||
+    !(authority.issuedAt instanceof Date) ||
+    !(authority.expiresAt instanceof Date)
+  ) {
+    return false;
+  }
+  const issuedAt = authority.issuedAt.valueOf();
+  const expiresAt = authority.expiresAt.valueOf();
+  const verifiedAt = context.verifiedAt.valueOf();
+  return (
+    Number.isFinite(issuedAt) &&
+    Number.isFinite(expiresAt) &&
+    issuedAt <= verifiedAt &&
+    verifiedAt <= expiresAt &&
+    expiresAt - issuedAt <= MAX_TEMPLATE_AUTHORITY_LIFETIME_MS
+  );
+}
+
+async function normalizeTemplate(
   value: JsonRecord,
   entryTime: unknown,
   context: ResolvedVerifiedWebhookContext,
-): CanonicalProviderEnvelope | UnsupportedVerifiedEnvelope {
-  const statusByEvent = {
-    APPROVED: "provider_approved",
-    DISABLED: "disabled",
-    PAUSED: "paused",
-    REJECTED: "provider_rejected",
-  } as const;
-  const categoryByProvider = {
-    AUTHENTICATION: "authentication",
-    MARKETING: "marketing",
-    UTILITY: "utility",
-  } as const;
+  credentials: MetaCredentialResolver,
+): Promise<CanonicalProviderEnvelope | UnsupportedVerifiedEnvelope> {
+  const status = typeof value.event === "string" ? STATUS_BY_TEMPLATE_EVENT.get(value.event) : undefined;
+  const category = typeof value.message_template_category === "string"
+    ? CATEGORY_BY_PROVIDER.get(value.message_template_category)
+    : undefined;
 
   if (
     !hasOnlyKeys(value, [
@@ -534,15 +594,13 @@ function normalizeTemplate(
       "message_template_version",
       "reason",
     ]) ||
-    typeof value.event !== "string" ||
-    !(value.event in statusByEvent) ||
+    status === undefined ||
     !EXTERNAL_IDENTIFIER.test(String(value.message_template_id ?? "")) ||
     typeof value.message_template_name !== "string" ||
     !TEMPLATE_NAME.test(value.message_template_name) ||
     typeof value.message_template_language !== "string" ||
     !/^(?:en|es)_[A-Z]{2}$/u.test(value.message_template_language) ||
-    typeof value.message_template_category !== "string" ||
-    !(value.message_template_category in categoryByProvider) ||
+    category === undefined ||
     !Array.isArray(value.message_template_components) ||
     !/^[1-9][0-9]{0,8}$/u.test(String(value.message_template_version ?? "")) ||
     (value.reason !== undefined && value.reason !== null && !isString(value.reason, 0, 1_024))
@@ -586,9 +644,21 @@ function normalizeTemplate(
     return unsupported(context, "template_manual_review");
   }
 
-  const status = statusByEvent[value.event as keyof typeof statusByEvent];
-  const category =
-    categoryByProvider[value.message_template_category as keyof typeof categoryByProvider];
+  let authority: unknown;
+  try {
+    authority = await credentials.resolveTemplateConnectionAuthority({
+      connectionId: context.connectionId,
+      businessAccountId: context.businessAccountId,
+      correlationId: context.correlationId,
+      verifiedAt: new Date(context.verifiedAt),
+    });
+  } catch {
+    return unsupported(context, "template_manual_review");
+  }
+  if (!validTemplateConnectionAuthority(authority, context)) {
+    return unsupported(context, "template_manual_review");
+  }
+
   const locale = value.message_template_language.startsWith("en_") ? "en" : "es";
   const providerReference = String(value.message_template_id);
   const templateKey = value.message_template_name;
@@ -616,15 +686,22 @@ function normalizeTemplate(
   });
 }
 
-function normalizePayload(
+function isUnsupportedRoot(
+  root: MessageRoot | UnsupportedVerifiedEnvelope,
+): root is UnsupportedVerifiedEnvelope {
+  return Object.hasOwn(root, "kind");
+}
+
+async function normalizePayload(
   payload: unknown,
   context: ResolvedVerifiedWebhookContext,
-): CanonicalProviderEnvelope | UnsupportedVerifiedEnvelope {
+  credentials: MetaCredentialResolver,
+): Promise<CanonicalProviderEnvelope | UnsupportedVerifiedEnvelope> {
   const root = messageRoot(payload, context);
-  if ("kind" in root) return root;
+  if (isUnsupportedRoot(root)) return root;
   if (root.change.field === "messages") return normalizeMessage(root.value, context);
   if (root.change.field === "message_template_status_update") {
-    return normalizeTemplate(root.value, root.entryTime, context);
+    return normalizeTemplate(root.value, root.entryTime, context, credentials);
   }
   return unsupported(context, "unsupported_event");
 }
@@ -864,7 +941,7 @@ export function createMetaCloudAdapter(options: MetaCloudAdapterOptions): WhatsA
           parsed.status === "duplicate" ? "ambiguous_payload" : "malformed_payload",
         );
       }
-      return normalizePayload(parsed.value, resolvedContext);
+      return normalizePayload(parsed.value, resolvedContext, options.credentials);
     },
 
     async dispatch(

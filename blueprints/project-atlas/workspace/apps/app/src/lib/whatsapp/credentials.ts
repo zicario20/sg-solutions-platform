@@ -7,6 +7,25 @@ export interface MetaCredentialResolver {
     phoneNumberId: string;
     graphApiVersion: string;
   }>;
+  resolveTemplateConnectionAuthority(input: MetaTemplateAuthorityRequest): Promise<MetaTemplateConnectionAuthority>;
+}
+
+export interface MetaTemplateAuthorityRequest {
+  connectionId: string;
+  businessAccountId: string;
+  correlationId: string;
+  verifiedAt: Date;
+}
+
+export interface MetaTemplateConnectionAuthority {
+  connectionId: string;
+  businessAccountId: string;
+  authorityReceiptId: string;
+  authorityVersion: number;
+  correlationId: string;
+  issuedAt: Date;
+  expiresAt: Date;
+  templateOwningConnectionCount: number;
 }
 
 export class MetaCredentialsUnavailableError extends Error {
@@ -26,5 +45,6 @@ export function createFailClosedMetaCredentialResolver(): MetaCredentialResolver
   return Object.freeze({
     resolveVerificationSecret: unavailable,
     resolveDispatchSecret: unavailable,
+    resolveTemplateConnectionAuthority: unavailable,
   });
 }

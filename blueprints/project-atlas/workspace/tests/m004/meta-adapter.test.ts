@@ -110,7 +110,24 @@ function templatePayload(
   };
 }
 
-function credentials(overrides: Record<string, string> = {}) {
+function templateAuthority(overrides: Record<string, unknown> = {}) {
+  return {
+    connectionId: CONNECTION_ID,
+    businessAccountId: BUSINESS_ACCOUNT_ID,
+    authorityReceiptId: "synthetic_template_authority_receipt",
+    authorityVersion: 1,
+    correlationId: "correlation_synthetic_meta",
+    issuedAt: new Date("2026-08-13T23:00:00.000Z"),
+    expiresAt: new Date("2026-08-14T00:00:00.000Z"),
+    templateOwningConnectionCount: 1,
+    ...overrides,
+  };
+}
+
+function credentials(
+  overrides: Record<string, string> = {},
+  authority: ReturnType<typeof templateAuthority> | null = templateAuthority(),
+) {
   return {
     resolveVerificationSecret: async () => ({
       appSecret: APP_SECRET,
@@ -121,6 +138,10 @@ function credentials(overrides: Record<string, string> = {}) {
       phoneNumberId: PHONE_NUMBER_ID,
       graphApiVersion: "v25.0",
       ...overrides,
+    }),
+    resolveTemplateConnectionAuthority: vi.fn(async () => {
+      if (authority === null) throw new Error("synthetic authority unavailable");
+      return authority;
     }),
   };
 }
@@ -378,6 +399,78 @@ describe("inactive Meta Cloud adapter normalization", () => {
       projection: { state, status: state },
     });
     expect(result).not.toMatchObject({ projection: { state: "provider_approved" } });
+  });
+
+  it("requests exact trusted authority for the verified connection, WABA, and correlation", async () => {
+    const raw = rawJson(templatePayload());
+    const resolver = credentials();
+
+    await expect(createAdapter(undefined, resolver).normalizeVerifiedEvent(raw, verifiedContext(raw)))
+      .resolves.toMatchObject({ kind: "template_projection" });
+    expect(resolver.resolveTemplateConnectionAuthority).toHaveBeenCalledWith({
+      connectionId: CONNECTION_ID,
+      businessAccountId: BUSINESS_ACCOUNT_ID,
+      correlationId: "correlation_synthetic_meta",
+      verifiedAt: OBSERVED_AT,
+    });
+  });
+
+  it.each([
+    ["missing authority", null],
+    ["wrong connection", templateAuthority({ connectionId: "connection_synthetic_other" })],
+    ["wrong WABA", templateAuthority({ businessAccountId: "999999999999999" })],
+    ["wrong correlation", templateAuthority({ correlationId: "correlation_synthetic_other" })],
+    ["stale evidence", templateAuthority({ expiresAt: new Date("2026-08-13T23:14:59.999Z") })],
+    ["future evidence", templateAuthority({ issuedAt: new Date("2026-08-13T23:15:00.001Z") })],
+    ["multiple-phone WABA ambiguity", templateAuthority({ templateOwningConnectionCount: 2 })],
+    ["missing receipt identity", templateAuthority({ authorityReceiptId: undefined })],
+  ])("keeps a complete template callback manual with %s", async (_label, authority) => {
+    const raw = rawJson(templatePayload());
+    const result = await createAdapter(undefined, credentials({}, authority))
+      .normalizeVerifiedEvent(raw, verifiedContext(raw));
+
+    expect(result).toEqual({
+      kind: "unsupported_verified",
+      connectionId: CONNECTION_ID,
+      reason: "template_manual_review",
+      receivedAt: OBSERVED_AT,
+      correlationId: "correlation_synthetic_meta",
+    });
+    expect(JSON.stringify(result)).not.toContain("synthetic_template_authority_receipt");
+    expect(JSON.stringify(result)).not.toContain("synthetic_appointment_notice");
+  });
+
+  it.each([
+    ["event", "constructor"],
+    ["event", "toString"],
+    ["event", "__proto__"],
+    ["message_template_category", "constructor"],
+    ["message_template_category", "toString"],
+    ["message_template_category", "__proto__"],
+  ])("rejects prototype-key template %s %s without canonical output", async (field, prototypeKey) => {
+    const raw = rawJson(templatePayload({ [field]: prototypeKey }));
+    const result = await createAdapter().normalizeVerifiedEvent(raw, verifiedContext(raw));
+
+    expect(result).toEqual({
+      kind: "unsupported_verified",
+      connectionId: CONNECTION_ID,
+      reason: "template_manual_review",
+      receivedAt: OBSERVED_AT,
+      correlationId: "correlation_synthetic_meta",
+    });
+    expect(result).not.toHaveProperty("projection");
+  });
+
+  it("rejects an inherited template event instead of treating it as an own canonical field", async () => {
+    const payload = templatePayload();
+    const value = payload.entry[0]?.changes[0]?.value;
+    delete value.event;
+    Object.setPrototypeOf(value, { event: "APPROVED" });
+    const raw = rawJson(payload);
+
+    const result = await createAdapter().normalizeVerifiedEvent(raw, verifiedContext(raw));
+    expect(result).toMatchObject({ kind: "unsupported_verified", reason: "template_manual_review" });
+    expect(result).not.toHaveProperty("projection");
   });
 
   it.each([
@@ -662,6 +755,14 @@ describe("inactive Meta Cloud adapter dispatch", () => {
     });
     await resolver.resolveDispatchSecret("PRIVATE-CONNECTION").catch((error: unknown) => {
       expect(String(error)).not.toContain("PRIVATE-CONNECTION");
+    });
+    await resolver.resolveTemplateConnectionAuthority({
+      connectionId: "PRIVATE-CONNECTION",
+      businessAccountId: "PRIVATE-WABA",
+      correlationId: "PRIVATE-CORRELATION",
+      verifiedAt: OBSERVED_AT,
+    }).catch((error: unknown) => {
+      expect(String(error)).not.toContain("PRIVATE");
     });
   });
 });
