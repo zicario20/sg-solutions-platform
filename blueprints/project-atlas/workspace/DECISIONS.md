@@ -423,3 +423,45 @@ fail-closed local/staging code under Decision 028. This decision does not select
 or other provider, authorize credentials, model traffic, real client data, public channel
 activation, deployment, production release or `Operational` status. All external-activation
 exclusions in Decision 028 and `EXTERNAL_ACTIVATION_REGISTER.md` remain in force.
+
+## 2026-08-20 — Decision 030
+
+Decision: recover the canonical module sequence from M004 WhatsApp Business. The recovery branch
+starts from the last clean independently reviewed M003 commit
+`1187f6ac4859679216290048df9964f269ac765d` and may selectively port evidence-backed work from
+`codex/m004-whatsapp-build` commit `68ffa205abc03a0ae84b7599b0e0af7f26f47eec`. M004 and every
+successor must use a separate worktree and close implementation, verification, architecture review,
+read-only Cyber Neo review and Product Owner acceptance before the next module begins.
+
+Reason: the transferred repository contains valuable M004 work but also stale worktree metadata,
+incomplete executable validation and later out-of-gate prototypes. The Product Owner selected the
+safe recovery option instead of treating the transferred tree as completed or rebuilding all M004
+work without evidence.
+
+Impact: Decision 028 remains the applicable `GENERATE` and provider-disabled local/staging Build
+gate for M004. Recovery may reuse the communications kernel, fail-closed policies, inactive Meta
+adapter, bounded webhook ingress, canonical persistence, migrations and tests only after review in
+the new M004 worktree. No credential, live account, phone number, template, provider traffic,
+deployment, default-branch merge or `Operational` claim is authorized. M005 and later modules remain
+blocked until M004 closes and the Product Owner approves advancement.
+
+## 2026-08-20 — Decision 031
+
+Decision: adopt the Product Owner-supplied CRM Dashboard and Analytics Overview brief and visual
+reference as future approved design input distributed across M016 Administrative Dashboard, M017
+CRM, M020 Lead Management and M092 Reports and Analytics. The reference establishes an executive,
+dense, responsive dark-premium direction adapted to the SG Solutions design system; it is not a
+pixel-for-pixel copy or authority to introduce duplicate routes, fabricated data or a second system
+of record.
+
+Reason: the Product Owner wants the future administrative experience to answer operational business
+questions about acquisition, conversion, services, verified revenue, cases, activity, geography and
+AI effectiveness using real platform data.
+
+Impact: M016 owns the administrative Overview composition, M017 the CRM workflow and pipeline,
+M020 lead lifecycle facts and M092 advanced analytics and metric definitions. Production widgets
+must use authorized backend aggregations over canonical records; demo fixtures are development/test
+only. Verified payments are the only revenue authority, RBAC applies in UI and backend, sensitive
+data is excluded, Power BI remains optional and deferred, and unavailable instrumentation produces
+honest empty states rather than invented metrics. This decision does not authorize early CRM code or
+allow M016/M017/M020/M092 to begin before their sequential module gates.
