@@ -177,7 +177,7 @@ async function queueOutbound(service: any, overrides: Record<string, unknown> = 
       owner: "communications",
       operation: "outbound_dispatch",
       bindingId: "binding_1",
-      destinationKey: "endpoint_digest_v1",
+      destinationKey: "endpoint_ref:endpoint_digest_v1",
       issuedAt: NOW,
       expiresAt: TOMORROW,
     },
@@ -401,13 +401,13 @@ describe("durable leases, attempts and recovery", () => {
       now: NOW,
       requiredPolicyVersion: 7,
     });
-    expect(claim).toMatchObject({ status: "claimed", leaseVersion: 1 });
+    expect(claim).toMatchObject({ status: "claimed", leaseVersion: 2 });
 
     expect(
       await repository.completeInbound({
         eventId: "event_1",
         leaseOwner: "worker_2",
-        leaseVersion: 1,
+        leaseVersion: 2,
         outcome: "applied",
         now: LATER,
       }),
@@ -474,12 +474,12 @@ describe("durable leases, attempts and recovery", () => {
       now: NOW,
       requiredPolicyVersion: 7,
     });
-    expect(inboundClaim).toMatchObject({ status: "claimed", leaseVersion: 1 });
+    expect(inboundClaim).toMatchObject({ status: "claimed", leaseVersion: 2 });
     expect(
       await repository.completeInbound({
         eventId: "event_expiry",
         leaseOwner: "worker_1",
-        leaseVersion: 1,
+        leaseVersion: 2,
         outcome: "applied",
         now: TOMORROW,
       }),
@@ -488,7 +488,7 @@ describe("durable leases, attempts and recovery", () => {
       await repository.completeInbound({
         eventId: "event_expiry",
         leaseOwner: "worker_1",
-        leaseVersion: 1,
+        leaseVersion: 2,
         outcome: "applied",
         now: new Date("invalid"),
       }),
@@ -1124,7 +1124,7 @@ describe("controlled inbound opt-out and reconciliation races", () => {
         owner: "communications",
         operation: "outbound_dispatch",
         bindingId: "binding_2",
-        destinationKey: "endpoint_digest_v1",
+        destinationKey: "endpoint_ref:endpoint_digest_v1",
         issuedAt: NOW,
         expiresAt: TOMORROW,
       },

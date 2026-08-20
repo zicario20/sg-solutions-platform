@@ -297,7 +297,7 @@ async function queueOutbound(service: any, overrides: Record<string, unknown> = 
       owner: "communications",
       operation: "outbound_dispatch",
       bindingId: "binding_1",
-      destinationKey: "endpoint_digest_v2",
+      destinationKey: "endpoint_ref:endpoint_digest_v2",
       issuedAt: NOW,
       expiresAt: TOMORROW,
     },

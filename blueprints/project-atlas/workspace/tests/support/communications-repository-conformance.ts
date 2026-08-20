@@ -28,6 +28,7 @@ export function communicationsConformanceIds(scenario: string) {
   const id = suffix(scenario);
   return {
     bindingId: `binding_${id}`,
+    secondaryBindingId: `binding_secondary_${id}`,
     commandId: `command_${id}`,
     connectionId: `connection_${id}`,
     conversationId: `conversation_${id}`,
@@ -41,44 +42,42 @@ export function communicationsConformanceIds(scenario: string) {
 
 export function communicationsConformanceSeed(scenario: string): CommunicationsSeed {
   const value = communicationsConformanceIds(scenario);
+  const binding = (bindingId: string) => ({
+    bindingId,
+    channel: "whatsapp" as const,
+    trustState: "reverified" as const,
+    freshUntil: CONFORMANCE_TOMORROW,
+    createdAt: CONFORMANCE_NOW,
+    updatedAt: CONFORMANCE_NOW,
+  });
+  const policy = (bindingId: string, discriminator: string) => ({
+    policyId: `policy_${discriminator}_${suffix(scenario)}`,
+    bindingId,
+    state: "normal" as const,
+    version: 7,
+    fence: 42,
+    updatedAt: CONFORMANCE_NOW,
+  });
+  const consent = (bindingId: string, discriminator: string) => ({
+    bindingId,
+    purpose: "transactional" as const,
+    state: "granted" as const,
+    version: 1,
+    receipt: {
+      receiptId: `consent_${discriminator}_${suffix(scenario)}`,
+      owner: "consent" as const,
+      operation: "consent_confirmation" as const,
+      bindingId,
+      issuedAt: CONFORMANCE_NOW,
+      expiresAt: CONFORMANCE_TOMORROW,
+    },
+    authorityReceiptId: `consent_${discriminator}_${suffix(scenario)}`,
+    changedAt: CONFORMANCE_NOW,
+  });
   return {
-    bindings: [
-      {
-        bindingId: value.bindingId,
-        channel: "whatsapp",
-        trustState: "reverified",
-        freshUntil: CONFORMANCE_TOMORROW,
-        createdAt: CONFORMANCE_NOW,
-        updatedAt: CONFORMANCE_NOW,
-      },
-    ],
-    policies: [
-      {
-        policyId: `policy_${suffix(scenario)}`,
-        bindingId: value.bindingId,
-        state: "normal",
-        version: 7,
-        fence: 42,
-        updatedAt: CONFORMANCE_NOW,
-      },
-    ],
-    consents: [
-      {
-        bindingId: value.bindingId,
-        purpose: "transactional",
-        state: "granted",
-        version: 1,
-        receipt: {
-          receiptId: `consent_${suffix(scenario)}`,
-          owner: "consent",
-          operation: "consent_confirmation",
-          bindingId: value.bindingId,
-          issuedAt: CONFORMANCE_NOW,
-          expiresAt: CONFORMANCE_TOMORROW,
-        },
-        changedAt: CONFORMANCE_NOW,
-      },
-    ],
+    bindings: [binding(value.bindingId), binding(value.secondaryBindingId)],
+    policies: [policy(value.bindingId, "primary"), policy(value.secondaryBindingId, "secondary")],
+    consents: [consent(value.bindingId, "primary"), consent(value.secondaryBindingId, "secondary")],
     connections: [{ channel: "whatsapp", state: "active" }],
     templates: [
       {
@@ -165,7 +164,7 @@ async function queueOutbound(repository: CommunicationsRepository, scenario: str
   const value = communicationsConformanceIds(scenario);
   const templateId = `template_${suffix(scenario)}`;
   await repository.acceptInbound(inbound(scenario));
-  const created = await repository.createOutbound({
+  const draft = {
     command: {
       commandId: value.commandId,
       channel: "whatsapp",
@@ -192,7 +191,8 @@ async function queueOutbound(repository: CommunicationsRepository, scenario: str
     },
     purpose: "transactional",
     templateId,
-  });
+  } as const;
+  const created = await repository.createOutbound(draft);
   expect(created).toEqual({
     status: "created",
     commandId: value.commandId,
@@ -210,7 +210,7 @@ async function queueOutbound(repository: CommunicationsRepository, scenario: str
         owner: "communications",
         operation: "outbound_dispatch",
         bindingId: value.bindingId,
-        destinationKey: "b".repeat(64),
+        destinationKey: `endpoint_ref:${"b".repeat(64)}`,
         issuedAt: CONFORMANCE_NOW,
         expiresAt: CONFORMANCE_TOMORROW,
       },
@@ -481,6 +481,217 @@ export function runCommunicationsRepositoryConformance(
             now: CONFORMANCE_NOW,
           }),
         ).resolves.toEqual({ status: "conflict", code: "reconciliation_receipt_mismatch" });
+      });
+    });
+
+    it("allocates distinct inbound ordinals and rejects cross-binding provider replay", async () => {
+      await withHarness(factory, `${label}-inbound-order`, async ({ repository, inspectState }) => {
+        const scenario = `${label}-inbound-order`;
+        const first = inbound(scenario);
+        const second = structuredClone(first);
+        second.providerEventId = `meta_evt_${suffix(`${scenario}-second`).repeat(2)}`;
+        second.providerBodyDigest = "d".repeat(64);
+        second.envelope.event.eventId = `event_${suffix(`${scenario}-second`)}`;
+        second.envelope.event.messageId = `message_${suffix(`${scenario}-second`)}`;
+        second.envelope.message.id = second.envelope.event.messageId;
+        await expect(Promise.all([repository.acceptInbound(first), repository.acceptInbound(second)]))
+          .resolves.toEqual([
+            expect.objectContaining({ status: "accepted" }),
+            expect.objectContaining({ status: "accepted" }),
+          ]);
+        const crossBinding = structuredClone(first);
+        crossBinding.envelope.event.bindingId = communicationsConformanceIds(scenario).secondaryBindingId;
+        crossBinding.envelope.participant.bindingId = crossBinding.envelope.event.bindingId;
+        await expect(repository.acceptInbound(crossBinding)).resolves.toEqual({
+          status: "replay_mismatch",
+          code: "provider_replay_mismatch",
+        });
+        if (inspectState) {
+          const state = await inspectState();
+          expect(state.inbound.map((row) => row.ordinal).sort()).toEqual([1, 2]);
+        }
+      });
+    });
+
+    it("uses body identity for honest outbound duplicate states and binding-scoped keys", async () => {
+      await withHarness(factory, `${label}-outbound-identity`, async ({ repository }) => {
+        const scenario = `${label}-outbound-identity`;
+        const value = communicationsConformanceIds(scenario);
+        await repository.acceptInbound(inbound(scenario));
+        const draft = {
+          command: {
+            commandId: value.commandId,
+            channel: "whatsapp" as const,
+            locale: "en" as const,
+            conversationId: value.conversationId,
+            bindingId: value.bindingId,
+            messageId: value.outboundMessageId,
+            idempotencyKey: `shared_${suffix(scenario)}`,
+            state: "draft" as const,
+            createdAt: CONFORMANCE_NOW,
+            correlationId: `correlation_out_${suffix(scenario)}`,
+          },
+          message: {
+            id: value.outboundMessageId,
+            conversationId: value.conversationId,
+            channel: "whatsapp" as const,
+            direction: "outbound" as const,
+            senderParticipantId: `participant_system_${suffix(scenario)}`,
+            recipientParticipantId: value.participantId,
+            locale: "en" as const,
+            kind: "text" as const,
+            body: "ORIGINAL-BODY",
+            createdAt: CONFORMANCE_NOW,
+          },
+          purpose: "transactional" as const,
+          templateId: `template_${suffix(scenario)}`,
+        };
+        await expect(repository.createOutbound(draft)).resolves.toMatchObject({ status: "created" });
+        await expect(repository.createOutbound(draft)).resolves.toMatchObject({
+          status: "duplicate",
+          reason: "outbound_draft_unresolved",
+        });
+        await expect(
+          repository.createOutbound({ ...draft, message: { ...draft.message, body: "ALTERED-BODY" } }),
+        ).resolves.toEqual({ status: "conflict", code: "idempotency_mismatch" });
+        await expect(repository.finalizeOutbound({
+          commandId: value.commandId,
+          fingerprint: "c".repeat(64),
+          requiredPolicyVersion: 7,
+          requiredFence: 42,
+          endpointDigests: [{ version: "endpoint.v1", digest: "b".repeat(64) }],
+          authorizationReceipt: {
+            receiptId: `dispatch_${suffix(scenario)}`,
+            owner: "communications",
+            operation: "outbound_dispatch",
+            bindingId: value.bindingId,
+            destinationKey: `endpoint_ref:${"b".repeat(64)}`,
+            issuedAt: CONFORMANCE_NOW,
+            expiresAt: CONFORMANCE_TOMORROW,
+          },
+          now: CONFORMANCE_NOW,
+        })).resolves.toMatchObject({ status: "created" });
+        await expect(repository.createOutbound(draft)).resolves.toEqual({
+          status: "duplicate",
+          commandId: value.commandId,
+          messageId: value.outboundMessageId,
+          commandState: "queued",
+        });
+        const secondary = {
+          ...draft,
+          command: {
+            ...draft.command,
+            commandId: `command_secondary_${suffix(scenario)}`,
+            bindingId: value.secondaryBindingId,
+          },
+          message: {
+            ...draft.message,
+            id: `message_secondary_${suffix(scenario)}`,
+          },
+        };
+        await expect(repository.createOutbound(secondary)).resolves.toMatchObject({ status: "created" });
+      });
+    });
+
+    it("round-trips failure and unknown outcomes and applies provider statuses idempotently", async () => {
+      for (const outcome of ["known_failure", "unknown"] as const) {
+        await withHarness(factory, `${label}-outcome-${outcome}`, async ({ repository, inspectState }) => {
+          const scenario = `${label}-outcome-${outcome}`;
+          const value = await queueOutbound(repository, scenario);
+          const attemptId = `attempt_${suffix(scenario)}`;
+          const claimed = await repository.claimOutbound({
+            commandId: value.commandId,
+            attemptId,
+            leaseOwner: "outcome-owner",
+            leaseExpiresAt: CONFORMANCE_LEASE_END,
+            now: CONFORMANCE_NOW,
+          });
+          if (claimed.status !== "claimed") throw new Error("CONFORMANCE_OUTBOUND_NOT_CLAIMED");
+          await expect(repository.markDispatchOutcome({
+            commandId: value.commandId,
+            attemptId,
+            leaseOwner: "outcome-owner",
+            leaseVersion: claimed.attempt.leaseVersion,
+            outcome,
+            now: CONFORMANCE_NOW,
+          })).resolves.toBe("completed");
+          if (inspectState) {
+            const attempt = (await inspectState()).attempts.find((row) => row.attemptId === attemptId);
+            expect(attempt?.resultCode).toBe(outcome);
+          }
+        });
+      }
+      await withHarness(factory, `${label}-provider-status`, async ({ repository, inspectState }) => {
+        const scenario = `${label}-provider-status`;
+        const value = await queueOutbound(repository, scenario);
+        const attemptId = `attempt_${suffix(scenario)}`;
+        const claimed = await repository.claimOutbound({ commandId: value.commandId, attemptId,
+          leaseOwner: "status-owner", leaseExpiresAt: CONFORMANCE_LEASE_END, now: CONFORMANCE_NOW });
+        if (claimed.status !== "claimed") throw new Error("CONFORMANCE_OUTBOUND_NOT_CLAIMED");
+        await repository.markDispatchOutcome({ commandId: value.commandId, attemptId,
+          leaseOwner: "status-owner", leaseVersion: claimed.attempt.leaseVersion,
+          outcome: "accepted", now: CONFORMANCE_NOW });
+        const status = { commandId: value.commandId, providerEventId: `status_${suffix(scenario)}`,
+          status: "delivered" as const, occurredAt: CONFORMANCE_NOW };
+        await expect(repository.applyProviderStatus(status)).resolves.toMatchObject({ status: "applied" });
+        await expect(repository.applyProviderStatus(status)).resolves.toMatchObject({ status: "duplicate" });
+        if (inspectState) expect((await inspectState()).providerStatuses).toContainEqual(status);
+      });
+    });
+
+    it("advances consent provenance, persists withdrawal history, and binds template definitions", async () => {
+      await withHarness(factory, `${label}-authority-history`, async ({ repository, inspectState }) => {
+        const scenario = `${label}-authority-history`;
+        const value = communicationsConformanceIds(scenario);
+        const nextReceipt = {
+          receiptId: `consent_next_${suffix(scenario)}`,
+          owner: "consent" as const,
+          operation: "consent_grant" as const,
+          bindingId: value.bindingId,
+          issuedAt: CONFORMANCE_NOW,
+          expiresAt: CONFORMANCE_TOMORROW,
+        };
+        await expect(repository.grantConsentFromReceipt({ bindingId: value.bindingId,
+          purpose: "transactional", operation: "consent_grant", receipt: nextReceipt,
+          now: CONFORMANCE_NOW })).resolves.toMatchObject({ status: "changed", version: 2 });
+        await expect(repository.grantConsentFromReceipt({ bindingId: value.bindingId,
+          purpose: "transactional", operation: "consent_grant", receipt: nextReceipt,
+          now: CONFORMANCE_NOW })).resolves.toMatchObject({ status: "duplicate", version: 2 });
+        const accepted = inbound(scenario);
+        await repository.acceptInbound(accepted);
+        const inboundReceipt = { receiptId: `withdraw_${suffix(scenario)}`,
+          owner: "communications" as const, operation: "inbound_opt_out" as const,
+          bindingId: value.bindingId, eventId: accepted.envelope.event.eventId,
+          issuedAt: CONFORMANCE_NOW, expiresAt: CONFORMANCE_TOMORROW,
+          correlationId: accepted.envelope.event.correlationId };
+        await expect(repository.withdrawContact({ bindingId: value.bindingId,
+          evidence: { source: "inbound_event", receipt: { ...inboundReceipt, owner: "consent" as never } },
+          now: CONFORMANCE_NOW })).resolves.toMatchObject({ status: "denied" });
+        await expect(repository.withdrawContact({ bindingId: value.bindingId,
+          evidence: { source: "inbound_event", receipt: inboundReceipt }, now: CONFORMANCE_NOW }))
+          .resolves.toMatchObject({ status: "changed" });
+        const templateId = `template_${suffix(scenario)}`;
+        await expect(repository.reconcileTemplate({ templateId, locale: "en",
+          providerState: "provider_approved", providerVersion: 2,
+          correlationId: `template_${suffix(scenario)}`,
+          receipt: { receiptId: `template_receipt_${suffix(scenario)}`,
+            owner: "communications", operation: "template_provider_reconciliation",
+            templateId, locale: "en", definitionVersion: 99, providerVersion: 2,
+            providerState: "provider_approved", issuedAt: CONFORMANCE_NOW,
+            expiresAt: CONFORMANCE_TOMORROW, correlationId: `template_${suffix(scenario)}` },
+          now: CONFORMANCE_NOW })).resolves.toEqual({ status: "denied", code: "provider_receipt_invalid" });
+        if (inspectState) {
+          const state = await inspectState();
+          expect(state.consentHistory.some(
+            (record) => record.authorityReceiptId === nextReceipt.receiptId && record.version === 2,
+          )).toBe(true);
+          expect(state.withdrawalHistory.at(-1)).toMatchObject({
+            bindingId: value.bindingId,
+            source: "inbound_event",
+            receiptId: inboundReceipt.receiptId,
+            eventId: inboundReceipt.eventId,
+          });
+        }
       });
     });
   });

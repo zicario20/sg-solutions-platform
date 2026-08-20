@@ -563,14 +563,15 @@ describe("M004 generated migration authority and canonical cutover", () => {
     const journal = JSON.parse(readFileSync(journalPath, "utf8")) as {
       entries: Array<{ idx: number; tag: string }>;
     };
-    expect(journal.entries.slice(-5).map(({ idx, tag }) => ({ idx, tag }))).toEqual([
+    expect(journal.entries.slice(-6).map(({ idx, tag }) => ({ idx, tag }))).toEqual([
       { idx: 6, tag: "0006_m004_communications_role_bootstrap" },
       { idx: 7, tag: migrations.structural.replace(/\.sql$/u, "") },
       { idx: 8, tag: "0008_m004_communications_backfill" },
       { idx: 9, tag: "0009_m004_communications_cutover_guard" },
       { idx: 10, tag: "0010_m004_communications_canonical_cutover" },
+      { idx: 11, tag: "0011_m004_receipt_security_hardening" },
     ]);
-    for (const index of ["0006", "0007", "0008", "0009", "0010"]) {
+    for (const index of ["0006", "0007", "0008", "0009", "0010", "0011"]) {
       expect(
         existsSync(
           fileURLToPath(new URL(`../../drizzle/meta/${index}_snapshot.json`, import.meta.url)),
@@ -1250,9 +1251,12 @@ describe("Task 7 recovered current-contract schema guards", () => {
     );
     expect(outboundColumns).toEqual(
       expect.arrayContaining([
+        "message_body_digest",
+        "owning_operation",
+        "owning_binding_id",
+        "owning_destination_key",
         "owning_receipt_issued_at",
         "owning_receipt_valid_until",
-        "owning_receipt_correlation_id",
       ]),
     );
 

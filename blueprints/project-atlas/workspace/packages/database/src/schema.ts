@@ -57,6 +57,12 @@ const publicConversationScope = (conversationId: unknown, channelKind: unknown) 
 
 const communicationsConversationScope = (channelKind: unknown) => sql`${channelKind} = 'whatsapp'`;
 
+const communicationsCommandScope = (commandId: unknown) =>
+  sql`exists (
+    select 1 from communication_outbound_commands command
+    where command.id = ${commandId} and command.channel_kind = 'whatsapp'
+  )`;
+
 const publicChildConversationScope = (conversationId: unknown) =>
   sql`exists (
     select 1
@@ -494,7 +500,7 @@ export const communicationContactEvidenceEvents = pgTable(
     ),
     check(
       "communication_contact_evidence_events_authority_valid",
-      sql`(${table.eventKind} in ('consent_granted', 'consent_withdrawn', 'consent_regranted') and ${table.owningDomain} = 'M078' and ${table.authorityRole} = 'consent') or (${table.eventKind} in ('ambiguous_opt_out_detected', 'ambiguous_opt_out_cleared', 'ambiguous_opt_out_withdrawn') and ${table.owningDomain} = 'M078' and ${table.authorityRole} = 'contact_review') or (${table.eventKind} in ('binding_suspended', 'binding_revalidated') and ${table.authorityRole} = 'binding_verification')`,
+      sql`(${table.eventKind} in ('consent_granted', 'consent_regranted') and ${table.owningDomain} = 'M078' and ${table.authorityRole} = 'consent') or (${table.eventKind} = 'consent_withdrawn' and ((${table.owningDomain} = 'M078' and ${table.authorityRole} = 'consent') or (${table.owningDomain} = 'M004' and ${table.authorityRole} = 'channel_policy_detection'))) or (${table.eventKind} in ('ambiguous_opt_out_detected', 'ambiguous_opt_out_cleared', 'ambiguous_opt_out_withdrawn') and ${table.owningDomain} = 'M078' and ${table.authorityRole} = 'contact_review') or (${table.eventKind} in ('binding_suspended', 'binding_revalidated') and ${table.authorityRole} = 'binding_verification')`,
     ),
     check(
       "communication_contact_evidence_events_receipt_valid",
@@ -502,7 +508,7 @@ export const communicationContactEvidenceEvents = pgTable(
     ),
     check(
       "communication_contact_evidence_events_state_shape_valid",
-      sql`(${table.eventKind} = 'consent_granted' and ${table.purpose} is not null and ${table.consentState} is not null and ${table.consentState} = 'granted' and ${table.fenceState} is not null and ${table.fenceState} = 'normal' and ${table.authorityVersion} is not null and ${table.authorityVersion} > 0 and ${table.reviewResolution} is null and ${table.bindingTrustState} is null and ${table.triggeringEventId} is null and ${table.policyVersion} is null) or (${table.eventKind} = 'consent_regranted' and ${table.purpose} is not null and ${table.consentState} is not null and ${table.consentState} = 'granted' and ${table.fenceState} is not null and ${table.fenceState} = 'normal_after_review' and ${table.authorityVersion} is not null and ${table.authorityVersion} > 0 and ${table.reviewResolution} is null and ${table.bindingTrustState} is null and ${table.triggeringEventId} is null and ${table.policyVersion} is null) or (${table.eventKind} = 'consent_withdrawn' and ${table.purpose} is not null and ${table.consentState} is not null and ${table.consentState} = 'withdrawn' and ${table.fenceState} is not null and ${table.fenceState} = 'withdrawn' and ${table.authorityVersion} is not null and ${table.authorityVersion} > 0 and ${table.reviewResolution} is null and ${table.bindingTrustState} is null and ${table.triggeringEventId} is null and ${table.policyVersion} is null) or (${table.eventKind} = 'ambiguous_opt_out_detected' and ${table.purpose} is not null and ${table.consentState} is not null and ${table.consentState} = 'granted' and ${table.fenceState} is not null and ${table.fenceState} = 'opt_out_pending' and ${table.authorityVersion} is not null and ${table.authorityVersion} > 0 and ${table.triggeringEventId} is not null and ${table.policyVersion} is not null and ${table.reviewResolution} is null and ${table.bindingTrustState} is null) or (${table.eventKind} = 'ambiguous_opt_out_cleared' and ${table.purpose} is not null and ${table.consentState} is not null and ${table.consentState} = 'granted' and ${table.fenceState} is not null and ${table.fenceState} = 'normal_after_review' and ${table.authorityVersion} is not null and ${table.authorityVersion} > 0 and ${table.reviewResolution} is not null and ${table.reviewResolution} = 'clear' and ${table.triggeringEventId} is not null and ${table.policyVersion} is not null and ${table.bindingTrustState} is null) or (${table.eventKind} = 'ambiguous_opt_out_withdrawn' and ${table.purpose} is not null and ${table.consentState} is not null and ${table.consentState} = 'withdrawn' and ${table.fenceState} is not null and ${table.fenceState} = 'withdrawn' and ${table.authorityVersion} is not null and ${table.authorityVersion} > 0 and ${table.reviewResolution} is not null and ${table.reviewResolution} = 'withdraw' and ${table.triggeringEventId} is not null and ${table.policyVersion} is not null and ${table.bindingTrustState} is null) or (${table.eventKind} = 'binding_suspended' and ${table.bindingTrustState} is not null and ${table.bindingTrustState} = 'suspended' and ${table.purpose} is null and ${table.consentState} is null and ${table.fenceState} is null and ${table.reviewResolution} is null and ${table.authorityVersion} is null and ${table.triggeringEventId} is null and ${table.policyVersion} is null) or (${table.eventKind} = 'binding_revalidated' and ${table.bindingTrustState} is not null and ${table.bindingTrustState} = 'reverified' and ${table.purpose} is null and ${table.consentState} is null and ${table.fenceState} is null and ${table.reviewResolution} is null and ${table.authorityVersion} is null and ${table.triggeringEventId} is null and ${table.policyVersion} is null)`,
+      sql`(${table.eventKind} = 'consent_granted' and ${table.purpose} is not null and ${table.consentState} is not null and ${table.consentState} = 'granted' and ${table.fenceState} is not null and ${table.fenceState} = 'normal' and ${table.authorityVersion} is not null and ${table.authorityVersion} > 0 and ${table.reviewResolution} is null and ${table.bindingTrustState} is null and ${table.triggeringEventId} is null and ${table.policyVersion} is null) or (${table.eventKind} = 'consent_regranted' and ${table.purpose} is not null and ${table.consentState} is not null and ${table.consentState} = 'granted' and ${table.fenceState} is not null and ${table.fenceState} = 'normal_after_review' and ${table.authorityVersion} is not null and ${table.authorityVersion} > 0 and ${table.reviewResolution} is null and ${table.bindingTrustState} is null and ${table.triggeringEventId} is null and ${table.policyVersion} is null) or (${table.eventKind} = 'consent_withdrawn' and ${table.purpose} is not null and ${table.consentState} is not null and ${table.consentState} = 'withdrawn' and ${table.fenceState} is not null and ${table.fenceState} = 'withdrawn' and ${table.authorityVersion} is not null and ${table.authorityVersion} > 0 and ${table.reviewResolution} is null and ${table.bindingTrustState} is null and ((${table.owningDomain} = 'M078' and ${table.triggeringEventId} is null) or (${table.owningDomain} = 'M004' and ${table.triggeringEventId} is not null)) and ${table.policyVersion} is null) or (${table.eventKind} = 'ambiguous_opt_out_detected' and ${table.purpose} is not null and ${table.consentState} is not null and ${table.consentState} = 'granted' and ${table.fenceState} is not null and ${table.fenceState} = 'opt_out_pending' and ${table.authorityVersion} is not null and ${table.authorityVersion} > 0 and ${table.triggeringEventId} is not null and ${table.policyVersion} is not null and ${table.reviewResolution} is null and ${table.bindingTrustState} is null) or (${table.eventKind} = 'ambiguous_opt_out_cleared' and ${table.purpose} is not null and ${table.consentState} is not null and ${table.consentState} = 'granted' and ${table.fenceState} is not null and ${table.fenceState} = 'normal_after_review' and ${table.authorityVersion} is not null and ${table.authorityVersion} > 0 and ${table.reviewResolution} is not null and ${table.reviewResolution} = 'clear' and ${table.triggeringEventId} is not null and ${table.policyVersion} is not null and ${table.bindingTrustState} is null) or (${table.eventKind} = 'ambiguous_opt_out_withdrawn' and ${table.purpose} is not null and ${table.consentState} is not null and ${table.consentState} = 'withdrawn' and ${table.fenceState} is not null and ${table.fenceState} = 'withdrawn' and ${table.authorityVersion} is not null and ${table.authorityVersion} > 0 and ${table.reviewResolution} is not null and ${table.reviewResolution} = 'withdraw' and ${table.triggeringEventId} is not null and ${table.policyVersion} is not null and ${table.bindingTrustState} is null) or (${table.eventKind} = 'binding_suspended' and ${table.bindingTrustState} is not null and ${table.bindingTrustState} = 'suspended' and ${table.purpose} is null and ${table.consentState} is null and ${table.fenceState} is null and ${table.reviewResolution} is null and ${table.authorityVersion} is null and ${table.triggeringEventId} is null and ${table.policyVersion} is null) or (${table.eventKind} = 'binding_revalidated' and ${table.bindingTrustState} is not null and ${table.bindingTrustState} = 'reverified' and ${table.purpose} is null and ${table.consentState} is null and ${table.fenceState} is null and ${table.reviewResolution} is null and ${table.authorityVersion} is null and ${table.triggeringEventId} is null and ${table.policyVersion} is null)`,
     ),
     check("communication_contact_evidence_events_sequence_positive", sql`${table.sequence} > 0`),
     check(
@@ -1077,12 +1083,15 @@ export const communicationOutboundCommands = pgTable(
     templateKey: varchar("template_key", { length: 120 }),
     templateDefinitionVersion: varchar("template_definition_version", { length: 80 }),
     destinationKey: varchar("destination_key", { length: 120 }),
+    messageBodyDigest: char("message_body_digest", { length: 64 }).notNull(),
     owningReceiptId: text("owning_receipt_id"),
     owningDomain: varchar("owning_domain", { length: 80 }),
+    owningOperation: varchar("owning_operation", { length: 80 }),
     owningReference: text("owning_reference"),
+    owningBindingId: text("owning_binding_id"),
+    owningDestinationKey: varchar("owning_destination_key", { length: 120 }),
     owningReceiptIssuedAt: timestamp("owning_receipt_issued_at", { withTimezone: true, mode: "date" }),
     owningReceiptValidUntil: timestamp("owning_receipt_valid_until", { withTimezone: true, mode: "date" }),
-    owningReceiptCorrelationId: text("owning_receipt_correlation_id"),
     expectedPolicyVersion: integer("expected_policy_version"),
     requiredFence: integer("required_fence"),
     endpointDigests: jsonb("endpoint_digests").notNull().default(sql`'[]'::jsonb`),
@@ -1125,6 +1134,7 @@ export const communicationOutboundCommands = pgTable(
       "communication_outbound_commands_fingerprint_valid",
       sql`${table.fingerprint} is null or ${table.fingerprint} ~ '^[0-9a-f]{64}$'`,
     ),
+    check("communication_outbound_commands_message_body_digest_valid", sql`${table.messageBodyDigest} ~ '^[0-9a-f]{64}$'`),
     check(
       "communication_outbound_commands_lease_token_hash_valid",
       sql`${table.leaseTokenHash} is null or ${table.leaseTokenHash} ~ '^[0-9a-f]{64}$'`,
@@ -1151,16 +1161,18 @@ export const communicationOutboundCommands = pgTable(
     check("communication_outbound_commands_version_nonnegative", sql`${table.version} >= 0`),
     check(
       "communication_outbound_commands_owning_receipt_window_valid",
-      sql`(${table.owningReceiptId} is null and ${table.owningDomain} is null and ${table.owningReference} is null and ${table.owningReceiptIssuedAt} is null and ${table.owningReceiptValidUntil} is null and ${table.owningReceiptCorrelationId} is null) or (${table.owningReceiptId} is not null and ${table.owningDomain} is not null and ${table.owningReference} is not null and ${table.owningReceiptIssuedAt} is not null and ${table.owningReceiptValidUntil} > ${table.owningReceiptIssuedAt} and ${table.owningReceiptCorrelationId} is not null)`,
+      sql`(${table.owningReceiptId} is null and ${table.owningDomain} is null and ${table.owningOperation} is null and ${table.owningReference} is null and ${table.owningBindingId} is null and ${table.owningDestinationKey} is null and ${table.owningReceiptIssuedAt} is null and ${table.owningReceiptValidUntil} is null) or (${table.owningReceiptId} is not null and ${table.owningDomain} = 'communications' and ${table.owningOperation} = 'outbound_dispatch' and ${table.owningReference} is not null and ${table.owningBindingId} = ${table.bindingId} and ${table.owningDestinationKey} = ${table.destinationKey} and ${table.owningReceiptIssuedAt} is not null and ${table.owningReceiptValidUntil} > ${table.owningReceiptIssuedAt})`,
     ),
     check(
       "communication_outbound_commands_finalization_valid",
-      sql`${table.state} = 'draft' or (${table.fingerprint} is not null and ${table.expectedPolicyVersion} is not null and ${table.requiredFence} is not null and ${table.owningReceiptId} is not null)`,
+      sql`${table.state} = 'draft' or (${table.fingerprint} is not null and ${table.expectedPolicyVersion} is not null and ${table.requiredFence} is not null and ${table.owningReceiptId} is not null and ${table.destinationKey} is not null)`,
     ),
     check(
       "communication_outbound_commands_destination_reference_opaque",
-      sql`${table.destinationKey} is null or (char_length(${table.destinationKey}) <= 120 and ${table.destinationKey} ~ '^(portal\\.|vault:|endpoint_ref:)[A-Za-z0-9][A-Za-z0-9._:-]{2,119}$')`,
+      sql`${table.destinationKey} is null or ${table.destinationKey} ~ '^endpoint_ref:[0-9a-f]{64}$'`,
     ),
+    check("communication_outbound_commands_owning_destination_valid", sql`${table.owningDestinationKey} is null or ${table.owningDestinationKey} ~ '^endpoint_ref:[0-9a-f]{64}$'`),
+    check("communication_outbound_commands_owning_reference_valid", sql`${table.owningReference} is null or ${table.owningReference} ~ '^outbound_command:[A-Za-z0-9][A-Za-z0-9._:-]{2,255}$'`),
     check(
       "communication_outbound_commands_lease_valid",
       sql`(${table.leaseOwnerId} is null and ${table.leaseTokenHash} is null and ${table.leaseExpiresAt} is null) or (${table.leaseOwnerId} is not null and ${table.leaseTokenHash} is not null and ${table.leaseExpiresAt} is not null)`,
@@ -1285,7 +1297,13 @@ export const communicationProviderStatusReceipts = pgTable(
       "communication_provider_status_receipts_status_valid",
       sql`${table.status} in ('sent', 'delivered', 'read', 'failed')`,
     ),
-    communicationsOnly("communication_provider_status_receipts"),
+    pgPolicy("communication_provider_status_receipts_communications_scope", {
+      as: "permissive",
+      for: "all",
+      to: communicationsGatewayRole,
+      using: communicationsCommandScope(table.commandId),
+      withCheck: communicationsCommandScope(table.commandId),
+    }),
   ],
 ).enableRLS();
 
@@ -1321,17 +1339,23 @@ export const communicationDispatchReconciliationReceipts = pgTable(
     ),
     check(
       "communication_dispatch_reconciliation_receipts_source_valid",
-      sql`${table.source} in ('provider_lookup', 'provider_status', 'manual_attestation')`,
+      sql`${table.source} in ('provider_lookup', 'manual_authority')`,
     ),
     check(
       "communication_dispatch_reconciliation_receipts_outcome_valid",
-      sql`${table.outcome} in ('accepted', 'confirmed_not_sent', 'failed')`,
+      sql`${table.outcome} in ('reconciled_accepted', 'confirmed_not_sent', 'terminal_failure')`,
     ),
     check(
       "communication_dispatch_reconciliation_receipts_window_valid",
       sql`${table.expiresAt} > ${table.issuedAt} and ${table.createdAt} >= ${table.issuedAt} and ${table.createdAt} < ${table.expiresAt}`,
     ),
-    communicationsOnly("communication_dispatch_reconciliation_receipts"),
+    pgPolicy("communication_dispatch_reconciliation_receipts_communications_scope", {
+      as: "permissive",
+      for: "all",
+      to: communicationsGatewayRole,
+      using: communicationsCommandScope(table.commandId),
+      withCheck: communicationsCommandScope(table.commandId),
+    }),
   ],
 ).enableRLS();
 

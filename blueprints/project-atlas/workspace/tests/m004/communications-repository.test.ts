@@ -1,4 +1,6 @@
 import { MemoryCommunicationsRepository } from "@atlas/domain";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import {
   assertRestrictedCommunicationsPrincipal,
   COMMUNICATIONS_TRANSACTION_SQL,
@@ -18,6 +20,14 @@ runCommunicationsRepositoryConformance("memory", async (scenario) => {
 });
 
 describe("Postgres communications transaction contract", () => {
+  const storeSource = readFileSync(
+    fileURLToPath(new URL("../../packages/database/src/postgres-communications-store.ts", import.meta.url)),
+    "utf8",
+  );
+  const schemaSource = readFileSync(
+    fileURLToPath(new URL("../../packages/database/src/schema.ts", import.meta.url)),
+    "utf8",
+  );
   const safePrincipal = {
     principal_name: "atlas_communications_runtime",
     is_member: true,
@@ -59,5 +69,44 @@ describe("Postgres communications transaction contract", () => {
     );
     expect(COMMUNICATIONS_TRANSACTION_SQL.lockBinding).toContain("for update");
     expect(COMMUNICATIONS_TRANSACTION_SQL.lockPolicy).toContain("for update");
+  });
+
+  it("keeps deterministic SQL compatible with positive versions, lock ordering, and canonical references", () => {
+    expect(storeSource).toMatch(/processing_version[^;]+null, 1, null/su);
+    expect(storeSource).toContain("select id from communication_conversations where id = $1 for update");
+    expect(storeSource).toContain("coalesce(max(ordinal), 0)::integer + 1 as ordinal");
+    expect(storeSource).toContain("canonicalEndpointReference(");
+    expect(storeSource).toContain("then 'inbound_event' else 'authority' end as source");
+    expect(storeSource.indexOf("COMMUNICATIONS_TRANSACTION_SQL.lockBinding")).toBeLessThan(
+      storeSource.indexOf("where binding_id = $1 and idempotency_key = $2"),
+    );
+    expect(schemaSource).toContain('messageBodyDigest: char("message_body_digest", { length: 64 })');
+  });
+
+  it("uses exhaustive domain-to-database outcome and reconciliation vocabularies", () => {
+    expect(storeSource).toContain('known_failure: { state: "failed", resultCode: "failed" }');
+    expect(storeSource).toContain('unknown: { state: "dispatch_unknown", resultCode: "dispatch_unknown" }');
+    expect(schemaSource).toContain("('provider_lookup', 'manual_authority')");
+    expect(schemaSource).toContain("('reconciled_accepted', 'confirmed_not_sent', 'terminal_failure')");
+    expect(storeSource.match(/evaluateOutboundPolicy\(/gu)).toHaveLength(2);
+  });
+
+  it("hardens both receipt tables with scoped policy, FORCE RLS, revokes, and least privilege", () => {
+    expect(schemaSource).toContain("communicationsCommandScope(table.commandId)");
+    const securityMigration = readFileSync(
+      fileURLToPath(new URL("../../drizzle/0011_m004_receipt_security_hardening.sql", import.meta.url)),
+      "utf8",
+    );
+    for (const table of [
+      "communication_provider_status_receipts",
+      "communication_dispatch_reconciliation_receipts",
+    ]) {
+      expect(securityMigration).toContain(`ALTER TABLE "${table}" FORCE ROW LEVEL SECURITY`);
+      expect(securityMigration).toContain(`"${table}" FROM PUBLIC`);
+    }
+    expect(securityMigration).toContain("'anon', 'authenticated', 'atlas_migration_runtime'");
+    expect(securityMigration).toContain("GRANT SELECT, INSERT ON TABLE");
+    expect(securityMigration).not.toContain("GRANT UPDATE");
+    expect(securityMigration).not.toContain("GRANT DELETE");
   });
 });

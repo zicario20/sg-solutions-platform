@@ -1,6 +1,6 @@
 {
-  "id": "f3059842-cf8e-4f86-8c02-aba75131830b",
-  "prevId": "98d57ab8-2fc0-47a1-a3c7-9d142c00c120",
+  "id": "5beca9d4-9d6f-4d1c-9b1e-cd24552e7761",
+  "prevId": "f3059842-cf8e-4f86-8c02-aba75131830b",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -129,37 +129,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "communication_audit_events_conversation_channel_fk": {
           "name": "communication_audit_events_conversation_channel_fk",
           "tableFrom": "communication_audit_events",
-          "tableTo": "communication_conversations",
           "columnsFrom": [
             "conversation_id",
             "channel_kind"
           ],
+          "tableTo": "communication_conversations",
           "columnsTo": [
             "id",
             "channel_kind"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "communication_audit_events_conversation_sequence_unique": {
           "name": "communication_audit_events_conversation_sequence_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "conversation_id",
             "sequence"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -309,9 +309,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {},
@@ -319,11 +319,11 @@
       "uniqueConstraints": {
         "communication_channel_connections_id_channel_unique": {
           "name": "communication_channel_connections_id_channel_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "id",
             "channel_kind"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -483,68 +483,68 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "communication_contact_bindings_connection_id_communication_channel_connections_id_fk": {
           "name": "communication_contact_bindings_connection_id_communication_channel_connections_id_fk",
           "tableFrom": "communication_contact_bindings",
-          "tableTo": "communication_channel_connections",
           "columnsFrom": [
             "connection_id"
           ],
+          "tableTo": "communication_channel_connections",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         },
         "communication_contact_bindings_connection_channel_fk": {
           "name": "communication_contact_bindings_connection_channel_fk",
           "tableFrom": "communication_contact_bindings",
-          "tableTo": "communication_channel_connections",
           "columnsFrom": [
             "connection_id",
             "channel_kind"
           ],
+          "tableTo": "communication_channel_connections",
           "columnsTo": [
             "id",
             "channel_kind"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "communication_contact_bindings_id_connection_channel_unique": {
           "name": "communication_contact_bindings_id_connection_channel_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "id",
             "connection_id",
             "channel_kind"
-          ]
+          ],
+          "nullsNotDistinct": false
         },
         "communication_contact_bindings_id_channel_unique": {
           "name": "communication_contact_bindings_id_channel_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "id",
             "channel_kind"
-          ]
+          ],
+          "nullsNotDistinct": false
         },
         "communication_contact_bindings_endpoint_unique": {
           "name": "communication_contact_bindings_endpoint_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "connection_id",
             "endpoint_digest_key_version",
             "endpoint_digest"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -740,42 +740,42 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "communication_contact_evidence_events_binding_id_communication_contact_bindings_id_fk": {
           "name": "communication_contact_evidence_events_binding_id_communication_contact_bindings_id_fk",
           "tableFrom": "communication_contact_evidence_events",
-          "tableTo": "communication_contact_bindings",
           "columnsFrom": [
             "binding_id"
           ],
+          "tableTo": "communication_contact_bindings",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "communication_contact_evidence_events_binding_sequence_unique": {
           "name": "communication_contact_evidence_events_binding_sequence_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "binding_id",
             "sequence"
-          ]
+          ],
+          "nullsNotDistinct": false
         },
         "communication_contact_evidence_events_receipt_unique": {
           "name": "communication_contact_evidence_events_receipt_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "evidence_receipt_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -922,35 +922,35 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "communication_contact_policies_binding_id_communication_contact_bindings_id_fk": {
           "name": "communication_contact_policies_binding_id_communication_contact_bindings_id_fk",
           "tableFrom": "communication_contact_policies",
-          "tableTo": "communication_contact_bindings",
           "columnsFrom": [
             "binding_id"
           ],
+          "tableTo": "communication_contact_bindings",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "communication_contact_policies_binding_purpose_unique": {
           "name": "communication_contact_policies_binding_purpose_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "binding_id",
             "purpose"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -1089,9 +1089,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "communication_conversations_reconciliation_idx": {
           "name": "communication_conversations_reconciliation_idx",
@@ -1110,9 +1110,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {},
@@ -1120,11 +1120,11 @@
       "uniqueConstraints": {
         "communication_conversations_id_channel_unique": {
           "name": "communication_conversations_id_channel_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "id",
             "channel_kind"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -1362,66 +1362,66 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "communication_dispatch_attempts_connection_id_communication_channel_connections_id_fk": {
           "name": "communication_dispatch_attempts_connection_id_communication_channel_connections_id_fk",
           "tableFrom": "communication_dispatch_attempts",
-          "tableTo": "communication_channel_connections",
           "columnsFrom": [
             "connection_id"
           ],
+          "tableTo": "communication_channel_connections",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         },
         "communication_dispatch_attempts_command_connection_fk": {
           "name": "communication_dispatch_attempts_command_connection_fk",
           "tableFrom": "communication_dispatch_attempts",
-          "tableTo": "communication_outbound_commands",
           "columnsFrom": [
             "command_id",
             "connection_id"
           ],
+          "tableTo": "communication_outbound_commands",
           "columnsTo": [
             "id",
             "connection_id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "communication_dispatch_attempts_command_ordinal_unique": {
           "name": "communication_dispatch_attempts_command_ordinal_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "command_id",
             "attempt_ordinal"
-          ]
+          ],
+          "nullsNotDistinct": false
         },
         "communication_dispatch_attempts_id_command_unique": {
           "name": "communication_dispatch_attempts_id_command_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "id",
             "command_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         },
         "communication_dispatch_attempts_external_reference_unique": {
           "name": "communication_dispatch_attempts_external_reference_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "connection_id",
             "external_message_reference"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -1560,32 +1560,32 @@
         "communication_dispatch_reconciliation_receipts_attempt_command_fk": {
           "name": "communication_dispatch_reconciliation_receipts_attempt_command_fk",
           "tableFrom": "communication_dispatch_reconciliation_receipts",
-          "tableTo": "communication_dispatch_attempts",
           "columnsFrom": [
             "attempt_id",
             "command_id"
           ],
+          "tableTo": "communication_dispatch_attempts",
           "columnsTo": [
             "id",
             "command_id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         },
         "communication_dispatch_reconciliation_receipts_command_binding_fk": {
           "name": "communication_dispatch_reconciliation_receipts_command_binding_fk",
           "tableFrom": "communication_dispatch_reconciliation_receipts",
-          "tableTo": "communication_outbound_commands",
           "columnsFrom": [
             "command_id",
             "binding_id"
           ],
+          "tableTo": "communication_outbound_commands",
           "columnsTo": [
             "id",
             "binding_id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
@@ -1875,100 +1875,100 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "communication_event_envelopes_receipt_connection_fk": {
           "name": "communication_event_envelopes_receipt_connection_fk",
           "tableFrom": "communication_event_envelopes",
-          "tableTo": "communication_provider_event_receipts",
           "columnsFrom": [
             "receipt_id",
             "connection_id"
           ],
+          "tableTo": "communication_provider_event_receipts",
           "columnsTo": [
             "id",
             "connection_id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "communication_event_envelopes_conversation_channel_fk": {
           "name": "communication_event_envelopes_conversation_channel_fk",
           "tableFrom": "communication_event_envelopes",
-          "tableTo": "communication_conversations",
           "columnsFrom": [
             "conversation_id",
             "channel_kind"
           ],
+          "tableTo": "communication_conversations",
           "columnsTo": [
             "id",
             "channel_kind"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         },
         "communication_event_envelopes_participant_conversation_channel_fk": {
           "name": "communication_event_envelopes_participant_conversation_channel_fk",
           "tableFrom": "communication_event_envelopes",
-          "tableTo": "communication_participants",
           "columnsFrom": [
             "participant_id",
             "conversation_id",
             "channel_kind"
           ],
+          "tableTo": "communication_participants",
           "columnsTo": [
             "id",
             "conversation_id",
             "channel_kind"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         },
         "communication_event_envelopes_message_conversation_fk": {
           "name": "communication_event_envelopes_message_conversation_fk",
           "tableFrom": "communication_event_envelopes",
-          "tableTo": "communication_messages",
           "columnsFrom": [
             "message_id",
             "conversation_id"
           ],
+          "tableTo": "communication_messages",
           "columnsTo": [
             "id",
             "conversation_id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         },
         "communication_event_envelopes_binding_connection_channel_fk": {
           "name": "communication_event_envelopes_binding_connection_channel_fk",
           "tableFrom": "communication_event_envelopes",
-          "tableTo": "communication_contact_bindings",
           "columnsFrom": [
             "binding_id",
             "connection_id",
             "channel_kind"
           ],
+          "tableTo": "communication_contact_bindings",
           "columnsTo": [
             "id",
             "connection_id",
             "channel_kind"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "communication_event_envelopes_receipt_id_unique": {
           "name": "communication_event_envelopes_receipt_id_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "receipt_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -2120,41 +2120,41 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "communication_handoffs_conversation_channel_fk": {
           "name": "communication_handoffs_conversation_channel_fk",
           "tableFrom": "communication_handoffs",
-          "tableTo": "communication_conversations",
           "columnsFrom": [
             "conversation_id",
             "channel_kind"
           ],
+          "tableTo": "communication_conversations",
           "columnsTo": [
             "id",
             "channel_kind"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "communication_handoffs_assignee_conversation_fk": {
           "name": "communication_handoffs_assignee_conversation_fk",
           "tableFrom": "communication_handoffs",
-          "tableTo": "communication_participants",
           "columnsFrom": [
             "assigned_participant_id",
             "conversation_id"
           ],
+          "tableTo": "communication_participants",
           "columnsTo": [
             "id",
             "conversation_id"
           ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -2354,9 +2354,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {},
@@ -2364,12 +2364,12 @@
       "uniqueConstraints": {
         "communication_message_templates_definition_unique": {
           "name": "communication_message_templates_definition_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "template_key",
             "locale",
             "definition_version"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -2552,9 +2552,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "communication_messages_external_reference_idx": {
           "name": "communication_messages_external_reference_idx",
@@ -2567,75 +2567,75 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "communication_messages_conversation_channel_fk": {
           "name": "communication_messages_conversation_channel_fk",
           "tableFrom": "communication_messages",
-          "tableTo": "communication_conversations",
           "columnsFrom": [
             "conversation_id",
             "channel_kind"
           ],
+          "tableTo": "communication_conversations",
           "columnsTo": [
             "id",
             "channel_kind"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "communication_messages_sender_conversation_fk": {
           "name": "communication_messages_sender_conversation_fk",
           "tableFrom": "communication_messages",
-          "tableTo": "communication_participants",
           "columnsFrom": [
             "sender_participant_id",
             "conversation_id"
           ],
+          "tableTo": "communication_participants",
           "columnsTo": [
             "id",
             "conversation_id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         },
         "communication_messages_recipient_conversation_fk": {
           "name": "communication_messages_recipient_conversation_fk",
           "tableFrom": "communication_messages",
-          "tableTo": "communication_participants",
           "columnsFrom": [
             "recipient_participant_id",
             "conversation_id"
           ],
+          "tableTo": "communication_participants",
           "columnsTo": [
             "id",
             "conversation_id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "communication_messages_id_conversation_unique": {
           "name": "communication_messages_id_conversation_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "id",
             "conversation_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         },
         "communication_messages_conversation_ordinal_unique": {
           "name": "communication_messages_conversation_ordinal_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "conversation_id",
             "ordinal"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -2938,70 +2938,70 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "communication_outbound_commands_conversation_channel_fk": {
           "name": "communication_outbound_commands_conversation_channel_fk",
           "tableFrom": "communication_outbound_commands",
-          "tableTo": "communication_conversations",
           "columnsFrom": [
             "conversation_id",
             "channel_kind"
           ],
+          "tableTo": "communication_conversations",
           "columnsTo": [
             "id",
             "channel_kind"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         },
         "communication_outbound_commands_binding_connection_channel_fk": {
           "name": "communication_outbound_commands_binding_connection_channel_fk",
           "tableFrom": "communication_outbound_commands",
-          "tableTo": "communication_contact_bindings",
           "columnsFrom": [
             "binding_id",
             "connection_id",
             "channel_kind"
           ],
+          "tableTo": "communication_contact_bindings",
           "columnsTo": [
             "id",
             "connection_id",
             "channel_kind"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "communication_outbound_commands_id_connection_unique": {
           "name": "communication_outbound_commands_id_connection_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "id",
             "connection_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         },
         "communication_outbound_commands_id_binding_unique": {
           "name": "communication_outbound_commands_id_binding_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "id",
             "binding_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         },
         "communication_outbound_commands_binding_key_unique": {
           "name": "communication_outbound_commands_binding_key_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "binding_id",
             "idempotency_key"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -3173,61 +3173,61 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "communication_participants_conversation_channel_fk": {
           "name": "communication_participants_conversation_channel_fk",
           "tableFrom": "communication_participants",
-          "tableTo": "communication_conversations",
           "columnsFrom": [
             "conversation_id",
             "channel_kind"
           ],
+          "tableTo": "communication_conversations",
           "columnsTo": [
             "id",
             "channel_kind"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "communication_participants_binding_channel_fk": {
           "name": "communication_participants_binding_channel_fk",
           "tableFrom": "communication_participants",
-          "tableTo": "communication_contact_bindings",
           "columnsFrom": [
             "channel_binding_id",
             "channel_kind"
           ],
+          "tableTo": "communication_contact_bindings",
           "columnsTo": [
             "id",
             "channel_kind"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "communication_participants_id_conversation_unique": {
           "name": "communication_participants_id_conversation_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "id",
             "conversation_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         },
         "communication_participants_id_conversation_channel_unique": {
           "name": "communication_participants_id_conversation_channel_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "id",
             "conversation_id",
             "channel_kind"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -3418,58 +3418,58 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "communication_provider_event_receipts_connection_id_communication_channel_connections_id_fk": {
           "name": "communication_provider_event_receipts_connection_id_communication_channel_connections_id_fk",
           "tableFrom": "communication_provider_event_receipts",
-          "tableTo": "communication_channel_connections",
           "columnsFrom": [
             "connection_id"
           ],
+          "tableTo": "communication_channel_connections",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         },
         "communication_provider_event_receipts_connection_channel_fk": {
           "name": "communication_provider_event_receipts_connection_channel_fk",
           "tableFrom": "communication_provider_event_receipts",
-          "tableTo": "communication_channel_connections",
           "columnsFrom": [
             "connection_id",
             "channel_kind"
           ],
+          "tableTo": "communication_channel_connections",
           "columnsTo": [
             "id",
             "channel_kind"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "communication_provider_event_receipts_id_connection_unique": {
           "name": "communication_provider_event_receipts_id_connection_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "id",
             "connection_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         },
         "communication_provider_event_receipts_identity_unique": {
           "name": "communication_provider_event_receipts_identity_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "connection_id",
             "external_event_reference"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -3568,15 +3568,15 @@
         "communication_provider_status_receipts_command_id_communication_outbound_commands_id_fk": {
           "name": "communication_provider_status_receipts_command_id_communication_outbound_commands_id_fk",
           "tableFrom": "communication_provider_status_receipts",
-          "tableTo": "communication_outbound_commands",
           "columnsFrom": [
             "command_id"
           ],
+          "tableTo": "communication_outbound_commands",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {
@@ -3679,26 +3679,26 @@
         "public_chat_citations_message_id_communication_messages_id_fk": {
           "name": "public_chat_citations_message_id_communication_messages_id_fk",
           "tableFrom": "public_chat_citations",
-          "tableTo": "communication_messages",
           "columnsFrom": [
             "message_id"
           ],
+          "tableTo": "communication_messages",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "public_chat_citations_message_source_unique": {
           "name": "public_chat_citations_message_source_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "message_id",
             "source_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -3809,74 +3809,74 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "public_chat_conversation_sessions_session_id_public_chat_sessions_id_fk": {
           "name": "public_chat_conversation_sessions_session_id_public_chat_sessions_id_fk",
           "tableFrom": "public_chat_conversation_sessions",
-          "tableTo": "public_chat_sessions",
           "columnsFrom": [
             "session_id"
           ],
+          "tableTo": "public_chat_sessions",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "public_chat_conversation_sessions_conversation_channel_fk": {
           "name": "public_chat_conversation_sessions_conversation_channel_fk",
           "tableFrom": "public_chat_conversation_sessions",
-          "tableTo": "communication_conversations",
           "columnsFrom": [
             "conversation_id",
             "channel_kind"
           ],
+          "tableTo": "communication_conversations",
           "columnsTo": [
             "id",
             "channel_kind"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "public_chat_conversation_sessions_participant_conversation_channel_fk": {
           "name": "public_chat_conversation_sessions_participant_conversation_channel_fk",
           "tableFrom": "public_chat_conversation_sessions",
-          "tableTo": "communication_participants",
           "columnsFrom": [
             "participant_id",
             "conversation_id",
             "channel_kind"
           ],
+          "tableTo": "communication_participants",
           "columnsTo": [
             "id",
             "conversation_id",
             "channel_kind"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "public_chat_conversation_sessions_conversation_unique": {
           "name": "public_chat_conversation_sessions_conversation_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "conversation_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         },
         "public_chat_conversation_sessions_session_start_key_unique": {
           "name": "public_chat_conversation_sessions_session_start_key_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "session_id",
             "start_idempotency_key"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -4004,35 +4004,35 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "public_chat_idempotency_conversation_id_communication_conversations_id_fk": {
           "name": "public_chat_idempotency_conversation_id_communication_conversations_id_fk",
           "tableFrom": "public_chat_idempotency",
-          "tableTo": "communication_conversations",
           "columnsFrom": [
             "conversation_id"
           ],
+          "tableTo": "communication_conversations",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "public_chat_idempotency_conversation_key_unique": {
           "name": "public_chat_idempotency_conversation_key_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "conversation_id",
             "idempotency_key"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -4110,9 +4110,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {},
@@ -4207,9 +4207,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {},
@@ -4217,10 +4217,10 @@
       "uniqueConstraints": {
         "public_chat_sessions_session_hash_unique": {
           "name": "public_chat_sessions_session_hash_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "session_hash"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {
@@ -4241,10 +4241,10 @@
   },
   "enums": {},
   "schemas": {},
+  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
-  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

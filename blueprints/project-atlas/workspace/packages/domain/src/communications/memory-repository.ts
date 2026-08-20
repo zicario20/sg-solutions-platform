@@ -1,4 +1,8 @@
-import { evaluateAuthorityChange, evaluateOutboundPolicy } from "./channel-policy.ts";
+import {
+  canonicalEndpointReference,
+  evaluateAuthorityChange,
+  evaluateOutboundPolicy,
+} from "./channel-policy.ts";
 import type {
   AcceptInboundCommand,
   AcceptInboundResult,
@@ -54,6 +58,7 @@ type InboundRecord = {
   providerBodyDigest: string;
   endpointDigests: AcceptInboundCommand["endpointDigests"];
   envelope: AcceptInboundCommand["envelope"];
+  ordinal: number;
   state: "persisted" | "applied" | "manual_review" | "dead_letter";
   leaseOwnerHash?: string;
   leaseVersion: number;
@@ -76,6 +81,7 @@ type OutboundRecord = CreateOutboundCommand & {
 };
 
 type AttemptRecord = OutboundDispatchAttempt & {
+  resultCode?: MarkDispatchOutcomeCommand["outcome"];
   leaseOwnerHash: string;
   leaseVersion: number;
   leaseExpiresAt: Date;
@@ -213,7 +219,10 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       const replayKey = `${input.connectionId}\u0000${input.providerEventId}`;
       const existing = this.inboundByReplay.get(replayKey);
       if (existing) {
-        if (existing.providerBodyDigest !== input.providerBodyDigest) {
+        if (
+          existing.providerBodyDigest !== input.providerBodyDigest ||
+          existing.envelope.event.bindingId !== input.envelope.event.bindingId
+        ) {
           return { status: "replay_mismatch", code: "provider_replay_mismatch" };
         }
         const activeDigest = existing.endpointDigests[0];
@@ -246,8 +255,12 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
         providerBodyDigest: input.providerBodyDigest,
         endpointDigests: clone(input.endpointDigests),
         envelope: metadataOnlyEnvelope(input.envelope),
+        ordinal:
+          [...this.inboundById.values()].filter(
+            (candidate) => candidate.envelope.event.conversationId === input.envelope.event.conversationId,
+          ).length + 1,
         state: "persisted",
-        leaseVersion: 0,
+        leaseVersion: 1,
       };
       this.inboundByReplay.set(replayKey, record);
       this.inboundById.set(input.envelope.event.eventId, record);
@@ -309,7 +322,11 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
 
   async createOutbound(input: CreateOutboundCommand): Promise<CreateOutboundResult> {
     const messageBodyDigest = await sha256(JSON.stringify(input.message.body));
-    const existing = this.outboundByIdempotency.get(input.command.idempotencyKey);
+    const idempotencyScope = this.outboundIdempotencyKey(
+      input.command.bindingId,
+      input.command.idempotencyKey,
+    );
+    const existing = this.outboundByIdempotency.get(idempotencyScope);
     if (existing) {
       if (!this.sameOutboundDraft(existing, input, messageBodyDigest)) {
         return { status: "conflict", code: "idempotency_mismatch" };
@@ -332,7 +349,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     };
     record.command.state = "draft";
     this.outboundById.set(record.command.commandId, record);
-    this.outboundByIdempotency.set(record.command.idempotencyKey, record);
+    this.outboundByIdempotency.set(idempotencyScope, record);
     return {
       status: "created",
       commandId: record.command.commandId,
@@ -342,9 +359,40 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
 
   async finalizeOutbound(input: FinalizeOutboundCommand): Promise<CreateOutboundResult> {
     const record = this.outboundById.get(input.commandId);
-    if (!record || record.state !== "draft" || !input.endpointDigests[0]) {
+    const activeDigest = input.endpointDigests[0];
+    if (!record || record.state !== "draft" || !activeDigest) {
       return { status: "conflict", code: "idempotency_mismatch" };
     }
+    const binding = this.bindings.get(record.command.bindingId);
+    const policy = this.policies.get(record.command.bindingId);
+    const consent = this.consents.get(this.consentKey(record.command.bindingId, record.purpose));
+    const connection = this.connections.get(record.command.channel);
+    const template = this.templates.get(this.templateKey(record.templateId, record.command.locale));
+    if (!binding || !policy || !consent) {
+      return { status: "conflict", code: "idempotency_mismatch" };
+    }
+    const decision = evaluateOutboundPolicy({
+      purpose: record.purpose,
+      binding: {
+        bindingId: binding.bindingId,
+        trustState: binding.trustState,
+        freshUntil: binding.freshUntil,
+      },
+      contactPolicy: { state: policy.state, version: policy.version, fence: policy.fence },
+      requiredPolicyVersion: input.requiredPolicyVersion,
+      requiredFence: input.requiredFence,
+      consent: { state: consent.state, receipt: consent.receipt },
+      connectionState: connection?.state ?? "disabled",
+      template: {
+        eligible: Boolean(
+          template?.internallyApproved && template.providerState === "provider_approved",
+        ),
+      },
+      authorizationReceipt: input.authorizationReceipt,
+      destinationKey: canonicalEndpointReference(activeDigest.digest),
+      now: input.now,
+    });
+    if (!decision.allowed) return { status: "conflict", code: "idempotency_mismatch" };
     record.fingerprint = input.fingerprint;
     record.requiredPolicyVersion = input.requiredPolicyVersion;
     record.requiredFence = input.requiredFence;
@@ -423,7 +471,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
           ),
         },
         authorizationReceipt: record.authorizationReceipt,
-        destinationKey: activeDigest.digest,
+        destinationKey: canonicalEndpointReference(activeDigest.digest),
         now: input.now,
       });
       if (!decision.allowed) return { status: "not_claimed", code: decision.code };
@@ -500,6 +548,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       record.leaseOwnerHash = undefined;
       record.leaseExpiresAt = undefined;
       attempt.state = state;
+      attempt.resultCode = input.outcome;
       attempt.completedAt = input.now;
       return "completed";
     });
@@ -912,6 +961,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
         eventId: record.envelope.event.eventId,
         endpointDigests: record.endpointDigests,
         envelope: record.envelope,
+        ordinal: record.ordinal,
         state: record.state,
         leaseVersion: record.leaseVersion,
       })),
@@ -940,6 +990,10 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
 
   private consentKey(bindingId: string, purpose: string): string {
     return `${bindingId}\u0000${purpose}`;
+  }
+
+  private outboundIdempotencyKey(bindingId: string, idempotencyKey: string): string {
+    return `${bindingId}\u0000${idempotencyKey}`;
   }
 
   private templateKey(templateId: string, locale: string): string {

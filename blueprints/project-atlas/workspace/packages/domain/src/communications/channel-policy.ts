@@ -37,6 +37,10 @@ export type OutboundAuthorizationReceipt = {
   expiresAt: Date;
 };
 
+export function canonicalEndpointReference(digest: string): string {
+  return `endpoint_ref:${digest}`;
+}
+
 export type OutboundPolicyInput = {
   purpose: ContactPurpose;
   binding: { bindingId: string; trustState: BindingTrustState; freshUntil: Date };

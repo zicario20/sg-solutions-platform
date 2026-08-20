@@ -22,9 +22,7 @@ async function seedScenario(scenario: string): Promise<void> {
   if (!sql) throw new Error("M004_POSTGRES_INTEGRATION_URL_REQUIRED");
   const ids = communicationsConformanceIds(scenario);
   const seed = communicationsConformanceSeed(scenario);
-  const binding = seed.bindings![0]!;
-  const policy = seed.policies![0]!;
-  const consent = seed.consents![0]!;
+  const primaryBinding = seed.bindings![0]!;
   const template = seed.templates![0]!;
   await sql.begin(async (tx) => {
     const principalRows = await tx.unsafe<
@@ -38,9 +36,13 @@ async function seedScenario(scenario: string): Promise<void> {
         configured_at, verified_at, suspended_at, created_at, updated_at
       ) values (
         ${ids.connectionId}, 'whatsapp', 'meta_cloud', 'active', 'synthetic.v1', 1,
-        ${binding.createdAt}, ${binding.createdAt}, null, ${binding.createdAt}, ${binding.updatedAt}
+        ${primaryBinding.createdAt}, ${primaryBinding.createdAt}, null,
+        ${primaryBinding.createdAt}, ${primaryBinding.updatedAt}
       ) on conflict (id) do nothing
     `;
+    for (const [index, binding] of seed.bindings!.entries()) {
+      const policy = seed.policies![index]!;
+      const consent = seed.consents![index]!;
     await tx`
       insert into communication_contact_bindings (
         id, connection_id, channel_kind, endpoint_digest, endpoint_digest_key_version,
@@ -79,6 +81,7 @@ async function seedScenario(scenario: string): Promise<void> {
         ${consent.receipt!.expiresAt}, ${consent.changedAt}, ${consent.changedAt}
       ) on conflict (evidence_receipt_id) do nothing
     `;
+    }
     await tx`
       insert into communication_message_templates (
         id, template_key, locale, purpose, definition_source, definition_version,
@@ -91,10 +94,10 @@ async function seedScenario(scenario: string): Promise<void> {
         ${template.templateId}, ${template.templateId}, ${template.locale}, 'transactional',
         'synthetic_test_fixture', ${template.definitionVersion}, '[]'::jsonb,
         ${template.providerState}, true, ${`approval_${template.templateId}`},
-        ${template.updatedAt}, ${binding.freshUntil}, ${`provider_${template.templateId}`},
+        ${template.updatedAt}, ${primaryBinding.freshUntil}, ${`provider_${template.templateId}`},
         ${template.providerVersion}, ${`provider_receipt_${template.templateId}`},
         ${`provider_correlation_${template.templateId}`}, ${template.updatedAt},
-        ${binding.freshUntil}, 'utility', ${template.updatedAt}, ${template.updatedAt},
+        ${primaryBinding.freshUntil}, 'utility', ${template.updatedAt}, ${template.updatedAt},
         ${template.updatedAt}
       ) on conflict (template_key, locale) do nothing
     `;
