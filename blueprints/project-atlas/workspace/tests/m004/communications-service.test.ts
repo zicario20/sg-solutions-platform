@@ -93,8 +93,44 @@ function validTemplateReceipt(templateId = "template_1") {
     owner: "communications",
     operation: "template_internal_approval",
     resourceId: templateId,
+    locale: "en",
+    definitionVersion: 1,
     issuedAt: NOW,
     expiresAt: TOMORROW,
+  };
+}
+
+function validProviderTemplateReceipt(
+  providerVersion: number,
+  providerState: "provider_approved" | "provider_rejected" | "paused" | "disabled",
+) {
+  return {
+    receiptId: `receipt_template_provider_${providerVersion}`,
+    owner: "communications",
+    operation: "template_provider_reconciliation",
+    templateId: "template_1",
+    locale: "en",
+    definitionVersion: 1,
+    providerVersion,
+    providerState,
+    issuedAt: NOW,
+    expiresAt: TOMORROW,
+    correlationId: `template_correlation_${providerVersion}`,
+  };
+}
+
+function validWithdrawalReceipt(issuedAt = NOW) {
+  return {
+    source: "authority",
+    receipt: {
+      receiptId: "receipt_withdrawal_1",
+      owner: "consent",
+      operation: "contact_withdrawal",
+      bindingId: "binding_1",
+      issuedAt,
+      expiresAt: TOMORROW,
+      correlationId: "withdrawal_correlation_1",
+    },
   };
 }
 
@@ -411,7 +447,11 @@ describe("receipt-gated consent, binding and template behavior", () => {
         now: NOW,
       }),
     ).toMatchObject({ status: "changed", state: "granted", version: 1 });
-    await repository.withdrawContact({ bindingId: "binding_1", now: LATER });
+    await repository.withdrawContact({
+      bindingId: "binding_1",
+      evidence: validWithdrawalReceipt(LATER),
+      now: LATER,
+    });
     expect(
       await repository.grantConsentFromReceipt({
         bindingId: "binding_1",
@@ -478,7 +518,11 @@ describe("receipt-gated consent, binding and template behavior", () => {
       }),
     ).toMatchObject({ status: "registered", internallyApproved: false });
     expect(
-      await templates.recordInternalApproval({ templateId: "template_1" }),
+      await templates.recordInternalApproval({
+        templateId: "template_1",
+        locale: "en",
+        definitionVersion: 1,
+      }),
     ).toEqual({ status: "denied", code: "approval_receipt_missing" });
     expect(
       await templates.applyProviderProjection({
@@ -486,6 +530,8 @@ describe("receipt-gated consent, binding and template behavior", () => {
         locale: "en",
         providerState: "provider_approved",
         providerVersion: 2,
+        correlationId: "template_correlation_2",
+        receipt: validProviderTemplateReceipt(2, "provider_approved"),
         now: NOW,
       }),
     ).toMatchObject({ status: "applied", internallyApproved: false });
@@ -495,6 +541,8 @@ describe("receipt-gated consent, binding and template behavior", () => {
     expect(
       await templates.recordInternalApproval({
         templateId: "template_1",
+        locale: "en",
+        definitionVersion: 1,
         receipt: validTemplateReceipt(),
       }),
     ).toMatchObject({ status: "approved", internallyApproved: true });
@@ -504,6 +552,8 @@ describe("receipt-gated consent, binding and template behavior", () => {
         locale: "en",
         providerState: "paused",
         providerVersion: 3,
+        correlationId: "template_correlation_3",
+        receipt: validProviderTemplateReceipt(3, "paused"),
         now: LATER,
       }),
     ).toMatchObject({ status: "applied", providerState: "paused", providerVersion: 3 });
@@ -513,6 +563,8 @@ describe("receipt-gated consent, binding and template behavior", () => {
         locale: "en",
         providerState: "provider_approved",
         providerVersion: 2,
+        correlationId: "template_correlation_2",
+        receipt: validProviderTemplateReceipt(2, "provider_approved"),
         now: LATER,
       }),
     ).toMatchObject({ status: "regressive", providerState: "paused", providerVersion: 3 });
@@ -533,6 +585,136 @@ describe("receipt-gated consent, binding and template behavior", () => {
         synthetic: false,
       }),
     ).resolves.toEqual({ status: "unavailable", code: "runtime_registration_disabled" });
+  });
+
+  it("binds internal approval and provider projection receipts to the exact template revision", async () => {
+    const { CanonicalMessageTemplateService } = runtimeApi();
+    const repository = createRepository({ templates: [] });
+    const templates = new CanonicalMessageTemplateService({
+      repository,
+      clock: { now: () => NOW },
+      allowSyntheticDefinitions: true,
+    });
+    await templates.registerInternalDefinition({
+      templateId: "template_1",
+      locale: "en",
+      definitionVersion: 1,
+      synthetic: true,
+    });
+
+    expect(
+      await templates.recordInternalApproval({
+        templateId: "template_1",
+        locale: "en",
+        definitionVersion: 1,
+        receipt: { ...validTemplateReceipt(), locale: "es" },
+      }),
+    ).toEqual({ status: "denied", code: "approval_receipt_invalid" });
+    expect(
+      await templates.applyProviderProjection({
+        templateId: "template_1",
+        locale: "en",
+        providerState: "provider_approved",
+        providerVersion: 2,
+        correlationId: "template_correlation_2",
+        now: NOW,
+      }),
+    ).toEqual({ status: "denied", code: "provider_receipt_missing" });
+    expect(
+      await templates.applyProviderProjection({
+        templateId: "template_1",
+        locale: "en",
+        providerState: "provider_approved",
+        providerVersion: 2,
+        correlationId: "wrong_correlation",
+        receipt: validProviderTemplateReceipt(2, "provider_approved"),
+        now: NOW,
+      }),
+    ).toEqual({ status: "denied", code: "provider_receipt_invalid" });
+  });
+
+  it("rejects withdrawal without owning evidence and preserves that evidence in history", async () => {
+    const repository = createRepository();
+
+    expect(await repository.withdrawContact({ bindingId: "binding_1", now: NOW })).toEqual({
+      status: "denied",
+      code: "withdrawal_evidence_missing",
+    });
+    expect(
+      await repository.withdrawContact({
+        bindingId: "binding_1",
+        evidence: validWithdrawalReceipt(),
+        now: NOW,
+      }),
+    ).toMatchObject({ status: "changed", state: "withdrawn" });
+    expect(repository.referenceState().withdrawalHistory).toEqual([
+      expect.objectContaining({
+        bindingId: "binding_1",
+        source: "authority",
+        receiptId: "receipt_withdrawal_1",
+        correlationId: "withdrawal_correlation_1",
+      }),
+    ]);
+  });
+
+  it("binds inbound withdrawal evidence to the referenced event correlation", async () => {
+    const fixture = createService();
+    await acceptInbound(fixture.service);
+    const receipt = {
+      receiptId: "receipt_inbound_withdrawal_1",
+      owner: "communications",
+      operation: "inbound_opt_out",
+      bindingId: "binding_1",
+      eventId: "event_1",
+      issuedAt: NOW,
+      expiresAt: TOMORROW,
+      correlationId: "wrong_correlation",
+    };
+
+    expect(
+      await fixture.repository.withdrawContact({
+        bindingId: "binding_1",
+        evidence: { source: "inbound_event", receipt },
+        now: NOW,
+      }),
+    ).toEqual({ status: "denied", code: "withdrawal_evidence_invalid" });
+    expect(
+      await fixture.repository.withdrawContact({
+        bindingId: "binding_1",
+        evidence: {
+          source: "inbound_event",
+          receipt: { ...receipt, correlationId: "correlation_1" },
+        },
+        now: NOW,
+      }),
+    ).toMatchObject({ status: "changed", state: "withdrawn" });
+  });
+
+  it("keeps consent withdrawn after ambiguous opt-out review until separate re-consent", async () => {
+    const repository = createRepository();
+    await repository.withdrawContact({
+      bindingId: "binding_1",
+      evidence: validWithdrawalReceipt(),
+      now: NOW,
+    });
+
+    expect(
+      await repository.resolveAmbiguousOptOutFromReceipt({
+        bindingId: "binding_1",
+        receipt: {
+          receiptId: "receipt_opt_out_review_1",
+          owner: "consent",
+          operation: "ambiguous_opt_out_resolution",
+          bindingId: "binding_1",
+          issuedAt: NOW,
+          expiresAt: TOMORROW,
+        },
+        now: NOW,
+      }),
+    ).toEqual({ status: "unchanged", state: "withdrawn", version: 2 });
+    expect(repository.referenceState().policies[0]).toMatchObject({
+      state: "normal_after_review",
+    });
   });
 });
 
@@ -600,7 +782,16 @@ describe("endpoint digest isolation and fail-closed dependencies", () => {
     expect(await queueOutbound(fixture.service)).toEqual({
       status: "unavailable",
       code: "destination_unavailable",
+      commandId: "outbound_command_1",
     });
-    expect(fixture.repository.referenceState().outbound).toEqual([]);
+    expect(fixture.repository.referenceState().outbound).toEqual([
+      expect.objectContaining({
+        commandId: "outbound_command_1",
+        state: "failed",
+        failureCode: "destination_unavailable",
+        fingerprint: undefined,
+        endpointDigests: undefined,
+      }),
+    ]);
   });
 });

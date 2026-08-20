@@ -24,6 +24,41 @@ function deferred() {
   return { promise, resolve };
 }
 
+function validWithdrawalEvidence(issuedAt = NOW) {
+  return {
+    source: "authority",
+    receipt: {
+      receiptId: "receipt_withdrawal_1",
+      owner: "consent",
+      operation: "contact_withdrawal",
+      bindingId: "binding_1",
+      issuedAt,
+      expiresAt: TOMORROW,
+      correlationId: "withdrawal_correlation_1",
+    },
+  };
+}
+
+function reconciliationReceipt(input: {
+  commandId: string;
+  attemptId: string;
+  outcome: "reconciled_accepted" | "confirmed_not_sent" | "terminal_failure";
+  source?: "provider_lookup" | "manual_authority";
+}) {
+  return {
+    receiptId: `receipt_reconcile_${input.outcome}`,
+    owner: "communications",
+    operation: "dispatch_reconciliation",
+    source: input.source ?? "provider_lookup",
+    commandId: input.commandId,
+    attemptId: input.attemptId,
+    outcome: input.outcome,
+    issuedAt: NOW,
+    expiresAt: TOMORROW,
+    correlationId: "correlation_out_1",
+  };
+}
+
 function repositoryOptions(overrides: Record<string, unknown> = {}) {
   return {
     bindings: [
@@ -168,7 +203,11 @@ describe("atomic opt-out and dispatch fencing", () => {
     const queued = await queueOutbound(service);
     expect(queued).toMatchObject({ status: "created" });
 
-    const withdrawal = repository.withdrawContact({ bindingId: "binding_1", now: NOW });
+    const withdrawal = repository.withdrawContact({
+      bindingId: "binding_1",
+      evidence: validWithdrawalEvidence(),
+      now: NOW,
+    });
     await withdrawalEntered.promise;
     const dispatch = service.dispatchOutbound({
       commandId: queued.commandId,
@@ -181,6 +220,49 @@ describe("atomic opt-out and dispatch fencing", () => {
     await expect(dispatch).resolves.toEqual({ status: "not_dispatched", code: "contact_policy_denied" });
     expect(providerCalls).toBe(0);
     expect(repository.referenceState().outbound[0]).toMatchObject({ state: "cancelled" });
+  });
+
+  it("uses the same lock so a dispatch claim that wins before withdrawal may complete", async () => {
+    const claimEntered = deferred();
+    const releaseClaim = deferred();
+    const providerEntered = deferred();
+    const releaseProvider = deferred();
+    const repository = createRepository({
+      lockBoundary: async ({ operation }: { operation: string }) => {
+        if (operation === "claim_outbound") {
+          claimEntered.resolve();
+          await releaseClaim.promise;
+        }
+      },
+    });
+    const service = createService(repository, {
+      dispatch: async () => {
+        providerEntered.resolve();
+        await releaseProvider.promise;
+        return { status: "accepted", providerReference: "provider_ref_1" };
+      },
+    });
+    const queued = await queueOutbound(service);
+    const dispatch = service.dispatchOutbound({
+      commandId: queued.commandId,
+      leaseOwner: "worker_1",
+      leaseExpiresAt: LATER,
+    });
+    await claimEntered.promise;
+    const withdrawal = repository.withdrawContact({
+      bindingId: "binding_1",
+      evidence: validWithdrawalEvidence(),
+      now: NOW,
+    });
+    releaseClaim.resolve();
+    await providerEntered.promise;
+    await expect(withdrawal).resolves.toMatchObject({ status: "changed", state: "withdrawn" });
+    releaseProvider.resolve();
+
+    await expect(dispatch).resolves.toMatchObject({ status: "accepted" });
+    expect(repository.referenceState().attempts[0]).toMatchObject({
+      state: "provider_accepted",
+    });
   });
 });
 
@@ -327,6 +409,242 @@ describe("durable leases, attempts and recovery", () => {
     ).toBe("conflict");
     expect(repository.referenceState().inbound[0]).toMatchObject({ state: "persisted" });
   });
+
+  it("rejects expired or non-finite lease completion for the owning worker", async () => {
+    const repository = createRepository();
+    await repository.acceptInbound({
+      connectionId: "connection_1",
+      providerEventId: "provider_event_expiry",
+      providerBodyDigest: "body_digest_expiry",
+      endpointDigests: [{ version: "v1", digest: "endpoint_digest_v1" }],
+      envelope: {
+        event: {
+          eventId: "event_expiry",
+          channel: "whatsapp",
+          locale: "en",
+          connectionState: "active",
+          bindingId: "binding_1",
+          conversationId: "conversation_1",
+          messageId: "message_expiry",
+          receivedAt: NOW,
+          state: "persisted",
+          correlationId: "correlation_expiry",
+        },
+        conversation: {
+          id: "conversation_1",
+          channel: "whatsapp",
+          locale: "en",
+          status: "new",
+          participantIds: ["participant_1"],
+          version: 1,
+          createdAt: NOW,
+          updatedAt: NOW,
+          lastActivityAt: NOW,
+        },
+        participant: {
+          participantId: "participant_1",
+          conversationId: "conversation_1",
+          bindingId: "binding_1",
+          role: "external_contact",
+          createdAt: NOW,
+        },
+        message: {
+          id: "message_expiry",
+          conversationId: "conversation_1",
+          channel: "whatsapp",
+          direction: "inbound",
+          senderParticipantId: "participant_1",
+          locale: "en",
+          kind: "text",
+          body: "Synthetic body",
+          createdAt: NOW,
+        },
+      },
+      optOutSignal: "none",
+    });
+    const inboundClaim = await repository.claimInbound({
+      eventId: "event_expiry",
+      leaseOwner: "worker_1",
+      leaseExpiresAt: LATER,
+      now: NOW,
+      requiredPolicyVersion: 7,
+    });
+    expect(inboundClaim).toMatchObject({ status: "claimed", leaseVersion: 1 });
+    expect(
+      await repository.completeInbound({
+        eventId: "event_expiry",
+        leaseOwner: "worker_1",
+        leaseVersion: 1,
+        outcome: "applied",
+        now: TOMORROW,
+      }),
+    ).toBe("conflict");
+    expect(
+      await repository.completeInbound({
+        eventId: "event_expiry",
+        leaseOwner: "worker_1",
+        leaseVersion: 1,
+        outcome: "applied",
+        now: new Date("invalid"),
+      }),
+    ).toBe("conflict");
+
+    const service = createService(repository, {
+      dispatch: async () => ({ status: "accepted", providerReference: "provider_ref_1" }),
+    });
+    const queued = await queueOutbound(service);
+    const outboundClaim = await repository.claimOutbound({
+      commandId: queued.commandId,
+      attemptId: "attempt_expiry",
+      leaseOwner: "worker_2",
+      leaseExpiresAt: LATER,
+      now: NOW,
+    });
+    expect(outboundClaim).toMatchObject({ status: "claimed", attempt: { leaseVersion: 1 } });
+    expect(
+      await repository.markDispatchOutcome({
+        commandId: queued.commandId,
+        attemptId: "attempt_expiry",
+        leaseOwner: "worker_2",
+        leaseVersion: 1,
+        outcome: "accepted",
+        now: TOMORROW,
+      }),
+    ).toBe("conflict");
+  });
+
+  it("returns recovery instead of success when inbound or outbound completion loses its lease", async () => {
+    let inboundNow = NOW;
+    const inboundRepository = createRepository();
+    const { CommunicationsService } = runtimeApi();
+    const baseDependencies = {
+      repository: inboundRepository,
+      clock: { now: () => inboundNow },
+      ids: { next: (kind: string) => `${kind}_recovery` },
+      endpointDigestKeys: {
+        resolve: async () => ({
+          status: "available",
+          active: { purpose: "communications_endpoint_digest", version: "v1", key: "key" },
+          prior: [],
+        }),
+      },
+      keyedDigest: { digest: async () => "endpoint_digest_v1" },
+      destinationResolver: {
+        resolve: async () => ({ status: "resolved", endpoint: "raw:endpoint:synthetic" }),
+      },
+      boundedExecutor: {
+        run: async (_operation: string, _timeout: number, action: () => Promise<unknown>) => action(),
+      },
+      provider: { dispatch: async () => ({ status: "accepted" }) },
+      publicKnowledge: {
+        answer: async () => {
+          inboundNow = TOMORROW;
+          return { status: "available", text: "Synthetic answer", sourceReceipt: "receipt_1" };
+        },
+      },
+      contentPolicy: { evaluate: () => ({ allowed: true, code: "allowed" }) },
+      handoff: { request: async () => ({ status: "unavailable" }) },
+      providerTimeoutMs: 2_000,
+      knowledgeTimeoutMs: 500,
+      handoffTimeoutMs: 500,
+    };
+    const expiringInboundService = new CommunicationsService(baseDependencies);
+    await expiringInboundService.acceptInbound({
+      connectionId: "connection_recovery",
+      providerEventId: "provider_event_recovery",
+      providerBodyDigest: "body_recovery",
+      endpoint: "raw:endpoint:synthetic",
+      envelope: {
+        event: {
+          eventId: "event_recovery",
+          channel: "whatsapp",
+          locale: "en",
+          connectionState: "active",
+          bindingId: "binding_1",
+          conversationId: "conversation_1",
+          messageId: "message_recovery",
+          receivedAt: NOW,
+          state: "persisted",
+          correlationId: "correlation_recovery",
+        },
+        conversation: {
+          id: "conversation_1",
+          channel: "whatsapp",
+          locale: "en",
+          status: "new",
+          participantIds: ["participant_1"],
+          version: 1,
+          createdAt: NOW,
+          updatedAt: NOW,
+          lastActivityAt: NOW,
+        },
+        participant: {
+          participantId: "participant_1",
+          conversationId: "conversation_1",
+          bindingId: "binding_1",
+          role: "external_contact",
+          createdAt: NOW,
+        },
+        message: {
+          id: "message_recovery",
+          conversationId: "conversation_1",
+          channel: "whatsapp",
+          direction: "inbound",
+          senderParticipantId: "participant_1",
+          locale: "en",
+          kind: "text",
+          body: "Synthetic body",
+          createdAt: NOW,
+        },
+      },
+      optOutSignal: "none",
+    });
+    expect(
+      await expiringInboundService.processInbound({
+        eventId: "event_recovery",
+        leaseOwner: "worker_recovery",
+        leaseExpiresAt: LATER,
+        requiredPolicyVersion: 7,
+        action: "public_knowledge",
+        prompt: "Synthetic question",
+      }),
+    ).toEqual({
+      status: "recovery_required",
+      code: "inbound_completion_conflict",
+      eventId: "event_recovery",
+    });
+
+    let outboundNow = NOW;
+    const outboundRepository = createRepository();
+    const expiringOutboundService = new CommunicationsService({
+      ...baseDependencies,
+      repository: outboundRepository,
+      clock: { now: () => outboundNow },
+      ids: (() => {
+        let id = 0;
+        return { next: (kind: string) => `${kind}_${++id}` };
+      })(),
+      provider: {
+        dispatch: async () => {
+          outboundNow = TOMORROW;
+          return { status: "accepted" };
+        },
+      },
+    });
+    const queued = await queueOutbound(expiringOutboundService);
+    expect(
+      await expiringOutboundService.dispatchOutbound({
+        commandId: queued.commandId,
+        leaseOwner: "worker_recovery",
+        leaseExpiresAt: LATER,
+      }),
+    ).toEqual({
+      status: "recovery_required",
+      code: "dispatch_completion_conflict",
+      commandId: queued.commandId,
+      attemptId: "dispatch_attempt_3",
+    });
+  });
 });
 
 describe("monotonic exactly-once provider statuses", () => {
@@ -375,5 +693,268 @@ describe("monotonic exactly-once provider statuses", () => {
       }),
     ).toMatchObject({ status: "applied", commandState: "read" });
     expect(repository.referenceState().providerStatuses).toHaveLength(3);
+  });
+
+  it("closes the active attempt when provider status arrives before dispatch completion", async () => {
+    const providerEntered = deferred();
+    const releaseProvider = deferred();
+    const repository = createRepository();
+    const service = createService(repository, {
+      dispatch: async () => {
+        providerEntered.resolve();
+        await releaseProvider.promise;
+        return { status: "accepted", providerReference: "provider_ref_1" };
+      },
+    });
+    const queued = await queueOutbound(service);
+    const dispatch = service.dispatchOutbound({
+      commandId: queued.commandId,
+      leaseOwner: "worker_1",
+      leaseExpiresAt: LATER,
+    });
+    await providerEntered.promise;
+
+    expect(
+      await repository.applyProviderStatus({
+        commandId: queued.commandId,
+        providerEventId: "early_status_1",
+        status: "sent",
+        occurredAt: NOW,
+      }),
+    ).toMatchObject({ status: "applied", commandState: "sent" });
+    expect(repository.referenceState().attempts[0]).toMatchObject({
+      state: "sent",
+      completedAt: NOW,
+    });
+    releaseProvider.resolve();
+
+    await expect(dispatch).resolves.toMatchObject({ status: "accepted" });
+    expect(repository.referenceState().attempts).toEqual([
+      expect.objectContaining({ state: "sent", completedAt: NOW }),
+    ]);
+  });
+});
+
+describe("controlled inbound opt-out and reconciliation races", () => {
+  it("serializes inbound opt-out acceptance before processing a prior event", async () => {
+    let acceptCount = 0;
+    const optOutEntered = deferred();
+    const releaseOptOut = deferred();
+    const repository = createRepository({
+      lockBoundary: async ({ operation }: { operation: string }) => {
+        if (operation === "accept_inbound" && ++acceptCount === 2) {
+          optOutEntered.resolve();
+          await releaseOptOut.promise;
+        }
+      },
+    });
+    const service = createService(repository, {
+      dispatch: async () => ({ status: "accepted" }),
+    });
+    await repository.acceptInbound({
+      connectionId: "connection_1",
+      providerEventId: "provider_event_prior",
+      providerBodyDigest: "body_prior",
+      endpointDigests: [{ version: "v1", digest: "endpoint_digest_v1" }],
+      envelope: {
+        event: {
+          eventId: "event_prior",
+          channel: "whatsapp",
+          locale: "en",
+          connectionState: "active",
+          bindingId: "binding_1",
+          conversationId: "conversation_1",
+          messageId: "message_prior",
+          receivedAt: NOW,
+          state: "persisted",
+          correlationId: "correlation_prior",
+        },
+        conversation: {
+          id: "conversation_1",
+          channel: "whatsapp",
+          locale: "en",
+          status: "new",
+          participantIds: ["participant_1"],
+          version: 1,
+          createdAt: NOW,
+          updatedAt: NOW,
+          lastActivityAt: NOW,
+        },
+        participant: {
+          participantId: "participant_1",
+          conversationId: "conversation_1",
+          bindingId: "binding_1",
+          role: "external_contact",
+          createdAt: NOW,
+        },
+        message: {
+          id: "message_prior",
+          conversationId: "conversation_1",
+          channel: "whatsapp",
+          direction: "inbound",
+          senderParticipantId: "participant_1",
+          locale: "en",
+          kind: "text",
+          body: "Synthetic body",
+          createdAt: NOW,
+        },
+      },
+      optOutSignal: "none",
+    });
+    const optOutEnvelope = repository.referenceState().inbound[0].envelope as any;
+    const acceptOptOut = repository.acceptInbound({
+      connectionId: "connection_1",
+      providerEventId: "provider_event_opt_out",
+      providerBodyDigest: "body_opt_out",
+      endpointDigests: [{ version: "v1", digest: "endpoint_digest_v1" }],
+      envelope: {
+        ...optOutEnvelope,
+        event: {
+          ...optOutEnvelope.event,
+          eventId: "event_opt_out",
+          messageId: "message_opt_out",
+          correlationId: "correlation_opt_out",
+        },
+        message: { ...optOutEnvelope.message, id: "message_opt_out", body: null },
+      },
+      optOutSignal: "pending",
+    });
+    await optOutEntered.promise;
+    const processPrior = service.processInbound({
+      eventId: "event_prior",
+      leaseOwner: "worker_prior",
+      leaseExpiresAt: LATER,
+      requiredPolicyVersion: 7,
+      action: "public_knowledge",
+      prompt: "Synthetic question",
+    });
+    releaseOptOut.resolve();
+
+    await expect(acceptOptOut).resolves.toMatchObject({ status: "accepted" });
+    await expect(processPrior).resolves.toEqual({
+      status: "conflict",
+      code: "policy_version_mismatch",
+    });
+  });
+
+  it("reconciles unknown and expired dispatches from typed evidence without resending", async () => {
+    const repository = createRepository();
+    const service = createService(repository, {
+      dispatch: async () => {
+        throw new Error("ambiguous");
+      },
+    });
+    const queued = await queueOutbound(service);
+    const unknown = await service.dispatchOutbound({
+      commandId: queued.commandId,
+      leaseOwner: "worker_1",
+      leaseExpiresAt: LATER,
+    });
+    expect(repository.reconcileOutbound).toBeTypeOf("function");
+
+    expect(
+      await repository.reconcileOutbound({
+        commandId: queued.commandId,
+        attemptId: unknown.attemptId,
+        now: NOW,
+      }),
+    ).toEqual({ status: "denied", code: "reconciliation_receipt_missing" });
+    expect(
+      await service.reconcileOutbound({
+        commandId: queued.commandId,
+        attemptId: unknown.attemptId,
+        receipt: reconciliationReceipt({
+          commandId: queued.commandId,
+          attemptId: unknown.attemptId,
+          outcome: "reconciled_accepted",
+        }),
+      }),
+    ).toMatchObject({ status: "reconciled", commandState: "reconciled_accepted" });
+    expect(
+      await service.dispatchOutbound({
+        commandId: queued.commandId,
+        leaseOwner: "worker_2",
+        leaseExpiresAt: TOMORROW,
+      }),
+    ).toEqual({ status: "not_dispatched", code: "already_completed" });
+
+    const expiredRepository = createRepository();
+    const expiredService = createService(expiredRepository, {
+      dispatch: async () => ({ status: "accepted" }),
+    });
+    const expiredQueued = await queueOutbound(expiredService);
+    const expiredClaim = await expiredRepository.claimOutbound({
+      commandId: expiredQueued.commandId,
+      attemptId: "attempt_expired_reconcile",
+      leaseOwner: "worker_expired",
+      leaseExpiresAt: LATER,
+      now: NOW,
+    });
+    expect(expiredClaim).toMatchObject({ status: "claimed" });
+    expect(
+      await expiredRepository.reconcileOutbound({
+        commandId: expiredQueued.commandId,
+        attemptId: "attempt_expired_reconcile",
+        receipt: {
+          ...reconciliationReceipt({
+            commandId: expiredQueued.commandId,
+            attemptId: "attempt_expired_reconcile",
+            outcome: "confirmed_not_sent",
+            source: "manual_authority",
+          }),
+          issuedAt: TOMORROW,
+          expiresAt: new Date("2026-08-22T12:00:00.000Z"),
+        },
+        now: TOMORROW,
+      }),
+    ).toMatchObject({ status: "reconciled", commandState: "confirmed_not_sent" });
+  });
+
+  it("serializes competing reconciliation receipts to one converged result", async () => {
+    const reconcileEntered = deferred();
+    const releaseReconcile = deferred();
+    const repository = createRepository({
+      lockBoundary: async ({ operation }: { operation: string }) => {
+        if (operation === "reconcile_outbound") {
+          reconcileEntered.resolve();
+          await releaseReconcile.promise;
+        }
+      },
+    });
+    const service = createService(repository, {
+      dispatch: async () => {
+        throw new Error("ambiguous");
+      },
+    });
+    expect(repository.reconcileOutbound).toBeTypeOf("function");
+    const queued = await queueOutbound(service);
+    const unknown = await service.dispatchOutbound({
+      commandId: queued.commandId,
+      leaseOwner: "worker_1",
+      leaseExpiresAt: LATER,
+    });
+    const receipt = reconciliationReceipt({
+      commandId: queued.commandId,
+      attemptId: unknown.attemptId,
+      outcome: "terminal_failure",
+      source: "manual_authority",
+    });
+    const first = repository.reconcileOutbound({
+      commandId: queued.commandId,
+      attemptId: unknown.attemptId,
+      receipt,
+      now: NOW,
+    });
+    await reconcileEntered.promise;
+    const second = repository.reconcileOutbound({
+      commandId: queued.commandId,
+      attemptId: unknown.attemptId,
+      receipt,
+      now: NOW,
+    });
+    releaseReconcile.resolve();
+
+    await expect(first).resolves.toMatchObject({ status: "reconciled", commandState: "failed" });
+    await expect(second).resolves.toMatchObject({ status: "duplicate", commandState: "failed" });
   });
 });

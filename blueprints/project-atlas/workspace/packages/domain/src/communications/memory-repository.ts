@@ -15,6 +15,8 @@ import type {
   CreateOutboundCommand,
   CreateOutboundResult,
   EvaluateTemplateEligibility,
+  FailOutboundDraftCommand,
+  FinalizeOutboundCommand,
   GrantConsentCommand,
   InboundClaimResult,
   MarkDispatchOutcomeCommand,
@@ -22,6 +24,8 @@ import type {
   ProviderStatusResult,
   RecoveryCandidate,
   RecoveryQuery,
+  ReconcileOutboundCommand,
+  ReconcileOutboundResult,
   ReconcileTemplateCommand,
   RegisterTemplateDefinition,
   ApproveTemplateDefinition,
@@ -34,6 +38,7 @@ import type {
   TemplateResult,
   WithdrawContactCommand,
   WithdrawContactResult,
+  WithdrawalHistoryRecord,
 } from "./repository.ts";
 import type {
   ChannelConnectionState,
@@ -56,6 +61,12 @@ type InboundRecord = {
 };
 
 type OutboundRecord = CreateOutboundCommand & {
+  fingerprint?: string;
+  requiredPolicyVersion?: number;
+  requiredFence?: number;
+  endpointDigests?: FinalizeOutboundCommand["endpointDigests"];
+  authorizationReceipt?: FinalizeOutboundCommand["authorizationReceipt"];
+  failureCode?: FailOutboundDraftCommand["code"];
   state: OutboundCommandState;
   leaseOwner?: string;
   leaseVersion: number;
@@ -66,12 +77,27 @@ type OutboundRecord = CreateOutboundCommand & {
 type AttemptRecord = OutboundDispatchAttempt & {
   leaseOwner: string;
   leaseVersion: number;
+  leaseExpiresAt: Date;
   providerReference?: string;
+};
+
+type ReconciledCommandState = Extract<
+  ReconcileOutboundResult,
+  { commandState: unknown }
+>["commandState"];
+
+type StoredReconciliationResult = {
+  status: "reconciled";
+  commandState: ReconciledCommandState;
 };
 
 type LockOperation =
   | "accept_inbound"
+  | "claim_inbound"
   | "claim_outbound"
+  | "complete_outbound"
+  | "apply_provider_status"
+  | "reconcile_outbound"
   | "withdraw_contact"
   | "grant_consent"
   | "resolve_opt_out"
@@ -123,6 +149,8 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
   >();
   private readonly templates = new Map<string, TemplateRecord>();
   private readonly providerStatuses = new Map<string, ApplyProviderStatusCommand>();
+  private readonly withdrawalHistory: WithdrawalHistoryRecord[] = [];
+  private readonly reconciliationReceipts = new Map<string, StoredReconciliationResult>();
   private readonly bindingLockTails = new Map<string, Promise<void>>();
   private readonly lockBoundary?: MemoryCommunicationsRepositoryOptions["lockBoundary"];
 
@@ -200,26 +228,28 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
   async claimInbound(input: ClaimInboundCommand): Promise<InboundClaimResult> {
     const record = this.inboundById.get(input.eventId);
     if (!record) return { status: "not_claimed", code: "not_found" };
-    if (record.state !== "persisted") {
-      return { status: "not_claimed", code: "already_completed" };
-    }
-    const policy = this.policies.get(record.envelope.event.bindingId);
-    if (!policy || policy.version !== input.requiredPolicyVersion) {
-      return { status: "not_claimed", code: "policy_version_mismatch" };
-    }
-    if (record.leaseOwner && record.leaseExpiresAt && record.leaseExpiresAt > input.now) {
-      return { status: "not_claimed", code: "lease_conflict" };
-    }
-    record.leaseOwner = input.leaseOwner;
-    record.leaseVersion += 1;
-    record.leaseExpiresAt = input.leaseExpiresAt;
-    return {
-      status: "claimed",
-      eventId: input.eventId,
-      leaseVersion: record.leaseVersion,
-      envelope: clone(record.envelope),
-      policyState: policy.state,
-    };
+    return this.withBindingLock(record.envelope.event.bindingId, "claim_inbound", async () => {
+      if (record.state !== "persisted") {
+        return { status: "not_claimed", code: "already_completed" };
+      }
+      const policy = this.policies.get(record.envelope.event.bindingId);
+      if (!policy || policy.version !== input.requiredPolicyVersion) {
+        return { status: "not_claimed", code: "policy_version_mismatch" };
+      }
+      if (record.leaseOwner && record.leaseExpiresAt && record.leaseExpiresAt > input.now) {
+        return { status: "not_claimed", code: "lease_conflict" };
+      }
+      record.leaseOwner = input.leaseOwner;
+      record.leaseVersion += 1;
+      record.leaseExpiresAt = input.leaseExpiresAt;
+      return {
+        status: "claimed",
+        eventId: input.eventId,
+        leaseVersion: record.leaseVersion,
+        envelope: clone(record.envelope),
+        policyState: policy.state,
+      };
+    });
   }
 
   async completeInbound(input: CompleteInboundCommand): Promise<"completed" | "conflict"> {
@@ -228,7 +258,8 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       !record ||
       record.state !== "persisted" ||
       record.leaseOwner !== input.leaseOwner ||
-      record.leaseVersion !== input.leaseVersion
+      record.leaseVersion !== input.leaseVersion ||
+      !this.validLeaseCompletion(input.now, record.leaseExpiresAt)
     ) {
       return "conflict";
     }
@@ -241,7 +272,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
   async createOutbound(input: CreateOutboundCommand): Promise<CreateOutboundResult> {
     const existing = this.outboundByIdempotency.get(input.command.idempotencyKey);
     if (existing) {
-      return existing.fingerprint === input.fingerprint
+      return this.sameOutboundDraft(existing, input)
         ? {
             status: "duplicate",
             commandId: existing.command.commandId,
@@ -251,10 +282,10 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     }
     const record: OutboundRecord = {
       ...clone(input),
-      state: "queued",
+      state: "draft",
       leaseVersion: 0,
     };
-    record.command.state = "queued";
+    record.command.state = "draft";
     this.outboundById.set(record.command.commandId, record);
     this.outboundByIdempotency.set(record.command.idempotencyKey, record);
     return {
@@ -262,6 +293,36 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       commandId: record.command.commandId,
       messageId: record.message.id,
     };
+  }
+
+  async finalizeOutbound(input: FinalizeOutboundCommand): Promise<CreateOutboundResult> {
+    const record = this.outboundById.get(input.commandId);
+    if (!record || record.state !== "draft" || !input.endpointDigests[0]) {
+      return { status: "conflict", code: "idempotency_mismatch" };
+    }
+    record.fingerprint = input.fingerprint;
+    record.requiredPolicyVersion = input.requiredPolicyVersion;
+    record.requiredFence = input.requiredFence;
+    record.endpointDigests = clone(input.endpointDigests);
+    record.authorizationReceipt = clone(input.authorizationReceipt);
+    record.state = "queued";
+    record.command.state = "queued";
+    return {
+      status: "created",
+      commandId: record.command.commandId,
+      messageId: record.message.id,
+    };
+  }
+
+  async failOutboundDraft(
+    input: FailOutboundDraftCommand,
+  ): Promise<"completed" | "conflict"> {
+    const record = this.outboundById.get(input.commandId);
+    if (!record || record.state !== "draft") return "conflict";
+    record.state = "failed";
+    record.command.state = "failed";
+    record.failureCode = input.code;
+    return "completed";
   }
 
   async claimOutbound(input: ClaimOutboundCommand): Promise<OutboundClaimResult> {
@@ -290,7 +351,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       if (!consent) return { status: "not_claimed", code: "consent_not_found" };
       const connection = this.connections.get(record.command.channel);
       const template = this.templates.get(this.templateKey(record.templateId, record.command.locale));
-      const activeDigest = record.endpointDigests[0];
+      const activeDigest = record.endpointDigests?.[0];
       if (!activeDigest) return { status: "not_claimed", code: "destination_mismatch" };
       const decision = evaluateOutboundPolicy({
         purpose: record.purpose,
@@ -304,8 +365,8 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
           version: policy.version,
           fence: policy.fence,
         },
-        requiredPolicyVersion: record.requiredPolicyVersion,
-        requiredFence: record.requiredFence,
+        requiredPolicyVersion: record.requiredPolicyVersion!,
+        requiredFence: record.requiredFence!,
         consent: { state: consent.state, receipt: consent.receipt },
         connectionState: connection?.state ?? "disabled",
         template: {
@@ -335,6 +396,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
         correlationId: record.command.correlationId,
         leaseOwner: input.leaseOwner,
         leaseVersion: record.leaseVersion,
+        leaseExpiresAt: input.leaseExpiresAt,
       };
       this.attempts.set(input.attemptId, attempt);
       return {
@@ -350,65 +412,81 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
   async markDispatchOutcome(
     input: MarkDispatchOutcomeCommand,
   ): Promise<"completed" | "conflict"> {
-    const record = this.outboundById.get(input.commandId);
-    const attempt = this.attempts.get(input.attemptId);
-    if (
-      !record ||
-      !attempt ||
-      record.state !== "dispatching" ||
-      attempt.state !== "dispatching" ||
-      record.leaseOwner !== input.leaseOwner ||
-      record.leaseVersion !== input.leaseVersion ||
-      attempt.leaseOwner !== input.leaseOwner ||
-      attempt.leaseVersion !== input.leaseVersion
-    ) {
-      return "conflict";
-    }
-    const state: OutboundCommandState =
-      input.outcome === "accepted"
-        ? "provider_accepted"
-        : input.outcome === "unknown"
-          ? "dispatch_unknown"
-          : "failed";
-    record.state = state;
-    record.command.state = state;
-    record.leaseOwner = undefined;
-    record.leaseExpiresAt = undefined;
-    attempt.state = state;
-    attempt.completedAt = input.now;
-    attempt.providerReference = input.providerReference;
-    return "completed";
+    const found = this.outboundById.get(input.commandId);
+    if (!found) return "conflict";
+    return this.withBindingLock(found.command.bindingId, "complete_outbound", async () => {
+      const record = this.outboundById.get(input.commandId);
+      const attempt = this.attempts.get(input.attemptId);
+      if (
+        !record ||
+        !attempt ||
+        attempt.leaseOwner !== input.leaseOwner ||
+        attempt.leaseVersion !== input.leaseVersion ||
+        !this.validLeaseCompletion(input.now, attempt.leaseExpiresAt)
+      ) {
+        return "conflict";
+      }
+      if (attempt.state !== "dispatching") {
+        return input.outcome === "accepted" &&
+          ["provider_accepted", "sent", "delivered", "read"].includes(attempt.state) &&
+          ["provider_accepted", "sent", "delivered", "read"].includes(record.state)
+          ? "completed"
+          : "conflict";
+      }
+      if (
+        record.state !== "dispatching" ||
+        record.leaseOwner !== input.leaseOwner ||
+        record.leaseVersion !== input.leaseVersion
+      ) {
+        return "conflict";
+      }
+      const state: OutboundCommandState =
+        input.outcome === "accepted"
+          ? "provider_accepted"
+          : input.outcome === "unknown"
+            ? "dispatch_unknown"
+            : "failed";
+      record.state = state;
+      record.command.state = state;
+      record.leaseOwner = undefined;
+      record.leaseExpiresAt = undefined;
+      attempt.state = state;
+      attempt.completedAt = input.now;
+      attempt.providerReference = input.providerReference;
+      return "completed";
+    });
   }
 
   async applyProviderStatus(input: ApplyProviderStatusCommand): Promise<ProviderStatusResult> {
-    const record = this.outboundById.get(input.commandId);
-    if (!record) return { status: "not_found" };
-    const eventKey = `${input.commandId}\u0000${input.providerEventId}`;
-    if (this.providerStatuses.has(eventKey)) {
-      return { status: "duplicate", commandState: record.state };
-    }
-    this.providerStatuses.set(eventKey, clone(input));
-    if (input.status === "failed") {
-      if (["provider_accepted", "dispatching", "queued"].includes(record.state)) {
-        record.state = "failed";
-        record.command.state = "failed";
-        return { status: "applied", commandState: "failed" };
+    const found = this.outboundById.get(input.commandId);
+    if (!found) return { status: "not_found" };
+    return this.withBindingLock(found.command.bindingId, "apply_provider_status", async () => {
+      const record = this.outboundById.get(input.commandId)!;
+      const eventKey = `${input.commandId}\u0000${input.providerEventId}`;
+      if (this.providerStatuses.has(eventKey)) {
+        return { status: "duplicate", commandState: record.state };
       }
-      return { status: "regressive", commandState: record.state };
-    }
-    const currentRank =
-      record.state === "sent" || record.state === "delivered" || record.state === "read"
-        ? DELIVERY_RANK[record.state]
-        : 0;
-    if (DELIVERY_RANK[input.status] <= currentRank) {
-      return { status: "regressive", commandState: record.state };
-    }
-    if (["failed", "expired", "cancelled", "manual_review"].includes(record.state)) {
-      return { status: "regressive", commandState: record.state };
-    }
-    record.state = input.status;
-    record.command.state = input.status;
-    return { status: "applied", commandState: input.status };
+      this.providerStatuses.set(eventKey, clone(input));
+      if (input.status === "failed") {
+        if (["provider_accepted", "dispatching", "queued"].includes(record.state)) {
+          this.closeActiveAttempt(record, "failed", input.occurredAt);
+          return { status: "applied", commandState: "failed" };
+        }
+        return { status: "regressive", commandState: record.state };
+      }
+      const currentRank =
+        record.state === "sent" || record.state === "delivered" || record.state === "read"
+          ? DELIVERY_RANK[record.state]
+          : 0;
+      if (DELIVERY_RANK[input.status] <= currentRank) {
+        return { status: "regressive", commandState: record.state };
+      }
+      if (["failed", "expired", "cancelled", "manual_review"].includes(record.state)) {
+        return { status: "regressive", commandState: record.state };
+      }
+      this.closeActiveAttempt(record, input.status, input.occurredAt);
+      return { status: "applied", commandState: input.status };
+    });
   }
 
   async grantConsentFromReceipt(input: GrantConsentCommand): Promise<ConsentChangeResult> {
@@ -452,6 +530,8 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
 
   async withdrawContact(input: WithdrawContactCommand): Promise<WithdrawContactResult> {
     return this.withBindingLock(input.bindingId, "withdraw_contact", async () => {
+      const evidence = this.validateWithdrawalEvidence(input);
+      if (evidence.status === "denied") return evidence;
       const policy = this.requirePolicy(input.bindingId, input.now);
       if (policy.state === "withdrawn") {
         return {
@@ -466,6 +546,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       policy.version += 1;
       policy.fence += 1;
       policy.updatedAt = input.now;
+      this.withdrawalHistory.push(evidence.record);
       for (const [key, consent] of this.consents) {
         if (consent.bindingId !== input.bindingId || consent.state !== "granted") continue;
         const withdrawn: ConsentRecord = {
@@ -516,7 +597,14 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       policy.version += 1;
       policy.fence += 1;
       policy.updatedAt = input.now;
-      return { status: "changed", state: "granted", version: policy.version };
+      const currentConsent = [...this.consents.values()]
+        .filter((consent) => consent.bindingId === input.bindingId)
+        .sort((left, right) => right.version - left.version)[0];
+      return {
+        status: "unchanged",
+        state: currentConsent?.state ?? "not_requested",
+        version: currentConsent?.version ?? 0,
+      };
     });
   }
 
@@ -590,14 +678,17 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       receipt.owner !== "communications" ||
       receipt.operation !== "template_internal_approval" ||
       receipt.resourceId !== input.templateId ||
+      receipt.locale !== input.locale ||
+      receipt.definitionVersion !== input.definitionVersion ||
       !currentReceipt(receipt, input.now)
     ) {
       return { status: "denied", code: "approval_receipt_invalid" };
     }
-    const template = [...this.templates.values()].find(
-      (candidate) => candidate.templateId === input.templateId,
-    );
+    const template = this.templates.get(this.templateKey(input.templateId, input.locale));
     if (!template) return { status: "not_found", code: "template_not_found" };
+    if (template.definitionVersion !== input.definitionVersion) {
+      return { status: "denied", code: "approval_receipt_invalid" };
+    }
     if (template.internallyApproved && template.approvalReceiptId === receipt.receiptId) {
       return { status: "duplicate", ...clone(template) };
     }
@@ -610,8 +701,22 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
   async reconcileTemplate(
     input: ReconcileTemplateCommand,
   ): Promise<TemplateReconciliationResult> {
+    if (!input.receipt) return { status: "denied", code: "provider_receipt_missing" };
     const template = this.templates.get(this.templateKey(input.templateId, input.locale));
     if (!template) return { status: "not_found", code: "template_not_found" };
+    if (
+      input.receipt.owner !== "communications" ||
+      input.receipt.operation !== "template_provider_reconciliation" ||
+      input.receipt.templateId !== input.templateId ||
+      input.receipt.locale !== input.locale ||
+      input.receipt.definitionVersion !== template.definitionVersion ||
+      input.receipt.providerVersion !== input.providerVersion ||
+      input.receipt.providerState !== input.providerState ||
+      input.receipt.correlationId !== input.correlationId ||
+      !currentReceipt(input.receipt, input.now)
+    ) {
+      return { status: "denied", code: "provider_receipt_invalid" };
+    }
     if (input.providerVersion < template.providerVersion) {
       return { status: "regressive", ...clone(template) };
     }
@@ -620,8 +725,55 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     }
     template.providerState = input.providerState;
     template.providerVersion = input.providerVersion;
+    template.providerReceiptId = input.receipt.receiptId;
+    template.providerCorrelationId = input.receipt.correlationId;
     template.updatedAt = input.now;
     return { status: "applied", ...clone(template) };
+  }
+
+  async reconcileOutbound(input: ReconcileOutboundCommand): Promise<ReconcileOutboundResult> {
+    const found = this.outboundById.get(input.commandId);
+    if (!found) return { status: "not_found" };
+    return this.withBindingLock(found.command.bindingId, "reconcile_outbound", async () => {
+      if (!input.receipt) {
+        return { status: "denied", code: "reconciliation_receipt_missing" };
+      }
+      const prior = this.reconciliationReceipts.get(input.receipt.receiptId);
+      if (prior) return { status: "duplicate", commandState: prior.commandState };
+      const record = this.outboundById.get(input.commandId);
+      const attempt = this.attempts.get(input.attemptId);
+      if (!record || !attempt) return { status: "not_found" };
+      if (!this.validReconciliationReceipt(input, input.receipt, record.command.correlationId)) {
+        return { status: "denied", code: "reconciliation_receipt_invalid" };
+      }
+      const expiredDispatch =
+        record.state === "dispatching" &&
+        record.leaseExpiresAt !== undefined &&
+        Number.isFinite(input.now.getTime()) &&
+        input.now >= record.leaseExpiresAt;
+      if (
+        record.state !== "dispatch_unknown" &&
+        record.state !== "reconciliation_required" &&
+        !expiredDispatch
+      ) {
+        return { status: "denied", code: "reconciliation_state_invalid" };
+      }
+      const commandState =
+        input.receipt.outcome === "reconciled_accepted"
+          ? "reconciled_accepted"
+          : input.receipt.outcome === "confirmed_not_sent"
+            ? "confirmed_not_sent"
+            : "failed";
+      record.state = commandState;
+      record.command.state = commandState;
+      record.leaseOwner = undefined;
+      record.leaseExpiresAt = undefined;
+      attempt.state = commandState;
+      attempt.completedAt = input.now;
+      const result: StoredReconciliationResult = { status: "reconciled", commandState };
+      this.reconciliationReceipts.set(input.receipt.receiptId, result);
+      return result;
+    });
   }
 
   async evaluateTemplateEligibility(
@@ -693,6 +845,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
         requiredPolicyVersion: record.requiredPolicyVersion,
         requiredFence: record.requiredFence,
         endpointDigests: record.endpointDigests,
+        failureCode: record.failureCode,
         state: record.state,
         leaseVersion: record.leaseVersion,
       })),
@@ -702,6 +855,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       consentHistory: this.consentHistory,
       templates: [...this.templates.values()],
       providerStatuses: [...this.providerStatuses.values()],
+      withdrawalHistory: this.withdrawalHistory,
     });
   }
 
@@ -729,6 +883,103 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     };
     this.policies.set(bindingId, created);
     return created;
+  }
+
+  private validLeaseCompletion(now: Date, leaseExpiresAt: Date | undefined): boolean {
+    return Boolean(
+      leaseExpiresAt &&
+        Number.isFinite(now.getTime()) &&
+        Number.isFinite(leaseExpiresAt.getTime()) &&
+        now < leaseExpiresAt,
+    );
+  }
+
+  private sameOutboundDraft(existing: OutboundRecord, input: CreateOutboundCommand): boolean {
+    return (
+      existing.command.bindingId === input.command.bindingId &&
+      existing.command.conversationId === input.command.conversationId &&
+      existing.command.channel === input.command.channel &&
+      existing.command.locale === input.command.locale &&
+      existing.message.body === input.message.body &&
+      existing.purpose === input.purpose &&
+      existing.templateId === input.templateId
+    );
+  }
+
+  private closeActiveAttempt(
+    record: OutboundRecord,
+    state: "sent" | "delivered" | "read" | "failed",
+    completedAt: Date,
+  ): void {
+    record.state = state;
+    record.command.state = state;
+    const attempt = [...this.attempts.values()].find(
+      (candidate) => candidate.commandId === record.command.commandId && candidate.state === "dispatching",
+    );
+    if (attempt) {
+      attempt.state = state;
+      attempt.completedAt = completedAt;
+    }
+    record.leaseOwner = undefined;
+    record.leaseExpiresAt = undefined;
+  }
+
+  private validateWithdrawalEvidence(input: WithdrawContactCommand):
+    | { status: "allowed"; record: WithdrawalHistoryRecord }
+    | { status: "denied"; code: "withdrawal_evidence_missing" | "withdrawal_evidence_invalid" } {
+    const evidence = input.evidence;
+    if (!evidence) return { status: "denied", code: "withdrawal_evidence_missing" };
+    const receipt = evidence.receipt;
+    if (
+      receipt.bindingId !== input.bindingId ||
+      !receipt.receiptId ||
+      !receipt.correlationId ||
+      !currentReceipt(receipt, input.now)
+    ) {
+      return { status: "denied", code: "withdrawal_evidence_invalid" };
+    }
+    if (evidence.source === "inbound_event") {
+      const inbound = this.inboundById.get(evidence.receipt.eventId);
+      if (
+        receipt.owner !== "communications" ||
+        receipt.operation !== "inbound_opt_out" ||
+        !inbound ||
+        inbound.envelope.event.bindingId !== input.bindingId ||
+        receipt.correlationId !== inbound.envelope.event.correlationId
+      ) {
+        return { status: "denied", code: "withdrawal_evidence_invalid" };
+      }
+    } else if (receipt.owner !== "consent" || receipt.operation !== "contact_withdrawal") {
+      return { status: "denied", code: "withdrawal_evidence_invalid" };
+    }
+    return {
+      status: "allowed",
+      record: {
+        bindingId: input.bindingId,
+        source: evidence.source,
+        receiptId: receipt.receiptId,
+        eventId: evidence.source === "inbound_event" ? evidence.receipt.eventId : undefined,
+        correlationId: receipt.correlationId,
+        changedAt: input.now,
+      },
+    };
+  }
+
+  private validReconciliationReceipt(
+    input: ReconcileOutboundCommand,
+    receipt: NonNullable<ReconcileOutboundCommand["receipt"]>,
+    correlationId: string,
+  ): boolean {
+    return (
+      receipt.owner === "communications" &&
+      receipt.operation === "dispatch_reconciliation" &&
+      (receipt.source === "provider_lookup" || receipt.source === "manual_authority") &&
+      receipt.commandId === input.commandId &&
+      receipt.attemptId === input.attemptId &&
+      receipt.correlationId === correlationId &&
+      Boolean(receipt.receiptId) &&
+      currentReceipt(receipt, input.now)
+    );
   }
 
   private async withBindingLock<T>(

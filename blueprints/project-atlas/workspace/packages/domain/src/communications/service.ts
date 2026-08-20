@@ -12,6 +12,8 @@ import type {
   EvaluateTemplateEligibility,
   HandoffRequestResult,
   MessageTemplateService,
+  ReconcileOutboundCommand,
+  ReconcileOutboundResult,
   ReconcileTemplateCommand,
   RegisterTemplateDefinition,
   ApproveTemplateDefinition,
@@ -198,14 +200,10 @@ export class CommunicationsService {
   async queueOutbound(input: QueueOutboundApplicationCommand): Promise<Record<string, unknown>> {
     const copy = this.dependencies.contentPolicy.evaluate({ text: input.body });
     if (!copy.allowed) return { status: "unavailable", code: "prohibited_content" };
-    const resolved = await this.resolveDestination(input.bindingId);
-    if (resolved.status === "unavailable") {
-      return { status: "unavailable", code: resolved.code };
-    }
     const now = this.dependencies.clock.now();
     const commandId = this.dependencies.ids.next("outbound_command");
     const messageId = this.dependencies.ids.next("outbound_message");
-    return this.dependencies.repository.createOutbound({
+    const draft = await this.dependencies.repository.createOutbound({
       command: {
         commandId,
         channel: input.channel,
@@ -231,11 +229,25 @@ export class CommunicationsService {
       },
       purpose: input.purpose,
       templateId: input.templateId,
+    });
+    if (draft.status !== "created") return draft;
+    const resolved = await this.resolveDestination(input.bindingId);
+    if (resolved.status === "unavailable") {
+      await this.dependencies.repository.failOutboundDraft({
+        commandId,
+        code: resolved.code,
+        now: this.dependencies.clock.now(),
+      });
+      return { status: "unavailable", code: resolved.code, commandId };
+    }
+    return this.dependencies.repository.finalizeOutbound({
+      commandId,
       fingerprint: input.fingerprint,
       requiredPolicyVersion: input.requiredPolicyVersion,
       requiredFence: input.requiredFence,
       endpointDigests: resolved.digests,
       authorizationReceipt: input.authorizationReceipt,
+      now: this.dependencies.clock.now(),
     });
   }
 
@@ -259,7 +271,7 @@ export class CommunicationsService {
 
     const resolved = await this.resolveDestination(claim.command.bindingId);
     if (resolved.status === "unavailable") {
-      await this.dependencies.repository.markDispatchOutcome({
+      const completion = await this.dependencies.repository.markDispatchOutcome({
         commandId: input.commandId,
         attemptId,
         leaseOwner: input.leaseOwner,
@@ -267,13 +279,14 @@ export class CommunicationsService {
         outcome: "known_failure",
         now: this.dependencies.clock.now(),
       });
+      if (completion === "conflict") return this.dispatchCompletionConflict(input.commandId, attemptId);
       return { status: "not_dispatched", code: resolved.code, attemptId };
     }
     const matchingDigest = resolved.digests.some(
       (candidate) => candidate.digest === claim.destinationDigest.digest,
     );
     if (!matchingDigest) {
-      await this.dependencies.repository.markDispatchOutcome({
+      const completion = await this.dependencies.repository.markDispatchOutcome({
         commandId: input.commandId,
         attemptId,
         leaseOwner: input.leaseOwner,
@@ -281,6 +294,7 @@ export class CommunicationsService {
         outcome: "known_failure",
         now: this.dependencies.clock.now(),
       });
+      if (completion === "conflict") return this.dispatchCompletionConflict(input.commandId, attemptId);
       return { status: "not_dispatched", code: "destination_mismatch", attemptId };
     }
 
@@ -297,7 +311,7 @@ export class CommunicationsService {
           }),
       );
       if (providerResult.status === "accepted") {
-        await this.dependencies.repository.markDispatchOutcome({
+        const completion = await this.dependencies.repository.markDispatchOutcome({
           commandId: input.commandId,
           attemptId,
           leaseOwner: input.leaseOwner,
@@ -306,9 +320,10 @@ export class CommunicationsService {
           providerReference: providerResult.providerReference,
           now: this.dependencies.clock.now(),
         });
+        if (completion === "conflict") return this.dispatchCompletionConflict(input.commandId, attemptId);
         return { status: "accepted", attemptId };
       }
-      await this.dependencies.repository.markDispatchOutcome({
+      const completion = await this.dependencies.repository.markDispatchOutcome({
         commandId: input.commandId,
         attemptId,
         leaseOwner: input.leaseOwner,
@@ -316,13 +331,14 @@ export class CommunicationsService {
         outcome: "known_failure",
         now: this.dependencies.clock.now(),
       });
+      if (completion === "conflict") return this.dispatchCompletionConflict(input.commandId, attemptId);
       return {
         status: "not_dispatched",
         code: providerResult.status === "unavailable" ? "provider_unavailable" : "provider_rejected",
         attemptId,
       };
     } catch {
-      await this.dependencies.repository.markDispatchOutcome({
+      const completion = await this.dependencies.repository.markDispatchOutcome({
         commandId: input.commandId,
         attemptId,
         leaseOwner: input.leaseOwner,
@@ -330,6 +346,7 @@ export class CommunicationsService {
         outcome: "unknown",
         now: this.dependencies.clock.now(),
       });
+      if (completion === "conflict") return this.dispatchCompletionConflict(input.commandId, attemptId);
       return { status: "dispatch_unknown", code: "provider_outcome_ambiguous", attemptId };
     }
   }
@@ -354,7 +371,9 @@ export class CommunicationsService {
       return { status: "conflict", code: claim.code };
     }
     if (claim.policyState === "opt_out_pending" || claim.policyState === "withdrawn") {
-      await this.completeInbound(claim, input, "applied");
+      if (!(await this.completeInbound(claim, input, "applied"))) {
+        return this.inboundCompletionConflict(input.eventId);
+      }
       return { status: "opt_out_pending", eventId: input.eventId };
     }
     if (input.action === "handoff") {
@@ -370,7 +389,9 @@ export class CommunicationsService {
             }),
         );
         if (result.status !== "queued") {
-          await this.completeInbound(claim, input, "manual_review");
+          if (!(await this.completeInbound(claim, input, "manual_review"))) {
+            return this.inboundCompletionConflict(input.eventId);
+          }
           return { status: "manual", code: "handoff_unavailable" };
         }
         if (
@@ -380,13 +401,19 @@ export class CommunicationsService {
             now: this.dependencies.clock.now(),
           })
         ) {
-          await this.completeInbound(claim, input, "manual_review");
+          if (!(await this.completeInbound(claim, input, "manual_review"))) {
+            return this.inboundCompletionConflict(input.eventId);
+          }
           return { status: "manual", code: "handoff_receipt_missing" };
         }
-        await this.completeInbound(claim, input, "applied");
+        if (!(await this.completeInbound(claim, input, "applied"))) {
+          return this.inboundCompletionConflict(input.eventId);
+        }
         return { status: "handoff_queued", receiptId: result.receipt!.receiptId };
       } catch {
-        await this.completeInbound(claim, input, "manual_review");
+        if (!(await this.completeInbound(claim, input, "manual_review"))) {
+          return this.inboundCompletionConflict(input.eventId);
+        }
         return { status: "manual", code: "handoff_unavailable" };
       }
     }
@@ -402,26 +429,36 @@ export class CommunicationsService {
           }),
       );
       if (answer.status !== "available") {
-        await this.completeInbound(claim, input, "manual_review");
+        if (!(await this.completeInbound(claim, input, "manual_review"))) {
+          return this.inboundCompletionConflict(input.eventId);
+        }
         return { status: "manual", code: "knowledge_unavailable" };
       }
       if (!answer.sourceReceipt) {
-        await this.completeInbound(claim, input, "manual_review");
+        if (!(await this.completeInbound(claim, input, "manual_review"))) {
+          return this.inboundCompletionConflict(input.eventId);
+        }
         return { status: "manual", code: "knowledge_receipt_missing" };
       }
       const decision = this.dependencies.contentPolicy.evaluate({ text: answer.text });
       if (!decision.allowed) {
-        await this.completeInbound(claim, input, "manual_review");
+        if (!(await this.completeInbound(claim, input, "manual_review"))) {
+          return this.inboundCompletionConflict(input.eventId);
+        }
         return { status: "manual", code: "prohibited_content" };
       }
-      await this.completeInbound(claim, input, "applied");
+      if (!(await this.completeInbound(claim, input, "applied"))) {
+        return this.inboundCompletionConflict(input.eventId);
+      }
       return {
         status: "answered",
         text: answer.text,
         sourceReceipt: answer.sourceReceipt,
       };
     } catch {
-      await this.completeInbound(claim, input, "manual_review");
+      if (!(await this.completeInbound(claim, input, "manual_review"))) {
+        return this.inboundCompletionConflict(input.eventId);
+      }
       return { status: "manual", code: "knowledge_unavailable" };
     }
   }
@@ -430,14 +467,39 @@ export class CommunicationsService {
     claim: Extract<Awaited<ReturnType<CommunicationsRepository["claimInbound"]>>, { status: "claimed" }>,
     input: { eventId: string; leaseOwner: string },
     outcome: "applied" | "manual_review" | "dead_letter",
-  ): Promise<void> {
-    await this.dependencies.repository.completeInbound({
+  ): Promise<boolean> {
+    return (await this.dependencies.repository.completeInbound({
       eventId: input.eventId,
       leaseOwner: input.leaseOwner,
       leaseVersion: claim.leaseVersion,
       outcome,
       now: this.dependencies.clock.now(),
+    })) === "completed";
+  }
+
+  async reconcileOutbound(
+    input: Omit<ReconcileOutboundCommand, "now">,
+  ): Promise<ReconcileOutboundResult> {
+    return this.dependencies.repository.reconcileOutbound({
+      ...input,
+      now: this.dependencies.clock.now(),
     });
+  }
+
+  private inboundCompletionConflict(eventId: string): Record<string, unknown> {
+    return { status: "recovery_required", code: "inbound_completion_conflict", eventId };
+  }
+
+  private dispatchCompletionConflict(
+    commandId: string,
+    attemptId: string,
+  ): Record<string, unknown> {
+    return {
+      status: "recovery_required",
+      code: "dispatch_completion_conflict",
+      commandId,
+      attemptId,
+    };
   }
 
   private async resolveDestination(bindingId: string): Promise<EndpointResolution> {

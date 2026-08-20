@@ -89,11 +89,25 @@ export type CreateOutboundCommand = {
   message: ChannelMessage;
   purpose: ContactPurpose;
   templateId: string;
+};
+
+export type FinalizeOutboundCommand = {
+  commandId: string;
   fingerprint: string;
   requiredPolicyVersion: number;
   requiredFence: number;
   endpointDigests: readonly EndpointDigest[];
   authorizationReceipt?: OutboundAuthorizationReceipt;
+  now: Date;
+};
+
+export type FailOutboundDraftCommand = {
+  commandId: string;
+  code:
+    | "destination_unavailable"
+    | "endpoint_digest_key_unavailable"
+    | "endpoint_digest_key_invalid";
+  now: Date;
 };
 
 export type CreateOutboundResult =
@@ -186,7 +200,11 @@ export type GrantConsentCommand = {
 };
 
 export type ConsentChangeResult =
-  | { status: "changed" | "duplicate"; state: ContactConsentState; version: number }
+  | {
+      status: "changed" | "duplicate" | "unchanged";
+      state: ContactConsentState;
+      version: number;
+    }
   | {
       status: "denied";
       code:
@@ -198,16 +216,58 @@ export type ConsentChangeResult =
 
 export type WithdrawContactCommand = {
   bindingId: string;
+  evidence?: ContactWithdrawalEvidence;
   now: Date;
 };
 
-export type WithdrawContactResult = {
-  status: "changed" | "duplicate";
-  state: "withdrawn";
-  policyVersion: number;
-  fence: number;
-  cancelledCommandIds: readonly string[];
+export type ContactWithdrawalEvidence =
+  | {
+      source: "inbound_event";
+      receipt: {
+        receiptId: string;
+        owner: "communications";
+        operation: "inbound_opt_out";
+        bindingId: string;
+        eventId: string;
+        issuedAt: Date;
+        expiresAt: Date;
+        correlationId: string;
+      };
+    }
+  | {
+      source: "authority";
+      receipt: {
+        receiptId: string;
+        owner: "consent";
+        operation: "contact_withdrawal";
+        bindingId: string;
+        issuedAt: Date;
+        expiresAt: Date;
+        correlationId: string;
+      };
+    };
+
+export type WithdrawalHistoryRecord = {
+  bindingId: string;
+  source: ContactWithdrawalEvidence["source"];
+  receiptId: string;
+  eventId?: string;
+  correlationId: string;
+  changedAt: Date;
 };
+
+export type WithdrawContactResult =
+  | {
+      status: "changed" | "duplicate";
+      state: "withdrawn";
+      policyVersion: number;
+      fence: number;
+      cancelledCommandIds: readonly string[];
+    }
+  | {
+      status: "denied";
+      code: "withdrawal_evidence_missing" | "withdrawal_evidence_invalid";
+    };
 
 export type ResolveOptOutCommand = {
   bindingId: string;
@@ -252,8 +312,24 @@ export type TemplateAuthorityReceipt = {
   owner: "communications";
   operation: "template_internal_approval";
   resourceId: string;
+  locale: ChannelLocale;
+  definitionVersion: number;
   issuedAt: Date;
   expiresAt: Date;
+};
+
+export type TemplateProviderReconciliationReceipt = {
+  receiptId: string;
+  owner: "communications";
+  operation: "template_provider_reconciliation";
+  templateId: string;
+  locale: ChannelLocale;
+  definitionVersion: number;
+  providerVersion: number;
+  providerState: TemplateProviderState;
+  issuedAt: Date;
+  expiresAt: Date;
+  correlationId: string;
 };
 
 export type TemplateRecord = {
@@ -262,6 +338,8 @@ export type TemplateRecord = {
   definitionVersion: number;
   internallyApproved: boolean;
   approvalReceiptId?: string;
+  providerReceiptId?: string;
+  providerCorrelationId?: string;
   providerState: TemplateLifecycleState;
   providerVersion: number;
   updatedAt: Date;
@@ -276,6 +354,8 @@ export type RegisterTemplateDefinition = {
 
 export type ApproveTemplateDefinition = {
   templateId: string;
+  locale: ChannelLocale;
+  definitionVersion: number;
   receipt?: TemplateAuthorityReceipt;
 };
 
@@ -284,12 +364,18 @@ export type ReconcileTemplateCommand = {
   locale: ChannelLocale;
   providerState: TemplateProviderState;
   providerVersion: number;
+  correlationId: string;
+  receipt?: TemplateProviderReconciliationReceipt;
   now: Date;
 };
 
 export type TemplateReconciliationResult =
   | ({ status: "applied" | "duplicate" | "regressive" } & TemplateRecord)
-  | { status: "not_found"; code: "template_not_found" };
+  | { status: "not_found"; code: "template_not_found" }
+  | {
+      status: "denied";
+      code: "provider_receipt_missing" | "provider_receipt_invalid";
+    };
 
 export type TemplateResult =
   | ({ status: "registered" | "approved" } & TemplateRecord)
@@ -325,11 +411,52 @@ export type RecoveryCandidate =
     }
   | { kind: "inbound_lease_expired"; eventId: string };
 
+export type DispatchReconciliationOutcome =
+  | "reconciled_accepted"
+  | "confirmed_not_sent"
+  | "terminal_failure";
+
+export type DispatchReconciliationReceipt = {
+  receiptId: string;
+  owner: "communications";
+  operation: "dispatch_reconciliation";
+  source: "provider_lookup" | "manual_authority";
+  commandId: string;
+  attemptId: string;
+  outcome: DispatchReconciliationOutcome;
+  issuedAt: Date;
+  expiresAt: Date;
+  correlationId: string;
+};
+
+export type ReconcileOutboundCommand = {
+  commandId: string;
+  attemptId: string;
+  receipt?: DispatchReconciliationReceipt;
+  now: Date;
+};
+
+export type ReconcileOutboundResult =
+  | {
+      status: "reconciled" | "duplicate";
+      commandState: "reconciled_accepted" | "confirmed_not_sent" | "failed";
+    }
+  | {
+      status: "denied";
+      code:
+        | "reconciliation_receipt_missing"
+        | "reconciliation_receipt_invalid"
+        | "reconciliation_state_invalid";
+    }
+  | { status: "not_found" };
+
 export interface CommunicationsRepository {
   acceptInbound(input: AcceptInboundCommand): Promise<AcceptInboundResult>;
   claimInbound(input: ClaimInboundCommand): Promise<InboundClaimResult>;
   completeInbound(input: CompleteInboundCommand): Promise<"completed" | "conflict">;
   createOutbound(input: CreateOutboundCommand): Promise<CreateOutboundResult>;
+  finalizeOutbound(input: FinalizeOutboundCommand): Promise<CreateOutboundResult>;
+  failOutboundDraft(input: FailOutboundDraftCommand): Promise<"completed" | "conflict">;
   claimOutbound(input: ClaimOutboundCommand): Promise<OutboundClaimResult>;
   markDispatchOutcome(
     input: MarkDispatchOutcomeCommand,
@@ -341,6 +468,7 @@ export interface CommunicationsRepository {
   suspendBinding(input: SuspendBindingCommand): Promise<BindingChangeResult>;
   revalidateBindingFromReceipt(input: RevalidateBindingCommand): Promise<BindingChangeResult>;
   reconcileTemplate(input: ReconcileTemplateCommand): Promise<TemplateReconciliationResult>;
+  reconcileOutbound(input: ReconcileOutboundCommand): Promise<ReconcileOutboundResult>;
   findRecoveryWork(input: RecoveryQuery): Promise<readonly RecoveryCandidate[]>;
   registerTemplateDefinition(input: RegisterTemplateDefinition & { now: Date }): Promise<TemplateResult>;
   approveTemplateDefinition(
@@ -369,6 +497,7 @@ export type CommunicationsReferenceState = {
   consentHistory: readonly ConsentRecord[];
   templates: readonly TemplateRecord[];
   providerStatuses: readonly ApplyProviderStatusCommand[];
+  withdrawalHistory: readonly WithdrawalHistoryRecord[];
 };
 
 export type CommunicationsSeed = {
