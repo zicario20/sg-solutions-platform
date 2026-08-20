@@ -7,13 +7,16 @@ import {
   deserializeMetaCanonicalEnvelopeRecord,
   serializeMetaCanonicalEnvelope,
 } from "../../apps/app/src/lib/whatsapp/provider-envelope-persistence.ts";
-import { validateCommunicationEventRecord } from "../../packages/database/src/communication-event-envelope.ts";
+import {
+  SUPPORTED_COMMUNICATION_EVENT_SCHEMA_VERSIONS,
+  validateCommunicationEventRecord,
+} from "../../packages/database/src/communication-event-envelope.ts";
 
 const occurredAt = new Date("2026-08-14T10:00:00.000Z");
 const receivedAt = new Date("2026-08-14T10:00:01.000Z");
 const base = {
   connectionId: "connection_synthetic",
-  externalEventReference: "event_synthetic",
+  externalEventReference: "meta_evt_0123456789abcdef0123456789abcdef",
   correlationId: "correlation_synthetic",
   receivedAt,
 };
@@ -22,7 +25,7 @@ const providerFixtures = [
   {
     ...base,
     kind: "text_message",
-    messageReference: "message_text",
+    messageReference: "wamid.SYNTHETICMESSAGETEXT0001",
     senderEndpoint: "sender_endpoint_synthetic_text",
     text: "synthetic text",
     occurredAt,
@@ -30,7 +33,7 @@ const providerFixtures = [
   {
     ...base,
     kind: "interactive_reply",
-    messageReference: "message_interactive",
+    messageReference: "wamid.SYNTHETICMESSAGEINTERACTIVE0001",
     senderEndpoint: "sender_endpoint_synthetic_interactive",
     replyKind: "button",
     replyId: "service_credit",
@@ -40,18 +43,18 @@ const providerFixtures = [
   {
     ...base,
     kind: "message_status",
-    externalMessageReference: "message_status",
+    externalMessageReference: "wamid.SYNTHETICMESSAGESTATUS0001",
     status: "delivered",
     occurredAt,
   },
   {
     ...base,
     kind: "media_reference",
-    messageReference: "message_media",
+    messageReference: "wamid.SYNTHETICMESSAGEMEDIA0001",
     senderEndpoint: "sender_endpoint_synthetic_media",
     occurredAt,
     media: {
-      externalReference: "media_synthetic",
+      externalReference: "123456789012345",
       declaredKind: "sticker",
       mimeType: "image/webp",
       checksum: "a".repeat(64),
@@ -66,7 +69,7 @@ const providerFixtures = [
       state: "internally_approved",
       version: 3,
       updatedAt: occurredAt,
-      providerReference: "provider_template_synthetic",
+      providerReference: "987654321098765",
       templateKey: "appointment_notice",
       category: "utility",
       components: [{ type: "body", format: "text", text: "Synthetic" }],
@@ -116,14 +119,15 @@ describe("M004 deterministic Meta envelope persistence codec", () => {
       const record = serializeMetaCanonicalEnvelope(event, {
         schemaVersion: "meta-envelope.v1",
         senderBindingId: "binding_synthetic",
-        textRetentionPolicy: "synthetic_local_text",
       });
       expect(validateCommunicationEventRecord(record)).toBe(record);
-      expect(deserializeMetaCanonicalEnvelopeRecord(record)).toEqual({
-        status: "available",
-        envelope: safeExpected[index],
-      });
+      expect(deserializeMetaCanonicalEnvelopeRecord(record)).toEqual(
+        event.kind === "text_message"
+          ? { status: "not_reversible", eventKind: "text_message", reason: "metadata_only" }
+          : { status: "available", envelope: safeExpected[index] },
+      );
       expect(JSON.stringify(record)).not.toContain("sender_endpoint_synthetic");
+      expect(JSON.stringify(record)).not.toContain("synthetic text");
       expect(Object.keys(record)).not.toEqual(
         expect.arrayContaining([
           "rawPayload",
@@ -139,7 +143,7 @@ describe("M004 deterministic Meta envelope persistence codec", () => {
     const status = serializeMetaCanonicalEnvelope(providerFixtures[2], {
       schemaVersion: "meta-envelope.v1",
     });
-    expect(status.externalMessageReference).toBe("message_status");
+    expect(status.externalMessageReference).toBe("wamid.SYNTHETICMESSAGESTATUS0001");
     expect(status.messageReference).toBeNull();
 
     const template = serializeMetaCanonicalEnvelope(providerFixtures[4], {
@@ -150,18 +154,17 @@ describe("M004 deterministic Meta envelope persistence codec", () => {
       templateAuthorityState: "internally_approved",
       templateAuthorityVersion: 3,
       templateAuthorityUpdatedAt: occurredAt,
-      templateProviderReference: "provider_template_synthetic",
+      templateProviderReference: "987654321098765",
       templateProviderState: "provider_approved",
       templateProviderVersion: "provider.synthetic.v1",
       templateProviderTimestamp: occurredAt,
     });
   });
 
-  it("accepts metadata-only text without retaining canonical text", () => {
+  it("always persists text as metadata-only without retaining canonical text", () => {
     const record = serializeMetaCanonicalEnvelope(providerFixtures[0], {
       schemaVersion: "meta-envelope.v1",
       senderBindingId: "binding_synthetic",
-      textRetentionPolicy: "metadata_only",
     });
 
     expect(record).toMatchObject({
@@ -175,17 +178,21 @@ describe("M004 deterministic Meta envelope persistence codec", () => {
       eventKind: "text_message",
       reason: "metadata_only",
     });
+    expect(JSON.stringify(record)).not.toContain("synthetic text");
   });
 
-  it("defaults text persistence to metadata-only when no retention gate is supplied", () => {
-    const record = serializeMetaCanonicalEnvelope(providerFixtures[0], {
-      schemaVersion: "meta-envelope.v1",
-      senderBindingId: "binding_synthetic",
-    });
-
-    expect(record.canonicalText).toBeNull();
-    expect(record.bodyRetentionPolicy).toBe("metadata_only");
-  });
+  it.each(["approved", "synthetic_local_text"])(
+    "rejects the removed caller-selectable %s retention mode",
+    (textRetentionPolicy) => {
+      expect(() =>
+        serializeMetaCanonicalEnvelope(providerFixtures[0], {
+          schemaVersion: "meta-envelope.v1",
+          senderBindingId: "binding_synthetic",
+          textRetentionPolicy,
+        } as never),
+      ).toThrowError("CANONICAL_PROVIDER_ENVELOPE_INVALID");
+    },
+  );
 
   it("does not invent an external event reference for unsupported verified input", () => {
     const record = serializeMetaCanonicalEnvelope(providerFixtures[5], {
@@ -235,7 +242,6 @@ describe("M004 deterministic Meta envelope persistence codec", () => {
       serializeMetaCanonicalEnvelope(event as CanonicalProviderEnvelope, {
         schemaVersion: "meta-envelope.v1",
         senderBindingId: "binding_synthetic",
-        textRetentionPolicy: "synthetic_local_text",
       }),
     ).toThrowError("CANONICAL_PROVIDER_ENVELOPE_INVALID");
   });
@@ -244,13 +250,138 @@ describe("M004 deterministic Meta envelope persistence codec", () => {
     expect(() =>
       serializeMetaCanonicalEnvelope(providerFixtures[0], {
         schemaVersion: "meta-envelope.v1",
-        textRetentionPolicy: "synthetic_local_text",
       }),
     ).toThrowError("CANONICAL_PROVIDER_ENVELOPE_BINDING_REQUIRED");
   });
 
+  const referenceTargets = [
+    {
+      label: "event",
+      fixture: providerFixtures[0],
+      wrongShape: "event_0123456789abcdef0123456789abcdef",
+      persistedField: "externalEventReference",
+    },
+    {
+      label: "message",
+      fixture: providerFixtures[0],
+      wrongShape: "meta_message_0123456789abcdef",
+      persistedField: "messageReference",
+    },
+    {
+      label: "status message",
+      fixture: providerFixtures[2],
+      wrongShape: "message_status_0123456789abcdef",
+      persistedField: "externalMessageReference",
+    },
+    {
+      label: "media",
+      fixture: providerFixtures[3],
+      wrongShape: "meta_media_0123456789abcdef",
+      persistedField: "mediaExternalReference",
+    },
+    {
+      label: "template",
+      fixture: providerFixtures[4],
+      wrongShape: "meta_template_0123456789abcdef",
+      persistedField: "templateProviderReference",
+    },
+  ] as const;
+
+  function withProviderReference(
+    label: (typeof referenceTargets)[number]["label"],
+    fixture: (typeof providerFixtures)[number],
+    reference: string,
+  ): unknown {
+    switch (label) {
+      case "event":
+        return { ...fixture, externalEventReference: reference };
+      case "message":
+        return { ...fixture, messageReference: reference };
+      case "status message":
+        return { ...fixture, externalMessageReference: reference };
+      case "media":
+        return {
+          ...fixture,
+          media: {
+            ...(fixture as Extract<CanonicalProviderEnvelope, { kind: "media_reference" }>).media,
+            externalReference: reference,
+          },
+        };
+      case "template":
+        return {
+          ...fixture,
+          projection: {
+            ...(fixture as Extract<CanonicalProviderEnvelope, { kind: "template_projection" }>).projection,
+            providerReference: reference,
+          },
+        };
+    }
+  }
+
+  const hostileOpaqueReferences = [
+    "https://graph.facebook.com/object",
+    "https://access-token@example.test/object?token=secret",
+    "+15551234567",
+    "155-512-34567",
+    "reference?token=secret",
+    "reference with whitespace",
+    "reference\u0000control",
+    `reference_${"a".repeat(256)}`,
+  ] as const;
+
+  for (const target of referenceTargets) {
+    it.each([...hostileOpaqueReferences, target.wrongShape])(
+      `rejects an invalid ${target.label} provider reference %j before conversion`,
+      (reference) => {
+        expect(() =>
+          serializeMetaCanonicalEnvelope(
+            withProviderReference(target.label, target.fixture, reference) as CanonicalProviderEnvelope,
+            { schemaVersion: "meta-envelope.v1", senderBindingId: "binding_synthetic" },
+          ),
+        ).toThrowError("CANONICAL_PROVIDER_ENVELOPE_INVALID");
+      },
+    );
+  }
+
+  it.each(referenceTargets)(
+    "independently rejects unsafe canonical $label references at database validation",
+    (target) => {
+      const record = serializeMetaCanonicalEnvelope(target.fixture, {
+        schemaVersion: "meta-envelope.v1",
+        senderBindingId: "binding_synthetic",
+      });
+      for (const reference of hostileOpaqueReferences) {
+        expect(() =>
+          validateCommunicationEventRecord({
+            ...record,
+            [target.persistedField]: reference,
+          }),
+        ).toThrowError("COMMUNICATION_EVENT_RECORD_INVALID");
+      }
+    },
+  );
+
+  it("shares one exact supported envelope schema version across both validators", () => {
+    expect(SUPPORTED_COMMUNICATION_EVENT_SCHEMA_VERSIONS).toEqual(["meta-envelope.v1"]);
+    const valid = serializeMetaCanonicalEnvelope(providerFixtures[0], {
+      schemaVersion: "meta-envelope.v1",
+      senderBindingId: "binding_synthetic",
+    });
+    for (const schemaVersion of ["", "meta-envelope.v2", "META-ENVELOPE.V1", " meta-envelope.v1"] as const) {
+      expect(() =>
+        serializeMetaCanonicalEnvelope(providerFixtures[0], {
+          schemaVersion: schemaVersion as "meta-envelope.v1",
+          senderBindingId: "binding_synthetic",
+        }),
+      ).toThrowError("CANONICAL_PROVIDER_ENVELOPE_INVALID");
+      expect(() => validateCommunicationEventRecord({ ...valid, schemaVersion })).toThrowError(
+        "COMMUNICATION_EVENT_RECORD_INVALID",
+      );
+    }
+  });
+
   it.each([
-    ["text_message", "canonicalText"],
+    ["text_message", "messageReference"],
     ["interactive_reply", "interactiveKind"],
     ["message_status", "externalMessageReference"],
     ["media_reference", "mediaExternalReference"],
@@ -262,7 +393,6 @@ describe("M004 deterministic Meta envelope persistence codec", () => {
     const record = serializeMetaCanonicalEnvelope(fixture, {
       schemaVersion: "meta-envelope.v1",
       senderBindingId: "binding_synthetic",
-      textRetentionPolicy: "synthetic_local_text",
     });
     expect(() => validateCommunicationEventRecord({ ...record, [field]: null })).toThrowError(
       "COMMUNICATION_EVENT_RECORD_INVALID",

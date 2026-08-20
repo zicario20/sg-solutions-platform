@@ -311,9 +311,12 @@ describe("M004 canonical communications Drizzle schema", () => {
       communicationProviderEventReceipts: [
         "communication_provider_event_receipts_kind_valid",
         "communication_provider_event_receipts_state_valid",
+        "communication_provider_event_receipts_schema_version_valid",
+        "communication_provider_event_receipts_external_event_reference_valid",
       ],
       communicationEventEnvelopes: [
         "communication_event_envelopes_kind_valid",
+        "communication_event_envelopes_schema_version_valid",
         "communication_event_envelopes_retention_valid",
         "communication_event_envelopes_typed_shape_valid",
         "communication_event_envelopes_reference_shape_valid",
@@ -619,6 +622,12 @@ describe("M004 generated migration authority and preparatory backfill", () => {
     ]) {
       expect(sql).toContain(`"${column}"`);
     }
+    expect(sql).toContain(
+      'CONSTRAINT "communication_event_envelopes_schema_version_valid" CHECK ("communication_event_envelopes"."schema_version" = \'meta-envelope.v1\')',
+    );
+    expect(sql).toContain(
+      'CONSTRAINT "communication_event_envelopes_retention_valid" CHECK ("communication_event_envelopes"."body_retention_policy" = \'metadata_only\' and "communication_event_envelopes"."canonical_text" is null)',
+    );
     expect(sql).toContain("communication_contact_bindings_id_channel_unique");
     expect(sql).toContain("communication_participants_binding_channel_fk");
     expect(sql).toContain('"consent_state" is not null');
@@ -1040,7 +1049,7 @@ describe.sequential("M004 disposable real-Postgres migration and RLS contract", 
                  event_kind, state, schema_version, signature_verified, correlation_id,
                  processing_version, received_at, persisted_at, created_at, updated_at)
                 values ('${receiptId}', '${connectionId}', 'whatsapp',
-                 'event_${eventKind}_${suffix}', '${"b".repeat(64)}', '${eventKind}', 'persisted',
+                 'meta_evt_${suffix}', '${"b".repeat(64)}', '${eventKind}', 'persisted',
                  'meta-envelope.v1', true, 'correlation_${eventKind}_${suffix}', 1,
                  now(), now(), now(), now())`);
               await tx.unsafe(statement);

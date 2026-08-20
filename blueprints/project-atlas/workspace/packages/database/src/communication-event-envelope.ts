@@ -1,3 +1,8 @@
+export const SUPPORTED_COMMUNICATION_EVENT_SCHEMA_VERSIONS = ["meta-envelope.v1"] as const;
+
+export type CommunicationEventSchemaVersion =
+  (typeof SUPPORTED_COMMUNICATION_EVENT_SCHEMA_VERSIONS)[number];
+
 export type CommunicationEventKind =
   | "text_message"
   | "interactive_reply"
@@ -18,11 +23,11 @@ export type CommunicationEventPersistenceRecord = Readonly<{
   correlationId: string;
   receivedAt: Date;
   eventKind: CommunicationEventKind;
-  schemaVersion: string;
+  schemaVersion: CommunicationEventSchemaVersion;
   bindingId: string | null;
   messageReference: string | null;
   externalMessageReference: string | null;
-  canonicalText: string | null;
+  canonicalText: null;
   deliveryState: "sent" | "delivered" | "read" | "failed" | null;
   interactiveKind: "button" | "list" | null;
   interactiveId: string | null;
@@ -67,7 +72,7 @@ export type CommunicationEventPersistenceRecord = Readonly<{
     | "unsupported_event"
     | "unverified_context"
     | null;
-  bodyRetentionPolicy: "metadata_only" | "synthetic_local_text" | "approved";
+  bodyRetentionPolicy: "metadata_only";
   occurredAt: Date;
 }>;
 
@@ -148,6 +153,25 @@ const UNSUPPORTED_REASONS = new Set([
 ]);
 const COMPONENT_TYPES = new Set(["header", "body", "footer", "buttons"]);
 const COMPONENT_FORMATS = new Set(["text", "image", "video", "document"]);
+const SUPPORTED_SCHEMA_VERSIONS = new Set<string>(SUPPORTED_COMMUNICATION_EVENT_SCHEMA_VERSIONS);
+const CANONICAL_OPAQUE_REFERENCE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._]{0,127}$/u;
+const CANONICAL_REFERENCE_FIELDS = [
+  "externalEventReference",
+  "messageReference",
+  "externalMessageReference",
+  "mediaExternalReference",
+  "templateProviderReference",
+] as const;
+
+export function isSupportedCommunicationEventSchemaVersion(
+  value: unknown,
+): value is CommunicationEventSchemaVersion {
+  return typeof value === "string" && SUPPORTED_SCHEMA_VERSIONS.has(value);
+}
+
+export function isCanonicalOpaqueProviderReference(value: unknown): value is string {
+  return typeof value === "string" && CANONICAL_OPAQUE_REFERENCE_PATTERN.test(value);
+}
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -177,6 +201,12 @@ function isNull(value: unknown): value is null {
 
 function hasOnlyNulls(record: Record<string, unknown>, keys: readonly string[]): boolean {
   return keys.every((key) => isNull(record[key]));
+}
+
+function hasValidCanonicalReferences(record: Record<string, unknown>): boolean {
+  return CANONICAL_REFERENCE_FIELDS.every(
+    (field) => record[field] === null || isCanonicalOpaqueProviderReference(record[field]),
+  );
 }
 
 function isTemplateComponent(value: unknown): value is PersistedTemplateComponent {
@@ -222,10 +252,9 @@ function hasValidTypedShape(record: Record<string, unknown>): boolean {
     case "text_message":
       return (
         isNonEmptyString(record.bindingId) &&
-        isNonEmptyString(record.messageReference) &&
-        ((record.bodyRetentionPolicy === "metadata_only" && isNull(record.canonicalText)) ||
-          (["synthetic_local_text", "approved"].includes(String(record.bodyRetentionPolicy)) &&
-            typeof record.canonicalText === "string")) &&
+        isCanonicalOpaqueProviderReference(record.messageReference) &&
+        record.bodyRetentionPolicy === "metadata_only" &&
+        isNull(record.canonicalText) &&
         hasOnlyNulls(record, MESSAGE_ONLY_FIELDS)
       );
     case "interactive_reply":
@@ -233,7 +262,7 @@ function hasValidTypedShape(record: Record<string, unknown>): boolean {
         record.bodyRetentionPolicy === "metadata_only" &&
         isNull(record.canonicalText) &&
         isNonEmptyString(record.bindingId) &&
-        isNonEmptyString(record.messageReference) &&
+        isCanonicalOpaqueProviderReference(record.messageReference) &&
         INTERACTIVE_KINDS.has(String(record.interactiveKind)) &&
         isNonEmptyString(record.interactiveId) &&
         typeof record.interactiveTitle === "string" &&
@@ -263,7 +292,7 @@ function hasValidTypedShape(record: Record<string, unknown>): boolean {
       return (
         record.bodyRetentionPolicy === "metadata_only" &&
         isNull(record.canonicalText) &&
-        isNonEmptyString(record.externalMessageReference) &&
+        isCanonicalOpaqueProviderReference(record.externalMessageReference) &&
         DELIVERY_STATES.has(String(record.deliveryState)) &&
         hasOnlyNulls(record, [
           "bindingId",
@@ -295,8 +324,8 @@ function hasValidTypedShape(record: Record<string, unknown>): boolean {
         record.bodyRetentionPolicy === "metadata_only" &&
         isNull(record.canonicalText) &&
         isNonEmptyString(record.bindingId) &&
-        isNonEmptyString(record.messageReference) &&
-        isNonEmptyString(record.mediaExternalReference) &&
+        isCanonicalOpaqueProviderReference(record.messageReference) &&
+        isCanonicalOpaqueProviderReference(record.mediaExternalReference) &&
         MEDIA_KINDS.has(String(record.mediaDeclaredKind)) &&
         isNullableNonEmptyString(record.mediaMimeType) &&
         (record.mediaChecksum === null ||
@@ -332,7 +361,7 @@ function hasValidTypedShape(record: Record<string, unknown>): boolean {
         Number.isSafeInteger(record.templateAuthorityVersion) &&
         Number(record.templateAuthorityVersion) > 0 &&
         isValidDate(record.templateAuthorityUpdatedAt) &&
-        isNonEmptyString(record.templateProviderReference) &&
+        isCanonicalOpaqueProviderReference(record.templateProviderReference) &&
         isNonEmptyString(record.templateKey) &&
         TEMPLATE_LOCALES.has(String(record.templateLocale)) &&
         TEMPLATE_CATEGORIES.has(String(record.templateCategory)) &&
@@ -402,11 +431,12 @@ export function validateCommunicationEventRecord(
     !EVENT_KINDS.has(value.eventKind as CommunicationEventKind) ||
     !isNonEmptyString(value.connectionId) ||
     !isNonEmptyString(value.correlationId) ||
-    !isNonEmptyString(value.schemaVersion) ||
+    !isSupportedCommunicationEventSchemaVersion(value.schemaVersion) ||
     !isValidDate(value.receivedAt) ||
     !isValidDate(value.occurredAt) ||
     (value.eventKind !== "unsupported_verified" &&
-      !isNonEmptyString(value.externalEventReference)) ||
+      !isCanonicalOpaqueProviderReference(value.externalEventReference)) ||
+    !hasValidCanonicalReferences(value) ||
     !hasValidTypedShape(value)
   ) {
     throw new Error("COMMUNICATION_EVENT_RECORD_INVALID");

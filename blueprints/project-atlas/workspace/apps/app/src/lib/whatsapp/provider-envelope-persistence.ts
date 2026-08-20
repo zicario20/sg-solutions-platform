@@ -1,6 +1,8 @@
 import {
+  type CommunicationEventSchemaVersion,
   type CommunicationEventPersistenceRecord,
   type PersistedTemplateComponent,
+  isSupportedCommunicationEventSchemaVersion,
   validateCommunicationEventRecord,
 } from "@atlas/database";
 import type {
@@ -9,12 +11,10 @@ import type {
   CanonicalProviderEnvelope,
   CanonicalStatusEnvelope,
   CanonicalTemplateProjectionEnvelope,
-  CanonicalTextEnvelope,
   UnsupportedVerifiedEnvelope,
 } from "./meta-contracts.ts";
 
 export type SafePersistedProviderEnvelope =
-  | (Omit<CanonicalTextEnvelope, "senderEndpoint"> & { readonly senderBindingId: string })
   | (Omit<CanonicalInteractiveEnvelope, "senderEndpoint"> & { readonly senderBindingId: string })
   | (Omit<CanonicalMediaEnvelope, "senderEndpoint"> & { readonly senderBindingId: string })
   | CanonicalStatusEnvelope
@@ -30,9 +30,8 @@ export type ProviderEnvelopeDeserializationResult =
     }>;
 
 export type ProviderEnvelopePersistenceContext = Readonly<{
-  schemaVersion: string;
+  schemaVersion: CommunicationEventSchemaVersion;
   senderBindingId?: string;
-  textRetentionPolicy?: "metadata_only" | "synthetic_local_text" | "approved";
 }>;
 
 const BASE_KEYS = ["connectionId", "externalEventReference", "receivedAt", "correlationId"];
@@ -47,6 +46,10 @@ const UNSUPPORTED_REASONS = new Set([
 ]);
 const TEMPLATE_COMPONENT_TYPES = new Set(["header", "body", "footer", "buttons"]);
 const TEMPLATE_COMPONENT_FORMATS = new Set(["text", "image", "video", "document"]);
+const META_EVENT_REFERENCE_PATTERN = /^meta_evt_[0-9a-f]{32,64}$/u;
+const META_MESSAGE_REFERENCE_PATTERN = /^wamid\.[A-Za-z0-9_]{16,120}$/u;
+const META_GRAPH_NUMERIC_REFERENCE_PATTERN = /^[1-9][0-9]{5,31}$/u;
+const PERSISTENCE_CONTEXT_KEYS = new Set(["schemaVersion", "senderBindingId"]);
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -62,6 +65,21 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+function isMetaReference(value: unknown, pattern: RegExp): value is string {
+  return typeof value === "string" && pattern.test(value);
+}
+
+function assertPersistenceContext(value: unknown): asserts value is ProviderEnvelopePersistenceContext {
+  if (
+    !isObject(value) ||
+    Object.keys(value).some((key) => !PERSISTENCE_CONTEXT_KEYS.has(key)) ||
+    !isSupportedCommunicationEventSchemaVersion(value.schemaVersion) ||
+    (value.senderBindingId !== undefined && !isNonEmptyString(value.senderBindingId))
+  ) {
+    throw new Error("CANONICAL_PROVIDER_ENVELOPE_INVALID");
+  }
+}
+
 function isValidDate(value: unknown): value is Date {
   return value instanceof Date && Number.isFinite(value.getTime());
 }
@@ -69,7 +87,7 @@ function isValidDate(value: unknown): value is Date {
 function assertBase(value: Record<string, unknown>): void {
   if (
     !isNonEmptyString(value.connectionId) ||
-    !isNonEmptyString(value.externalEventReference) ||
+    !isMetaReference(value.externalEventReference, META_EVENT_REFERENCE_PATTERN) ||
     !isValidDate(value.receivedAt) ||
     !isNonEmptyString(value.correlationId)
   ) {
@@ -110,7 +128,7 @@ function assertProviderEnvelope(
           "text",
           "occurredAt",
         ]) ||
-        !isNonEmptyString(value.messageReference) ||
+        !isMetaReference(value.messageReference, META_MESSAGE_REFERENCE_PATTERN) ||
         !isNonEmptyString(value.senderEndpoint) ||
         typeof value.text !== "string" ||
         !isValidDate(value.occurredAt)
@@ -131,7 +149,7 @@ function assertProviderEnvelope(
           "replyTitle",
           "occurredAt",
         ]) ||
-        !isNonEmptyString(value.messageReference) ||
+        !isMetaReference(value.messageReference, META_MESSAGE_REFERENCE_PATTERN) ||
         !isNonEmptyString(value.senderEndpoint) ||
         !["button", "list"].includes(String(value.replyKind)) ||
         !isNonEmptyString(value.replyId) ||
@@ -151,7 +169,7 @@ function assertProviderEnvelope(
           "status",
           "occurredAt",
         ]) ||
-        !isNonEmptyString(value.externalMessageReference) ||
+        !isMetaReference(value.externalMessageReference, META_MESSAGE_REFERENCE_PATTERN) ||
         !["sent", "delivered", "read", "failed"].includes(String(value.status)) ||
         !isValidDate(value.occurredAt)
       ) {
@@ -169,14 +187,14 @@ function assertProviderEnvelope(
           "occurredAt",
           "media",
         ]) ||
-        !isNonEmptyString(value.messageReference) ||
+        !isMetaReference(value.messageReference, META_MESSAGE_REFERENCE_PATTERN) ||
         !isNonEmptyString(value.senderEndpoint) ||
         !isValidDate(value.occurredAt) ||
         !isObject(value.media) ||
         Object.keys(value.media).some(
           (key) => !["externalReference", "declaredKind", "mimeType", "checksum"].includes(key),
         ) ||
-        !isNonEmptyString(value.media.externalReference) ||
+        !isMetaReference(value.media.externalReference, META_GRAPH_NUMERIC_REFERENCE_PATTERN) ||
         !["image", "document", "audio", "sticker", "video"].includes(String(value.media.declaredKind)) ||
         (value.media.mimeType !== undefined && !isNonEmptyString(value.media.mimeType)) ||
         (value.media.checksum !== undefined &&
@@ -212,7 +230,7 @@ function assertProviderEnvelope(
         !Number.isSafeInteger(projection.version) ||
         Number(projection.version) <= 0 ||
         !isValidDate(projection.updatedAt) ||
-        !isNonEmptyString(projection.providerReference) ||
+        !isMetaReference(projection.providerReference, META_GRAPH_NUMERIC_REFERENCE_PATTERN) ||
         !isNonEmptyString(projection.templateKey) ||
         !["authentication", "marketing", "utility"].includes(String(projection.category)) ||
         !Array.isArray(projection.components) ||
@@ -276,10 +294,8 @@ export function serializeMetaCanonicalEnvelope(
   envelope: CanonicalProviderEnvelope | UnsupportedVerifiedEnvelope,
   context: ProviderEnvelopePersistenceContext,
 ): CommunicationEventPersistenceRecord {
+  assertPersistenceContext(context);
   assertProviderEnvelope(envelope);
-  if (!isNonEmptyString(context.schemaVersion)) {
-    throw new Error("CANONICAL_PROVIDER_ENVELOPE_INVALID");
-  }
   const base = {
     ...EMPTY_TYPED_FIELDS,
     connectionId: envelope.connectionId,
@@ -303,16 +319,11 @@ export function serializeMetaCanonicalEnvelope(
       if (!isNonEmptyString(context.senderBindingId)) {
         throw new Error("CANONICAL_PROVIDER_ENVELOPE_BINDING_REQUIRED");
       }
-      {
-        const retentionPolicy = context.textRetentionPolicy ?? "metadata_only";
-        record = {
-          ...base,
-          bindingId: context.senderBindingId,
-          messageReference: envelope.messageReference,
-          canonicalText: retentionPolicy === "metadata_only" ? null : envelope.text,
-          bodyRetentionPolicy: retentionPolicy,
-        };
-      }
+      record = {
+        ...base,
+        bindingId: context.senderBindingId,
+        messageReference: envelope.messageReference,
+      };
       break;
     case "interactive_reply":
       if (!isNonEmptyString(context.senderBindingId)) {
@@ -393,20 +404,7 @@ export function deserializeMetaCanonicalEnvelopeRecord(
   });
   switch (record.eventKind) {
     case "text_message":
-      if (record.bodyRetentionPolicy === "metadata_only") {
-        return { status: "not_reversible", eventKind: "text_message", reason: "metadata_only" };
-      }
-      return {
-        status: "available",
-        envelope: {
-          ...supportedBase(),
-          kind: "text_message",
-          senderBindingId: required(record.bindingId),
-          messageReference: required(record.messageReference),
-          text: required(record.canonicalText),
-          occurredAt: record.occurredAt,
-        },
-      };
+      return { status: "not_reversible", eventKind: "text_message", reason: "metadata_only" };
     case "interactive_reply":
       return {
         status: "available",
