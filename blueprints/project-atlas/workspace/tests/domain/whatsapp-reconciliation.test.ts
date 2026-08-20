@@ -54,9 +54,9 @@ describe("WhatsApp reconciliation and recovery jobs", () => {
         { kind: "inbound_lease_expired" as const, eventId: "event_retry", attempts: 1 },
         { kind: "inbound_lease_expired" as const, eventId: "event_exhausted", attempts: 3 },
       ],
+      deadLetterExpiredInbound: async () => ({ status: "dead_lettered" as const }),
     } as unknown as MemoryCommunicationsRepository;
-    expect(await expireChannelRecoveryState({ repository, now: NOW, limit: 4, maxInboundAttempts: 11 })).toEqual({ status: "rejected", code: "inbound_retry_limit_invalid" });
-    expect(await expireChannelRecoveryState({ repository, now: NOW, limit: 4, maxInboundAttempts: 3 })).toEqual({
+    expect(await expireChannelRecoveryState({ repository, now: NOW, limit: 4 })).toEqual({
       status: "completed",
       code: "recovery_work_found",
       work: [
@@ -66,5 +66,98 @@ describe("WhatsApp reconciliation and recovery jobs", () => {
         { kind: "inbound_lease_expired", eventId: "event_exhausted", attempts: 3, disposition: "dead_letter", terminal: true },
       ],
     });
+  });
+
+  it("persists exhausted inbound recovery once and never reopens it under a later higher caller limit", async () => {
+    const repository = new MemoryCommunicationsRepository({
+      policies: [{
+        policyId: "policy_recovery",
+        bindingId: "binding_recovery",
+        state: "normal",
+        version: 7,
+        fence: 1,
+        updatedAt: NOW,
+      }],
+    });
+    await repository.acceptInbound({
+      connectionId: "connection_recovery",
+      providerEventId: "provider_event_recovery",
+      providerBodyDigest: "body_digest_recovery",
+      endpointDigests: [{ version: "v1", digest: "endpoint_digest_recovery" }],
+      optOutSignal: "none",
+      envelope: {
+        event: {
+          eventId: "event_recovery",
+          channel: "whatsapp",
+          locale: "en",
+          connectionState: "active",
+          bindingId: "binding_recovery",
+          conversationId: "conversation_recovery",
+          messageId: "message_recovery",
+          receivedAt: NOW,
+          state: "persisted",
+          correlationId: "correlation_recovery",
+        },
+        conversation: {
+          id: "conversation_recovery",
+          channel: "whatsapp",
+          locale: "en",
+          status: "new",
+          participantIds: ["participant_recovery"],
+          version: 1,
+          createdAt: NOW,
+          updatedAt: NOW,
+          lastActivityAt: NOW,
+        },
+        participant: {
+          participantId: "participant_recovery",
+          conversationId: "conversation_recovery",
+          bindingId: "binding_recovery",
+          role: "external_contact",
+          createdAt: NOW,
+        },
+        message: {
+          id: "message_recovery",
+          conversationId: "conversation_recovery",
+          channel: "whatsapp",
+          direction: "inbound",
+          senderParticipantId: "participant_recovery",
+          locale: "en",
+          kind: "text",
+          body: "Synthetic recovery input",
+          createdAt: NOW,
+        },
+      },
+    });
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const claimAt = new Date(NOW.getTime() + attempt * 120_000);
+      await expect(repository.claimInbound({
+        eventId: "event_recovery",
+        leaseOwner: `worker_${attempt}`,
+        leaseExpiresAt: new Date(claimAt.getTime() + 60_000),
+        now: claimAt,
+        requiredPolicyVersion: 7,
+      })).resolves.toMatchObject({ status: "claimed", leaseVersion: attempt + 1 });
+    }
+
+    const expiredAt = new Date(NOW.getTime() + 6 * 60_000);
+    await expect(expireChannelRecoveryState({ repository, now: expiredAt, limit: 10 })).resolves.toMatchObject({
+      status: "completed",
+      work: [{ eventId: "event_recovery", attempts: 3, disposition: "dead_letter", terminal: true }],
+    });
+    expect(repository.referenceState().inbound[0]).toMatchObject({
+      eventId: "event_recovery",
+      state: "dead_letter",
+      leaseVersion: 4,
+    });
+
+    await expect(
+      (expireChannelRecoveryState as (input: Record<string, unknown>) => Promise<unknown>)({
+        repository,
+        now: new Date(expiredAt.getTime() + 60_000),
+        limit: 10,
+        maxInboundAttempts: 99,
+      }),
+    ).resolves.toEqual({ status: "completed", code: "no_recovery_work", work: [] });
   });
 });

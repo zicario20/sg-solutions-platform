@@ -1787,6 +1787,48 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
     });
   }
 
+  async deadLetterExpiredInbound(
+    input: import("@atlas/domain").DeadLetterExpiredInboundCommand,
+  ): Promise<import("@atlas/domain").DeadLetterExpiredInboundResult> {
+    return withCommunicationsTransaction(this.sql, async (tx) => {
+      const updated = await query<{ id: string }>(
+        tx,
+        `update communication_provider_event_receipts
+         set state = 'dead_letter', outcome_reason = 'retry_exhausted',
+             processing_version = processing_version + 1,
+             lease_owner_id = null, lease_token_hash = null, lease_expires_at = null,
+             processed_at = $3, updated_at = $3
+         where id = $1 and state = 'persisted' and processing_version = $2
+           and lease_expires_at <= $3
+         returning id`,
+        [input.eventId, input.expectedAttempts, input.now],
+      );
+      if (updated[0]) return { status: "dead_lettered" } as const;
+
+      const current = (
+        await query<{
+          state: string;
+          processing_version: number;
+          lease_expires_at: Date | null;
+        }>(
+          tx,
+          `select state, processing_version, lease_expires_at
+           from communication_provider_event_receipts where id = $1`,
+          [input.eventId],
+        )
+      )[0];
+      if (!current) return { status: "conflict", code: "not_found" } as const;
+      if (current.state === "dead_letter") return { status: "already_terminal" } as const;
+      if (current.state !== "persisted") {
+        return { status: "conflict", code: "state_changed" } as const;
+      }
+      if (current.processing_version !== input.expectedAttempts) {
+        return { status: "conflict", code: "version_mismatch" } as const;
+      }
+      return { status: "conflict", code: "lease_not_expired" } as const;
+    });
+  }
+
   async referenceState(): Promise<CommunicationsReferenceState> {
     return withCommunicationsTransaction(this.sql, async (tx) => {
       const [inbound, outbound, attempts, policies, bindings, consentHistory, templates, statuses, withdrawals] =

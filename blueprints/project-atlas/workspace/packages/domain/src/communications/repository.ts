@@ -443,6 +443,20 @@ export type RecoveryCandidate =
     }
   | { kind: "inbound_lease_expired"; eventId: string; attempts: number };
 
+export type DeadLetterExpiredInboundCommand = {
+  eventId: string;
+  expectedAttempts: number;
+  reason: "retry_exhausted";
+  now: Date;
+};
+
+export type DeadLetterExpiredInboundResult =
+  | { status: "dead_lettered" | "already_terminal" }
+  | {
+      status: "conflict";
+      code: "not_found" | "state_changed" | "version_mismatch" | "lease_not_expired";
+    };
+
 export type DispatchReconciliationOutcome =
   | "reconciled_accepted"
   | "confirmed_not_sent"
@@ -514,6 +528,9 @@ export interface CommunicationsRepository {
   reconcileTemplate(input: ReconcileTemplateCommand): Promise<TemplateReconciliationResult>;
   reconcileOutbound(input: ReconcileOutboundCommand): Promise<ReconcileOutboundResult>;
   findRecoveryWork(input: RecoveryQuery): Promise<readonly RecoveryCandidate[]>;
+  deadLetterExpiredInbound(
+    input: DeadLetterExpiredInboundCommand,
+  ): Promise<DeadLetterExpiredInboundResult>;
   registerTemplateDefinition(input: RegisterTemplateDefinition & { now: Date }): Promise<TemplateResult>;
   approveTemplateDefinition(
     input: ApproveTemplateDefinition & { now: Date },

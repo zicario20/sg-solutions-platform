@@ -18,6 +18,8 @@ import type {
   ConsentRecord,
   CreateOutboundCommand,
   CreateOutboundResult,
+  DeadLetterExpiredInboundCommand,
+  DeadLetterExpiredInboundResult,
   EvaluateTemplateEligibility,
   FailOutboundDraftCommand,
   FinalizeOutboundCommand,
@@ -107,6 +109,7 @@ type LockOperation =
   | "claim_inbound"
   | "claim_outbound"
   | "complete_outbound"
+  | "dead_letter_inbound"
   | "apply_provider_status"
   | "reconcile_outbound"
   | "withdraw_contact"
@@ -318,6 +321,43 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     record.leaseOwnerHash = undefined;
     record.leaseExpiresAt = undefined;
     return "completed";
+  }
+
+  async deadLetterExpiredInbound(
+    input: DeadLetterExpiredInboundCommand,
+  ): Promise<DeadLetterExpiredInboundResult> {
+    const found = this.inboundById.get(input.eventId);
+    if (!found) return { status: "conflict", code: "not_found" };
+    return this.withBindingLock<DeadLetterExpiredInboundResult>(
+      found.envelope.event.bindingId,
+      "dead_letter_inbound",
+      async () => {
+      const record = this.inboundById.get(input.eventId);
+      if (!record) return { status: "conflict", code: "not_found" };
+      if (record.state === "dead_letter") return { status: "already_terminal" };
+      if (record.state !== "persisted") return { status: "conflict", code: "state_changed" };
+      if (
+        !Number.isSafeInteger(input.expectedAttempts) ||
+        input.expectedAttempts < 1 ||
+        record.leaseVersion !== input.expectedAttempts
+      ) {
+        return { status: "conflict", code: "version_mismatch" };
+      }
+      if (
+        input.reason !== "retry_exhausted" ||
+        !Number.isFinite(input.now.getTime()) ||
+        !record.leaseExpiresAt ||
+        record.leaseExpiresAt > input.now
+      ) {
+        return { status: "conflict", code: "lease_not_expired" };
+      }
+      record.state = "dead_letter";
+      record.leaseVersion += 1;
+      record.leaseOwnerHash = undefined;
+      record.leaseExpiresAt = undefined;
+        return { status: "dead_lettered" };
+      },
+    );
   }
 
   async createOutbound(input: CreateOutboundCommand): Promise<CreateOutboundResult> {

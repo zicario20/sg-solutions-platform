@@ -5,7 +5,6 @@ import type {
   ContactWithdrawalEvidence,
   DispatchReconciliationReceipt,
   ReconcileTemplateCommand,
-  RecoveryCandidate,
   TemplateProviderReconciliationReceipt,
 } from "./repository.ts";
 
@@ -148,10 +147,10 @@ export type ExpireRecoveryInput = {
   repository: CommunicationsRepository;
   now: Date;
   limit: number;
-  maxInboundAttempts: number;
 };
 
 const RECEIPT_ID = /^[a-z][a-z0-9_-]{2,127}$/i;
+const INBOUND_RECOVERY_ATTEMPT_LIMIT = 3;
 const OWNER_ACTION = {
   appointment: ["appointments", "book_appointment"],
   document_upload: ["documents", "issue_upload_link"],
@@ -533,24 +532,9 @@ export async function reconcileMessageTemplate(input: ReconcileTemplateInput): P
   } as JobResult;
 }
 
-function recoveryDisposition(
-  candidate: RecoveryCandidate,
-  maxInboundAttempts: number,
-): "dead_letter" | "manual_review" | "retry_allowed" {
-  if (candidate.kind !== "inbound_lease_expired") return "manual_review";
-  return candidate.attempts >= maxInboundAttempts ? "dead_letter" : "retry_allowed";
-}
-
 export async function expireChannelRecoveryState(input: ExpireRecoveryInput): Promise<JobResult> {
   if (!Number.isSafeInteger(input.limit) || input.limit < 1 || input.limit > 100) {
     return { status: "rejected", code: "recovery_limit_invalid" };
-  }
-  if (
-    !Number.isSafeInteger(input.maxInboundAttempts) ||
-    input.maxInboundAttempts < 1 ||
-    input.maxInboundAttempts > 10
-  ) {
-    return { status: "rejected", code: "inbound_retry_limit_invalid" };
   }
   const candidates = await input.repository.findRecoveryWork({ now: input.now, limit: input.limit });
   if (
@@ -563,12 +547,36 @@ export async function expireChannelRecoveryState(input: ExpireRecoveryInput): Pr
   ) {
     return { status: "manual_review", code: "recovery_state_invalid" };
   }
+  const work: Record<string, unknown>[] = [];
+  for (const candidate of candidates) {
+    if (candidate.kind !== "inbound_lease_expired") {
+      work.push({ ...candidate, disposition: "manual_review", terminal: true });
+      continue;
+    }
+    if (candidate.attempts < INBOUND_RECOVERY_ATTEMPT_LIMIT) {
+      work.push({ ...candidate, disposition: "retry_allowed", terminal: false });
+      continue;
+    }
+    const persisted = await input.repository.deadLetterExpiredInbound({
+      eventId: candidate.eventId,
+      expectedAttempts: candidate.attempts,
+      reason: "retry_exhausted",
+      now: input.now,
+    });
+    if (persisted.status === "conflict") {
+      work.push({
+        ...candidate,
+        disposition: "manual_review",
+        terminal: false,
+        code: persisted.code,
+      });
+      continue;
+    }
+    work.push({ ...candidate, disposition: "dead_letter", terminal: true });
+  }
   return {
     status: "completed",
     code: candidates.length === 0 ? "no_recovery_work" : "recovery_work_found",
-    work: candidates.map((candidate) => {
-      const disposition = recoveryDisposition(candidate, input.maxInboundAttempts);
-      return { ...candidate, disposition, terminal: disposition !== "retry_allowed" };
-    }),
+    work,
   };
 }
