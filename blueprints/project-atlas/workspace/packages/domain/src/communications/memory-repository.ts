@@ -1113,8 +1113,8 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
         operation: receipt.operation,
         eventId: evidence.source === "inbound_event" ? evidence.receipt.eventId : undefined,
         correlationId: receipt.correlationId,
-        issuedAt: receipt.issuedAt,
-        expiresAt: receipt.expiresAt,
+        issuedAt: new Date(receipt.issuedAt.getTime()),
+        expiresAt: new Date(receipt.expiresAt.getTime()),
         changedAt: input.now,
       },
     };

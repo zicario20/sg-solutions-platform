@@ -984,5 +984,54 @@ export function runCommunicationsRepositoryConformance(
         });
       });
     });
+
+    it("owns withdrawal receipt timestamps after persistence", async () => {
+      await withHarness(factory, `${label}-withdrawal-date-ownership`, async ({ repository }) => {
+        const scenario = `${label}-withdrawal-date-ownership`;
+        const value = communicationsConformanceIds(scenario);
+        const issuedAt = new Date(CONFORMANCE_NOW.getTime());
+        const expiresAt = new Date(CONFORMANCE_TOMORROW.getTime());
+        const receipt = {
+          receiptId: `withdrawal_date_ownership_${suffix(scenario)}`,
+          owner: "consent" as const,
+          operation: "contact_withdrawal" as const,
+          bindingId: value.bindingId,
+          issuedAt: new Date(issuedAt.getTime()),
+          expiresAt: new Date(expiresAt.getTime()),
+          correlationId: `withdrawal_date_ownership_${suffix(scenario)}`,
+        };
+        await expect(repository.withdrawContact({
+          bindingId: value.bindingId,
+          evidence: { source: "authority", receipt },
+          now: CONFORMANCE_NOW,
+        })).resolves.toMatchObject({ status: "changed" });
+
+        receipt.issuedAt.setTime(receipt.issuedAt.getTime() - 1);
+        receipt.expiresAt.setTime(receipt.expiresAt.getTime() + 1);
+
+        await expect(repository.withdrawContact({
+          bindingId: value.bindingId,
+          evidence: {
+            source: "authority",
+            receipt: {
+              ...receipt,
+              issuedAt,
+              expiresAt,
+            },
+          },
+          now: CONFORMANCE_NOW,
+        })).resolves.toMatchObject({ status: "duplicate" });
+        const storedState = await repository.referenceState();
+        expect(storedState).toMatchObject({
+          withdrawalHistory: [
+            expect.objectContaining({
+              receiptId: receipt.receiptId,
+              issuedAt,
+              expiresAt,
+            }),
+          ],
+        });
+      });
+    });
   });
 }

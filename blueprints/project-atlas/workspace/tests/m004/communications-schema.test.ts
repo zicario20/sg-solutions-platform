@@ -622,11 +622,18 @@ describe("M004 generated migration authority and canonical cutover", () => {
     expect(sql).toContain(
       'CONSTRAINT "communication_contact_evidence_events_typed_contact_binding_fk" FOREIGN KEY ("contact_evidence_event_id","binding_id","contact_evidence_event_kind") REFERENCES "public"."communication_contact_evidence_events"("id","binding_id","event_kind")',
     );
-    expect(
-      sql.indexOf("communication_contact_evidence_events_id_binding_kind_unique"),
-    ).toBeLessThan(
-      sql.indexOf("communication_contact_evidence_events_typed_contact_binding_fk"),
-    );
+    const orderedConstraintFragments = [
+      'DROP CONSTRAINT "communication_contact_evidence_events_contact_binding_fk"',
+      'DROP CONSTRAINT "communication_contact_evidence_events_id_binding_unique"',
+      'ADD CONSTRAINT "communication_contact_evidence_events_id_binding_kind_unique"',
+      'ADD CONSTRAINT "communication_contact_evidence_events_typed_contact_binding_fk"',
+    ] as const;
+    let priorIndex = -1;
+    for (const fragment of orderedConstraintFragments) {
+      const index = sql.indexOf(fragment);
+      expect(index, `${fragment} must follow its dependency`).toBeGreaterThan(priorIndex);
+      priorIndex = index;
+    }
   });
 
   it("forces RLS, denies ambient roles, and grants only the two gateway roles", () => {
