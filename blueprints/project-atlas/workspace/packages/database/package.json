@@ -7,6 +7,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json --noEmit",
+    "runtime:communications:provision-local": "tsx --tsconfig ../../tsconfig.json scripts/provision-communications-runtime.ts",
+    "runtime:communications:validate": "tsx --tsconfig ../../tsconfig.json scripts/validate-communications-runtime.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
