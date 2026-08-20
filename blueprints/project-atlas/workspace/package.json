@@ -25,6 +25,7 @@
     "test:e2e": "playwright test",
     "test:e2e:www": "node tests/support/run-www-e2e.mjs",
     "test:e2e:m003": "node tests/support/run-m003-e2e.mjs",
+    "test:integration:m004": "node tests/support/run-m004-integration.mjs",
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {

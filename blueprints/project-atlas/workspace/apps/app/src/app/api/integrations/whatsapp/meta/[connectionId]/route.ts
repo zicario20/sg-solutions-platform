@@ -1,13 +1,9 @@
-import { whatsAppRuntimeHandler } from "../../../../../../lib/whatsapp/runtime.ts";
+import {
+  createWhatsAppRouteHandler,
+  whatsAppRuntimeHandler,
+} from "../../../../../../lib/whatsapp/runtime.ts";
 
-type RouteContext = {
-  readonly params: Promise<{ readonly connectionId: string }>;
-};
-
-async function handle(request: Request, context: RouteContext): Promise<Response> {
-  const { connectionId } = await context.params;
-  return whatsAppRuntimeHandler(request, { connectionId });
-}
+const handle = createWhatsAppRouteHandler(whatsAppRuntimeHandler);
 
 export const runtime = "nodejs";
 export const DELETE = handle;

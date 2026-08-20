@@ -22,6 +22,24 @@ const unavailable = async (): Promise<never> => {
   throw new Error("whatsapp_provider_traffic_unavailable");
 };
 
+export type WhatsAppRouteContext = {
+  readonly params: Promise<{ readonly connectionId: string }>;
+};
+
+export type WhatsAppRouteHandler = (
+  request: Request,
+  context: WhatsAppRouteContext,
+) => Promise<Response>;
+
+export function createWhatsAppRouteHandler(
+  handler: WhatsAppIngressHandler,
+): WhatsAppRouteHandler {
+  return async (request, context) => {
+    const { connectionId } = await context.params;
+    return handler(request, { connectionId });
+  };
+}
+
 export const whatsAppRuntimeHandler: WhatsAppIngressHandler = createWhatsAppIngressHandler({
   limits: {
     providerTrafficAllowed: config.providerTrafficAllowed,
