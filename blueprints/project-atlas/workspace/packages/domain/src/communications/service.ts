@@ -1,0 +1,535 @@
+import type {
+  ChannelKind,
+  ChannelLocale,
+  ChannelMessage,
+  DomainReceipt,
+} from "./contracts.ts";
+import type {
+  AcceptInboundResult,
+  CanonicalInboundEnvelope,
+  CommunicationsRepository,
+  EndpointDigest,
+  EvaluateTemplateEligibility,
+  HandoffRequestResult,
+  MessageTemplateService,
+  ReconcileTemplateCommand,
+  RegisterTemplateDefinition,
+  ApproveTemplateDefinition,
+  TemplateEligibilityResult,
+  TemplateResult,
+} from "./repository.ts";
+
+export type EndpointDigestKey = {
+  purpose: "communications_endpoint_digest";
+  version: string;
+  key: string;
+};
+
+export interface EndpointDigestKeyResolver {
+  resolve(): Promise<
+    | {
+        status: "available";
+        active: EndpointDigestKey;
+        prior: readonly EndpointDigestKey[];
+      }
+    | { status: "unavailable" }
+  >;
+}
+
+export interface KeyedDigestPort {
+  digest(input: { key: string; payload: string }): Promise<string>;
+}
+
+export interface DestinationResolutionPort {
+  resolve(input: { bindingId: string }): Promise<
+    | { status: "resolved"; endpoint: string }
+    | { status: "unavailable" }
+  >;
+}
+
+export interface BoundedExecutor {
+  run<T>(operation: string, timeoutMs: number, action: () => Promise<T>): Promise<T>;
+}
+
+export interface OutboundProviderPort {
+  dispatch(input: {
+    commandId: string;
+    attemptId: string;
+    destination: string;
+    message: ChannelMessage;
+  }): Promise<
+    | { status: "accepted"; providerReference?: string }
+    | { status: "failed"; code: string }
+    | { status: "unavailable" }
+  >;
+}
+
+export interface PublicKnowledgePort {
+  answer(input: { prompt: string; locale: ChannelLocale }): Promise<
+    | { status: "available"; text: string; sourceReceipt?: string }
+    | { status: "unavailable" }
+  >;
+}
+
+export interface ContentPolicyPort {
+  evaluate(input: { text: string }):
+    | { allowed: true; code: "allowed" }
+    | { allowed: false; code: string };
+}
+
+export interface HandoffPort {
+  request(input: {
+    conversationId: string;
+    idempotencyKey: string;
+  }): Promise<HandoffRequestResult>;
+}
+
+export type CommunicationsServiceDependencies = {
+  repository: CommunicationsRepository;
+  clock: { now(): Date };
+  ids: { next(kind: string): string };
+  endpointDigestKeys: EndpointDigestKeyResolver;
+  keyedDigest: KeyedDigestPort;
+  destinationResolver: DestinationResolutionPort;
+  boundedExecutor: BoundedExecutor;
+  provider: OutboundProviderPort;
+  publicKnowledge: PublicKnowledgePort;
+  contentPolicy: ContentPolicyPort;
+  handoff: HandoffPort;
+  providerTimeoutMs: number;
+  knowledgeTimeoutMs: number;
+  handoffTimeoutMs: number;
+};
+
+export type AcceptInboundApplicationCommand = {
+  connectionId: string;
+  providerEventId: string;
+  providerBodyDigest: string;
+  endpoint: string;
+  envelope: CanonicalInboundEnvelope;
+  optOutSignal: "none" | "pending";
+};
+
+export type QueueOutboundApplicationCommand = {
+  channel: ChannelKind;
+  locale: ChannelLocale;
+  conversationId: string;
+  bindingId: string;
+  body: string;
+  purpose: import("./contracts.ts").ContactPurpose;
+  templateId: string;
+  idempotencyKey: string;
+  fingerprint: string;
+  requiredPolicyVersion: number;
+  requiredFence: number;
+  authorizationReceipt?: import("./channel-policy.ts").OutboundAuthorizationReceipt;
+  correlationId: string;
+};
+
+type EndpointResolution =
+  | { status: "available"; endpoint: string; digests: readonly EndpointDigest[] }
+  | {
+      status: "unavailable";
+      code:
+        | "destination_unavailable"
+        | "endpoint_digest_key_unavailable"
+        | "endpoint_digest_key_invalid";
+    };
+
+const KEY_VERSION = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
+const RECEIPT_ID = /^[a-z][a-z0-9_-]{2,127}$/i;
+const ENDPOINT_DIGEST_DOMAIN = "communications:endpoint-digest:v1\u0000";
+const MAX_PRIOR_ENDPOINT_KEYS = 3;
+
+function validDate(value: Date): boolean {
+  return Number.isFinite(value.getTime());
+}
+
+function validHandoffReceipt(
+  receipt: DomainReceipt | undefined,
+  input: { conversationId: string; idempotencyKey: string; now: Date },
+): boolean {
+  return Boolean(
+    receipt &&
+      receipt.owner === "communications" &&
+      receipt.operation === "handoff" &&
+      RECEIPT_ID.test(receipt.receiptId) &&
+      receipt.resourceId === input.conversationId &&
+      receipt.idempotencyKey === input.idempotencyKey &&
+      validDate(receipt.issuedAt) &&
+      validDate(receipt.expiresAt) &&
+      receipt.issuedAt <= input.now &&
+      receipt.expiresAt > input.now,
+  );
+}
+
+export class CommunicationsService {
+  constructor(private readonly dependencies: CommunicationsServiceDependencies) {}
+
+  async acceptInbound(
+    input: AcceptInboundApplicationCommand,
+  ): Promise<
+    | AcceptInboundResult
+    | {
+        status: "unavailable";
+        code: "endpoint_digest_key_unavailable" | "endpoint_digest_key_invalid";
+      }
+  > {
+    const resolved = await this.digestEndpoint(input.endpoint);
+    if (resolved.status === "unavailable") {
+      return {
+        status: "unavailable",
+        code:
+          resolved.code === "destination_unavailable"
+            ? "endpoint_digest_key_unavailable"
+            : resolved.code,
+      };
+    }
+    return this.dependencies.repository.acceptInbound({
+      connectionId: input.connectionId,
+      providerEventId: input.providerEventId,
+      providerBodyDigest: input.providerBodyDigest,
+      endpointDigests: resolved.digests,
+      envelope: input.envelope,
+      optOutSignal: input.optOutSignal,
+    });
+  }
+
+  async queueOutbound(input: QueueOutboundApplicationCommand): Promise<Record<string, unknown>> {
+    const copy = this.dependencies.contentPolicy.evaluate({ text: input.body });
+    if (!copy.allowed) return { status: "unavailable", code: "prohibited_content" };
+    const resolved = await this.resolveDestination(input.bindingId);
+    if (resolved.status === "unavailable") {
+      return { status: "unavailable", code: resolved.code };
+    }
+    const now = this.dependencies.clock.now();
+    const commandId = this.dependencies.ids.next("outbound_command");
+    const messageId = this.dependencies.ids.next("outbound_message");
+    return this.dependencies.repository.createOutbound({
+      command: {
+        commandId,
+        channel: input.channel,
+        locale: input.locale,
+        conversationId: input.conversationId,
+        bindingId: input.bindingId,
+        messageId,
+        idempotencyKey: input.idempotencyKey,
+        state: "queued",
+        createdAt: now,
+        correlationId: input.correlationId,
+      },
+      message: {
+        id: messageId,
+        conversationId: input.conversationId,
+        channel: input.channel,
+        direction: "outbound",
+        senderParticipantId: "system",
+        locale: input.locale,
+        kind: "text",
+        body: input.body,
+        createdAt: now,
+      },
+      purpose: input.purpose,
+      templateId: input.templateId,
+      fingerprint: input.fingerprint,
+      requiredPolicyVersion: input.requiredPolicyVersion,
+      requiredFence: input.requiredFence,
+      endpointDigests: resolved.digests,
+      authorizationReceipt: input.authorizationReceipt,
+    });
+  }
+
+  async dispatchOutbound(input: {
+    commandId: string;
+    leaseOwner: string;
+    leaseExpiresAt: Date;
+  }): Promise<Record<string, unknown>> {
+    const now = this.dependencies.clock.now();
+    const attemptId = this.dependencies.ids.next("dispatch_attempt");
+    const claim = await this.dependencies.repository.claimOutbound({
+      commandId: input.commandId,
+      attemptId,
+      leaseOwner: input.leaseOwner,
+      leaseExpiresAt: input.leaseExpiresAt,
+      now,
+    });
+    if (claim.status === "not_claimed") {
+      return { status: "not_dispatched", code: claim.code };
+    }
+
+    const resolved = await this.resolveDestination(claim.command.bindingId);
+    if (resolved.status === "unavailable") {
+      await this.dependencies.repository.markDispatchOutcome({
+        commandId: input.commandId,
+        attemptId,
+        leaseOwner: input.leaseOwner,
+        leaseVersion: claim.attempt.leaseVersion,
+        outcome: "known_failure",
+        now: this.dependencies.clock.now(),
+      });
+      return { status: "not_dispatched", code: resolved.code, attemptId };
+    }
+    const matchingDigest = resolved.digests.some(
+      (candidate) => candidate.digest === claim.destinationDigest.digest,
+    );
+    if (!matchingDigest) {
+      await this.dependencies.repository.markDispatchOutcome({
+        commandId: input.commandId,
+        attemptId,
+        leaseOwner: input.leaseOwner,
+        leaseVersion: claim.attempt.leaseVersion,
+        outcome: "known_failure",
+        now: this.dependencies.clock.now(),
+      });
+      return { status: "not_dispatched", code: "destination_mismatch", attemptId };
+    }
+
+    try {
+      const providerResult = await this.dependencies.boundedExecutor.run(
+        "communications_provider_dispatch",
+        this.dependencies.providerTimeoutMs,
+        () =>
+          this.dependencies.provider.dispatch({
+            commandId: input.commandId,
+            attemptId,
+            destination: resolved.endpoint,
+            message: claim.message,
+          }),
+      );
+      if (providerResult.status === "accepted") {
+        await this.dependencies.repository.markDispatchOutcome({
+          commandId: input.commandId,
+          attemptId,
+          leaseOwner: input.leaseOwner,
+          leaseVersion: claim.attempt.leaseVersion,
+          outcome: "accepted",
+          providerReference: providerResult.providerReference,
+          now: this.dependencies.clock.now(),
+        });
+        return { status: "accepted", attemptId };
+      }
+      await this.dependencies.repository.markDispatchOutcome({
+        commandId: input.commandId,
+        attemptId,
+        leaseOwner: input.leaseOwner,
+        leaseVersion: claim.attempt.leaseVersion,
+        outcome: "known_failure",
+        now: this.dependencies.clock.now(),
+      });
+      return {
+        status: "not_dispatched",
+        code: providerResult.status === "unavailable" ? "provider_unavailable" : "provider_rejected",
+        attemptId,
+      };
+    } catch {
+      await this.dependencies.repository.markDispatchOutcome({
+        commandId: input.commandId,
+        attemptId,
+        leaseOwner: input.leaseOwner,
+        leaseVersion: claim.attempt.leaseVersion,
+        outcome: "unknown",
+        now: this.dependencies.clock.now(),
+      });
+      return { status: "dispatch_unknown", code: "provider_outcome_ambiguous", attemptId };
+    }
+  }
+
+  async processInbound(input: {
+    eventId: string;
+    leaseOwner: string;
+    leaseExpiresAt: Date;
+    requiredPolicyVersion: number;
+    action: "public_knowledge" | "handoff";
+    prompt?: string;
+    idempotencyKey?: string;
+  }): Promise<Record<string, unknown>> {
+    const claim = await this.dependencies.repository.claimInbound({
+      eventId: input.eventId,
+      leaseOwner: input.leaseOwner,
+      leaseExpiresAt: input.leaseExpiresAt,
+      requiredPolicyVersion: input.requiredPolicyVersion,
+      now: this.dependencies.clock.now(),
+    });
+    if (claim.status === "not_claimed") {
+      return { status: "conflict", code: claim.code };
+    }
+    if (claim.policyState === "opt_out_pending" || claim.policyState === "withdrawn") {
+      await this.completeInbound(claim, input, "applied");
+      return { status: "opt_out_pending", eventId: input.eventId };
+    }
+    if (input.action === "handoff") {
+      const idempotencyKey = input.idempotencyKey ?? "";
+      try {
+        const result = await this.dependencies.boundedExecutor.run(
+          "communications_handoff",
+          this.dependencies.handoffTimeoutMs,
+          () =>
+            this.dependencies.handoff.request({
+              conversationId: claim.envelope.conversation.id,
+              idempotencyKey,
+            }),
+        );
+        if (result.status !== "queued") {
+          await this.completeInbound(claim, input, "manual_review");
+          return { status: "manual", code: "handoff_unavailable" };
+        }
+        if (
+          !validHandoffReceipt(result.receipt, {
+            conversationId: claim.envelope.conversation.id,
+            idempotencyKey,
+            now: this.dependencies.clock.now(),
+          })
+        ) {
+          await this.completeInbound(claim, input, "manual_review");
+          return { status: "manual", code: "handoff_receipt_missing" };
+        }
+        await this.completeInbound(claim, input, "applied");
+        return { status: "handoff_queued", receiptId: result.receipt!.receiptId };
+      } catch {
+        await this.completeInbound(claim, input, "manual_review");
+        return { status: "manual", code: "handoff_unavailable" };
+      }
+    }
+
+    try {
+      const answer = await this.dependencies.boundedExecutor.run(
+        "communications_public_knowledge",
+        this.dependencies.knowledgeTimeoutMs,
+        () =>
+          this.dependencies.publicKnowledge.answer({
+            prompt: input.prompt ?? "",
+            locale: claim.envelope.event.locale,
+          }),
+      );
+      if (answer.status !== "available") {
+        await this.completeInbound(claim, input, "manual_review");
+        return { status: "manual", code: "knowledge_unavailable" };
+      }
+      if (!answer.sourceReceipt) {
+        await this.completeInbound(claim, input, "manual_review");
+        return { status: "manual", code: "knowledge_receipt_missing" };
+      }
+      const decision = this.dependencies.contentPolicy.evaluate({ text: answer.text });
+      if (!decision.allowed) {
+        await this.completeInbound(claim, input, "manual_review");
+        return { status: "manual", code: "prohibited_content" };
+      }
+      await this.completeInbound(claim, input, "applied");
+      return {
+        status: "answered",
+        text: answer.text,
+        sourceReceipt: answer.sourceReceipt,
+      };
+    } catch {
+      await this.completeInbound(claim, input, "manual_review");
+      return { status: "manual", code: "knowledge_unavailable" };
+    }
+  }
+
+  private async completeInbound(
+    claim: Extract<Awaited<ReturnType<CommunicationsRepository["claimInbound"]>>, { status: "claimed" }>,
+    input: { eventId: string; leaseOwner: string },
+    outcome: "applied" | "manual_review" | "dead_letter",
+  ): Promise<void> {
+    await this.dependencies.repository.completeInbound({
+      eventId: input.eventId,
+      leaseOwner: input.leaseOwner,
+      leaseVersion: claim.leaseVersion,
+      outcome,
+      now: this.dependencies.clock.now(),
+    });
+  }
+
+  private async resolveDestination(bindingId: string): Promise<EndpointResolution> {
+    try {
+      const destination = await this.dependencies.destinationResolver.resolve({ bindingId });
+      if (destination.status !== "resolved" || !destination.endpoint) {
+        return { status: "unavailable", code: "destination_unavailable" };
+      }
+      return this.digestEndpoint(destination.endpoint);
+    } catch {
+      return { status: "unavailable", code: "destination_unavailable" };
+    }
+  }
+
+  private async digestEndpoint(endpoint: string): Promise<EndpointResolution> {
+    let ring: Awaited<ReturnType<EndpointDigestKeyResolver["resolve"]>>;
+    try {
+      ring = await this.dependencies.endpointDigestKeys.resolve();
+    } catch {
+      return { status: "unavailable", code: "endpoint_digest_key_unavailable" };
+    }
+    if (ring.status !== "available") {
+      return { status: "unavailable", code: "endpoint_digest_key_unavailable" };
+    }
+    const keys = [ring.active, ...ring.prior];
+    const versions = new Set<string>();
+    if (
+      ring.prior.length > MAX_PRIOR_ENDPOINT_KEYS ||
+      keys.some(
+        (candidate) =>
+          candidate.purpose !== "communications_endpoint_digest" ||
+          !KEY_VERSION.test(candidate.version) ||
+          !candidate.key ||
+          versions.has(candidate.version) ||
+          (versions.add(candidate.version), false),
+      )
+    ) {
+      return { status: "unavailable", code: "endpoint_digest_key_invalid" };
+    }
+    try {
+      const payload = `${ENDPOINT_DIGEST_DOMAIN}${endpoint}`;
+      const digests: EndpointDigest[] = [];
+      for (const candidate of keys) {
+        const digest = await this.dependencies.keyedDigest.digest({
+          key: candidate.key,
+          payload,
+        });
+        if (!digest) {
+          return { status: "unavailable", code: "endpoint_digest_key_unavailable" };
+        }
+        digests.push({ version: candidate.version, digest });
+      }
+      return { status: "available", endpoint, digests };
+    } catch {
+      return { status: "unavailable", code: "endpoint_digest_key_unavailable" };
+    }
+  }
+}
+
+export class CanonicalMessageTemplateService implements MessageTemplateService {
+  constructor(
+    private readonly dependencies: {
+      repository: CommunicationsRepository;
+      clock: { now(): Date };
+      allowSyntheticDefinitions?: boolean;
+    },
+  ) {}
+
+  async registerInternalDefinition(input: RegisterTemplateDefinition): Promise<TemplateResult> {
+    if (!this.dependencies.allowSyntheticDefinitions || !input.synthetic) {
+      return { status: "unavailable", code: "runtime_registration_disabled" };
+    }
+    return this.dependencies.repository.registerTemplateDefinition({
+      ...input,
+      now: this.dependencies.clock.now(),
+    });
+  }
+
+  async recordInternalApproval(input: ApproveTemplateDefinition): Promise<TemplateResult> {
+    return this.dependencies.repository.approveTemplateDefinition({
+      ...input,
+      now: this.dependencies.clock.now(),
+    });
+  }
+
+  async applyProviderProjection(input: ReconcileTemplateCommand): Promise<TemplateResult> {
+    return this.dependencies.repository.reconcileTemplate(input);
+  }
+
+  async evaluateEligibility(
+    input: EvaluateTemplateEligibility,
+  ): Promise<TemplateEligibilityResult> {
+    return this.dependencies.repository.evaluateTemplateEligibility(input);
+  }
+}
