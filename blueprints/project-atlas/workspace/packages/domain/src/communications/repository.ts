@@ -441,7 +441,7 @@ export type RecoveryCandidate =
       commandId: string;
       attemptId: string;
     }
-  | { kind: "inbound_lease_expired"; eventId: string };
+  | { kind: "inbound_lease_expired"; eventId: string; attempts: number };
 
 export type DispatchReconciliationOutcome =
   | "reconciled_accepted"

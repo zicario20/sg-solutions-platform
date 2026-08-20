@@ -1,3 +1,4 @@
+import type { HandoffReason, HumanHandoffPort } from "../public-chat/providers.ts";
 import type { ContentPolicyPort } from "./service.ts";
 import type {
   CommunicationsRepository,
@@ -40,13 +41,12 @@ export interface PublicOrientationPort {
 
 export type OwningDomainReceipt = {
   receiptId: string;
-  owner: "appointments" | "communications" | "documents" | "leads" | "payments";
+  owner: "appointments" | "documents" | "leads" | "payments";
   operation:
     | "book_appointment"
     | "capture_lead"
     | "issue_payment_link"
-    | "issue_upload_link"
-    | "request_handoff";
+    | "issue_upload_link";
   bindingId: string;
   resourceId: string;
   idempotencyKey: string;
@@ -59,7 +59,6 @@ export type OwningDomainReceipt = {
 export type OwningActionIntent =
   | "appointment"
   | "document_upload"
-  | "handoff"
   | "lead"
   | "payment_link";
 
@@ -101,6 +100,8 @@ export type ProcessInboundInput = {
   contentPolicy: ContentPolicyPort;
   publicOrientation?: PublicOrientationPort;
   owningAction?: OwningDomainActionPort;
+  humanHandoff?: HumanHandoffPort;
+  handoffReason?: HandoffReason;
   eventId: string;
   leaseOwner: string;
   leaseExpiresAt: Date;
@@ -147,13 +148,13 @@ export type ExpireRecoveryInput = {
   repository: CommunicationsRepository;
   now: Date;
   limit: number;
+  maxInboundAttempts: number;
 };
 
 const RECEIPT_ID = /^[a-z][a-z0-9_-]{2,127}$/i;
 const OWNER_ACTION = {
   appointment: ["appointments", "book_appointment"],
   document_upload: ["documents", "issue_upload_link"],
-  handoff: ["communications", "request_handoff"],
   lead: ["leads", "capture_lead"],
   payment_link: ["payments", "issue_payment_link"],
 } as const satisfies Record<OwningActionIntent, readonly [OwningDomainReceipt["owner"], OwningDomainReceipt["operation"]]>;
@@ -333,6 +334,51 @@ export async function processInboundChannelEvent(input: ProcessInboundInput): Pr
     });
   }
 
+  if (input.intent === "handoff") {
+    const idempotencyKey = input.idempotencyKey ?? "";
+    if (!input.humanHandoff || !idempotencyKey) {
+      return finishInbound(input, claim, "manual_review", {
+        status: "manual_review",
+        code: "handoff_unavailable",
+      });
+    }
+    try {
+      const handoff = await input.executor.run(
+        "communications_handoff",
+        input.ownerTimeoutMs,
+        () =>
+          input.humanHandoff!.enqueue({
+            conversationId: claim.envelope.conversation.id,
+            locale: claim.envelope.event.locale,
+            reason: input.handoffReason ?? "visitor_requested",
+            correlationId: claim.envelope.event.correlationId,
+            idempotencyKey,
+          }),
+      );
+      if (
+        handoff.status !== "queued" ||
+        !RECEIPT_ID.test(handoff.receiptId) ||
+        !(handoff.queuedAt instanceof Date) ||
+        !Number.isFinite(handoff.queuedAt.getTime())
+      ) {
+        return finishInbound(input, claim, "manual_review", {
+          status: "manual_review",
+          code: "handoff_unavailable",
+        });
+      }
+      return finishInbound(input, claim, "applied", {
+        status: "handoff_queued",
+        receiptId: handoff.receiptId,
+        queuedAt: handoff.queuedAt,
+      });
+    } catch {
+      return finishInbound(input, claim, "manual_review", {
+        status: "manual_review",
+        code: "handoff_unavailable",
+      });
+    }
+  }
+
   if (input.intent === "public_orientation") {
     if (!input.publicOrientation) {
       return finishInbound(input, claim, "manual_review", {
@@ -386,7 +432,7 @@ export async function processInboundChannelEvent(input: ProcessInboundInput): Pr
   if (Object.hasOwn(OWNER_ACTION, input.intent)) {
     const intent = input.intent as OwningActionIntent;
     const [owner, operation] = OWNER_ACTION[intent];
-    const resourceId = intent === "handoff" ? claim.envelope.conversation.id : input.resourceId ?? "";
+    const resourceId = input.resourceId ?? "";
     const idempotencyKey = input.idempotencyKey ?? "";
     if (!input.owningAction || !resourceId || !idempotencyKey) {
       return finishInbound(input, claim, "manual_review", {
@@ -487,18 +533,42 @@ export async function reconcileMessageTemplate(input: ReconcileTemplateInput): P
   } as JobResult;
 }
 
-function recoveryDisposition(candidate: RecoveryCandidate): "manual_review" | "retry_allowed" {
-  return candidate.kind === "inbound_lease_expired" ? "retry_allowed" : "manual_review";
+function recoveryDisposition(
+  candidate: RecoveryCandidate,
+  maxInboundAttempts: number,
+): "dead_letter" | "manual_review" | "retry_allowed" {
+  if (candidate.kind !== "inbound_lease_expired") return "manual_review";
+  return candidate.attempts >= maxInboundAttempts ? "dead_letter" : "retry_allowed";
 }
 
 export async function expireChannelRecoveryState(input: ExpireRecoveryInput): Promise<JobResult> {
   if (!Number.isSafeInteger(input.limit) || input.limit < 1 || input.limit > 100) {
     return { status: "rejected", code: "recovery_limit_invalid" };
   }
+  if (
+    !Number.isSafeInteger(input.maxInboundAttempts) ||
+    input.maxInboundAttempts < 1 ||
+    input.maxInboundAttempts > 10
+  ) {
+    return { status: "rejected", code: "inbound_retry_limit_invalid" };
+  }
   const candidates = await input.repository.findRecoveryWork({ now: input.now, limit: input.limit });
+  if (
+    candidates.length > input.limit ||
+    candidates.some(
+      (candidate) =>
+        candidate.kind === "inbound_lease_expired" &&
+        (!Number.isSafeInteger(candidate.attempts) || candidate.attempts < 1),
+    )
+  ) {
+    return { status: "manual_review", code: "recovery_state_invalid" };
+  }
   return {
     status: "completed",
     code: candidates.length === 0 ? "no_recovery_work" : "recovery_work_found",
-    work: candidates.map((candidate) => ({ ...candidate, disposition: recoveryDisposition(candidate) })),
+    work: candidates.map((candidate) => {
+      const disposition = recoveryDisposition(candidate, input.maxInboundAttempts);
+      return { ...candidate, disposition, terminal: disposition !== "retry_allowed" };
+    }),
   };
 }

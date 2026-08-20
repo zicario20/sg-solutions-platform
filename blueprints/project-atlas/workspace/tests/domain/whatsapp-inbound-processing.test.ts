@@ -242,4 +242,36 @@ describe("WhatsApp inbound processing job", () => {
     ).toMatchObject({ status: "completed", code: "binding_suspended" });
     expect(wrongPerson.referenceState().bindings[0]).toMatchObject({ trustState: "suspended" });
   });
+
+  it("uses the approved shared human handoff authority instead of a communications-owned receipt", async () => {
+    const repository = await fixture("handoff");
+    let ownerActionCalls = 0;
+    const result = await processInboundChannelEvent(
+      input(repository, "handoff", {
+        intent: "handoff",
+        idempotencyKey: "handoff_key_1",
+        owningAction: {
+          execute: async () => {
+            ownerActionCalls += 1;
+            return { status: "unavailable" };
+          },
+        },
+        humanHandoff: {
+          enqueue: async (request) => {
+            expect(request).toMatchObject({
+              conversationId: "conversation_handoff",
+              locale: "en",
+              reason: "visitor_requested",
+              correlationId: "correlation_handoff",
+              idempotencyKey: "handoff_key_1",
+            });
+            return { status: "queued", receiptId: "handoff_receipt_1", queuedAt: NOW };
+          },
+        },
+      }),
+    );
+
+    expect(result).toMatchObject({ status: "handoff_queued", receiptId: "handoff_receipt_1" });
+    expect(ownerActionCalls).toBe(0);
+  });
 });

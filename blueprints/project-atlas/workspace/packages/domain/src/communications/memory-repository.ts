@@ -949,7 +949,11 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
         inbound.leaseExpiresAt &&
         inbound.leaseExpiresAt <= input.now
       ) {
-        candidates.push({ kind: "inbound_lease_expired", eventId: inbound.envelope.event.eventId });
+        candidates.push({
+          kind: "inbound_lease_expired",
+          eventId: inbound.envelope.event.eventId,
+          attempts: inbound.leaseVersion,
+        });
       }
     }
     return candidates.slice(0, Math.max(0, Math.min(input.limit, 100)));

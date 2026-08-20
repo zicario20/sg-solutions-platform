@@ -51,17 +51,19 @@ describe("WhatsApp reconciliation and recovery jobs", () => {
       findRecoveryWork: async () => [
         { kind: "outbound_dispatch_unknown" as const, commandId: "command_1", attemptId: "attempt_1" },
         { kind: "outbound_lease_expired" as const, commandId: "command_2", attemptId: "attempt_2" },
-        { kind: "inbound_lease_expired" as const, eventId: "event_1" },
+        { kind: "inbound_lease_expired" as const, eventId: "event_retry", attempts: 1 },
+        { kind: "inbound_lease_expired" as const, eventId: "event_exhausted", attempts: 3 },
       ],
     } as unknown as MemoryCommunicationsRepository;
-    expect(await expireChannelRecoveryState({ repository, now: NOW, limit: 101 })).toEqual({ status: "rejected", code: "recovery_limit_invalid" });
-    expect(await expireChannelRecoveryState({ repository, now: NOW, limit: 3 })).toEqual({
+    expect(await expireChannelRecoveryState({ repository, now: NOW, limit: 4, maxInboundAttempts: 11 })).toEqual({ status: "rejected", code: "inbound_retry_limit_invalid" });
+    expect(await expireChannelRecoveryState({ repository, now: NOW, limit: 4, maxInboundAttempts: 3 })).toEqual({
       status: "completed",
       code: "recovery_work_found",
       work: [
-        { kind: "outbound_dispatch_unknown", commandId: "command_1", attemptId: "attempt_1", disposition: "manual_review" },
-        { kind: "outbound_lease_expired", commandId: "command_2", attemptId: "attempt_2", disposition: "manual_review" },
-        { kind: "inbound_lease_expired", eventId: "event_1", disposition: "retry_allowed" },
+        { kind: "outbound_dispatch_unknown", commandId: "command_1", attemptId: "attempt_1", disposition: "manual_review", terminal: true },
+        { kind: "outbound_lease_expired", commandId: "command_2", attemptId: "attempt_2", disposition: "manual_review", terminal: true },
+        { kind: "inbound_lease_expired", eventId: "event_retry", attempts: 1, disposition: "retry_allowed", terminal: false },
+        { kind: "inbound_lease_expired", eventId: "event_exhausted", attempts: 3, disposition: "dead_letter", terminal: true },
       ],
     });
   });

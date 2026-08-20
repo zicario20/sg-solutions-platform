@@ -1757,12 +1757,14 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         command_id: string | null;
         attempt_id: string | null;
         event_id: string | null;
+        attempts: number | null;
       }>(
         tx,
         `select * from (
           select case when command.state = 'dispatch_unknown'
             then 'outbound_dispatch_unknown' else 'outbound_lease_expired' end as kind,
             command.id as command_id, attempt.id as attempt_id, null::text as event_id,
+            null::integer as attempts,
             coalesce(attempt.completed_at, attempt.started_at) as recovery_at
           from communication_outbound_commands command
           join lateral (select * from communication_dispatch_attempts
@@ -1770,7 +1772,8 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
           where command.state = 'dispatch_unknown'
              or (command.state = 'dispatching' and command.lease_expires_at <= $1)
           union all
-          select 'inbound_lease_expired', null, null, receipt.id, receipt.lease_expires_at
+          select 'inbound_lease_expired', null, null, receipt.id, receipt.processing_version,
+            receipt.lease_expires_at
           from communication_provider_event_receipts receipt
           where receipt.state = 'persisted' and receipt.lease_expires_at <= $1
         ) work order by recovery_at asc limit $2`,
@@ -1778,7 +1781,7 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       );
       return rows.map((row) =>
         row.kind === "inbound_lease_expired"
-          ? { kind: row.kind, eventId: row.event_id! }
+          ? { kind: row.kind, eventId: row.event_id!, attempts: row.attempts! }
           : { kind: row.kind, commandId: row.command_id!, attemptId: row.attempt_id! },
       );
     });
