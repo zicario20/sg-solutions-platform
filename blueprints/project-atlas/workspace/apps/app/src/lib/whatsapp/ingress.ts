@@ -478,6 +478,11 @@ function createSafeCorrelationId(dependencies: WhatsAppIngressDependencies): str
 
 const MAX_RETIRED_CLEANUPS = 1;
 
+type PendingCleanupRetirement = {
+  active: boolean;
+  retire: () => boolean;
+};
+
 export function createWhatsAppIngressHandler(
   dependencies: WhatsAppIngressDependencies,
 ): WhatsAppIngressHandler {
@@ -485,12 +490,12 @@ export function createWhatsAppIngressHandler(
   requirePositiveSafeInteger(dependencies.limits.readTimeoutMilliseconds, "read timeout");
   requirePositiveSafeInteger(dependencies.limits.totalTimeoutMilliseconds, "total timeout");
   let retiredCleanupCount = 0;
-  const pendingRetirements: Array<() => boolean> = [];
+  const pendingRetirements: PendingCleanupRetirement[] = [];
 
   const retireNextCleanup = () => {
     while (retiredCleanupCount < MAX_RETIRED_CLEANUPS && pendingRetirements.length > 0) {
-      const retire = pendingRetirements.shift();
-      if (retire?.()) return;
+      const waiter = pendingRetirements.shift();
+      if (waiter?.active && waiter.retire()) return;
     }
   };
 
@@ -649,10 +654,17 @@ export function createWhatsAppIngressHandler(
             releaseDeferred = true;
             let cleanupFinished = false;
             let retired = false;
+            let queuedRetirement: PendingCleanupRetirement | undefined;
             const finishCleanup = () => {
               if (cleanupFinished) return;
               cleanupFinished = true;
               clearTimeout(retirementTimer);
+              if (queuedRetirement) {
+                queuedRetirement.active = false;
+                const index = pendingRetirements.indexOf(queuedRetirement);
+                if (index >= 0) pendingRetirements.splice(index, 1);
+                queuedRetirement = undefined;
+              }
               if (retired) {
                 retiredCleanupCount = Math.max(0, retiredCleanupCount - 1);
                 retireNextCleanup();
@@ -671,7 +683,10 @@ export function createWhatsAppIngressHandler(
             };
             const retirementTimer = setTimeout(() => {
               if (cleanupFinished) return;
-              if (!retireCleanup()) pendingRetirements.push(retireCleanup);
+              if (!retireCleanup()) {
+                queuedRetirement = { active: true, retire: retireCleanup };
+                pendingRetirements.push(queuedRetirement);
+              }
             }, dependencies.limits.totalTimeoutMilliseconds);
             void error.cleanup.then(finishCleanup, finishCleanup);
           }

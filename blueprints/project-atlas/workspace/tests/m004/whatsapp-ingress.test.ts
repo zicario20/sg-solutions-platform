@@ -502,6 +502,49 @@ describe("bounded WhatsApp webhook ingress", () => {
     await flushMicrotasks();
   });
 
+  it("removes a settled cleanup from the queued retirement waiters", async () => {
+    const clock = new ControlledClock();
+    const firstAuthority = deferred<MetaWebhookConnectionAuthority>();
+    const secondAuthority = deferred<MetaWebhookConnectionAuthority>();
+    let authorityCalls = 0;
+    const authorityResolver = {
+      resolveWebhookConnectionAuthority: vi.fn(() => {
+        authorityCalls += 1;
+        if (authorityCalls === 1) return firstAuthority.promise;
+        if (authorityCalls === 2) return secondAuthority.promise;
+        return Promise.resolve(AUTHORITY);
+      }),
+    };
+    const tracked = trackedSinglePermitSemaphore(2);
+    const { handler } = createHarness({ clock, authorityResolver, semaphore: tracked.semaphore });
+    const challenge = new URLSearchParams({
+      "hub.mode": "subscribe",
+      "hub.verify_token": VERIFY_TOKEN,
+      "hub.challenge": "123456789",
+    });
+    const request = () => new Request(`https://atlas.invalid/task6?${challenge.toString()}`, {
+      method: "GET",
+    });
+
+    const first = handler(request(), { connectionId: CONNECTION_ID });
+    const second = handler(request(), { connectionId: CONNECTION_ID });
+    await flushMicrotasks();
+    clock.advanceBy(5_000);
+    await expect(first).resolves.toHaveProperty("status", 504);
+    await expect(second).resolves.toHaveProperty("status", 504);
+    clock.advanceBy(5_000);
+    await flushMicrotasks();
+    expect(tracked.releaseCount()).toBe(1);
+
+    secondAuthority.resolve(AUTHORITY);
+    await flushMicrotasks();
+    expect(tracked.releaseCount()).toBe(2);
+
+    const recovered = await handler(request(), { connectionId: CONNECTION_ID });
+    expect(recovered.status).toBe(200);
+    expect(authorityCalls).toBe(3);
+  });
+
   it("rejects over-concurrency before reading the second body", async () => {
     const semaphore = createIngressSemaphore(1);
     const firstBody = controlledBody();
