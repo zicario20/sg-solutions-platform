@@ -2,8 +2,13 @@ import { PROJECT_CODE } from "@atlas/config";
 import { createWhatsAppIngressHandler } from "../../apps/app/src/lib/whatsapp/ingress.ts";
 import { whatsAppRuntimeHandler } from "../../apps/app/src/lib/whatsapp/runtime.ts";
 import {
+  DELETE as whatsappWebhookDelete,
   GET as whatsappWebhookGet,
+  HEAD as whatsappWebhookHead,
+  OPTIONS as whatsappWebhookOptions,
+  PATCH as whatsappWebhookPatch,
   POST as whatsappWebhookPost,
+  PUT as whatsappWebhookPut,
   runtime as whatsappWebhookRuntime,
 } from "../../apps/app/src/app/api/integrations/whatsapp/meta/[connectionId]/route.ts";
 
@@ -14,8 +19,13 @@ if (PROJECT_CODE !== "project-atlas") {
 if (
   typeof createWhatsAppIngressHandler !== "function" ||
   typeof whatsAppRuntimeHandler !== "function" ||
+  typeof whatsappWebhookDelete !== "function" ||
   typeof whatsappWebhookGet !== "function" ||
+  typeof whatsappWebhookHead !== "function" ||
+  typeof whatsappWebhookOptions !== "function" ||
+  typeof whatsappWebhookPatch !== "function" ||
   typeof whatsappWebhookPost !== "function" ||
+  typeof whatsappWebhookPut !== "function" ||
   whatsappWebhookRuntime !== "nodejs"
 ) {
   throw new Error("whatsapp_server_module_resolution_contract_failed");

@@ -10,5 +10,10 @@ async function handle(request: Request, context: RouteContext): Promise<Response
 }
 
 export const runtime = "nodejs";
+export const DELETE = handle;
 export const GET = handle;
+export const HEAD = handle;
+export const OPTIONS = handle;
+export const PATCH = handle;
 export const POST = handle;
+export const PUT = handle;

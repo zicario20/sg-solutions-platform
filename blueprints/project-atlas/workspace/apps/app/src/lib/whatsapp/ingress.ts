@@ -1,9 +1,8 @@
 import { createHash } from "node:crypto";
-import type { MetaCredentialResolver } from "./credentials.ts";
 import type {
   CanonicalProviderEnvelope,
   UnsupportedVerifiedEnvelope,
-  WhatsAppProviderAdapter,
+  VerifiedWebhookContext,
 } from "./meta-contracts.ts";
 import { verifyMetaChallenge, verifyMetaWebhook } from "./meta-webhook.ts";
 
@@ -42,6 +41,7 @@ export type MetaWebhookConnectionAuthority = {
 export interface MetaWebhookConnectionAuthorityResolver {
   resolveWebhookConnectionAuthority(
     connectionId: string,
+    signal: AbortSignal,
   ): Promise<MetaWebhookConnectionAuthority>;
 }
 
@@ -76,10 +76,22 @@ export type WhatsAppIngressDependencies = {
   readonly semaphore: IngressSemaphore;
   readonly rateBudget: IngressRateBudget;
   readonly authorityResolver: MetaWebhookConnectionAuthorityResolver;
-  readonly credentials: Pick<MetaCredentialResolver, "resolveVerificationSecret">;
-  readonly adapter: Pick<WhatsAppProviderAdapter, "normalizeVerifiedEvent">;
+  readonly credentials: {
+    readonly resolveVerificationSecret: (
+      connectionId: string,
+      signal: AbortSignal,
+    ) => Promise<{ readonly appSecret: string; readonly verifyToken: string }>;
+  };
+  readonly adapter: {
+    readonly normalizeVerifiedEvent: (
+      raw: Uint8Array,
+      context: VerifiedWebhookContext,
+      signal: AbortSignal,
+    ) => Promise<CanonicalProviderEnvelope | UnsupportedVerifiedEnvelope>;
+  };
   readonly acceptInbound: (
     command: DurableInboundAcceptanceCommand,
+    signal: AbortSignal,
   ) => Promise<DurableInboundAcceptanceResult>;
   readonly telemetry: { readonly record: (event: IngressTelemetryEvent) => void };
 };
@@ -113,6 +125,7 @@ class IngressFailure extends Error {
     readonly code: FailureCode,
     readonly status: number,
     readonly responseBody: "invalid" | "unavailable",
+    readonly cleanup?: Promise<void>,
   ) {
     super(code);
     this.name = "IngressFailure";
@@ -251,11 +264,48 @@ async function withTimeout<T>(
   timeoutMilliseconds: number,
   clock: IngressClock,
   failure: IngressFailure,
+  abortController: AbortController,
+  cleanupOnTimeout?: (operation: Promise<T>) => Promise<void>,
 ): Promise<T> {
-  if (timeoutMilliseconds <= 0) throw failure;
+  const createDeferredFailure = () => {
+    let completeCleanup!: () => void;
+    const cleanup = new Promise<void>((resolve) => {
+      completeCleanup = resolve;
+    });
+    return {
+      failure: new IngressFailure(
+        failure.code,
+        failure.status,
+        failure.responseBody,
+        cleanup,
+      ),
+      completeCleanup,
+    };
+  };
+  const startTimeoutCleanup = (completeCleanup: () => void): void => {
+    abortController.abort();
+    let cleanup: Promise<void>;
+    try {
+      cleanup = cleanupOnTimeout
+        ? cleanupOnTimeout(operation)
+        : operation.then(() => undefined, () => undefined);
+    } catch {
+      cleanup = operation.then(() => undefined, () => undefined);
+    }
+    void cleanup.then(completeCleanup, completeCleanup);
+  };
+  if (timeoutMilliseconds <= 0) {
+    const deferred = createDeferredFailure();
+    startTimeoutCleanup(deferred.completeCleanup);
+    throw deferred.failure;
+  }
   let handle: unknown;
   const timeout = new Promise<never>((_resolve, reject) => {
-    handle = clock.setTimeout(() => reject(failure), timeoutMilliseconds);
+    handle = clock.setTimeout(() => {
+      const deferred = createDeferredFailure();
+      reject(deferred.failure);
+      startTimeoutCleanup(deferred.completeCleanup);
+    }, timeoutMilliseconds);
   });
   try {
     return await Promise.race([operation, timeout]);
@@ -268,12 +318,14 @@ function withinTotal<T>(
   operation: Promise<T>,
   deadline: number,
   clock: IngressClock,
+  abortController: AbortController,
 ): Promise<T> {
   return withTimeout(
     operation,
     remainingMilliseconds(deadline, clock),
     clock,
     new IngressFailure("total_timeout", 504, "unavailable"),
+    abortController,
   );
 }
 
@@ -282,7 +334,7 @@ function validatePostHeaders(request: Request, maxRawBodyBytes: number): number 
     throw new IngressFailure("content_type_rejected", 415, "invalid");
   }
   const encoding = request.headers.get("content-encoding");
-  if (encoding !== null && encoding !== "identity") {
+  if (encoding !== null) {
     throw new IngressFailure("content_encoding_rejected", 415, "invalid");
   }
   const declared = request.headers.get("content-length");
@@ -300,12 +352,27 @@ function validatePostHeaders(request: Request, maxRawBodyBytes: number): number 
   return declaredBytes;
 }
 
-async function cancelReader(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<void> {
+function releaseReader(reader: ReadableStreamDefaultReader<Uint8Array>): void {
   try {
-    await reader.cancel();
+    reader.releaseLock();
   } catch {
-    // Cancellation failure cannot expose request data or replace the bounded response.
+    // Reader cleanup cannot alter the bounded response.
   }
+}
+
+function beginReaderCleanup(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  readOperation: Promise<unknown>,
+): Promise<void> {
+  let cancellation: Promise<unknown>;
+  try {
+    cancellation = Promise.resolve(reader.cancel());
+  } catch {
+    cancellation = Promise.resolve();
+  }
+  return Promise.allSettled([readOperation, cancellation]).then(() => {
+    releaseReader(reader);
+  });
 }
 
 async function readRawBody(
@@ -313,6 +380,7 @@ async function readRawBody(
   declaredBytes: number | null,
   dependencies: WhatsAppIngressDependencies,
   deadline: number,
+  abortController: AbortController,
 ): Promise<Uint8Array> {
   const reader = request.body?.getReader();
   if (!reader) {
@@ -324,6 +392,7 @@ async function readRawBody(
 
   const chunks: Uint8Array[] = [];
   let byteLength = 0;
+  let cleanupOwnsReader = false;
   try {
     while (true) {
       const totalRemaining = remainingMilliseconds(deadline, dependencies.clock);
@@ -337,31 +406,46 @@ async function readRawBody(
           : new IngressFailure("read_timeout", 408, "unavailable");
       let result: ReadableStreamReadResult<Uint8Array>;
       try {
+        const readOperation = reader.read();
         result = await withTimeout(
-          reader.read(),
+          readOperation,
           readTimeout,
           dependencies.clock,
           timeoutFailure,
+          abortController,
+          (operation) => {
+            cleanupOwnsReader = true;
+            return beginReaderCleanup(reader, operation);
+          },
         );
       } catch (error) {
-        await cancelReader(reader);
         throw error;
       }
       if (result.done) break;
       if (!(result.value instanceof Uint8Array)) {
-        await cancelReader(reader);
-        throw new IngressFailure("payload_rejected", 400, "invalid");
+        cleanupOwnsReader = true;
+        throw new IngressFailure(
+          "payload_rejected",
+          400,
+          "invalid",
+          beginReaderCleanup(reader, Promise.resolve()),
+        );
       }
       if (result.value.byteLength > dependencies.limits.maxRawBodyBytes - byteLength) {
-        await cancelReader(reader);
-        throw new IngressFailure("payload_too_large", 413, "invalid");
+        cleanupOwnsReader = true;
+        throw new IngressFailure(
+          "payload_too_large",
+          413,
+          "invalid",
+          beginReaderCleanup(reader, Promise.resolve()),
+        );
       }
       const snapshot = Uint8Array.from(result.value);
       chunks.push(snapshot);
       byteLength += snapshot.byteLength;
     }
   } finally {
-    reader.releaseLock();
+    if (!cleanupOwnsReader) releaseReader(reader);
   }
 
   if (declaredBytes !== null && declaredBytes !== byteLength) {
@@ -437,6 +521,13 @@ export function createWhatsAppIngressHandler(
         new IngressFailure("concurrency_exhausted", 503, "unavailable"),
       );
     }
+    let releaseDeferred = false;
+    let released = false;
+    const releaseOnce = () => {
+      if (released) return;
+      released = true;
+      release();
+    };
     try {
       if (!dependencies.rateBudget.tryConsume(dependencies.clock.now())) {
         return failureResponse(
@@ -447,19 +538,28 @@ export function createWhatsAppIngressHandler(
       }
 
       const deadline = dependencies.clock.now() + dependencies.limits.totalTimeoutMilliseconds;
+      const abortController = new AbortController();
       try {
         const authority = await withinTotal(
-          dependencies.authorityResolver.resolveWebhookConnectionAuthority(context.connectionId),
+          dependencies.authorityResolver.resolveWebhookConnectionAuthority(
+            context.connectionId,
+            abortController.signal,
+          ),
           deadline,
           dependencies.clock,
+          abortController,
         );
         if (!validateAuthority(authority, context.connectionId, dependencies.clock.now())) {
           throw new IngressFailure("authority_rejected", 403, "invalid");
         }
         const secret = await withinTotal(
-          dependencies.credentials.resolveVerificationSecret(context.connectionId),
+          dependencies.credentials.resolveVerificationSecret(
+            context.connectionId,
+            abortController.signal,
+          ),
           deadline,
           dependencies.clock,
+          abortController,
         );
 
         if (request.method === "GET") {
@@ -476,7 +576,13 @@ export function createWhatsAppIngressHandler(
           );
         }
 
-        const raw = await readRawBody(request, declaredBytes, dependencies, deadline);
+        const raw = await readRawBody(
+          request,
+          declaredBytes,
+          dependencies,
+          deadline,
+          abortController,
+        );
         const verification = verifyMetaWebhook({
           raw,
           signatureHeader: request.headers.get("x-hub-signature-256") ?? undefined,
@@ -493,25 +599,34 @@ export function createWhatsAppIngressHandler(
         }
 
         const envelope = await withinTotal(
-          dependencies.adapter.normalizeVerifiedEvent(raw, verification.context),
+          dependencies.adapter.normalizeVerifiedEvent(
+            raw,
+            verification.context,
+            abortController.signal,
+          ),
           deadline,
           dependencies.clock,
+          abortController,
         );
         if (!isCanonicalEnvelope(envelope)) {
           throw new IngressFailure("payload_rejected", 400, "invalid");
         }
 
         const acceptance = await withinTotal(
-          dependencies.acceptInbound({
-            authority,
-            connectionId: context.connectionId,
-            providerEventId: envelope.externalEventReference,
-            providerBodyDigest: createHash("sha256").update(raw).digest("hex"),
-            envelope,
-            correlationId,
-          }),
+          dependencies.acceptInbound(
+            {
+              authority,
+              connectionId: context.connectionId,
+              providerEventId: envelope.externalEventReference,
+              providerBodyDigest: createHash("sha256").update(raw).digest("hex"),
+              envelope,
+              correlationId,
+            },
+            abortController.signal,
+          ),
           deadline,
           dependencies.clock,
+          abortController,
         );
         if (acceptance.status === "accepted" || acceptance.status === "duplicate") {
           return response(dependencies, correlationId, 200, "accepted", acceptance.status);
@@ -519,12 +634,16 @@ export function createWhatsAppIngressHandler(
         throw new IngressFailure("replay_mismatch", 409, "invalid");
       } catch (error) {
         if (error instanceof IngressFailure) {
+          if (error.cleanup) {
+            releaseDeferred = true;
+            void error.cleanup.then(releaseOnce, releaseOnce);
+          }
           return failureResponse(dependencies, correlationId, error);
         }
         return response(dependencies, correlationId, 503, "unavailable", "dependency_unavailable");
       }
     } finally {
-      release();
+      if (!releaseDeferred) releaseOnce();
     }
   };
 }

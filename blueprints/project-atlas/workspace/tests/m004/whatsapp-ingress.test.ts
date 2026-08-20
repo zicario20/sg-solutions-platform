@@ -113,9 +113,11 @@ function immediateBody(...chunks: readonly Uint8Array[]): ReadableStream<Uint8Ar
   });
 }
 
-function controlledBody() {
+function controlledBody(
+  cancelImplementation: (reason?: unknown) => Promise<void> = async () => undefined,
+) {
   let controller!: ReadableStreamDefaultController<Uint8Array>;
-  const cancel = vi.fn(async () => undefined);
+  const cancel = vi.fn(cancelImplementation);
   const stream = new ReadableStream<Uint8Array>({
     start(value) {
       controller = value;
@@ -129,6 +131,27 @@ function controlledBody() {
     cancel,
     enqueue: (value: Uint8Array) => controller.enqueue(value),
     close: () => controller.close(),
+  };
+}
+
+function trackedSinglePermitSemaphore() {
+  const base = createIngressSemaphore(1);
+  const released = deferred<void>();
+  let releaseCount = 0;
+  return {
+    semaphore: {
+      tryAcquire() {
+        const release = base.tryAcquire();
+        if (!release) return null;
+        return () => {
+          release();
+          releaseCount += 1;
+          released.resolve();
+        };
+      },
+    },
+    released,
+    releaseCount: () => releaseCount,
   };
 }
 
@@ -308,11 +331,16 @@ describe("bounded WhatsApp webhook ingress", () => {
 
   it.each([
     ["unsupported content type", { contentType: "application/json; charset=utf-8" }, 415],
+    ["present identity encoding", { contentEncoding: "identity" }, 415],
+    ["present empty encoding", { contentEncoding: "" }, 415],
     ["unsupported encoding", { contentEncoding: "gzip" }, 415],
+    ["comma-separated encodings", { contentEncoding: "br,gzip" }, 415],
+    ["duplicated encodings", { contentEncoding: "identity, identity" }, 415],
     ["invalid declared length", { contentLength: "1,2" }, 400],
     ["oversized declared length", { contentLength: "1025" }, 413],
   ])("rejects %s before credentials or body read", async (_label, headers, status) => {
     const body = controlledBody();
+    body.close();
     const { handler, credentials } = createHarness();
     const response = await handler(postRequest(body.stream, headers), { connectionId: CONNECTION_ID });
 
@@ -376,6 +404,58 @@ describe("bounded WhatsApp webhook ingress", () => {
     expect(body.getReader).not.toHaveBeenCalled();
   });
 
+  it("aborts a timed-out dependency and retains its permit until that operation settles", async () => {
+    const clock = new ControlledClock();
+    const firstAuthority = deferred<MetaWebhookConnectionAuthority>();
+    let authorityCalls = 0;
+    let observedSignal: AbortSignal | undefined;
+    const authorityResolver = {
+      resolveWebhookConnectionAuthority: vi.fn(
+        async (_connectionId: string, signal?: AbortSignal) => {
+          authorityCalls += 1;
+          observedSignal = signal;
+          if (authorityCalls === 1) return firstAuthority.promise;
+          return AUTHORITY;
+        },
+      ),
+    };
+    const tracked = trackedSinglePermitSemaphore();
+    const { handler } = createHarness({
+      clock,
+      authorityResolver,
+      semaphore: tracked.semaphore,
+    });
+    const challenge = new URLSearchParams({
+      "hub.mode": "subscribe",
+      "hub.verify_token": VERIFY_TOKEN,
+      "hub.challenge": "123456789",
+    });
+    const request = () => new Request(`https://atlas.invalid/task6?${challenge.toString()}`, {
+      method: "GET",
+    });
+    const first = handler(request(), { connectionId: CONNECTION_ID });
+    await flushMicrotasks();
+
+    clock.advanceBy(5_000);
+    const timedOut = await first;
+
+    expect(timedOut.status).toBe(504);
+    expect(observedSignal).toBeInstanceOf(AbortSignal);
+    expect(observedSignal?.aborted).toBe(true);
+    expect(tracked.releaseCount()).toBe(0);
+
+    const exhausted = await handler(request(), { connectionId: CONNECTION_ID });
+    expect(exhausted.status).toBe(503);
+    expect(authorityCalls).toBe(1);
+
+    firstAuthority.resolve(AUTHORITY);
+    await tracked.released.promise;
+    expect(tracked.releaseCount()).toBe(1);
+
+    const recovered = await handler(request(), { connectionId: CONNECTION_ID });
+    expect(recovered.status).toBe(200);
+  });
+
   it("rejects over-concurrency before reading the second body", async () => {
     const semaphore = createIngressSemaphore(1);
     const firstBody = controlledBody();
@@ -397,6 +477,59 @@ describe("bounded WhatsApp webhook ingress", () => {
     firstBody.enqueue(new Uint8Array());
     firstBody.close();
     await first;
+  });
+
+  it("returns read timeout without awaiting cancel and releases only after cancel/read cleanup", async () => {
+    const clock = new ControlledClock();
+    const cancellation = deferred<void>();
+    const body = controlledBody(() => cancellation.promise);
+    const tracked = trackedSinglePermitSemaphore();
+    const { handler } = createHarness({ clock, semaphore: tracked.semaphore });
+    let responseSettled = false;
+    const first = handler(
+      postRequest(body.stream, { signatureHeader: `sha256=${"0".repeat(64)}` }),
+      { connectionId: CONNECTION_ID },
+    ).then((response) => {
+      responseSettled = true;
+      return response;
+    });
+    await flushMicrotasks();
+
+    clock.advanceBy(1_000);
+    await flushMicrotasks();
+
+    let cancellationResolved = false;
+    try {
+      expect(responseSettled).toBe(true);
+      const timedOut = await first;
+      expect(timedOut.status).toBe(408);
+      expect(body.cancel).toHaveBeenCalledTimes(1);
+      expect(tracked.releaseCount()).toBe(0);
+
+      const exhaustedBody = controlledBody();
+      exhaustedBody.close();
+      const exhausted = await handler(
+        postRequest(exhaustedBody.stream, { signatureHeader: `sha256=${"0".repeat(64)}` }),
+        { connectionId: CONNECTION_ID },
+      );
+      expect(exhausted.status).toBe(503);
+      expect(exhaustedBody.getReader).not.toHaveBeenCalled();
+
+      cancellation.resolve();
+      cancellationResolved = true;
+      await tracked.released.promise;
+      expect(tracked.releaseCount()).toBe(1);
+
+      const raw = rawJson(messagePayload());
+      const recovered = await handler(
+        postRequest(immediateBody(raw), { signatureHeader: signature(raw) }),
+        { connectionId: CONNECTION_ID },
+      );
+      expect(recovered.status).toBe(200);
+    } finally {
+      if (!cancellationResolved) cancellation.resolve();
+      await first;
+    }
   });
 
   it("rejects exhausted rate budget before credentials or body read", async () => {
@@ -491,7 +624,12 @@ describe("bounded WhatsApp webhook ingress", () => {
       invoked.resolve();
       return committed.promise;
     });
-    const { handler } = createHarness({ acceptInbound });
+    const {
+      handler,
+      authorityResolver,
+      credentials,
+      normalizeVerifiedEvent,
+    } = createHarness({ acceptInbound });
     let settled = false;
     const pending = handler(
       postRequest(immediateBody(raw), { signatureHeader: signature(raw) }),
@@ -510,7 +648,12 @@ describe("bounded WhatsApp webhook ingress", () => {
       providerBodyDigest: expect.stringMatching(/^[a-f0-9]{64}$/u),
       envelope: expect.objectContaining({ kind: "text_message" }) as CanonicalProviderEnvelope,
       correlationId: "correlation_task6_opaque_0001",
-    }));
+    }), expect.any(AbortSignal));
+    const operationSignal = authorityResolver.resolveWebhookConnectionAuthority.mock.calls[0]?.[1];
+    expect(operationSignal).toBeInstanceOf(AbortSignal);
+    expect(credentials.resolveVerificationSecret.mock.calls[0]?.[1]).toBe(operationSignal);
+    expect(normalizeVerifiedEvent.mock.calls[0]?.[2]).toBe(operationSignal);
+    expect(acceptInbound.mock.calls[0]?.[1]).toBe(operationSignal);
 
     committed.resolve({ status: "accepted" });
     const response = await pending;
@@ -558,4 +701,36 @@ describe("bounded WhatsApp webhook ingress", () => {
       expect(challengeText).not.toContain("PRIVATE-CHALLENGE");
     },
   );
+
+  it("exports every Next-supported unsupported verb through the real bounded 405 handler", async () => {
+    vi.stubEnv("WHATSAPP_RUNTIME_STATE", "disabled");
+    vi.stubEnv("WHATSAPP_ENABLED", "false");
+    vi.stubEnv("WHATSAPP_GRAPH_API_VERSION", "");
+    vi.resetModules();
+    const route = await import(
+      "../../apps/app/src/app/api/integrations/whatsapp/meta/[connectionId]/route.ts"
+    );
+    const handlers = [
+      ["OPTIONS", route.OPTIONS],
+      ["HEAD", route.HEAD],
+      ["PUT", route.PUT],
+      ["PATCH", route.PATCH],
+      ["DELETE", route.DELETE],
+    ] as const;
+
+    for (const [method, routeHandler] of handlers) {
+      expect(routeHandler, `${method} must be exported by the real route module`).toBeTypeOf("function");
+      const response = await routeHandler(
+        new Request("https://atlas.invalid/task6", { method }),
+        { params: Promise.resolve({ connectionId: CONNECTION_ID }) },
+      );
+      expect(response.status).toBe(405);
+      expect(response.headers.get("allow")).toBe("GET, POST");
+      expect(response.headers.get("cache-control")).toBe("no-store");
+      expect(response.headers.get("x-atlas-correlation-id")).toMatch(
+        /^correlation_[A-Za-z0-9_:-]+$/u,
+      );
+      expect(await response.text()).not.toContain(CONNECTION_ID);
+    }
+  });
 });
