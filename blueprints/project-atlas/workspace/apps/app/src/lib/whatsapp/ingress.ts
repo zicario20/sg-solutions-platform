@@ -476,6 +476,8 @@ function createSafeCorrelationId(dependencies: WhatsAppIngressDependencies): str
   return "correlation_unavailable";
 }
 
+const MAX_RETIRED_CLEANUPS = 1;
+
 export function createWhatsAppIngressHandler(
   dependencies: WhatsAppIngressDependencies,
 ): WhatsAppIngressHandler {
@@ -511,10 +513,6 @@ export function createWhatsAppIngressHandler(
       if (error instanceof IngressFailure) {
         return failureResponse(dependencies, correlationId, error);
       }
-      return response(dependencies, correlationId, 503, "unavailable", "dependency_unavailable");
-    }
-
-    if (retiredCleanupCount > 0) {
       return response(dependencies, correlationId, 503, "unavailable", "dependency_unavailable");
     }
 
@@ -655,6 +653,7 @@ export function createWhatsAppIngressHandler(
             };
             const retirementTimer = setTimeout(() => {
               if (cleanupFinished) return;
+              if (retiredCleanupCount >= MAX_RETIRED_CLEANUPS) return;
               retired = true;
               retiredCleanupCount += 1;
               releaseOnce();

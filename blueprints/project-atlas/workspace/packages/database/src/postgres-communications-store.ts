@@ -1174,9 +1174,9 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       if (status === "applied") {
         await query(
           tx,
-          `update communication_outbound_commands set state = $2, lease_owner_id = null,
-             lease_token_hash = null, lease_expires_at = null, updated_at = $3 where id = $1`,
-          [input.commandId, nextState, input.occurredAt],
+           `update communication_outbound_commands set state = $2, lease_owner_id = null,
+              lease_token_hash = null, lease_expires_at = null, updated_at = $3 where id = $1`,
+           [input.commandId, nextState, evidence.occurredAt],
         );
         await query(
           tx,

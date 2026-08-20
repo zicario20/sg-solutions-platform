@@ -404,7 +404,7 @@ describe("bounded WhatsApp webhook ingress", () => {
     expect(body.getReader).not.toHaveBeenCalled();
   });
 
-  it("aborts a timed-out dependency and retains its permit until that operation settles", async () => {
+  it("retires one never-settling cleanup without permanently closing the ingress route", async () => {
     const clock = new ControlledClock();
     const firstAuthority = deferred<MetaWebhookConnectionAuthority>();
     let authorityCalls = 0;
@@ -444,16 +444,17 @@ describe("bounded WhatsApp webhook ingress", () => {
     expect(observedSignal?.aborted).toBe(true);
     expect(tracked.releaseCount()).toBe(0);
 
-    const exhausted = await handler(request(), { connectionId: CONNECTION_ID });
-    expect(exhausted.status).toBe(503);
-    expect(authorityCalls).toBe(1);
-
-    firstAuthority.resolve(AUTHORITY);
+    clock.advanceBy(5_000);
+    await flushMicrotasks();
     await tracked.released.promise;
     expect(tracked.releaseCount()).toBe(1);
 
     const recovered = await handler(request(), { connectionId: CONNECTION_ID });
     expect(recovered.status).toBe(200);
+    expect(authorityCalls).toBe(2);
+
+    firstAuthority.resolve(AUTHORITY);
+    await flushMicrotasks();
   });
 
   it("rejects over-concurrency before reading the second body", async () => {

@@ -1337,15 +1337,9 @@ export const communicationProviderStatusVerifications = pgTable(
   "communication_provider_status_verifications",
   {
     receiptId: text("receipt_id").primaryKey(),
-    commandId: text("command_id")
-      .notNull()
-      .references(() => communicationOutboundCommands.id, { onDelete: "cascade" }),
-    attemptId: text("attempt_id")
-      .notNull()
-      .references(() => communicationDispatchAttempts.id, { onDelete: "cascade" }),
-    connectionId: text("connection_id")
-      .notNull()
-      .references(() => communicationChannelConnections.id, { onDelete: "restrict" }),
+    commandId: text("command_id").notNull(),
+    attemptId: text("attempt_id").notNull(),
+    connectionId: text("connection_id").notNull(),
     externalMessageReferenceDigest: char("external_message_reference_digest", { length: 64 }).notNull(),
     providerEventId: text("provider_event_id").notNull(),
     status: varchar("status", { length: 24 }).notNull(),
@@ -1356,6 +1350,16 @@ export const communicationProviderStatusVerifications = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   },
   (table) => [
+    foreignKey({
+      name: "communication_provider_status_verifications_command_connection_fk",
+      columns: [table.commandId, table.connectionId],
+      foreignColumns: [communicationOutboundCommands.id, communicationOutboundCommands.connectionId],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "communication_provider_status_verifications_attempt_command_fk",
+      columns: [table.attemptId, table.commandId],
+      foreignColumns: [communicationDispatchAttempts.id, communicationDispatchAttempts.commandId],
+    }).onDelete("cascade"),
     unique("communication_provider_status_verifications_connection_event_unique").on(
       table.connectionId,
       table.providerEventId,
@@ -1368,11 +1372,24 @@ export const communicationProviderStatusVerifications = pgTable(
       "communication_provider_status_verifications_digest_valid",
       sql`${table.externalMessageReferenceDigest} ~ '^[0-9a-f]{64}$' and ${table.bodyDigest} ~ '^[0-9a-f]{64}$'`,
     ),
-    pgPolicy("communication_provider_status_verifications_communications_scope", {
+    check(
+      "communication_provider_status_verifications_identity_valid",
+      sql`${table.receiptId} ~ '^provider_status_[0-9a-f]{32}$' and ${table.providerEventId} ~ '^[A-Za-z0-9][A-Za-z0-9._:-]{2,255}$' and ${table.correlationId} ~ '^[A-Za-z0-9][A-Za-z0-9._:-]{2,255}$'`,
+    ),
+    check(
+      "communication_provider_status_verifications_time_valid",
+      sql`${table.verifiedAt} >= ${table.occurredAt}`,
+    ),
+    pgPolicy("communication_provider_status_verifications_read_scope", {
       as: "permissive",
-      for: "all",
+      for: "select",
       to: communicationsGatewayRole,
       using: communicationsCommandScope(table.commandId),
+    }),
+    pgPolicy("communication_provider_status_verifications_append_scope", {
+      as: "permissive",
+      for: "insert",
+      to: communicationsGatewayRole,
       withCheck: communicationsCommandScope(table.commandId),
     }),
   ],
