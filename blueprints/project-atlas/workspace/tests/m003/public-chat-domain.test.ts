@@ -15,9 +15,32 @@ import {
   type PublicChatConversation,
   type PublicKnowledgeProvider,
 } from "../../packages/domain/src/public-chat/index.ts";
+import { transitionConversationOwnership } from "../../packages/domain/src/communications/index.ts";
 import { inspectProhibitedChatContent } from "../../packages/validation/src/public-chat.ts";
 
 const NOW = new Date("2026-08-12T18:00:00.000Z");
+
+it("keeps every public-chat ownership transition equivalent to the canonical kernel", () => {
+  const states = [
+    "new",
+    "ai_active",
+    "human_requested",
+    "waiting_for_human",
+    "human_active",
+    "returned_to_ai",
+    "closed",
+    "expired",
+    "restricted",
+  ] as const;
+
+  for (const from of states) {
+    for (const to of states) {
+      expect(canTransitionConversation(from, to)).toBe(
+        transitionConversationOwnership(from, to).code === "transitioned",
+      );
+    }
+  }
+});
 
 class MemoryConversationRepository implements ConversationRepository {
   readonly records = new Map<string, PublicChatConversation>();

@@ -1,15 +1,13 @@
-export type ChatLocale = "es" | "en";
+import type {
+  ChannelConversation,
+  ChannelLocale,
+  ChannelMessage,
+  ConversationOwnershipState,
+} from "../communications/contracts.ts";
 
-export type ConversationStatus =
-  | "new"
-  | "ai_active"
-  | "human_requested"
-  | "waiting_for_human"
-  | "human_active"
-  | "returned_to_ai"
-  | "closed"
-  | "expired"
-  | "restricted";
+export type ChatLocale = ChannelLocale;
+
+export type ConversationStatus = ConversationOwnershipState;
 
 export type ChatActor = "visitor" | "assistant" | "human" | "system";
 export type MessageState = "accepted" | "answered" | "failed" | "handoff_required";
@@ -29,29 +27,22 @@ export type PublicChatAction = {
   path: string;
 };
 
-export type PublicChatMessage = {
-  id: string;
+export type PublicChatMessage = Pick<ChannelMessage, "id" | "body" | "createdAt"> & {
   actor: ChatActor;
-  body: string | null;
   state: MessageState;
   citations: PublicCitation[];
   actions: PublicChatAction[];
-  createdAt: Date;
 };
 
-export type PublicChatConversation = {
-  id: string;
-  version: number;
-  locale: ChatLocale;
-  status: ConversationStatus;
+export type PublicChatConversation = Pick<
+  ChannelConversation,
+  "id" | "version" | "locale" | "status" | "createdAt" | "updatedAt" | "lastActivityAt"
+> & {
   sessionHash: string;
   noticeVersion: string;
   correlationId: string;
   startIdempotencyKey: string;
   startFingerprint: string;
-  createdAt: Date;
-  updatedAt: Date;
-  lastActivityAt: Date;
   expiresAt: Date;
   revokedAt?: Date;
   closedAt?: Date;
@@ -66,11 +57,10 @@ export type PublicChatConversation = {
   messages: PublicChatMessage[];
 };
 
-export type PublicChatProjection = {
-  id: string;
-  version: number;
-  locale: ChatLocale;
-  status: ConversationStatus;
+export type PublicChatProjection = Pick<
+  ChannelConversation,
+  "id" | "version" | "locale" | "status"
+> & {
   messages: PublicChatMessage[];
   expiresAt: Date;
 };
