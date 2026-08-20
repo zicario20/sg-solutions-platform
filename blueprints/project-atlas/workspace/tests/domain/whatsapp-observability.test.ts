@@ -7,7 +7,7 @@ import {
 const BASE_EVENT = {
   operation: "dispatch",
   result: "accepted",
-  correlationId: "correlation_0123456789abcdef",
+  correlationId: "correlation_0123456789abcdef0123456789abcdef",
   durationBucket: "under_500ms",
 } as const;
 
@@ -34,6 +34,21 @@ describe("communications observability contract", () => {
       expect(() => projectCommunicationsTelemetryEvent(invalid)).toThrow(
         "COMMUNICATIONS_TELEMETRY_INVALID",
       );
+    }
+  });
+
+  it("rejects correlation values that were not internally minted", () => {
+    for (const correlationId of [
+      "correlation_client_12345678",
+      "correlation_token_123456789",
+      "correlation_provider_12345678",
+      "correlation_0123456789abcdef",
+      "correlation_0123456789abcdef0123456789abcdeg",
+      "0123456789abcdef0123456789abcdef",
+    ]) {
+      expect(() =>
+        projectCommunicationsTelemetryEvent({ ...BASE_EVENT, correlationId }),
+      ).toThrow("COMMUNICATIONS_TELEMETRY_INVALID");
     }
   });
 

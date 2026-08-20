@@ -82,7 +82,7 @@ const ALLOWED_KEYS = new Set([
   "connectionState",
 ]);
 const REQUIRED_KEYS = ["operation", "result", "correlationId", "durationBucket"] as const;
-const CORRELATION_ID = /^correlation_[a-z0-9][a-z0-9_-]{7,115}$/u;
+const CORRELATION_ID = /^correlation_[0-9a-f]{32}$/u;
 
 function invalid(): never {
   throw new Error("COMMUNICATIONS_TELEMETRY_INVALID");

@@ -4,7 +4,7 @@ import { projectCommunicationsTelemetryEvent } from "@atlas/observability";
 const SAFE_EVENT = {
   operation: "webhook",
   result: "rejected",
-  correlationId: "correlation_fedcba9876543210",
+  correlationId: "correlation_fedcba9876543210fedcba9876543210",
   connectionState: "disabled",
   durationBucket: "under_100ms",
 } as const;
