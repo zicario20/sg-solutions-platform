@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { readWhatsAppConfig } from "@atlas/config";
 import { describe, expect, it } from "vitest";
 
 const releaseFiles = [
@@ -31,5 +32,28 @@ describe.skipIf(!releaseGate)("production gate artifacts", () => {
     expect(ci).toMatch(/corepack pnpm exec playwright test tests\/e2e\/health\.spec\.ts/);
     expect(pcr).toMatch(/Rollback/);
     expect(pcr).toMatch(/Verification evidence/);
+  });
+
+  it("keeps provider traffic disabled for every current release configuration", () => {
+    const currentReleaseConfigurations = [
+      {},
+      {
+        WHATSAPP_RUNTIME_STATE: "local",
+        WHATSAPP_ENABLED: "true",
+        WHATSAPP_GRAPH_API_VERSION: "v23.0",
+        WHATSAPP_PROVIDER_TRAFFIC_ALLOWED: "true",
+        WHATSAPP_OPERATIONAL_APPROVAL: "true",
+      },
+      {
+        WHATSAPP_RUNTIME_STATE: "staging",
+        WHATSAPP_ENABLED: "true",
+        WHATSAPP_GRAPH_API_VERSION: "v23.0",
+        WHATSAPP_PROVIDER_TRAFFIC_ALLOWED: "true",
+      },
+    ];
+
+    for (const environment of currentReleaseConfigurations) {
+      expect(readWhatsAppConfig(environment).providerTrafficAllowed).toBe(false);
+    }
   });
 });
