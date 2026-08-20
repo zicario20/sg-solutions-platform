@@ -15,7 +15,8 @@ export type StateTransitionCode =
   | "terminal"
   | "invalid_transition"
   | "regressive"
-  | "disabled";
+  | "disabled"
+  | "unknown_state";
 
 export type StateTransitionResult<T extends string> = {
   state: T;
@@ -28,6 +29,7 @@ function transition<T extends string>(
   transitions: Readonly<Record<T, readonly T[]>>,
   terminalStates: ReadonlySet<T>,
 ): StateTransitionResult<T> {
+  if (!Object.hasOwn(transitions, from)) return { state: from, code: "unknown_state" };
   if (from === to) return { state: from, code: "duplicate" };
   if (terminalStates.has(from)) return { state: from, code: "terminal" };
   return transitions[from].includes(to)
@@ -187,9 +189,8 @@ export function transitionTemplateLifecycle(
 
 const BINDING_TRANSITIONS: Readonly<Record<BindingTrustState, readonly BindingTrustState[]>> = {
   unlinked: ["candidate_match"],
-  candidate_match: ["unlinked", "linked_prospect", "linked_client"],
-  linked_prospect: ["verification_due", "suspended", "revoked"],
-  linked_client: ["verification_due", "suspended", "revoked"],
+  candidate_match: ["unlinked", "linked_contact"],
+  linked_contact: ["verification_due", "suspended", "revoked"],
   verification_due: ["reverified", "suspended", "revoked"],
   reverified: ["verification_due", "suspended", "revoked"],
   reassignment_suspected: [],

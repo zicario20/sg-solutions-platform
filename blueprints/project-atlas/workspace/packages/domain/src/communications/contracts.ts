@@ -79,8 +79,7 @@ export type ConversationOwnershipState =
 export type BindingTrustState =
   | "unlinked"
   | "candidate_match"
-  | "linked_prospect"
-  | "linked_client"
+  | "linked_contact"
   | "verification_due"
   | "reverified"
   | "reassignment_suspected"

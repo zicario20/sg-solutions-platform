@@ -273,8 +273,7 @@ describe("canonical communications state machines", () => {
     const bindingStates: readonly BindingTrustState[] = [
       "unlinked",
       "candidate_match",
-      "linked_prospect",
-      "linked_client",
+      "linked_contact",
       "verification_due",
       "reverified",
       "reassignment_suspected",
@@ -288,9 +287,8 @@ describe("canonical communications state machines", () => {
       transition: transitionBindingTrust,
       allowed: {
         unlinked: ["candidate_match"],
-        candidate_match: ["unlinked", "linked_prospect", "linked_client"],
-        linked_prospect: ["verification_due", "suspended", "revoked"],
-        linked_client: ["verification_due", "suspended", "revoked"],
+        candidate_match: ["unlinked", "linked_contact"],
+        linked_contact: ["verification_due", "suspended", "revoked"],
         verification_due: ["reverified", "suspended", "revoked"],
         reverified: ["verification_due", "suspended", "revoked"],
         reassignment_suspected: [],
@@ -328,6 +326,31 @@ describe("canonical communications state machines", () => {
         expired: [],
         restricted: [],
       },
+    });
+  });
+
+  it("returns a result code for malformed runtime source states without throwing", () => {
+    const malformedState = "malformed_runtime_state" as never;
+    const transitions = [
+      () => transitionConnection(malformedState, "configured"),
+      () => transitionInboundEvent(malformedState, "persisted", { quarantineEnabled: false }),
+      () => transitionOutboundCommand(malformedState, "queued"),
+      () => transitionContactConsent(malformedState, "granted"),
+      () => transitionContactPolicy(malformedState, "normal"),
+      () => transitionTemplateLifecycle(malformedState, "draft"),
+      () => transitionBindingTrust(malformedState, "candidate_match"),
+      () => transitionConversationOwnership(malformedState, "ai_active"),
+    ];
+
+    for (const transition of transitions) {
+      expect(transition).not.toThrow();
+      expect(transition()).toEqual({ state: "malformed_runtime_state", code: "unknown_state" });
+    }
+
+    expect(() => transitionConnection("disabled", malformedState)).not.toThrow();
+    expect(transitionConnection("disabled", malformedState)).toEqual({
+      state: "disabled",
+      code: "invalid_transition",
     });
   });
 });
