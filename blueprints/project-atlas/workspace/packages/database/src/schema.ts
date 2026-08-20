@@ -12,6 +12,7 @@ import {
   pgPolicy,
   pgRole,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   unique,
@@ -55,6 +56,24 @@ const publicConversationScope = (conversationId: unknown, channelKind: unknown) 
   )`;
 
 const communicationsConversationScope = (channelKind: unknown) => sql`${channelKind} = 'whatsapp'`;
+
+const publicChildConversationScope = (conversationId: unknown) =>
+  sql`exists (
+    select 1
+    from public_chat_conversation_sessions pcs
+    where pcs.conversation_id = ${conversationId}
+      and pcs.session_id = ${publicSessionId}
+  )`;
+
+const publicCitationScope = (messageId: unknown) =>
+  sql`exists (
+    select 1
+    from communication_messages message
+    join public_chat_conversation_sessions pcs on pcs.conversation_id = message.conversation_id
+    where message.id = ${messageId}
+      and message.channel_kind = 'public_web'
+      and pcs.session_id = ${publicSessionId}
+  )`;
 
 const sharedPolicies = (name: string, conversationId: unknown, channelKind: unknown) => [
   pgPolicy(`${name}_public_chat_scope`, {
@@ -110,7 +129,7 @@ export const publicChatRateLimits = pgTable(
   ],
 ).enableRLS();
 
-export const publicChatConversations = pgTable(
+const supersededPublicChatConversations = pgTable(
   "public_chat_conversations",
   {
     id: text("id").primaryKey(),
@@ -161,13 +180,13 @@ export const publicChatConversations = pgTable(
   ],
 ).enableRLS();
 
-export const publicChatMessages = pgTable(
+const supersededPublicChatMessages = pgTable(
   "public_chat_messages",
   {
     id: text("id").primaryKey(),
     conversationId: text("conversation_id")
       .notNull()
-      .references(() => publicChatConversations.id, { onDelete: "cascade" }),
+      .references(() => supersededPublicChatConversations.id, { onDelete: "cascade" }),
     ordinal: integer("ordinal").notNull(),
     actor: varchar("actor", { length: 16 }).notNull(),
     state: varchar("state", { length: 24 }).notNull(),
@@ -205,7 +224,7 @@ export const publicChatCitations = pgTable(
     id: text("id").primaryKey(),
     messageId: text("message_id")
       .notNull()
-      .references(() => publicChatMessages.id, { onDelete: "cascade" }),
+      .references(() => communicationMessages.id, { onDelete: "restrict" }),
     sourceId: text("source_id").notNull(),
     title: text("title").notNull(),
     path: text("path").notNull(),
@@ -222,17 +241,23 @@ export const publicChatCitations = pgTable(
       "public_chat_citations_source_kind_valid",
       sql`${table.sourceKind} is null or ${table.sourceKind} = 'provider'`,
     ),
-    gatewayAccess("public_chat_citations"),
+    pgPolicy("public_chat_citations_server_gateway_only", {
+      as: "permissive",
+      for: "all",
+      to: publicChatGatewayRole,
+      using: publicCitationScope(table.messageId),
+      withCheck: publicCitationScope(table.messageId),
+    }),
   ],
 ).enableRLS();
 
-export const publicChatHandoffs = pgTable(
+const supersededPublicChatHandoffs = pgTable(
   "public_chat_handoffs",
   {
     id: text("id").primaryKey(),
     conversationId: text("conversation_id")
       .notNull()
-      .references(() => publicChatConversations.id, { onDelete: "cascade" }),
+      .references(() => supersededPublicChatConversations.id, { onDelete: "cascade" }),
     status: varchar("status", { length: 24 }).notNull(),
     reason: varchar("reason", { length: 48 }).notNull(),
     receiptId: text("receipt_id"),
@@ -256,7 +281,7 @@ export const publicChatIdempotency = pgTable(
     id: text("id").primaryKey(),
     conversationId: text("conversation_id")
       .notNull()
-      .references(() => publicChatConversations.id, { onDelete: "cascade" }),
+      .references(() => communicationConversations.id, { onDelete: "restrict" }),
     idempotencyKey: varchar("idempotency_key", { length: 128 }).notNull(),
     commandKind: varchar("command_kind", { length: 16 }).notNull(),
     commandFingerprint: varchar("command_fingerprint", { length: 64 }).notNull(),
@@ -286,18 +311,24 @@ export const publicChatIdempotency = pgTable(
       "public_chat_idempotency_completion_valid",
       sql`(${table.state} = 'completed' and ${table.result} is not null and ${table.completedAt} is not null) or (${table.state} = 'in_progress' and ${table.completedAt} is null)`,
     ),
-    gatewayAccess("public_chat_idempotency"),
+    pgPolicy("public_chat_idempotency_server_gateway_only", {
+      as: "permissive",
+      for: "all",
+      to: publicChatGatewayRole,
+      using: publicChildConversationScope(table.conversationId),
+      withCheck: publicChildConversationScope(table.conversationId),
+    }),
   ],
 ).enableRLS();
 
-export const publicChatAuditEvents = pgTable(
+const supersededPublicChatAuditEvents = pgTable(
   "public_chat_audit_events",
   {
     id: text("id").primaryKey(),
     sequence: bigint("sequence", { mode: "number" }).notNull(),
     conversationId: text("conversation_id")
       .notNull()
-      .references(() => publicChatConversations.id, { onDelete: "cascade" }),
+      .references(() => supersededPublicChatConversations.id, { onDelete: "cascade" }),
     eventName: varchar("event_name", { length: 64 }).notNull(),
     reason: varchar("reason", { length: 48 }),
     version: integer("version").notNull(),
@@ -507,6 +538,7 @@ export const communicationContactPolicies = pgTable(
     decisionCode: varchar("decision_code", { length: 32 }),
     evidenceReceiptId: text("evidence_receipt_id"),
     version: integer("version").notNull(),
+    fence: integer("fence").notNull().default(0),
     evaluatedAt: timestamp("evaluated_at", { withTimezone: true, mode: "date" }).notNull(),
     ...timestamps,
   },
@@ -532,6 +564,7 @@ export const communicationContactPolicies = pgTable(
       sql`${table.decisionCode} is null or ${table.decisionCode} in ('allowed', 'denied_consent', 'denied_policy', 'denied_binding', 'denied_readiness', 'stale_version')`,
     ),
     check("communication_contact_policies_version_positive", sql`${table.version} > 0`),
+    check("communication_contact_policies_fence_nonnegative", sql`${table.fence} >= 0`),
     index("communication_contact_policies_fence_idx").on(table.fenceState, table.updatedAt),
     communicationsOnly("communication_contact_policies"),
   ],
@@ -1044,17 +1077,20 @@ export const communicationOutboundCommands = pgTable(
     templateKey: varchar("template_key", { length: 120 }),
     templateDefinitionVersion: varchar("template_definition_version", { length: 80 }),
     destinationKey: varchar("destination_key", { length: 120 }),
-    owningReceiptId: text("owning_receipt_id").notNull(),
-    owningDomain: varchar("owning_domain", { length: 80 }).notNull(),
-    owningReference: text("owning_reference").notNull(),
-    owningReceiptIssuedAt: timestamp("owning_receipt_issued_at", { withTimezone: true, mode: "date" }).notNull(),
-    owningReceiptValidUntil: timestamp("owning_receipt_valid_until", { withTimezone: true, mode: "date" }).notNull(),
-    owningReceiptCorrelationId: text("owning_receipt_correlation_id").notNull(),
-    expectedPolicyVersion: integer("expected_policy_version").notNull(),
+    owningReceiptId: text("owning_receipt_id"),
+    owningDomain: varchar("owning_domain", { length: 80 }),
+    owningReference: text("owning_reference"),
+    owningReceiptIssuedAt: timestamp("owning_receipt_issued_at", { withTimezone: true, mode: "date" }),
+    owningReceiptValidUntil: timestamp("owning_receipt_valid_until", { withTimezone: true, mode: "date" }),
+    owningReceiptCorrelationId: text("owning_receipt_correlation_id"),
+    expectedPolicyVersion: integer("expected_policy_version"),
+    requiredFence: integer("required_fence"),
+    endpointDigests: jsonb("endpoint_digests").notNull().default(sql`'[]'::jsonb`),
     idempotencyKey: varchar("idempotency_key", { length: 128 }).notNull(),
-    fingerprint: char("fingerprint", { length: 64 }).notNull(),
+    fingerprint: char("fingerprint", { length: 64 }),
     correlationId: text("correlation_id").notNull(),
     state: varchar("state", { length: 32 }).notNull(),
+    failureCode: varchar("failure_code", { length: 64 }),
     version: integer("version").notNull(),
     leaseOwnerId: text("lease_owner_id"),
     leaseTokenHash: char("lease_token_hash", { length: 64 }),
@@ -1079,6 +1115,7 @@ export const communicationOutboundCommands = pgTable(
       ],
     }).onDelete("restrict"),
     unique("communication_outbound_commands_id_connection_unique").on(table.id, table.connectionId),
+    unique("communication_outbound_commands_id_binding_unique").on(table.id, table.bindingId),
     unique("communication_outbound_commands_binding_key_unique").on(
       table.bindingId,
       table.idempotencyKey,
@@ -1086,11 +1123,15 @@ export const communicationOutboundCommands = pgTable(
     check("communication_outbound_commands_channel_valid", sql`${table.channelKind} = 'whatsapp'`),
     check(
       "communication_outbound_commands_fingerprint_valid",
-      sql`${table.fingerprint} ~ '^[0-9a-f]{64}$'`,
+      sql`${table.fingerprint} is null or ${table.fingerprint} ~ '^[0-9a-f]{64}$'`,
     ),
     check(
       "communication_outbound_commands_lease_token_hash_valid",
       sql`${table.leaseTokenHash} is null or ${table.leaseTokenHash} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "communication_outbound_commands_lease_owner_hash_valid",
+      sql`${table.leaseOwnerId} is null or ${table.leaseOwnerId} ~ '^[0-9a-f]{64}$'`,
     ),
     check("communication_outbound_commands_locale_valid", sql`${table.locale} in ('es', 'en')`),
     check(
@@ -1103,12 +1144,18 @@ export const communicationOutboundCommands = pgTable(
     ),
     check(
       "communication_outbound_commands_policy_version_positive",
-      sql`${table.expectedPolicyVersion} > 0`,
+      sql`${table.expectedPolicyVersion} is null or ${table.expectedPolicyVersion} > 0`,
     ),
-    check("communication_outbound_commands_version_positive", sql`${table.version} > 0`),
+    check("communication_outbound_commands_required_fence_valid", sql`${table.requiredFence} is null or ${table.requiredFence} >= 0`),
+    check("communication_outbound_commands_endpoint_digests_valid", sql`jsonb_typeof(${table.endpointDigests}) = 'array'`),
+    check("communication_outbound_commands_version_nonnegative", sql`${table.version} >= 0`),
     check(
       "communication_outbound_commands_owning_receipt_window_valid",
-      sql`${table.owningReceiptValidUntil} > ${table.owningReceiptIssuedAt}`,
+      sql`(${table.owningReceiptId} is null and ${table.owningDomain} is null and ${table.owningReference} is null and ${table.owningReceiptIssuedAt} is null and ${table.owningReceiptValidUntil} is null and ${table.owningReceiptCorrelationId} is null) or (${table.owningReceiptId} is not null and ${table.owningDomain} is not null and ${table.owningReference} is not null and ${table.owningReceiptIssuedAt} is not null and ${table.owningReceiptValidUntil} > ${table.owningReceiptIssuedAt} and ${table.owningReceiptCorrelationId} is not null)`,
+    ),
+    check(
+      "communication_outbound_commands_finalization_valid",
+      sql`${table.state} = 'draft' or (${table.fingerprint} is not null and ${table.expectedPolicyVersion} is not null and ${table.requiredFence} is not null and ${table.owningReceiptId} is not null)`,
     ),
     check(
       "communication_outbound_commands_destination_reference_opaque",
@@ -1158,6 +1205,10 @@ export const communicationDispatchAttempts = pgTable(
     resultCode: varchar("result_code", { length: 32 }),
     providerIoCapabilityHash: char("provider_io_capability_hash", { length: 64 }),
     providerIoStartedAt: timestamp("provider_io_started_at", { withTimezone: true, mode: "date" }),
+    leaseOwnerHash: char("lease_owner_hash", { length: 64 }).notNull(),
+    leaseVersion: integer("lease_version").notNull(),
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    providerReferenceDigest: char("provider_reference_digest", { length: 64 }),
     startedAt: timestamp("started_at", { withTimezone: true, mode: "date" }).notNull(),
     completedAt: timestamp("completed_at", { withTimezone: true, mode: "date" }),
     ...timestamps,
@@ -1175,6 +1226,7 @@ export const communicationDispatchAttempts = pgTable(
       table.commandId,
       table.attemptOrdinal,
     ),
+    unique("communication_dispatch_attempts_id_command_unique").on(table.id, table.commandId),
     unique("communication_dispatch_attempts_external_reference_unique").on(
       table.connectionId,
       table.externalMessageReference,
@@ -1184,6 +1236,10 @@ export const communicationDispatchAttempts = pgTable(
       "communication_dispatch_attempts_request_digest_valid",
       sql`${table.requestDigest} ~ '^[0-9a-f]{64}$'`,
     ),
+    check("communication_dispatch_attempts_lease_owner_hash_valid", sql`${table.leaseOwnerHash} ~ '^[0-9a-f]{64}$'`),
+    check("communication_dispatch_attempts_lease_version_positive", sql`${table.leaseVersion} > 0`),
+    check("communication_dispatch_attempts_lease_window_valid", sql`${table.leaseExpiresAt} > ${table.startedAt}`),
+    check("communication_dispatch_attempts_provider_reference_digest_valid", sql`${table.providerReferenceDigest} is null or ${table.providerReferenceDigest} ~ '^[0-9a-f]{64}$'`),
     check(
       "communication_dispatch_attempts_policy_version_positive",
       sql`${table.expectedPolicyVersion} > 0`,
@@ -1206,6 +1262,76 @@ export const communicationDispatchAttempts = pgTable(
     ),
     index("communication_dispatch_attempts_recovery_idx").on(table.state, table.completedAt),
     communicationsOnly("communication_dispatch_attempts"),
+  ],
+).enableRLS();
+
+export const communicationProviderStatusReceipts = pgTable(
+  "communication_provider_status_receipts",
+  {
+    commandId: text("command_id")
+      .notNull()
+      .references(() => communicationOutboundCommands.id, { onDelete: "cascade" }),
+    providerEventId: text("provider_event_id").notNull(),
+    status: varchar("status", { length: 24 }).notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true, mode: "date" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (table) => [
+    primaryKey({
+      name: "communication_provider_status_receipts_command_event_pk",
+      columns: [table.commandId, table.providerEventId],
+    }),
+    check(
+      "communication_provider_status_receipts_status_valid",
+      sql`${table.status} in ('sent', 'delivered', 'read', 'failed')`,
+    ),
+    communicationsOnly("communication_provider_status_receipts"),
+  ],
+).enableRLS();
+
+export const communicationDispatchReconciliationReceipts = pgTable(
+  "communication_dispatch_reconciliation_receipts",
+  {
+    receiptId: text("receipt_id").primaryKey(),
+    receiptDigest: char("receipt_digest", { length: 64 }).notNull(),
+    commandId: text("command_id").notNull(),
+    attemptId: text("attempt_id").notNull(),
+    bindingId: text("binding_id").notNull(),
+    source: varchar("source", { length: 32 }).notNull(),
+    outcome: varchar("outcome", { length: 32 }).notNull(),
+    correlationId: text("correlation_id").notNull(),
+    issuedAt: timestamp("issued_at", { withTimezone: true, mode: "date" }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "communication_dispatch_reconciliation_receipts_attempt_command_fk",
+      columns: [table.attemptId, table.commandId],
+      foreignColumns: [communicationDispatchAttempts.id, communicationDispatchAttempts.commandId],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "communication_dispatch_reconciliation_receipts_command_binding_fk",
+      columns: [table.commandId, table.bindingId],
+      foreignColumns: [communicationOutboundCommands.id, communicationOutboundCommands.bindingId],
+    }).onDelete("restrict"),
+    check(
+      "communication_dispatch_reconciliation_receipts_digest_valid",
+      sql`${table.receiptDigest} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "communication_dispatch_reconciliation_receipts_source_valid",
+      sql`${table.source} in ('provider_lookup', 'provider_status', 'manual_attestation')`,
+    ),
+    check(
+      "communication_dispatch_reconciliation_receipts_outcome_valid",
+      sql`${table.outcome} in ('accepted', 'confirmed_not_sent', 'failed')`,
+    ),
+    check(
+      "communication_dispatch_reconciliation_receipts_window_valid",
+      sql`${table.expiresAt} > ${table.issuedAt} and ${table.createdAt} >= ${table.issuedAt} and ${table.createdAt} < ${table.expiresAt}`,
+    ),
+    communicationsOnly("communication_dispatch_reconciliation_receipts"),
   ],
 ).enableRLS();
 

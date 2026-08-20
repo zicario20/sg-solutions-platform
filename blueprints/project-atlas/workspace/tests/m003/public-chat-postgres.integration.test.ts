@@ -23,8 +23,9 @@ describe("M003 real Postgres contract", () => {
       const expiresAt = new Date(now.getTime() + 30 * 60_000);
       const suffix = crypto.randomUUID().replaceAll("-", "");
       const sessionHash = `${"d".repeat(32)}${suffix}`;
+      const sessionId = `session_${suffix}`;
       await registerPublicChatSession(sql, {
-        id: `session_${suffix}`,
+        id: sessionId,
         sessionHash,
         csrfHash: "e".repeat(64),
         correlationId: "correlation_integration_1",
@@ -77,6 +78,25 @@ describe("M003 real Postgres contract", () => {
           fingerprint: "2".repeat(64),
           conversationId: conversation.id,
           idempotencyKey: `command_${suffix}`,
+          expectedVersion: 1,
+          leaseExpiresAt: new Date(now.getTime() + 60_000),
+        }),
+      ).resolves.toEqual({ status: "conflict" });
+
+      await sql.begin(async (tx) => {
+        await tx.unsafe("set local role atlas_public_chat_gateway");
+        await tx`
+          update public_chat_sessions set revoked_at = current_timestamp,
+            updated_at = current_timestamp
+          where id = ${sessionId}
+        `;
+      });
+      await expect(
+        repository.claimCommand({
+          kind: "message",
+          fingerprint: "3".repeat(64),
+          conversationId: conversation.id,
+          idempotencyKey: `revoked_${suffix}`,
           expectedVersion: 1,
           leaseExpiresAt: new Date(now.getTime() + 60_000),
         }),

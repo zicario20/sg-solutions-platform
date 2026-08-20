@@ -64,6 +64,20 @@
       "when": 1787249879081,
       "tag": "0008_m004_communications_backfill",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787251995592,
+      "tag": "0009_m004_communications_cutover_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1787252190200,
+      "tag": "0010_m004_communications_canonical_cutover",
+      "breakpoints": true
     }
   ]
 }

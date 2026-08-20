@@ -2,25 +2,26 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
+  communicationAuditEvents,
+  communicationConversations,
+  communicationHandoffs,
+  communicationMessages,
   getPublicChatTableConfig,
-  publicChatAuditEvents,
   publicChatCitations,
-  publicChatConversations,
-  publicChatHandoffs,
+  publicChatConversationSessions,
   publicChatIdempotency,
-  publicChatMessages,
   publicChatRateLimits,
   publicChatSessions,
 } from "../../packages/database/src/schema.ts";
 
 const TABLES = [
   publicChatSessions,
-  publicChatConversations,
-  publicChatMessages,
+  communicationConversations,
+  communicationMessages,
   publicChatCitations,
-  publicChatHandoffs,
+  communicationHandoffs,
   publicChatIdempotency,
-  publicChatAuditEvents,
+  communicationAuditEvents,
 ];
 
 describe("M003 Drizzle schema contract", () => {
@@ -70,16 +71,16 @@ describe("M003 Drizzle schema contract", () => {
   });
 
   it("exposes version, expiry, reconciliation, and nullable body columns", () => {
-    const conversation = getPublicChatTableConfig(publicChatConversations);
+    const conversation = getPublicChatTableConfig(communicationConversations);
     expect(conversation.columns.find((column) => column.name === "version")?.notNull).toBe(true);
     expect(conversation.indexes.map((index) => index.config.name)).toEqual(
       expect.arrayContaining([
-        "public_chat_conversations_expiry_idx",
-        "public_chat_conversations_reconciliation_idx",
+        "communication_conversations_activity_idx",
+        "communication_conversations_reconciliation_idx",
       ]),
     );
 
-    const body = getPublicChatTableConfig(publicChatMessages).columns.find(
+    const body = getPublicChatTableConfig(communicationMessages).columns.find(
       (column) => column.name === "body",
     );
     expect(body?.notNull).toBe(false);
@@ -96,17 +97,20 @@ describe("M003 Drizzle schema contract", () => {
     expect(
       idempotency.columns.find((column) => column.name === "command_fingerprint")?.notNull,
     ).toBe(true);
-    const conversation = getPublicChatTableConfig(publicChatConversations);
-    expect(conversation.uniqueConstraints.map((constraint) => constraint.name)).toContain(
-      "public_chat_conversations_session_start_key_unique",
+    const ownership = getPublicChatTableConfig(publicChatConversationSessions);
+    expect(ownership.uniqueConstraints.map((constraint) => constraint.name)).toContain(
+      "public_chat_conversation_sessions_session_start_key_unique",
     );
     expect(idempotency.indexes.map((index) => index.config.name)).toContain(
       "public_chat_idempotency_lease_idx",
     );
 
-    const reasonColumns = [publicChatMessages, publicChatHandoffs, publicChatAuditEvents].flatMap(
-      (table) =>
-        getPublicChatTableConfig(table).columns.filter((column) => column.name.includes("reason")),
+    const reasonColumns = [
+      communicationMessages,
+      communicationHandoffs,
+      communicationAuditEvents,
+    ].flatMap((table) =>
+      getPublicChatTableConfig(table).columns.filter((column) => column.name.includes("reason")),
     );
     expect(reasonColumns.length).toBeGreaterThan(0);
     for (const column of reasonColumns) expect(column.dataType).toBe("string");

@@ -318,7 +318,10 @@ describe("canonical inbound and application behavior", () => {
     expect(duplicate).toMatchObject({ status: "duplicate", eventId: "event_1" });
     expect(mismatch).toEqual({ status: "replay_mismatch", code: "provider_replay_mismatch" });
     expect(repository.referenceState().inbound).toHaveLength(1);
-    expect(repository.referenceState().inbound[0]?.envelope).toEqual(envelope());
+    expect(repository.referenceState().inbound[0]?.envelope).toEqual({
+      ...envelope(),
+      message: { ...envelope().message, body: null },
+    });
   });
 
   it("establishes opt_out_pending atomically and prioritizes it before knowledge", async () => {

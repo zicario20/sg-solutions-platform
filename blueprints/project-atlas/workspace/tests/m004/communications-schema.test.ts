@@ -556,19 +556,21 @@ describe("M004 canonical communications Drizzle schema", () => {
   });
 });
 
-describe("M004 generated migration authority and preparatory backfill", () => {
-  it("records generated bootstrap, structural and backfill migrations without hand-authored metadata", () => {
+describe("M004 generated migration authority and canonical cutover", () => {
+  it("records generated metadata for bootstrap, backfill, guarded cutover and canonical structure", () => {
     const migrations = currentM004Migrations();
     const journalPath = fileURLToPath(new URL("../../drizzle/meta/_journal.json", import.meta.url));
     const journal = JSON.parse(readFileSync(journalPath, "utf8")) as {
       entries: Array<{ idx: number; tag: string }>;
     };
-    expect(journal.entries.slice(-3).map(({ idx, tag }) => ({ idx, tag }))).toEqual([
+    expect(journal.entries.slice(-5).map(({ idx, tag }) => ({ idx, tag }))).toEqual([
       { idx: 6, tag: "0006_m004_communications_role_bootstrap" },
       { idx: 7, tag: migrations.structural.replace(/\.sql$/u, "") },
       { idx: 8, tag: "0008_m004_communications_backfill" },
+      { idx: 9, tag: "0009_m004_communications_cutover_guard" },
+      { idx: 10, tag: "0010_m004_communications_canonical_cutover" },
     ]);
-    for (const index of ["0006", "0007", "0008"]) {
+    for (const index of ["0006", "0007", "0008", "0009", "0010"]) {
       expect(
         existsSync(
           fileURLToPath(new URL(`../../drizzle/meta/${index}_snapshot.json`, import.meta.url)),

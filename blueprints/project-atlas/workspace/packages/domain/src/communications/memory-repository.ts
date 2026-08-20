@@ -55,12 +55,13 @@ type InboundRecord = {
   endpointDigests: AcceptInboundCommand["endpointDigests"];
   envelope: AcceptInboundCommand["envelope"];
   state: "persisted" | "applied" | "manual_review" | "dead_letter";
-  leaseOwner?: string;
+  leaseOwnerHash?: string;
   leaseVersion: number;
   leaseExpiresAt?: Date;
 };
 
 type OutboundRecord = CreateOutboundCommand & {
+  messageBodyDigest: string;
   fingerprint?: string;
   requiredPolicyVersion?: number;
   requiredFence?: number;
@@ -68,17 +69,16 @@ type OutboundRecord = CreateOutboundCommand & {
   authorizationReceipt?: FinalizeOutboundCommand["authorizationReceipt"];
   failureCode?: FailOutboundDraftCommand["code"];
   state: OutboundCommandState;
-  leaseOwner?: string;
+  leaseOwnerHash?: string;
   leaseVersion: number;
   leaseExpiresAt?: Date;
   blockedCode?: Extract<OutboundClaimResult, { status: "not_claimed" }>["code"];
 };
 
 type AttemptRecord = OutboundDispatchAttempt & {
-  leaseOwner: string;
+  leaseOwnerHash: string;
   leaseVersion: number;
   leaseExpiresAt: Date;
-  providerReference?: string;
 };
 
 type ReconciledCommandState = Extract<
@@ -118,6 +118,36 @@ const DELIVERY_RANK: Readonly<Record<"sent" | "delivered" | "read", number>> = {
   delivered: 2,
   read: 3,
 };
+
+const MAX_LEASE_MILLISECONDS = 15 * 60_000;
+
+async function sha256(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function validClaimLease(now: Date, expiresAt: Date): boolean {
+  return (
+    Number.isFinite(now.getTime()) &&
+    Number.isFinite(expiresAt.getTime()) &&
+    expiresAt > now &&
+    expiresAt.getTime() - now.getTime() <= MAX_LEASE_MILLISECONDS
+  );
+}
+
+function metadataOnlyEnvelope(
+  envelope: AcceptInboundCommand["envelope"],
+): AcceptInboundCommand["envelope"] {
+  return { ...clone(envelope), message: { ...clone(envelope.message), body: null } };
+}
+
+function metadataOnlyMessage(
+  message: CreateOutboundCommand["message"],
+): CreateOutboundCommand["message"] {
+  return { ...clone(message), body: null };
+}
 
 function clone<T>(value: T): T {
   return structuredClone(value);
@@ -215,7 +245,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
         replayKey,
         providerBodyDigest: input.providerBodyDigest,
         endpointDigests: clone(input.endpointDigests),
-        envelope: clone(input.envelope),
+        envelope: metadataOnlyEnvelope(input.envelope),
         state: "persisted",
         leaseVersion: 0,
       };
@@ -241,10 +271,13 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       if (!policy || policy.version !== input.requiredPolicyVersion) {
         return { status: "not_claimed", code: "policy_version_mismatch" };
       }
-      if (record.leaseOwner && record.leaseExpiresAt && record.leaseExpiresAt > input.now) {
+      if (!validClaimLease(input.now, input.leaseExpiresAt)) {
         return { status: "not_claimed", code: "lease_conflict" };
       }
-      record.leaseOwner = input.leaseOwner;
+      if (record.leaseOwnerHash && record.leaseExpiresAt && record.leaseExpiresAt > input.now) {
+        return { status: "not_claimed", code: "lease_conflict" };
+      }
+      record.leaseOwnerHash = await sha256(input.leaseOwner);
       record.leaseVersion += 1;
       record.leaseExpiresAt = input.leaseExpiresAt;
       return {
@@ -262,22 +295,23 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     if (
       !record ||
       record.state !== "persisted" ||
-      record.leaseOwner !== input.leaseOwner ||
+      record.leaseOwnerHash !== (await sha256(input.leaseOwner)) ||
       record.leaseVersion !== input.leaseVersion ||
       !this.validLeaseCompletion(input.now, record.leaseExpiresAt)
     ) {
       return "conflict";
     }
     record.state = input.outcome;
-    record.leaseOwner = undefined;
+    record.leaseOwnerHash = undefined;
     record.leaseExpiresAt = undefined;
     return "completed";
   }
 
   async createOutbound(input: CreateOutboundCommand): Promise<CreateOutboundResult> {
+    const messageBodyDigest = await sha256(JSON.stringify(input.message.body));
     const existing = this.outboundByIdempotency.get(input.command.idempotencyKey);
     if (existing) {
-      if (!this.sameOutboundDraft(existing, input)) {
+      if (!this.sameOutboundDraft(existing, input, messageBodyDigest)) {
         return { status: "conflict", code: "idempotency_mismatch" };
       }
       const reason = this.outboundDuplicateReason(existing);
@@ -291,6 +325,8 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     }
     const record: OutboundRecord = {
       ...clone(input),
+      message: metadataOnlyMessage(input.message),
+      messageBodyDigest,
       state: "draft",
       leaseVersion: 0,
     };
@@ -352,6 +388,9 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       if (record.state !== "queued") {
         return { status: "not_claimed", code: "already_completed" };
       }
+      if (!validClaimLease(input.now, input.leaseExpiresAt)) {
+        return { status: "not_claimed", code: "lease_conflict" };
+      }
       const binding = this.bindings.get(record.command.bindingId);
       if (!binding) return { status: "not_claimed", code: "binding_not_found" };
       const policy = this.policies.get(record.command.bindingId);
@@ -391,7 +430,8 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
 
       record.state = "dispatching";
       record.command.state = "dispatching";
-      record.leaseOwner = input.leaseOwner;
+      const leaseOwnerHash = await sha256(input.leaseOwner);
+      record.leaseOwnerHash = leaseOwnerHash;
       record.leaseVersion += 1;
       record.leaseExpiresAt = input.leaseExpiresAt;
       const attempt: AttemptRecord = {
@@ -403,7 +443,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
         state: "dispatching",
         startedAt: input.now,
         correlationId: record.command.correlationId,
-        leaseOwner: input.leaseOwner,
+        leaseOwnerHash,
         leaseVersion: record.leaseVersion,
         leaseExpiresAt: input.leaseExpiresAt,
       };
@@ -429,7 +469,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       if (
         !record ||
         !attempt ||
-        attempt.leaseOwner !== input.leaseOwner ||
+        attempt.leaseOwnerHash !== (await sha256(input.leaseOwner)) ||
         attempt.leaseVersion !== input.leaseVersion ||
         !this.validLeaseCompletion(input.now, attempt.leaseExpiresAt)
       ) {
@@ -444,7 +484,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       }
       if (
         record.state !== "dispatching" ||
-        record.leaseOwner !== input.leaseOwner ||
+        record.leaseOwnerHash !== (await sha256(input.leaseOwner)) ||
         record.leaseVersion !== input.leaseVersion
       ) {
         return "conflict";
@@ -457,11 +497,10 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
             : "failed";
       record.state = state;
       record.command.state = state;
-      record.leaseOwner = undefined;
+      record.leaseOwnerHash = undefined;
       record.leaseExpiresAt = undefined;
       attempt.state = state;
       attempt.completedAt = input.now;
-      attempt.providerReference = input.providerReference;
       return "completed";
     });
   }
@@ -806,7 +845,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
             : "failed";
       record.state = commandState;
       record.command.state = commandState;
-      record.leaseOwner = undefined;
+      record.leaseOwnerHash = undefined;
       record.leaseExpiresAt = undefined;
       attempt.state = commandState;
       attempt.completedAt = input.now;
@@ -934,13 +973,17 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     );
   }
 
-  private sameOutboundDraft(existing: OutboundRecord, input: CreateOutboundCommand): boolean {
+  private sameOutboundDraft(
+    existing: OutboundRecord,
+    input: CreateOutboundCommand,
+    messageBodyDigest: string,
+  ): boolean {
     return (
       existing.command.bindingId === input.command.bindingId &&
       existing.command.conversationId === input.command.conversationId &&
       existing.command.channel === input.command.channel &&
       existing.command.locale === input.command.locale &&
-      existing.message.body === input.message.body &&
+      existing.messageBodyDigest === messageBodyDigest &&
       existing.purpose === input.purpose &&
       existing.templateId === input.templateId
     );
@@ -960,7 +1003,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       attempt.state = state;
       attempt.completedAt = completedAt;
     }
-    record.leaseOwner = undefined;
+    record.leaseOwnerHash = undefined;
     record.leaseExpiresAt = undefined;
   }
 

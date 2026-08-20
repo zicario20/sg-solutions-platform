@@ -55,6 +55,10 @@ async function withGatewayTransaction<T>(
   }) as Promise<T>;
 }
 
+async function setPublicChatScope(tx: TransactionSql, sessionId: string): Promise<void> {
+  await tx`select set_config('atlas.public_chat_session_id', ${sessionId}, true)`;
+}
+
 type ConversationRow = {
   id: string;
   version: number;
@@ -244,6 +248,17 @@ async function loadConversation(
   conversationId: string,
   sessionHash: string,
 ): Promise<PublicChatConversation | null> {
+  const sessions = await sql<Array<{ id: string }>>`
+    select id
+    from public_chat_sessions
+    where session_hash = ${sessionHash}
+      and revoked_at is null
+      and expires_at > current_timestamp
+    limit 1
+  `;
+  const session = sessions[0];
+  if (!session) return null;
+  await setPublicChatScope(sql, session.id);
   const rows = await sql<ConversationRow[]>`
     select
       c.id,
@@ -251,38 +266,57 @@ async function loadConversation(
       c.locale,
       c.status,
       s.session_hash,
-      c.notice_version,
+      ownership.notice_version,
       c.correlation_id,
-      c.start_idempotency_key,
-      c.start_fingerprint,
+      ownership.start_idempotency_key,
+      ownership.start_fingerprint,
       c.created_at,
       c.updated_at,
       c.last_activity_at,
       c.expires_at,
       s.revoked_at,
       c.closed_at,
-      c.handoff_receipt_id,
-      c.handoff_reason,
+      handoff.receipt_id as handoff_receipt_id,
+      handoff.reason_code as handoff_reason,
       (
-        select h.queued_at
-        from public_chat_handoffs h
-        where h.conversation_id = c.id
-        order by h.updated_at desc
+        select latest_handoff.queued_at
+        from communication_handoffs latest_handoff
+        where latest_handoff.conversation_id = c.id
+        order by latest_handoff.updated_at desc
         limit 1
       ) as handoff_queued_at
-    from public_chat_conversations c
-    inner join public_chat_sessions s on s.id = c.session_id
-    where c.id = ${conversationId} and s.session_hash = ${sessionHash}
+    from communication_conversations c
+    inner join public_chat_conversation_sessions ownership on ownership.conversation_id = c.id
+    inner join public_chat_sessions s on s.id = ownership.session_id
+    left join lateral (
+      select receipt_id, reason_code
+      from communication_handoffs
+      where conversation_id = c.id
+      order by updated_at desc
+      limit 1
+    ) handoff on true
+    where c.id = ${conversationId} and c.channel_kind = 'public_web'
+      and ownership.session_id = ${session.id} and s.session_hash = ${sessionHash}
     limit 1
   `;
   const row = rows[0];
   if (!row) return null;
 
   const messageRows = await sql<MessageRow[]>`
-    select id, actor, body, body_stored, state, actions, created_at
-    from public_chat_messages
-    where conversation_id = ${conversationId}
-    order by ordinal asc
+    select message.id,
+      case sender.kind
+        when 'external' then 'visitor'
+        when 'automated' then 'assistant'
+        when 'human' then 'human'
+        else 'system'
+      end as actor,
+      message.body, message.body_stored, message.state, message.actions, message.created_at
+    from communication_messages message
+    join communication_participants sender
+      on sender.id = message.sender_participant_id
+      and sender.conversation_id = message.conversation_id
+    where message.conversation_id = ${conversationId} and message.channel_kind = 'public_web'
+    order by message.ordinal asc
   `;
   const messageIds = messageRows.map((message) => message.id);
   const citationRows =
@@ -347,51 +381,97 @@ async function persistConversation(
   transcriptPersistence: TranscriptPersistence,
 ): Promise<void> {
   await tx`
-    update public_chat_conversations
+    update communication_conversations
     set
       version = ${conversation.version},
       locale = ${conversation.locale},
       status = ${conversation.status},
-      notice_version = ${conversation.noticeVersion},
       correlation_id = ${conversation.correlationId},
       updated_at = ${conversation.updatedAt},
       last_activity_at = ${conversation.lastActivityAt},
       expires_at = ${conversation.expiresAt},
-      closed_at = ${conversation.closedAt ?? null},
-      handoff_receipt_id = ${conversation.handoffReceiptId ?? null},
-      handoff_reason = ${conversation.handoffReason ?? null}
-    where id = ${conversation.id}
+      closed_at = ${conversation.closedAt ?? null}
+    where id = ${conversation.id} and channel_kind = 'public_web'
+  `;
+  await tx`
+    update public_chat_conversation_sessions
+    set notice_version = ${conversation.noticeVersion}, updated_at = ${conversation.updatedAt}
+    where conversation_id = ${conversation.id}
   `;
   await tx`
     update public_chat_sessions
     set expires_at = greatest(expires_at, ${conversation.expiresAt}),
         revoked_at = coalesce(revoked_at, ${conversation.revokedAt ?? null}),
         updated_at = ${conversation.updatedAt}
-    where id = (select session_id from public_chat_conversations where id = ${conversation.id})
+    where id = (
+      select session_id from public_chat_conversation_sessions
+      where conversation_id = ${conversation.id}
+    )
   `;
 
   for (const [ordinal, message] of conversation.messages.entries()) {
     const bodyStored = transcriptPersistence === "approved";
+    const senderKind =
+      message.actor === "visitor"
+        ? "external"
+        : message.actor === "assistant"
+          ? "automated"
+          : message.actor;
+    const senderId =
+      message.actor === "visitor"
+        ? (
+            await tx<Array<{ participant_id: string }>>`
+              select participant_id from public_chat_conversation_sessions
+              where conversation_id = ${conversation.id}
+            `
+          )[0]?.participant_id
+        : `participant:${conversation.id}:${senderKind}`;
+    if (!senderId) throw new Error("PUBLIC_CHAT_PARTICIPANT_SCOPE_MISSING");
     await tx`
-      insert into public_chat_messages (
-        id, conversation_id, ordinal, actor, state, body, body_stored, actions, created_at
+      insert into communication_participants (
+        id, conversation_id, channel_kind, kind, channel_binding_id,
+        joined_at, left_at, created_at, updated_at
+      ) values (
+        ${senderId}, ${conversation.id}, 'public_web', ${senderKind}, null,
+        ${message.createdAt}, null, ${message.createdAt}, ${conversation.updatedAt}
+      ) on conflict (id) do update
+      set kind = excluded.kind, left_at = null, updated_at = excluded.updated_at
+    `;
+    await tx`
+      insert into communication_messages (
+        id, conversation_id, channel_kind, ordinal, direction, sender_participant_id,
+        recipient_participant_id, locale, kind, state, body, body_stored,
+        body_retention_policy, actions, rejection_reason, external_message_reference, created_at
       ) values (
         ${message.id},
         ${conversation.id},
-        ${ordinal},
-        ${message.actor},
+        'public_web',
+        ${ordinal + 1},
+        ${message.actor === "visitor" ? "inbound" : message.actor === "system" ? "system" : "outbound"},
+        ${senderId},
+        null,
+        ${conversation.locale},
+        ${message.actor === "system" ? "system" : "text"},
         ${message.state},
         ${bodyStored ? message.body : null},
         ${bodyStored},
+        ${bodyStored ? "approved" : "metadata_only"},
         ${tx.json(message.actions)},
+        ${message.state === "failed" ? "response_rejected" : null},
+        null,
         ${message.createdAt}
       )
       on conflict (id) do update
       set ordinal = excluded.ordinal,
-          actor = excluded.actor,
+          direction = excluded.direction,
+          sender_participant_id = excluded.sender_participant_id,
+          locale = excluded.locale,
+          kind = excluded.kind,
           state = excluded.state,
           body = excluded.body,
           body_stored = excluded.body_stored,
+          body_retention_policy = excluded.body_retention_policy,
+          rejection_reason = excluded.rejection_reason,
           actions = excluded.actions
     `;
     for (const citation of message.citations) {
@@ -423,21 +503,27 @@ async function persistConversation(
 
   if (conversation.status === "human_requested" || conversation.status === "waiting_for_human") {
     await tx`
-      insert into public_chat_handoffs (
-        id, conversation_id, status, reason, receipt_id, requested_at, queued_at, updated_at
+      insert into communication_handoffs (
+        id, conversation_id, channel_kind, state, reason_code, receipt_id, correlation_id,
+        assigned_participant_id, requested_at, queued_at, accepted_at, closed_at, updated_at
       ) values (
         ${`handoff:${conversation.id}`},
         ${conversation.id},
-        ${conversation.status},
+        'public_web',
+        ${conversation.status === "human_requested" ? "requested" : "queued"},
         ${conversation.handoffReason ?? "policy_required"},
         ${conversation.handoffReceiptId ?? null},
+        ${conversation.correlationId},
+        null,
         ${conversation.updatedAt},
         ${conversation.handoffQueuedAt ?? null},
+        null,
+        null,
         ${conversation.updatedAt}
       )
       on conflict (id) do update
-      set status = excluded.status,
-          reason = excluded.reason,
+      set state = excluded.state,
+          reason_code = excluded.reason_code,
           receipt_id = excluded.receipt_id,
           queued_at = excluded.queued_at,
           updated_at = excluded.updated_at
@@ -451,19 +537,49 @@ async function appendAuditEvent(
   eventName: AuditEvent["name"],
   reason?: ChatReasonCode,
 ): Promise<void> {
+  await tx`select pg_advisory_xact_lock(hashtextextended(${`public-chat:audit:${conversation.id}`}, 0))`;
   const sequenceRows = await tx<{ sequence: number }[]>`
     select coalesce(max(sequence), 0)::integer + 1 as sequence
-    from public_chat_audit_events
+    from communication_audit_events
     where conversation_id = ${conversation.id}
   `;
   const sequence = sequenceRows[0]?.sequence ?? 1;
+  const aggregateType =
+    eventName.includes("message") || eventName.includes("response")
+      ? "message"
+      : eventName.includes("handoff")
+        ? "handoff"
+        : "conversation";
+  const aggregateId =
+    aggregateType === "message"
+      ? (conversation.messages.at(-1)?.id ?? conversation.id)
+      : aggregateType === "handoff"
+        ? `handoff:${conversation.id}`
+        : conversation.id;
+  const resultCode =
+    eventName === "chat_conversation_started"
+      ? "new"
+      : eventName === "chat_handoff_requested"
+        ? "requested"
+        : eventName === "chat_handoff_queued"
+          ? "queued"
+          : eventName === "chat_conversation_closed"
+            ? "closed"
+            : eventName === "chat_message_rejected"
+              ? "rejected"
+              : eventName === "chat_response_failed"
+                ? "failed"
+                : "accepted";
   await tx`
-    insert into public_chat_audit_events (
-      id, sequence, conversation_id, event_name, reason, version, locale, correlation_id, created_at
+    insert into communication_audit_events (
+      id, sequence, conversation_id, channel_kind, event_name, aggregate_type, aggregate_id,
+      result_code, reason_code, version, locale, purpose, policy_version,
+      correlation_id, occurred_at, created_at
     ) values (
-      ${`audit:${conversation.id}:${sequence}`}, ${sequence}, ${conversation.id}, ${eventName},
-      ${reason ?? null}, ${conversation.version}, ${conversation.locale},
-      ${conversation.correlationId}, ${conversation.updatedAt}
+      ${`audit:${conversation.id}:${sequence}`}, ${sequence}, ${conversation.id}, 'public_web',
+      ${eventName}, ${aggregateType}, ${aggregateId}, ${resultCode}, ${reason ?? null},
+      ${conversation.version}, ${conversation.locale}, null, null,
+      ${conversation.correlationId}, ${conversation.updatedAt}, ${conversation.updatedAt}
     )
   `;
 }
@@ -525,6 +641,41 @@ export function isValidPublicChatAdvanceVersion(
 export function createPostgresPublicChatStore(
   sql: postgres.Sql<Record<string, never>>,
 ): PublicChatTransactionalStore {
+  const ownershipScopes = new Map<string, { sessionId: string; sessionHash: string }>();
+  const rememberScope = (
+    conversationId: string,
+    scope: { sessionId: string; sessionHash: string },
+  ): void => {
+    ownershipScopes.delete(conversationId);
+    ownershipScopes.set(conversationId, scope);
+    while (ownershipScopes.size > 1_024) {
+      const oldest = ownershipScopes.keys().next().value;
+      if (typeof oldest !== "string") break;
+      ownershipScopes.delete(oldest);
+    }
+  };
+  const proveScope = async (
+    tx: TransactionSql,
+    conversationId: string,
+    scope: { sessionId: string; sessionHash: string },
+  ): Promise<boolean> => {
+    await setPublicChatScope(tx, scope.sessionId);
+    const rows = await tx<Array<{ valid: boolean }>>`
+      select true as valid
+      from public_chat_sessions session
+      join public_chat_conversation_sessions ownership on ownership.session_id = session.id
+      where session.id = ${scope.sessionId}
+        and session.session_hash = ${scope.sessionHash}
+        and session.revoked_at is null
+        and session.expires_at > current_timestamp
+        and ownership.conversation_id = ${conversationId}
+      limit 1
+    `;
+    if (rows[0]?.valid === true) return true;
+    ownershipScopes.delete(conversationId);
+    return false;
+  };
+
   return {
     async createConversation(conversation) {
       return withGatewayTransaction(sql, async (tx) => {
@@ -539,51 +690,78 @@ export function createPostgresPublicChatStore(
         `;
         const session = sessions[0];
         if (!session) throw new Error("PUBLIC_CHAT_SESSION_NOT_FOUND");
-        const inserted = await tx<{ id: string }[]>`
-          insert into public_chat_conversations (
-            id, session_id, version, locale, status, notice_version, correlation_id,
-            start_idempotency_key, start_fingerprint,
-            last_activity_at, expires_at, closed_at, handoff_receipt_id, handoff_reason,
-            reconciliation_required, created_at, updated_at
-          ) values (
-            ${conversation.id}, ${session.id}, ${conversation.version}, ${conversation.locale},
-            ${conversation.status}, ${conversation.noticeVersion}, ${conversation.correlationId},
-            ${conversation.startIdempotencyKey}, ${conversation.startFingerprint},
-            ${conversation.lastActivityAt}, ${conversation.expiresAt},
-            ${conversation.closedAt ?? null}, ${conversation.handoffReceiptId ?? null},
-            ${conversation.handoffReason ?? null}, false,
-            ${conversation.createdAt}, ${conversation.updatedAt}
-          )
-          on conflict (session_id, start_idempotency_key) do nothing
-          returning id
-        `;
-        if (inserted[0]) {
-          await appendAuditEvent(tx, conversation, "chat_conversation_started");
-          return "created" as const;
-        }
+        await setPublicChatScope(tx, session.id);
+        await tx`select pg_advisory_xact_lock(hashtextextended(${`${session.id}:${conversation.startIdempotencyKey}`}, 0))`;
         const existing = await tx<Array<{ id: string; start_fingerprint: string }>>`
-          select id, start_fingerprint
-          from public_chat_conversations
-          where session_id = ${session.id}
-            and start_idempotency_key = ${conversation.startIdempotencyKey}
+          select conversation_id as id, start_fingerprint
+          from public_chat_conversation_sessions
+          where session_id = ${session.id} and start_idempotency_key = ${conversation.startIdempotencyKey}
           limit 1
           for update
         `;
         const row = existing[0];
-        if (!row || row.start_fingerprint !== conversation.startFingerprint) {
+        if (row) {
+          if (row.start_fingerprint !== conversation.startFingerprint) return "conflict" as const;
+          rememberScope(row.id, {
+            sessionId: session.id,
+            sessionHash: conversation.sessionHash,
+          });
+          const replayed = await loadConversation(tx, row.id, conversation.sessionHash);
+          if (!replayed) throw new Error("PUBLIC_CHAT_START_REPLAY_UNAVAILABLE");
+          return { replayed } as const;
+        }
+        if (
+          conversation.version !== 1 ||
+          conversation.status !== "new" ||
+          conversation.createdAt.valueOf() !== conversation.updatedAt.valueOf()
+        ) {
           return "conflict" as const;
         }
-        const replayed = await loadConversation(tx, row.id, conversation.sessionHash);
-        if (!replayed) throw new Error("PUBLIC_CHAT_START_REPLAY_UNAVAILABLE");
-        return { replayed } as const;
+        const participantId = `participant_${(await sha256(`${conversation.id}:external`)).slice(0, 24)}`;
+        const sessionLinkId = `session_link_${(await sha256(`${conversation.id}:${session.id}`)).slice(0, 24)}`;
+        await tx`
+          select atlas_bootstrap_public_chat_conversation(
+            ${session.id}, ${conversation.id}, ${participantId}, ${sessionLinkId},
+            ${conversation.locale}, ${conversation.correlationId}, ${conversation.noticeVersion},
+            ${conversation.startIdempotencyKey}, ${conversation.startFingerprint},
+            ${conversation.createdAt}, ${conversation.expiresAt}
+          )
+        `;
+        rememberScope(conversation.id, {
+          sessionId: session.id,
+          sessionHash: conversation.sessionHash,
+        });
+        return "created" as const;
       });
     },
 
-    findOwnedConversation: (conversationId, sessionHash) =>
-      withGatewayTransaction(sql, (tx) => loadConversation(tx, conversationId, sessionHash)),
+    async findOwnedConversation(conversationId, sessionHash) {
+      const conversation = await withGatewayTransaction(sql, (tx) =>
+        loadConversation(tx, conversationId, sessionHash),
+      );
+      if (conversation) {
+        const sessions = await withGatewayTransaction(sql, async (tx) => {
+          const rows = await tx<Array<{ id: string }>>`
+            select id from public_chat_sessions
+            where session_hash = ${sessionHash}
+              and revoked_at is null
+              and expires_at > current_timestamp
+            limit 1
+          `;
+          return rows;
+        });
+        if (sessions[0]) rememberScope(conversationId, { sessionId: sessions[0].id, sessionHash });
+      } else {
+        ownershipScopes.delete(conversationId);
+      }
+      return conversation;
+    },
 
     async findCommandResult(conversationId, idempotencyKey, kind, fingerprint) {
+      const scope = ownershipScopes.get(conversationId);
+      if (!scope) return null;
       return withGatewayTransaction(sql, async (tx) => {
+        if (!(await proveScope(tx, conversationId, scope))) return null;
         const rows = await tx<
           Array<Pick<CommandRow, "state" | "result" | "command_kind" | "command_fingerprint">>
         >`
@@ -601,11 +779,16 @@ export function createPostgresPublicChatStore(
     },
 
     async claimCommand(command, _leaseToken, leaseTokenHash) {
+      const scope = ownershipScopes.get(command.conversationId);
+      if (!scope) return { status: "conflict" as const };
       return withGatewayTransaction(sql, async (tx) => {
+        if (!(await proveScope(tx, command.conversationId, scope))) {
+          return { status: "conflict" as const };
+        }
         const versions = await tx<{ version: number }[]>`
           select version
-          from public_chat_conversations
-          where id = ${command.conversationId}
+          from communication_conversations
+          where id = ${command.conversationId} and channel_kind = 'public_web'
           limit 1
           for update
         `;
@@ -666,8 +849,11 @@ export function createPostgresPublicChatStore(
     },
 
     async waitForCommandResult(conversationId, idempotencyKey, kind, fingerprint, waitUntil) {
+      const scope = ownershipScopes.get(conversationId);
+      if (!scope) return null;
       while (Date.now() < waitUntil.getTime()) {
         const completed = await withGatewayTransaction(sql, async (tx) => {
+          if (!(await proveScope(tx, conversationId, scope))) return null;
           const rows = await tx<
             Array<Pick<CommandRow, "state" | "result" | "command_kind" | "command_fingerprint">>
           >`
@@ -689,10 +875,13 @@ export function createPostgresPublicChatStore(
     },
 
     async advanceCommand(command, leaseTokenHash, transcriptPersistence) {
+      const scope = ownershipScopes.get(command.conversation.id);
+      if (!scope) return "conflict" as const;
       return withGatewayTransaction(sql, async (tx) => {
+        if (!(await proveScope(tx, command.conversation.id, scope))) return "conflict" as const;
         const versions = await tx<{ version: number }[]>`
-          select version from public_chat_conversations
-          where id = ${command.conversation.id}
+          select version from communication_conversations
+          where id = ${command.conversation.id} and channel_kind = 'public_web'
           limit 1 for update
         `;
         const claims = await tx<CommandRow[]>`
@@ -737,10 +926,13 @@ export function createPostgresPublicChatStore(
     },
 
     async completeCommand(command, leaseTokenHash, transcriptPersistence) {
+      const scope = ownershipScopes.get(command.conversation.id);
+      if (!scope) return "conflict" as const;
       return withGatewayTransaction(sql, async (tx) => {
+        if (!(await proveScope(tx, command.conversation.id, scope))) return "conflict" as const;
         const versions = await tx<{ version: number }[]>`
-          select version from public_chat_conversations
-          where id = ${command.conversation.id}
+          select version from communication_conversations
+          where id = ${command.conversation.id} and channel_kind = 'public_web'
           limit 1 for update
         `;
         const claims = await tx<CommandRow[]>`

@@ -1,0 +1,113 @@
+import { afterAll } from "vitest";
+import {
+  assertRestrictedCommunicationsPrincipal,
+  COMMUNICATIONS_TRANSACTION_SQL,
+  createCommunicationsSql,
+  createPostgresCommunicationsRepository,
+} from "../../packages/database/src/index.ts";
+import {
+  communicationsConformanceIds,
+  communicationsConformanceSeed,
+  runCommunicationsRepositoryConformance,
+} from "../support/communications-repository-conformance.ts";
+
+const integrationUrl = process.env.M004_POSTGRES_INTEGRATION_URL;
+const sql = integrationUrl ? createCommunicationsSql(integrationUrl) : null;
+
+afterAll(async () => {
+  if (sql) await sql.end({ timeout: 5 });
+});
+
+async function seedScenario(scenario: string): Promise<void> {
+  if (!sql) throw new Error("M004_POSTGRES_INTEGRATION_URL_REQUIRED");
+  const ids = communicationsConformanceIds(scenario);
+  const seed = communicationsConformanceSeed(scenario);
+  const binding = seed.bindings![0]!;
+  const policy = seed.policies![0]!;
+  const consent = seed.consents![0]!;
+  const template = seed.templates![0]!;
+  await sql.begin(async (tx) => {
+    const principalRows = await tx.unsafe<
+      Array<Parameters<typeof assertRestrictedCommunicationsPrincipal>[0]>
+    >(COMMUNICATIONS_TRANSACTION_SQL.attestPrincipal);
+    assertRestrictedCommunicationsPrincipal(principalRows[0]);
+    await tx.unsafe(COMMUNICATIONS_TRANSACTION_SQL.setLocalRole);
+    await tx`
+      insert into communication_channel_connections (
+        id, channel_kind, adapter_key, readiness_state, policy_version, version,
+        configured_at, verified_at, suspended_at, created_at, updated_at
+      ) values (
+        ${ids.connectionId}, 'whatsapp', 'meta_cloud', 'active', 'synthetic.v1', 1,
+        ${binding.createdAt}, ${binding.createdAt}, null, ${binding.createdAt}, ${binding.updatedAt}
+      ) on conflict (id) do nothing
+    `;
+    await tx`
+      insert into communication_contact_bindings (
+        id, connection_id, channel_kind, endpoint_digest, endpoint_digest_key_version,
+        trust_state, locale, contact_policy_version, version, verification_receipt_id,
+        endpoint_verified_at, verification_expires_at, wrong_person_reported_at,
+        reassignment_risk_at, suspended_at, created_at, updated_at
+      ) values (
+        ${binding.bindingId}, ${ids.connectionId}, 'whatsapp', ${"b".repeat(64)},
+        'endpoint.v1', ${binding.trustState}, 'en', ${policy.version}, 1,
+        ${`verification_${ids.bindingId}`}, ${binding.createdAt}, ${binding.freshUntil},
+        null, null, null, ${binding.createdAt}, ${binding.updatedAt}
+      ) on conflict (id) do nothing
+    `;
+    await tx`
+      insert into communication_contact_policies (
+        id, binding_id, purpose, consent_state, fence_state, decision_code,
+        evidence_receipt_id, version, fence, evaluated_at, created_at, updated_at
+      ) values (
+        ${policy.policyId}, ${binding.bindingId}, 'transactional', ${consent.state},
+        ${policy.state}, 'allowed', ${consent.receipt!.receiptId}, ${policy.version},
+        ${policy.fence}, ${policy.updatedAt}, ${binding.createdAt}, ${policy.updatedAt}
+      ) on conflict (binding_id, purpose) do nothing
+    `;
+    await tx`
+      insert into communication_contact_evidence_events (
+        id, binding_id, sequence, event_kind, purpose, consent_state, fence_state,
+        binding_trust_state, review_resolution, evidence_receipt_id, receipt_kind,
+        owning_domain, authority_role, authority_version, triggering_event_id,
+        policy_version, correlation_id, receipt_issued_at, receipt_valid_until,
+        occurred_at, created_at
+      ) values (
+        ${`evidence_${ids.bindingId}`}, ${binding.bindingId}, 1, 'consent_granted',
+        'transactional', 'granted', 'normal', null, null, ${consent.receipt!.receiptId},
+        'consent_evidence', 'M078', 'consent', ${consent.version}, null, null,
+        ${`consent_correlation_${ids.bindingId}`}, ${consent.receipt!.issuedAt},
+        ${consent.receipt!.expiresAt}, ${consent.changedAt}, ${consent.changedAt}
+      ) on conflict (evidence_receipt_id) do nothing
+    `;
+    await tx`
+      insert into communication_message_templates (
+        id, template_key, locale, purpose, definition_source, definition_version,
+        variable_keys, state, internally_approved, approval_receipt_id,
+        approval_receipt_issued_at, approval_receipt_valid_until, external_reference,
+        projection_version, provider_receipt_id, provider_correlation_id,
+        provider_receipt_issued_at, provider_receipt_valid_until, category,
+        observed_at, created_at, updated_at
+      ) values (
+        ${template.templateId}, ${template.templateId}, ${template.locale}, 'transactional',
+        'synthetic_test_fixture', ${template.definitionVersion}, '[]'::jsonb,
+        ${template.providerState}, true, ${`approval_${template.templateId}`},
+        ${template.updatedAt}, ${binding.freshUntil}, ${`provider_${template.templateId}`},
+        ${template.providerVersion}, ${`provider_receipt_${template.templateId}`},
+        ${`provider_correlation_${template.templateId}`}, ${template.updatedAt},
+        ${binding.freshUntil}, 'utility', ${template.updatedAt}, ${template.updatedAt},
+        ${template.updatedAt}
+      ) on conflict (template_key, locale) do nothing
+    `;
+  });
+}
+
+runCommunicationsRepositoryConformance(
+  "postgres",
+  async (scenario) => {
+    if (!sql) throw new Error("M004_POSTGRES_INTEGRATION_URL_REQUIRED");
+    await seedScenario(scenario);
+    const repository = createPostgresCommunicationsRepository(sql);
+    return { repository, inspectState: () => repository.referenceState() };
+  },
+  Boolean(integrationUrl),
+);
