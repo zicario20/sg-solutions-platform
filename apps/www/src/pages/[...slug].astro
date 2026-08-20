@@ -1,0 +1,17 @@
+---
+import PageRenderer from "../components/PageRenderer.astro";
+import type { PublicPage } from "../domain/public-site";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getStaticPageEntries } from "../lib/routes";
+
+export function getStaticPaths() {
+  return getStaticPageEntries();
+}
+
+interface Props {
+  page: PublicPage;
+}
+const { page } = Astro.props;
+---
+
+<BaseLayout page={page}><PageRenderer page={page} /></BaseLayout>

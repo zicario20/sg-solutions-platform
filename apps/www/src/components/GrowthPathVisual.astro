@@ -1,0 +1,54 @@
+---
+import { SITE_CHROME } from "../content/site-chrome";
+import type { Locale } from "../domain/public-site";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = SITE_CHROME[locale];
+---
+
+<div class="growth-visual" aria-hidden="true">
+  <svg viewBox="0 0 640 520" role="presentation">
+    <defs>
+      <linearGradient id="orbit" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#0B63CE" />
+        <stop offset="0.6" stop-color="#00A3E0" />
+        <stop offset="1" stop-color="#2E7D32" />
+      </linearGradient>
+      <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffffff" />
+        <stop offset="1" stop-color="#edf6ff" />
+      </linearGradient>
+    </defs>
+    <circle cx="332" cy="248" r="184" fill="#eaf5ff" opacity=".72" />
+    <path d="M94 354C190 120 463 74 565 235" fill="none" stroke="url(#orbit)" stroke-width="8" stroke-linecap="round" />
+    <path d="M116 382C260 472 489 418 558 267" fill="none" stroke="#0A2540" stroke-opacity=".14" stroke-width="2" stroke-dasharray="8 12" />
+    <g transform="translate(118 116)">
+      <rect x="0" y="190" width="58" height="118" rx="12" fill="#2E7D32" opacity=".88" />
+      <rect x="72" y="132" width="58" height="176" rx="12" fill="#0B63CE" opacity=".9" />
+      <rect x="144" y="68" width="58" height="240" rx="12" fill="#00A3E0" opacity=".92" />
+      <path d="M23 168L96 105L170 38" fill="none" stroke="#B7791F" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M154 39h27v27" fill="none" stroke="#B7791F" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+    </g>
+    <g transform="translate(328 249)">
+      <rect x="0" y="56" width="190" height="119" rx="20" fill="url(#panel)" stroke="#b9cee1" stroke-width="3" />
+      <path d="M-16 72L92 0l114 72" fill="#0B63CE" stroke="#0A2540" stroke-width="5" stroke-linejoin="round" />
+      <rect x="78" y="103" width="40" height="72" rx="5" fill="#0A2540" />
+      <rect x="24" y="96" width="34" height="30" rx="4" fill="#bce9fb" stroke="#0B63CE" stroke-width="3" />
+      <rect x="136" y="96" width="34" height="30" rx="4" fill="#bce9fb" stroke="#0B63CE" stroke-width="3" />
+    </g>
+    <g fill="#0B63CE">
+      <circle cx="512" cy="93" r="7" />
+      <path d="M477 108l5 14 14 5-14 5-5 14-5-14-14-5 14-5z" />
+    </g>
+  </svg>
+  <div class="growth-visual__badge growth-visual__badge--top">
+    <span class="status-dot"></span><span>{copy.growthPlan}</span>
+  </div>
+  <div class="growth-visual__badge growth-visual__badge--bottom">
+    <span class="badge-check">✓</span><span>{copy.growthNextStep}</span>
+  </div>
+</div>

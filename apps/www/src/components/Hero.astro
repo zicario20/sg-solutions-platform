@@ -1,0 +1,38 @@
+---
+import { SITE_CHROME } from "../content/site-chrome";
+import type { PublicPage } from "../domain/public-site";
+import ActionLink from "./ActionLink.astro";
+import GrowthPathVisual from "./GrowthPathVisual.astro";
+
+interface Props {
+  page: PublicPage;
+}
+const { page } = Astro.props;
+const copy = SITE_CHROME[page.locale];
+const servicesHref = page.locale === "es" ? "/servicios/" : "/en/services/";
+---
+
+<section class:list={["hero", { "hero--home": page.kind === "home" }] }>
+  <div class="site-container hero__grid">
+    <div class="hero__copy">
+      <p class="eyebrow"><span></span>{page.hero.eyebrow}</p>
+      <h1>{page.hero.heading}</h1>
+      <p class="hero__summary">{page.hero.summary}</p>
+      <div class="hero__actions">
+        <ActionLink action="evaluation" locale={page.locale} />
+        <a class="action-link action-link--secondary" href={servicesHref}>
+          <span>{copy.heroExploreServices}</span><span aria-hidden="true">→</span>
+        </a>
+      </div>
+      <p class="hero__note">
+        <span aria-hidden="true">✓</span>
+        {copy.heroNote}
+      </p>
+    </div>
+    {page.kind === "home" ? <GrowthPathVisual locale={page.locale} /> : (
+      <div class="hero__signal" aria-hidden="true">
+        <span></span><span></span><span></span><i></i>
+      </div>
+    )}
+  </div>
+</section>

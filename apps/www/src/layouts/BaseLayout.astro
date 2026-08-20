@@ -1,0 +1,63 @@
+---
+import SiteFooter from "../components/SiteFooter.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import { SITE_CHROME } from "../content/site-chrome";
+import type { PublicPage } from "../domain/public-site";
+import { createSeoProjection, createStructuredData, serializeStructuredData } from "../lib/seo";
+import "../styles/global.css";
+
+interface Props {
+  page: PublicPage;
+}
+const { page } = Astro.props;
+const copy = SITE_CHROME[page.locale];
+const origin = Astro.site?.toString() ?? "https://www.sgsllc.com";
+const seo = createSeoProjection(page, origin);
+const structuredData = createStructuredData(page, origin);
+const serializedStructuredData = serializeStructuredData(structuredData);
+const esPage = page.locale === "es" ? seo.canonical : seo.alternate;
+const enPage = page.locale === "en" ? seo.canonical : seo.alternate;
+---
+
+<!doctype html>
+<html lang={page.locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; form-action 'self';" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=()" />
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin" />
+    <meta http-equiv="Cross-Origin-Embedder-Policy" content="credentialless" />
+    <meta http-equiv="Cross-Origin-Resource-Policy" content="same-origin" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#0A2540" />
+    <link rel="icon" type="image/jpeg" href="/brand/sg-solutions-logo.jpg" />
+    <title>{seo.title}</title>
+    <meta name="description" content={seo.description} />
+    <meta name="robots" content={page.publicationState === "published" ? "index,follow" : "noindex,follow"} />
+    <link rel="canonical" href={seo.canonical} />
+    <link rel="alternate" hreflang="es" href={esPage} />
+    <link rel="alternate" hreflang="en" href={enPage} />
+    <link rel="alternate" hreflang="x-default" href="https://www.sgsllc.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="SG Solutions" />
+    <meta property="og:title" content={seo.title} />
+    <meta property="og:description" content={seo.description} />
+    <meta property="og:url" content={seo.canonical} />
+    <meta property="og:locale" content={page.locale === "es" ? "es_US" : "en_US"} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={seo.title} />
+    <meta name="twitter:description" content={seo.description} />
+    <script type="application/ld+json" set:html={serializedStructuredData}></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">{copy.skip}</a>
+    <SiteHeader page={page} />
+    <main id="main-content"><slot /></main>
+    <SiteFooter page={page} />
+    <script is:inline src="/scripts/mobile-navigation.js" defer></script>
+  </body>
+</html>

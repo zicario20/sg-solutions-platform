@@ -1,0 +1,18 @@
+{
+  "name": "@atlas/ui",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "radix-ui": "1.6.7",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-hook-form": "7.84.0"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": { "incremental": true, "plugins": [{ "name": "next" }] },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": [
+    "../../blueprints/**",
+    "../../superpowers-main/**",
+    "../../ui-ux-pro-max-skill-main/**",
+    "../../cyber-neo-main/**",
+    "../../the-architect-main/**",
+    "node_modules/**"
+  ]
+}

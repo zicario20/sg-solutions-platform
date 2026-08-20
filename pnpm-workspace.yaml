@@ -1,0 +1,20 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "!blueprints/**"
+  - "!superpowers-main/**"
+  - "!ui-ux-pro-max-skill-main/**"
+  - "!cyber-neo-main/**"
+  - "!the-architect-main/**"
+
+overrides:
+  esbuild: 0.25.12
+  postcss: 8.5.25
+  sharp: 0.35.3
+
+allowBuilds:
+  "@sentry/cli": true
+  core-js: false
+  esbuild: true
+  protobufjs: false
+  sharp: true

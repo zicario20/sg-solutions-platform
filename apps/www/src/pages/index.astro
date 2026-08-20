@@ -1,0 +1,12 @@
+---
+import PageRenderer from "../components/PageRenderer.astro";
+import { PUBLIC_PAGES } from "../content/site-content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const page = PUBLIC_PAGES.find(
+  (candidate) => candidate.routeKey === "home" && candidate.locale === "es",
+);
+if (!page) throw new Error("Spanish home content is required");
+---
+
+<BaseLayout page={page}><PageRenderer page={page} /></BaseLayout>

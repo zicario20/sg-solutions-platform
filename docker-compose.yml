@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17.10-alpine3.24
+    environment:
+      POSTGRES_DB: "${ATLAS_POSTGRES_DB:-atlas_test}"
+      POSTGRES_PASSWORD: "${ATLAS_POSTGRES_PASSWORD:?Set ATLAS_POSTGRES_PASSWORD in a local untracked .env file}"
+      POSTGRES_USER: "${ATLAS_POSTGRES_USER:-atlas}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    ports:
+      - "${ATLAS_POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - atlas_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  atlas_postgres_data:

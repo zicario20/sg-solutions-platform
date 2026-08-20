@@ -1,0 +1,33 @@
+---
+import { SITE_CHROME } from "../content/site-chrome";
+import type { PublicPage } from "../domain/public-site";
+
+interface Props {
+  page: PublicPage;
+}
+const { page } = Astro.props;
+const copy = SITE_CHROME[page.locale];
+const homeHref = page.locale === "es" ? "/" : "/en/";
+const servicesHref = page.locale === "es" ? "/servicios/" : "/en/services/";
+const items =
+  page.kind === "service"
+    ? [
+        { label: copy.breadcrumbHome, href: homeHref },
+        { label: copy.breadcrumbServices, href: servicesHref },
+        { label: page.hero.heading },
+      ]
+    : [{ label: copy.breadcrumbHome, href: homeHref }, { label: page.hero.heading }];
+---
+
+{page.routeKey !== "home" && (
+  <nav class="breadcrumbs site-container" aria-label={copy.breadcrumbLabel}>
+    <ol>
+      {items.map((item, index) => (
+        <li>
+          {item.href ? <a href={item.href}>{item.label}</a> : <span aria-current="page">{item.label}</span>}
+          {index < items.length - 1 && <span aria-hidden="true">/</span>}
+        </li>
+      ))}
+    </ol>
+  </nav>
+)}

@@ -1,0 +1,22 @@
+{
+  "name": "@atlas/observability",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/exporter-trace-otlp-http": "0.221.0",
+    "@opentelemetry/sdk-node": "0.221.0",
+    "@sentry/nextjs": "10.69.0",
+    "next": "16.2.12",
+    "posthog-js": "1.409.5",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  }
+}

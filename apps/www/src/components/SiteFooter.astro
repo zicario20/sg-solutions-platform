@@ -1,0 +1,42 @@
+---
+import { getChromeBySurface } from "../content/site-chrome";
+import type { PublicPage } from "../domain/public-site";
+import LogoLockup from "./LogoLockup.astro";
+
+interface Props {
+  page: PublicPage;
+}
+
+const { page } = Astro.props;
+const copy = getChromeBySurface(page.locale, page.surface);
+const homeHref = page.surface === "client"
+  ? page.locale === "es" ? "/client/dashboard/" : "/en/client/dashboard/"
+  : page.surface === "admin"
+    ? page.locale === "es" ? "/admin/dashboard/" : "/en/admin/dashboard/"
+    : page.locale === "es" ? "/" : "/en/";
+---
+
+<footer class="site-footer">
+  <div class="site-container footer-grid">
+    <div class="footer-brand">
+      <a href={homeHref} aria-label="SG Solutions"><LogoLockup /></a>
+      <p>{copy.footerSummary}</p>
+    </div>
+    <div>
+      <h2>{copy.footerServices}</h2>
+      <ul>{copy.footerLinks.services.map((item) => <li><a href={item.href}>{item.label}</a></li>)}</ul>
+    </div>
+    <div>
+      <h2>{copy.footerCompany}</h2>
+      <ul>{copy.footerLinks.company.map((item) => <li><a href={item.href}>{item.label}</a></li>)}</ul>
+    </div>
+    <div>
+      <h2>{copy.footerPolicies}</h2>
+      <ul>{copy.footerLinks.policies.map((item) => <li><a href={item.href}>{item.label}</a></li>)}</ul>
+    </div>
+  </div>
+  <div class="site-container footer-bottom">
+    <p>© {new Date().getFullYear()} SG Solutions LLC.</p>
+    <p>{copy.disclosure}</p>
+  </div>
+</footer>

@@ -1,0 +1,17 @@
+---
+interface Props {
+  compact?: boolean;
+}
+
+const { compact = false } = Astro.props;
+---
+
+<span class:list={["logo-lockup", { "logo-lockup--compact": compact }]}>
+  <img
+    src="/brand/sg-solutions-logo.jpg"
+    width="1024"
+    height="1024"
+    alt="SG Solutions LLC"
+    decoding="async"
+  />
+</span>

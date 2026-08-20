@@ -1,0 +1,47 @@
+---
+import { SITE_CHROME } from "../content/site-chrome";
+import type { Locale } from "../domain/public-site";
+import {
+  type PublicAction,
+  type PublicActionEnvironment,
+  resolvePublicAction,
+} from "../lib/actions";
+
+interface Props {
+  action: PublicAction;
+  locale: Locale;
+  variant?: "primary" | "secondary" | "text";
+  label?: string;
+}
+
+const { action, locale, variant = "primary", label } = Astro.props;
+const environment: PublicActionEnvironment = {
+  evaluationUrl: import.meta.env.PUBLIC_EVALUATION_URL,
+  quoteUrl: import.meta.env.PUBLIC_QUOTE_URL,
+  clientPortalUrl: import.meta.env.PUBLIC_CLIENT_PORTAL_URL,
+  allowedHosts: (import.meta.env.PUBLIC_ACTION_ALLOWED_HOSTS ?? "")
+    .split(",")
+    .map((host: string) => host.trim())
+    .filter(Boolean),
+};
+const resolution = resolvePublicAction(action, locale, environment);
+const copy = SITE_CHROME[locale];
+const text =
+  label ??
+  (action === "evaluation"
+    ? copy.primaryAction
+    : action === "quote"
+      ? copy.secondaryAction
+      : copy.portal);
+---
+
+<a
+  class:list={["action-link", `action-link--${variant}`]}
+  href={resolution.href}
+  data-action={action}
+  data-action-available={String(resolution.available)}
+  rel={resolution.external ? "external noopener noreferrer" : undefined}
+>
+  <span>{text}</span>
+  {action !== "clientPortal" && <span aria-hidden="true">→</span>}
+</a>

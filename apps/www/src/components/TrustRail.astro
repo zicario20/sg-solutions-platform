@@ -1,0 +1,14 @@
+---
+import { SITE_CHROME } from "../content/site-chrome";
+import type { Locale } from "../domain/public-site";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const copy = SITE_CHROME[locale];
+---
+
+<aside class="trust-rail" aria-label={copy.trustLabel}>
+  <div class="site-container"><ul>{copy.trustItems.map((item) => <li><span aria-hidden="true">✓</span>{item}</li>)}</ul></div>
+</aside>
