@@ -40,10 +40,29 @@ const MIME_TYPE = /^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,63}\/[A-Za-z0-9][A-Za-z0-9
 const CHECKSUM = /^[a-f0-9]{64}$/u;
 const TEMPLATE_NAME = /^[a-z0-9][a-z0-9_]{0,511}$/u;
 const LANGUAGE_CODE = /^(?:en|es)_[A-Z]{2}$/u;
-const BCP47_LANGUAGE = /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8}){0,3}$/u;
 const MAX_JSON_DEPTH = 20;
 const MAX_JSON_COLLECTION_ENTRIES = 64;
 const MAX_JSON_STRING_CODE_UNITS = 8_192;
+// Provider callback timestamps are exact Unix seconds. The floor excludes legacy/impossible data,
+// while five minutes of forward skew permits ordinary clock drift without accepting future events.
+const MIN_PROVIDER_UNIX_SECONDS = 1_577_836_800;
+const MAX_PROVIDER_FUTURE_SKEW_SECONDS = 300;
+// These statuses prove the provider rejected the request before accepting a message. Timeouts,
+// throttling, conflict, redirects, informational responses and server failures remain ambiguous.
+const PRE_ACCEPTANCE_REJECTION_STATUSES = new Set([
+  400,
+  401,
+  403,
+  404,
+  405,
+  406,
+  410,
+  411,
+  413,
+  414,
+  415,
+  422,
+]);
 
 class DuplicateJsonKeyError extends Error {}
 
@@ -220,15 +239,25 @@ function isString(value: unknown, minimum: number, maximum: number): value is st
   );
 }
 
-function parseTimestamp(value: unknown): Date | null {
-  if (typeof value !== "string" || !/^[0-9]{10,13}$/u.test(value)) return null;
-  const date = new Date(Number(value) * 1_000);
+function plausibleUnixSeconds(value: number, verifiedAt: Date): boolean {
+  return (
+    Number.isSafeInteger(value) &&
+    value >= MIN_PROVIDER_UNIX_SECONDS &&
+    value <= Math.floor(verifiedAt.valueOf() / 1_000) + MAX_PROVIDER_FUTURE_SKEW_SECONDS
+  );
+}
+
+function parseTimestamp(value: unknown, verifiedAt: Date): Date | null {
+  if (typeof value !== "string" || !/^[1-9][0-9]{9}$/u.test(value)) return null;
+  const seconds = Number(value);
+  if (!plausibleUnixSeconds(seconds, verifiedAt)) return null;
+  const date = new Date(seconds * 1_000);
   return Number.isNaN(date.valueOf()) ? null : date;
 }
 
-function parseNumericTimestamp(value: unknown): Date | null {
-  if (!Number.isSafeInteger(value) || (value as number) < 1_000_000_000) return null;
-  const date = new Date((value as number) * 1_000);
+function parseNumericTimestamp(value: unknown, verifiedAt: Date): Date | null {
+  if (typeof value !== "number" || !plausibleUnixSeconds(value, verifiedAt)) return null;
+  const date = new Date(value * 1_000);
   return Number.isNaN(date.valueOf()) ? null : date;
 }
 
@@ -329,7 +358,7 @@ function normalizeMessage(
     ) {
       return unsupported(context, "malformed_payload");
     }
-    const occurredAt = parseTimestamp(status.timestamp);
+    const occurredAt = parseTimestamp(status.timestamp, context.verifiedAt);
     if (!occurredAt) return unsupported(context, "malformed_payload");
     const state = status.status as "delivered" | "failed" | "read" | "sent";
     return Object.freeze({
@@ -355,7 +384,7 @@ function normalizeMessage(
   ) {
     return unsupported(context, "malformed_payload");
   }
-  const occurredAt = parseTimestamp(message.timestamp);
+  const occurredAt = parseTimestamp(message.timestamp, context.verifiedAt);
   if (!occurredAt) return unsupported(context, "malformed_payload");
   const base = {
     connectionId: context.connectionId,
@@ -481,7 +510,19 @@ function normalizeTemplate(
   value: JsonRecord,
   entryTime: unknown,
   context: ResolvedVerifiedWebhookContext,
-): UnsupportedVerifiedEnvelope {
+): CanonicalProviderEnvelope | UnsupportedVerifiedEnvelope {
+  const statusByEvent = {
+    APPROVED: "provider_approved",
+    DISABLED: "disabled",
+    PAUSED: "paused",
+    REJECTED: "provider_rejected",
+  } as const;
+  const categoryByProvider = {
+    AUTHENTICATION: "authentication",
+    MARKETING: "marketing",
+    UTILITY: "utility",
+  } as const;
+
   if (
     !hasOnlyKeys(value, [
       "event",
@@ -490,24 +531,89 @@ function normalizeTemplate(
       "message_template_language",
       "message_template_category",
       "message_template_components",
+      "message_template_version",
       "reason",
     ]) ||
-    !isString(value.event, 1, 64) ||
+    typeof value.event !== "string" ||
+    !(value.event in statusByEvent) ||
     !EXTERNAL_IDENTIFIER.test(String(value.message_template_id ?? "")) ||
-    !isString(value.message_template_name, 1, 512) ||
+    typeof value.message_template_name !== "string" ||
+    !TEMPLATE_NAME.test(value.message_template_name) ||
     typeof value.message_template_language !== "string" ||
-    !BCP47_LANGUAGE.test(value.message_template_language) ||
-    (value.message_template_category !== undefined &&
-      !["AUTHENTICATION", "MARKETING", "UTILITY"].includes(String(value.message_template_category))) ||
-    (value.message_template_components !== undefined &&
-      !Array.isArray(value.message_template_components)) ||
-    (value.reason !== undefined && value.reason !== null && !isString(value.reason, 0, 1_024)) ||
-    !parseNumericTimestamp(entryTime)
+    !/^(?:en|es)_[A-Z]{2}$/u.test(value.message_template_language) ||
+    typeof value.message_template_category !== "string" ||
+    !(value.message_template_category in categoryByProvider) ||
+    !Array.isArray(value.message_template_components) ||
+    !/^[1-9][0-9]{0,8}$/u.test(String(value.message_template_version ?? "")) ||
+    (value.reason !== undefined && value.reason !== null && !isString(value.reason, 0, 1_024))
   ) {
-    return unsupported(context, "malformed_payload");
+    return unsupported(context, "template_manual_review");
   }
 
-  return unsupported(context, "template_manual_review");
+  const providerTimestamp = parseNumericTimestamp(entryTime, context.verifiedAt);
+  const providerVersion = String(value.message_template_version);
+  const version = Number(providerVersion);
+  const components: { type: "body" | "footer" | "header"; format?: "text"; text: string }[] = [];
+  const seenTypes = new Set<string>();
+  for (const candidate of value.message_template_components) {
+    if (!isRecord(candidate) || typeof candidate.type !== "string" || seenTypes.has(candidate.type)) {
+      return unsupported(context, "template_manual_review");
+    }
+    seenTypes.add(candidate.type);
+    if (
+      candidate.type === "HEADER" &&
+      hasOnlyKeys(candidate, ["type", "format", "text"]) &&
+      candidate.format === "TEXT" &&
+      isString(candidate.text, 1, 1_024)
+    ) {
+      components.push({ type: "header", format: "text", text: candidate.text });
+      continue;
+    }
+    if (
+      (candidate.type === "BODY" || candidate.type === "FOOTER") &&
+      hasOnlyKeys(candidate, ["type", "text"]) &&
+      isString(candidate.text, 1, 4_096)
+    ) {
+      components.push({
+        type: candidate.type === "BODY" ? "body" : "footer",
+        text: candidate.text,
+      });
+      continue;
+    }
+    return unsupported(context, "template_manual_review");
+  }
+  if (!providerTimestamp || !Number.isSafeInteger(version) || !seenTypes.has("BODY")) {
+    return unsupported(context, "template_manual_review");
+  }
+
+  const status = statusByEvent[value.event as keyof typeof statusByEvent];
+  const category =
+    categoryByProvider[value.message_template_category as keyof typeof categoryByProvider];
+  const locale = value.message_template_language.startsWith("en_") ? "en" : "es";
+  const providerReference = String(value.message_template_id);
+  const templateKey = value.message_template_name;
+  const frozenComponents = Object.freeze(components.map((component) => Object.freeze(component)));
+  return Object.freeze({
+    kind: "template_projection",
+    connectionId: context.connectionId,
+    externalEventReference: `${providerReference}:${value.event}:${providerVersion}`,
+    receivedAt: new Date(context.verifiedAt),
+    correlationId: context.correlationId,
+    projection: Object.freeze({
+      templateId: templateKey,
+      locale,
+      state: status,
+      version,
+      updatedAt: new Date(providerTimestamp),
+      providerReference,
+      templateKey,
+      category,
+      components: frozenComponents,
+      status,
+      providerVersion,
+      providerTimestamp: new Date(providerTimestamp),
+    }),
+  });
 }
 
 function normalizePayload(
@@ -678,6 +784,14 @@ async function readBoundedResponse(
   return combined;
 }
 
+async function cancelResponseBody(response: Response): Promise<void> {
+  try {
+    await response.body?.cancel();
+  } catch {
+    // Cancellation is best-effort; response details remain unread and are never logged.
+  }
+}
+
 function acceptedReference(raw: Uint8Array): string | null {
   const parsed = parseProviderJson(raw);
   if (parsed.status !== "parsed" || !isRecord(parsed.value)) return null;
@@ -723,7 +837,7 @@ export function createMetaCloudAdapter(options: MetaCloudAdapterOptions): WhatsA
         messageLookup: false,
         statusReconciliation: false,
         mediaReferences: true,
-        templateProjection: false,
+        templateProjection: true,
         get observedAt(): Date {
           return new Date(observedAt);
         },
@@ -794,14 +908,16 @@ export function createMetaCloudAdapter(options: MetaCloudAdapterOptions): WhatsA
         return { status: "dispatch_unknown", reason: "acceptance_ambiguous" };
       }
 
-      if ((response.status >= 300 && response.status < 400) || response.status >= 500) {
-        return { status: "dispatch_unknown", reason: "acceptance_ambiguous" };
-      }
-      if (!response.ok) {
+      const status = response.status;
+      if (!Number.isInteger(status) || status < 200 || status > 299) {
+        await cancelResponseBody(response);
+        if (!PRE_ACCEPTANCE_REJECTION_STATUSES.has(status)) {
+          return { status: "dispatch_unknown", reason: "acceptance_ambiguous" };
+        }
         return {
           status: "confirmed_not_sent",
           reason: "provider_rejected",
-          statusCode: response.status,
+          statusCode: status,
         };
       }
       const rawResponse = await readBoundedResponse(response, options.maxProviderResponseBytes, signal);

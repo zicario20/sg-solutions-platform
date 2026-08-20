@@ -14,6 +14,7 @@ export type VerifyMetaWebhookInput = {
   readonly raw: Uint8Array;
   readonly signatureHeader: string | undefined;
   readonly appSecret: string;
+  readonly maxRawBodyBytes: number;
   readonly connectionId: string;
   readonly businessAccountId: string;
   readonly phoneNumberId: string;
@@ -118,6 +119,14 @@ export function verifyMetaWebhookSignature(
 export function verifyMetaWebhook(input: VerifyMetaWebhookInput): MetaWebhookVerificationResult {
   if (
     !(input.raw instanceof Uint8Array) ||
+    !Number.isSafeInteger(input.maxRawBodyBytes) ||
+    input.maxRawBodyBytes <= 0 ||
+    input.raw.byteLength > input.maxRawBodyBytes
+  ) {
+    return { status: "rejected", reason: "verification_rejected" };
+  }
+
+  if (
     !IDENTIFIER.test(input.connectionId) ||
     !PROVIDER_IDENTIFIER.test(input.businessAccountId) ||
     !PROVIDER_IDENTIFIER.test(input.phoneNumberId) ||

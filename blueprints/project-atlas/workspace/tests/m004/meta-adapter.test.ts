@@ -36,6 +36,7 @@ function verifiedContext(
     phoneNumberId: overrides.phoneNumberId ?? PHONE_NUMBER_ID,
     correlationId: "correlation_synthetic_meta",
     verifiedAt: OBSERVED_AT,
+    maxRawBodyBytes: 64 * 1024,
   });
   if (result.status !== "verified") throw new Error("synthetic fixture failed verification");
   return result.context;
@@ -79,20 +80,30 @@ function statusPayload(status: Record<string, unknown>) {
   };
 }
 
-function templatePayload(event = "APPROVED") {
+function templatePayload(
+  overrides: Record<string, unknown> = {},
+  entryTime: number = 1_786_661_700,
+) {
   return {
     object: "whatsapp_business_account",
     entry: [{
       id: BUSINESS_ACCOUNT_ID,
-      time: 1_786_661_700,
+      time: entryTime,
       changes: [{
         field: "message_template_status_update",
         value: {
-          event,
+          event: "APPROVED",
           message_template_id: "300000000000003",
-          message_template_name: "PRIVATE-TEMPLATE-NAME",
-          message_template_language: "en-US",
+          message_template_name: "synthetic_appointment_notice",
+          message_template_language: "en_US",
           message_template_category: "UTILITY",
+          message_template_components: [
+            { type: "HEADER", format: "TEXT", text: "Synthetic header" },
+            { type: "BODY", text: "Synthetic body" },
+            { type: "FOOTER", text: "Synthetic footer" },
+          ],
+          message_template_version: "3",
+          ...overrides,
         },
       }],
     }],
@@ -137,6 +148,24 @@ function textCommand(overrides: Partial<ProviderDispatchCommand> = {}): Provider
     idempotencyKey: "idempotency_dispatch_synthetic",
     content: { kind: "text", body: "Synthetic hello" },
     ...overrides,
+  };
+}
+
+function controlledUnreadResponse(status: number) {
+  const marker = `PRIVATE-UNREAD-STATUS-${String(status)}`;
+  const cancel = vi.fn(async () => undefined);
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode(marker));
+    },
+    cancel,
+  });
+  const getReader = vi.spyOn(body, "getReader");
+  return {
+    response: { status, body } as unknown as Response,
+    cancel,
+    getReader,
+    marker,
   };
 }
 
@@ -192,9 +221,15 @@ describe("inactive Meta Cloud adapter normalization", () => {
       messageLookup: false,
       statusReconciliation: false,
       mediaReferences: true,
-      templateProjection: false,
+      templateProjection: true,
       observedAt: OBSERVED_AT,
-      supportedInboundKinds: ["text_message", "interactive_reply", "message_status", "media_reference"],
+      supportedInboundKinds: [
+        "text_message",
+        "interactive_reply",
+        "message_status",
+        "media_reference",
+        "template_projection",
+      ],
       supportedStatusKinds: ["sent", "delivered", "read", "failed"],
     });
     expect(Object.isFrozen(snapshot)).toBe(true);
@@ -300,22 +335,94 @@ describe("inactive Meta Cloud adapter normalization", () => {
     },
   );
 
-  it.each(["APPROVED", "REJECTED", "PAUSED", "DISABLED", "MYSTERY_STATUS"])(
-    "keeps the WABA-level template %s callback minimized and manual until activation review",
-    async (event) => {
-      const raw = rawJson(templatePayload(event));
-      const result = await createAdapter().normalizeVerifiedEvent(raw, verifiedContext(raw));
-      expect(result).toEqual({
-        kind: "unsupported_verified",
-        connectionId: CONNECTION_ID,
-        reason: "template_manual_review",
-        receivedAt: OBSERVED_AT,
-        correlationId: "correlation_synthetic_meta",
-      });
-      expect(JSON.stringify(result)).not.toContain(event);
-      expect(JSON.stringify(result)).not.toContain("PRIVATE-TEMPLATE-NAME");
-    },
+  it("normalizes the exact complete approved template callback into a canonical projection", async () => {
+    const raw = rawJson(templatePayload());
+
+    await expect(createAdapter().normalizeVerifiedEvent(raw, verifiedContext(raw))).resolves.toEqual({
+      kind: "template_projection",
+      connectionId: CONNECTION_ID,
+      externalEventReference: "300000000000003:APPROVED:3",
+      receivedAt: OBSERVED_AT,
+      correlationId: "correlation_synthetic_meta",
+      projection: {
+        templateId: "synthetic_appointment_notice",
+        locale: "en",
+        state: "provider_approved",
+        version: 3,
+        updatedAt: new Date("2026-08-13T22:55:00.000Z"),
+        providerReference: "300000000000003",
+        templateKey: "synthetic_appointment_notice",
+        category: "utility",
+        components: [
+          { type: "header", format: "text", text: "Synthetic header" },
+          { type: "body", text: "Synthetic body" },
+          { type: "footer", text: "Synthetic footer" },
+        ],
+        status: "provider_approved",
+        providerVersion: "3",
+        providerTimestamp: new Date("2026-08-13T22:55:00.000Z"),
+      },
+    });
+  });
+
+  it.each([
+    ["REJECTED", "provider_rejected"],
+    ["PAUSED", "paused"],
+    ["DISABLED", "disabled"],
+  ])("normalizes complete %s template callback without activating it", async (event, state) => {
+    const raw = rawJson(templatePayload({ event }));
+
+    const result = await createAdapter().normalizeVerifiedEvent(raw, verifiedContext(raw));
+    expect(result).toMatchObject({
+      kind: "template_projection",
+      projection: { state, status: state },
+    });
+    expect(result).not.toMatchObject({ projection: { state: "provider_approved" } });
+  });
+
+  it.each([
+    ["unknown status", { event: "MYSTERY_STATUS" }, 1_786_661_700],
+    ["regressive pending status", { event: "PENDING" }, 1_786_661_700],
+    ["zero provider version", { message_template_version: "0" }, 1_786_661_700],
+    ["missing components", { message_template_components: undefined }, 1_786_661_700],
+    ["non-canonical locale", { message_template_language: "en-US" }, 1_786_661_700],
+    ["millisecond entry time", {}, 1_786_661_700_000],
+    ["far-future entry time", {}, 4_102_444_800],
+  ])("keeps %s template callback minimized for manual review", async (_label, overrides, time) => {
+    const raw = rawJson(templatePayload(overrides, time));
+    const result = await createAdapter().normalizeVerifiedEvent(raw, verifiedContext(raw));
+    expect(result).toEqual({
+      kind: "unsupported_verified",
+      connectionId: CONNECTION_ID,
+      reason: "template_manual_review",
+      receivedAt: OBSERVED_AT,
+      correlationId: "correlation_synthetic_meta",
+    });
+    expect(JSON.stringify(result)).not.toContain("MYSTERY_STATUS");
+    expect(JSON.stringify(result)).not.toContain("synthetic_appointment_notice");
+  },
   );
+
+  it.each([
+    ["millisecond timestamp", "1786661700000"],
+    ["overflow timestamp", "99999999999999999999"],
+    ["pre-plausibility timestamp", "0999999999"],
+    ["far-future timestamp", "4102444800"],
+    ["beyond receipt skew", "1786663201"],
+  ])("rejects an official message carrying a %s", async (_label, timestamp) => {
+    const raw = rawJson(messagePayload({
+      from: "15550000001",
+      id: "wamid.synthetic.timestamp",
+      timestamp,
+      type: "text",
+      text: { body: "safe" },
+    }));
+
+    await expect(createAdapter().normalizeVerifiedEvent(raw, verifiedContext(raw))).resolves.toMatchObject({
+      kind: "unsupported_verified",
+      reason: "malformed_payload",
+    });
+  });
 
   it.each([
     ["account", { businessAccountId: "999999999999999", phoneNumberId: PHONE_NUMBER_ID }],
@@ -462,14 +569,46 @@ describe("inactive Meta Cloud adapter dispatch", () => {
     expect(fetchImplementation).not.toHaveBeenCalled();
   });
 
-  it("returns bounded known rejection for 4xx without reading response details into the result", async () => {
-    const result = await createAdapter(vi.fn(async () => new Response(
-      JSON.stringify({ error: { message: "PRIVATE-RESPONSE", token: ACCESS_TOKEN } }),
-      { status: 400 },
-    ))).dispatch(textCommand(), new AbortController().signal);
-    expect(result).toEqual({ status: "confirmed_not_sent", reason: "provider_rejected", statusCode: 400 });
-    expect(JSON.stringify(result)).not.toContain("PRIVATE");
-    expect(JSON.stringify(result)).not.toContain(ACCESS_TOKEN);
+  it.each([400, 401, 403, 404, 405, 406, 410, 411, 413, 414, 415, 422])(
+    "treats documented pre-acceptance rejection status %s as confirmed_not_sent and cancels unread body",
+    async (statusCode) => {
+      const { response, cancel, getReader, marker } = controlledUnreadResponse(statusCode);
+      const result = await createAdapter(vi.fn(async () => response))
+        .dispatch(textCommand(), new AbortController().signal);
+
+      expect(result).toEqual({ status: "confirmed_not_sent", reason: "provider_rejected", statusCode });
+      expect(cancel).toHaveBeenCalledTimes(1);
+      expect(getReader).not.toHaveBeenCalled();
+      expect(JSON.stringify(result)).not.toContain(marker);
+    },
+  );
+
+  it.each([0, 199, 302, 408, 409, 418, 429, 500, 503, 599, 600, Number.NaN, 418.5])(
+    "treats uncertain HTTP status %s as dispatch_unknown and cancels unread body",
+    async (statusCode) => {
+      const { response, cancel, getReader, marker } = controlledUnreadResponse(statusCode);
+      const result = await createAdapter(vi.fn(async () => response))
+        .dispatch(textCommand(), new AbortController().signal);
+
+      expect(result).toEqual({ status: "dispatch_unknown", reason: "acceptance_ambiguous" });
+      expect(cancel).toHaveBeenCalledTimes(1);
+      expect(getReader).not.toHaveBeenCalled();
+      expect(JSON.stringify(result)).not.toContain(marker);
+    },
+  );
+
+  it("treats an abort thrown after fetch begins as ambiguous", async () => {
+    const controller = new AbortController();
+    const fetchImplementation = vi.fn(async () => {
+      controller.abort();
+      throw new DOMException("PRIVATE-ABORT", "AbortError");
+    });
+
+    await expect(createAdapter(fetchImplementation as unknown as typeof fetch)
+      .dispatch(textCommand(), controller.signal)).resolves.toEqual({
+      status: "dispatch_unknown",
+      reason: "acceptance_ambiguous",
+    });
   });
 
   it.each([

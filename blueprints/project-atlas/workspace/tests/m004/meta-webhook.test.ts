@@ -18,6 +18,7 @@ function webhookInput(raw: Uint8Array, signatureHeader: string | undefined = sig
     raw,
     signatureHeader,
     appSecret: APP_SECRET,
+    maxRawBodyBytes: 64 * 1024,
     connectionId: "connection_synthetic_meta",
     businessAccountId: "100000000000001",
     phoneNumberId: "200000000000002",
@@ -132,5 +133,33 @@ describe("Meta webhook verification", () => {
 
     expect(result).toEqual({ status: "rejected", reason: "verification_rejected" });
     expect(JSON.stringify(result)).not.toContain("PRIVATE");
+  });
+
+  it.each([0, -1, 1.5, Number.POSITIVE_INFINITY])(
+    "requires a positive safe-integer raw-body limit instead of treating %s as configured",
+    (maxRawBodyBytes) => {
+      const raw = new TextEncoder().encode('{"safe":true}');
+
+      expect(verifyMetaWebhook({ ...webhookInput(raw), maxRawBodyBytes })).toEqual({
+        status: "rejected",
+        reason: "verification_rejected",
+      });
+    },
+  );
+
+  it("rejects an oversized body before copying or hashing its bytes", () => {
+    const raw = new Uint8Array(32);
+    Object.defineProperty(raw, Symbol.iterator, {
+      value: () => {
+        throw new Error("raw bytes were copied before the size gate");
+      },
+    });
+
+    expect(
+      verifyMetaWebhook({
+        ...webhookInput(raw, `sha256=${"0".repeat(64)}`),
+        maxRawBodyBytes: 31,
+      }),
+    ).toEqual({ status: "rejected", reason: "verification_rejected" });
   });
 });

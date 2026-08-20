@@ -177,6 +177,7 @@ export type ProviderInboundKind =
   | "interactive_reply"
   | "media_reference"
   | "message_status"
+  | "template_projection"
   | "text_message";
 
 export type ProviderStatusKind = "delivered" | "failed" | "read" | "sent";
@@ -187,7 +188,7 @@ export type ProviderCapabilitySnapshot = {
   readonly messageLookup: false;
   readonly statusReconciliation: false;
   readonly mediaReferences: true;
-  readonly templateProjection: false;
+  readonly templateProjection: true;
   readonly observedAt: Date;
   readonly supportedInboundKinds: readonly ProviderInboundKind[];
   readonly supportedStatusKinds: readonly ProviderStatusKind[];
@@ -219,6 +220,7 @@ export const META_SUPPORTED_INBOUND_KINDS = Object.freeze([
   "interactive_reply",
   "message_status",
   "media_reference",
+  "template_projection",
 ] satisfies readonly ProviderInboundKind[]);
 
 export const META_SUPPORTED_STATUS_KINDS = Object.freeze([
