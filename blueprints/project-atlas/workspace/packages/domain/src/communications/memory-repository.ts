@@ -1089,6 +1089,16 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     } else if (receipt.owner !== "consent" || receipt.operation !== "contact_withdrawal") {
       return { status: "denied", code: "withdrawal_evidence_invalid" };
     }
+    const prior = this.withdrawalHistory.find((record) => record.receiptId === receipt.receiptId);
+    if (
+      prior &&
+      (prior.bindingId !== input.bindingId ||
+        prior.source !== evidence.source ||
+        prior.correlationId !== receipt.correlationId ||
+        prior.eventId !== (evidence.source === "inbound_event" ? evidence.receipt.eventId : undefined))
+    ) {
+      return { status: "denied", code: "withdrawal_evidence_invalid" };
+    }
     return {
       status: "allowed",
       record: {

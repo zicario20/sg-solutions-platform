@@ -105,6 +105,23 @@ describe("Postgres communications transaction contract", () => {
     expect(storeSource.match(/evaluateOutboundPolicy\(/gu)).toHaveLength(2);
   });
 
+  it("owns each contact withdrawal receipt once and links purpose-local projections", () => {
+    const withdrawSource = storeSource.slice(
+      storeSource.indexOf("async withdrawContact("),
+      storeSource.indexOf("async resolveAmbiguousOptOutFromReceipt("),
+    );
+    expect(schemaSource).toContain('contactEvidenceEventId: text("contact_evidence_event_id")');
+    expect(schemaSource).toContain("'contact_withdrawal_recorded'");
+    expect(schemaSource).toContain(
+      'unique("communication_contact_evidence_events_receipt_unique").on(table.evidenceReceiptId)',
+    );
+    expect(schemaSource).toContain("communication_contact_evidence_events_contact_binding_fk");
+    expect(withdrawSource.match(/appendContactWithdrawalEvidence\(/gu)).toHaveLength(1);
+    expect(withdrawSource).toContain("contactEvidenceEventId: contactEvidence.id");
+    expect(storeSource).toContain("on conflict (evidence_receipt_id) do nothing");
+    expect(storeSource).toContain("where event_kind = 'contact_withdrawal_recorded'");
+  });
+
   it("hardens both receipt tables with scoped policy, FORCE RLS, revokes, and least privilege", () => {
     expect(schemaSource).toContain("communicationsCommandScope(table.commandId)");
     const securityMigration = readFileSync(

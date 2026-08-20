@@ -42,7 +42,7 @@ async function seedScenario(scenario: string): Promise<void> {
     `;
     for (const [index, binding] of seed.bindings!.entries()) {
       const policy = seed.policies![index]!;
-      const consent = seed.consents![index]!;
+      const consents = seed.consents!.filter((consent) => consent.bindingId === binding.bindingId);
     await tx`
       insert into communication_contact_bindings (
         id, connection_id, channel_kind, endpoint_digest, endpoint_digest_key_version,
@@ -56,31 +56,36 @@ async function seedScenario(scenario: string): Promise<void> {
         null, null, null, ${binding.createdAt}, ${binding.updatedAt}
       ) on conflict (id) do nothing
     `;
-    await tx`
-      insert into communication_contact_policies (
-        id, binding_id, purpose, consent_state, fence_state, decision_code,
-        evidence_receipt_id, version, fence, evaluated_at, created_at, updated_at
-      ) values (
-        ${policy.policyId}, ${binding.bindingId}, 'transactional', ${consent.state},
-        ${policy.state}, 'allowed', ${consent.receipt!.receiptId}, ${policy.version},
-        ${policy.fence}, ${policy.updatedAt}, ${binding.createdAt}, ${policy.updatedAt}
-      ) on conflict (binding_id, purpose) do nothing
-    `;
-    await tx`
-      insert into communication_contact_evidence_events (
-        id, binding_id, sequence, event_kind, purpose, consent_state, fence_state,
-        binding_trust_state, review_resolution, evidence_receipt_id, receipt_kind,
-        owning_domain, authority_role, authority_version, triggering_event_id,
-        policy_version, correlation_id, receipt_issued_at, receipt_valid_until,
-        occurred_at, created_at
-      ) values (
-        ${`evidence_${ids.bindingId}`}, ${binding.bindingId}, 1, 'consent_granted',
-        'transactional', 'granted', 'normal', null, null, ${consent.receipt!.receiptId},
-        'consent_evidence', 'M078', 'consent', ${consent.version}, null, null,
-        ${`consent_correlation_${ids.bindingId}`}, ${consent.receipt!.issuedAt},
-        ${consent.receipt!.expiresAt}, ${consent.changedAt}, ${consent.changedAt}
-      ) on conflict (evidence_receipt_id) do nothing
-    `;
+      for (const [consentIndex, consent] of consents.entries()) {
+        await tx`
+          insert into communication_contact_policies (
+            id, binding_id, purpose, consent_state, fence_state, decision_code,
+            evidence_receipt_id, version, fence, evaluated_at, created_at, updated_at
+          ) values (
+            ${`${policy.policyId}_${consent.purpose}`}, ${binding.bindingId}, ${consent.purpose},
+            ${consent.state}, ${policy.state}, 'allowed', ${consent.receipt!.receiptId},
+            ${policy.version}, ${policy.fence}, ${policy.updatedAt}, ${binding.createdAt},
+            ${policy.updatedAt}
+          ) on conflict (binding_id, purpose) do nothing
+        `;
+        await tx`
+          insert into communication_contact_evidence_events (
+            id, binding_id, sequence, event_kind, purpose, consent_state, fence_state,
+            binding_trust_state, review_resolution, evidence_receipt_id, receipt_kind,
+            owning_domain, authority_role, authority_version, triggering_event_id,
+            policy_version, correlation_id, receipt_issued_at, receipt_valid_until,
+            occurred_at, created_at
+          ) values (
+            ${`evidence_${ids.bindingId}_${consent.purpose}`}, ${binding.bindingId},
+            ${consentIndex + 1}, 'consent_granted', ${consent.purpose}, 'granted', 'normal',
+            null, null, ${consent.receipt!.receiptId}, 'consent_evidence', 'M078',
+            'consent', ${consent.version}, null, null,
+            ${`consent_correlation_${ids.bindingId}_${consent.purpose}`},
+            ${consent.receipt!.issuedAt}, ${consent.receipt!.expiresAt},
+            ${consent.changedAt}, ${consent.changedAt}
+          ) on conflict (evidence_receipt_id) do nothing
+        `;
+      }
     }
     await tx`
       insert into communication_message_templates (

@@ -92,6 +92,13 @@
       "when": 1787255710919,
       "tag": "0012_m004_inbound_processing_version_parity",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1787256657727,
+      "tag": "0013_m004_contact_withdrawal_evidence",
+      "breakpoints": true
     }
   ]
 }

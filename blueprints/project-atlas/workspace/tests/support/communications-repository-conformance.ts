@@ -58,26 +58,34 @@ export function communicationsConformanceSeed(scenario: string): CommunicationsS
     fence: 42,
     updatedAt: CONFORMANCE_NOW,
   });
-  const consent = (bindingId: string, discriminator: string) => ({
+  const consent = (
+    bindingId: string,
+    discriminator: string,
+    purpose: "transactional" | "service" = "transactional",
+  ) => ({
     bindingId,
-    purpose: "transactional" as const,
+    purpose,
     state: "granted" as const,
     version: 1,
     receipt: {
-      receiptId: `consent_${discriminator}_${suffix(scenario)}`,
+      receiptId: `consent_${discriminator}_${purpose}_${suffix(scenario)}`,
       owner: "consent" as const,
       operation: "consent_confirmation" as const,
       bindingId,
       issuedAt: CONFORMANCE_NOW,
       expiresAt: CONFORMANCE_TOMORROW,
     },
-    authorityReceiptId: `consent_${discriminator}_${suffix(scenario)}`,
+    authorityReceiptId: `consent_${discriminator}_${purpose}_${suffix(scenario)}`,
     changedAt: CONFORMANCE_NOW,
   });
   return {
     bindings: [binding(value.bindingId), binding(value.secondaryBindingId)],
     policies: [policy(value.bindingId, "primary"), policy(value.secondaryBindingId, "secondary")],
-    consents: [consent(value.bindingId, "primary"), consent(value.secondaryBindingId, "secondary")],
+    consents: [
+      consent(value.bindingId, "primary"),
+      consent(value.bindingId, "primary", "service"),
+      consent(value.secondaryBindingId, "secondary"),
+    ],
     connections: [{ channel: "whatsapp", state: "active" }],
     templates: [
       {
@@ -160,7 +168,11 @@ async function withHarness<T>(
   }
 }
 
-async function queueOutbound(repository: CommunicationsRepository, scenario: string) {
+async function queueOutbound(
+  repository: CommunicationsRepository,
+  scenario: string,
+  policy = { version: 7, fence: 42 },
+) {
   const value = communicationsConformanceIds(scenario);
   const templateId = `template_${suffix(scenario)}`;
   await repository.acceptInbound(inbound(scenario));
@@ -202,8 +214,8 @@ async function queueOutbound(repository: CommunicationsRepository, scenario: str
     repository.finalizeOutbound({
       commandId: value.commandId,
       fingerprint: "c".repeat(64),
-      requiredPolicyVersion: 7,
-      requiredFence: 42,
+      requiredPolicyVersion: policy.version,
+      requiredFence: policy.fence,
       endpointDigests: [{ version: "endpoint.v1", digest: "b".repeat(64) }],
       authorizationReceipt: {
         receiptId: `dispatch_${suffix(scenario)}`,
@@ -830,6 +842,112 @@ export function runCommunicationsRepositoryConformance(
             eventId: inboundReceipt.eventId,
           });
         }
+      });
+    });
+
+    it("atomically withdraws multiple purpose histories from one contact evidence receipt", async () => {
+      await withHarness(factory, `${label}-contact-withdrawal`, async ({ repository, inspectState }) => {
+        const scenario = `${label}-contact-withdrawal`;
+        const value = communicationsConformanceIds(scenario);
+        for (const purpose of ["transactional", "service"] as const) {
+          await expect(repository.grantConsentFromReceipt({
+            bindingId: value.bindingId,
+            purpose,
+            operation: "consent_grant",
+            receipt: {
+              receiptId: `grant_${purpose}_${suffix(scenario)}`,
+              owner: "consent",
+              operation: "consent_grant",
+              bindingId: value.bindingId,
+              issuedAt: CONFORMANCE_NOW,
+              expiresAt: CONFORMANCE_TOMORROW,
+            },
+            now: CONFORMANCE_NOW,
+          })).resolves.toMatchObject({ status: "changed", version: 2 });
+        }
+        await expect(repository.grantConsentFromReceipt({
+          bindingId: value.bindingId,
+          purpose: "transactional",
+          operation: "consent_grant",
+          receipt: {
+            receiptId: `grant_transactional_next_${suffix(scenario)}`,
+            owner: "consent",
+            operation: "consent_grant",
+            bindingId: value.bindingId,
+            issuedAt: CONFORMANCE_NOW,
+            expiresAt: CONFORMANCE_TOMORROW,
+          },
+          now: CONFORMANCE_NOW,
+        })).resolves.toMatchObject({ status: "changed", version: 3 });
+        const preQueue = await repository.referenceState();
+        const policy = preQueue.policies
+          .filter((record) => record.bindingId === value.bindingId)
+          .reduce((latest, record) => record.version > latest.version ? record : latest);
+        const queued = await queueOutbound(repository, scenario, {
+          version: policy.version,
+          fence: policy.fence,
+        });
+        const receipt = {
+          receiptId: `contact_withdrawal_${suffix(scenario)}`,
+          owner: "consent" as const,
+          operation: "contact_withdrawal" as const,
+          bindingId: value.bindingId,
+          issuedAt: CONFORMANCE_NOW,
+          expiresAt: CONFORMANCE_TOMORROW,
+          correlationId: `withdrawal_${suffix(scenario)}`,
+        };
+        await expect(repository.withdrawContact({
+          bindingId: value.bindingId,
+          evidence: { source: "authority", receipt },
+          now: CONFORMANCE_NOW,
+        })).resolves.toMatchObject({
+          status: "changed",
+          cancelledCommandIds: [queued.commandId],
+        });
+        const after = inspectState ? await inspectState() : await repository.referenceState();
+        for (const [purpose, version] of [["transactional", 4], ["service", 3]] as const) {
+          expect(after.consentHistory
+            .filter((record) => record.bindingId === value.bindingId && record.purpose === purpose)
+            .at(-1))
+            .toMatchObject({
+              state: "withdrawn",
+              version,
+              authorityReceiptId: undefined,
+            });
+        }
+        expect(after.withdrawalHistory.filter((record) => record.receiptId === receipt.receiptId))
+          .toEqual([
+            expect.objectContaining({
+              bindingId: value.bindingId,
+              source: "authority",
+              receiptId: receipt.receiptId,
+              correlationId: receipt.correlationId,
+            }),
+          ]);
+        expect(after.policies
+          .filter((record) => record.bindingId === value.bindingId)
+          .every((record) => record.state === "withdrawn"))
+          .toBe(true);
+        expect(after.outbound).toContainEqual(expect.objectContaining({
+          commandId: queued.commandId,
+          state: "cancelled",
+        }));
+        await expect(repository.withdrawContact({
+          bindingId: value.bindingId,
+          evidence: { source: "authority", receipt },
+          now: CONFORMANCE_NOW,
+        })).resolves.toMatchObject({ status: "duplicate", cancelledCommandIds: [] });
+        await expect(repository.withdrawContact({
+          bindingId: value.bindingId,
+          evidence: {
+            source: "authority",
+            receipt: { ...receipt, correlationId: `${receipt.correlationId}_mismatch` },
+          },
+          now: CONFORMANCE_NOW,
+        })).resolves.toEqual({ status: "denied", code: "withdrawal_evidence_invalid" });
+        const finalState = inspectState ? await inspectState() : await repository.referenceState();
+        expect(finalState.withdrawalHistory.filter((record) => record.receiptId === receipt.receiptId))
+          .toHaveLength(1);
       });
     });
   });

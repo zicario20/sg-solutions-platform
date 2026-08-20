@@ -1243,6 +1243,40 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         );
         if (!source[0]) return { status: "denied", code: "withdrawal_evidence_invalid" } as const;
       }
+      const storedEvidence = (
+        await query<{
+          id: string;
+          binding_id: string;
+          owning_domain: string;
+          authority_role: string;
+          triggering_event_id: string | null;
+          correlation_id: string;
+          receipt_issued_at: Date;
+          receipt_valid_until: Date;
+        }>(
+          tx,
+          `select id, binding_id, owning_domain, authority_role, triggering_event_id,
+             correlation_id, receipt_issued_at, receipt_valid_until
+           from communication_contact_evidence_events
+           where evidence_receipt_id = $1 and event_kind = 'contact_withdrawal_recorded'
+           for update`,
+          [receipt.receiptId],
+        )
+      )[0];
+      const expectedDomain = evidence.source === "inbound_event" ? "M004" : "M078";
+      const expectedRole = evidence.source === "inbound_event" ? "channel_policy_detection" : "consent";
+      const expectedEventId = evidence.source === "inbound_event" ? evidence.receipt.eventId : null;
+      const storedEvidenceMatches = storedEvidence &&
+        storedEvidence.binding_id === input.bindingId &&
+        storedEvidence.owning_domain === expectedDomain &&
+        storedEvidence.authority_role === expectedRole &&
+        storedEvidence.triggering_event_id === expectedEventId &&
+        storedEvidence.correlation_id === receipt.correlationId &&
+        storedEvidence.receipt_issued_at.getTime() === receipt.issuedAt.getTime() &&
+        storedEvidence.receipt_valid_until.getTime() === receipt.expiresAt.getTime();
+      if (storedEvidence && !storedEvidenceMatches) {
+        return { status: "denied", code: "withdrawal_evidence_invalid" } as const;
+      }
       if (policies.length > 0 && policies.every((policy) => policy.fence_state === "withdrawn")) {
         return {
           status: "duplicate",
@@ -1256,33 +1290,41 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       if (evidencePolicies.length === 0) {
         return { status: "denied", code: "withdrawal_evidence_invalid" } as const;
       }
+      if (storedEvidence) {
+        return { status: "denied", code: "withdrawal_evidence_invalid" } as const;
+      }
+      const contactEvidence = await this.appendContactWithdrawalEvidence(tx, {
+        bindingId: input.bindingId,
+        receiptId: receipt.receiptId,
+        owningDomain: expectedDomain,
+        authorityRole: expectedRole,
+        triggeringEventId: expectedEventId ?? undefined,
+        correlationId: receipt.correlationId,
+        issuedAt: receipt.issuedAt,
+        expiresAt: receipt.expiresAt,
+        occurredAt: input.now,
+      });
+      if (!contactEvidence) {
+        return { status: "denied", code: "withdrawal_evidence_invalid" } as const;
+      }
       for (const evidencePolicy of evidencePolicies) {
         const latestConsent = (
-          await query<{ authority_version: number }>(
+          await query<{ authority_version: number; consent_state: string }>(
             tx,
-            `select authority_version from communication_contact_evidence_events
+            `select authority_version, consent_state from communication_contact_evidence_events
              where binding_id = $1 and purpose = $2
                and event_kind in ('consent_granted', 'consent_regranted', 'consent_withdrawn')
              order by sequence desc limit 1 for update`,
             [input.bindingId, evidencePolicy.purpose],
           )
         )[0];
-        await this.appendEvidence(tx, {
+        if (!latestConsent || latestConsent.consent_state !== "granted") continue;
+        await this.appendConsentWithdrawalProjection(tx, {
           bindingId: input.bindingId,
-          eventKind: "consent_withdrawn",
           purpose: evidencePolicy.purpose,
-          consentState: "withdrawn",
-          fenceState: "withdrawn",
-          receiptId: receipt.receiptId,
-          receiptKind: "contact_withdrawal",
-          owningDomain: evidence.source === "inbound_event" ? "M004" : "M078",
-          authorityRole: evidence.source === "inbound_event" ? "channel_policy_detection" : "consent",
-          authorityVersion: (latestConsent?.authority_version ?? 0) + 1,
-          correlationId: receipt.correlationId,
-          issuedAt: receipt.issuedAt,
-          expiresAt: receipt.expiresAt,
+          authorityVersion: latestConsent.authority_version + 1,
+          contactEvidenceEventId: contactEvidence.id,
           occurredAt: input.now,
-          triggeringEventId: evidence.source === "inbound_event" ? evidence.receipt.eventId : undefined,
         });
       }
       const cancelled = await query<{ id: string }>(
@@ -1754,7 +1796,7 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
           query<Record<string, unknown>>(tx, `select binding_id as "bindingId", purpose, consent_state as state, authority_version as version, case when event_kind = 'consent_withdrawn' then null else evidence_receipt_id end as "authorityReceiptId", occurred_at as "changedAt" from communication_contact_evidence_events where purpose is not null order by binding_id, sequence`),
           query<Record<string, unknown>>(tx, `select template_key as "templateId", locale, definition_version as "definitionVersion", internally_approved as "internallyApproved", approval_receipt_id as "approvalReceiptId", provider_receipt_id as "providerReceiptId", provider_correlation_id as "providerCorrelationId", state as "providerState", projection_version as "providerVersion", updated_at as "updatedAt" from communication_message_templates order by template_key, locale`),
           query<Record<string, unknown>>(tx, `select command_id as "commandId", provider_event_id as "providerEventId", status, occurred_at as "occurredAt" from communication_provider_status_receipts order by command_id, provider_event_id`),
-          query<Record<string, unknown>>(tx, `select binding_id as "bindingId", case when owning_domain = 'M004' then 'inbound_event' else 'authority' end as source, evidence_receipt_id as "receiptId", triggering_event_id as "eventId", correlation_id as "correlationId", occurred_at as "changedAt" from communication_contact_evidence_events where event_kind = 'consent_withdrawn' order by binding_id, sequence`),
+          query<Record<string, unknown>>(tx, `select binding_id as "bindingId", case when owning_domain = 'M004' then 'inbound_event' else 'authority' end as source, evidence_receipt_id as "receiptId", triggering_event_id as "eventId", correlation_id as "correlationId", occurred_at as "changedAt" from communication_contact_evidence_events where event_kind = 'contact_withdrawal_recorded' order by binding_id, sequence`),
         ]);
       return {
         inbound,
@@ -2042,6 +2084,89 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         input.correlationId,
         input.issuedAt,
         input.expiresAt,
+        input.occurredAt,
+      ],
+    );
+  }
+
+  private async appendContactWithdrawalEvidence(
+    tx: TransactionSql,
+    input: {
+      bindingId: string;
+      receiptId: string;
+      owningDomain: string;
+      authorityRole: string;
+      triggeringEventId?: string;
+      correlationId: string;
+      issuedAt: Date;
+      expiresAt: Date;
+      occurredAt: Date;
+    },
+  ): Promise<{ id: string } | undefined> {
+    const sequence = (
+      await query<{ sequence: number }>(
+        tx,
+        `select coalesce(max(sequence), 0)::integer + 1 as sequence
+         from communication_contact_evidence_events where binding_id = $1`,
+        [input.bindingId],
+      )
+    )[0]?.sequence ?? 1;
+    const id = `evidence_${sha256(`${input.bindingId}:${input.receiptId}:contact`).slice(0, 24)}`;
+    return (
+      await query<{ id: string }>(
+        tx,
+        `insert into communication_contact_evidence_events (
+          id, binding_id, sequence, event_kind, purpose, consent_state, fence_state,
+          binding_trust_state, review_resolution, evidence_receipt_id, receipt_kind,
+          owning_domain, authority_role, authority_version, contact_evidence_event_id,
+          triggering_event_id, policy_version, correlation_id, receipt_issued_at,
+          receipt_valid_until, occurred_at, created_at
+        ) values ($1, $2, $3, 'contact_withdrawal_recorded', null, null, null,
+          null, null, $4, 'contact_withdrawal', $5, $6, null, null, $7, null,
+          $8, $9, $10, $11, $11)
+        on conflict (evidence_receipt_id) do nothing returning id`,
+        [id, input.bindingId, sequence, input.receiptId, input.owningDomain,
+          input.authorityRole, input.triggeringEventId ?? null, input.correlationId,
+          input.issuedAt, input.expiresAt, input.occurredAt],
+      )
+    )[0];
+  }
+
+  private async appendConsentWithdrawalProjection(
+    tx: TransactionSql,
+    input: {
+      bindingId: string;
+      purpose: string;
+      authorityVersion: number;
+      contactEvidenceEventId: string;
+      occurredAt: Date;
+    },
+  ): Promise<void> {
+    const sequence = (
+      await query<{ sequence: number }>(
+        tx,
+        `select coalesce(max(sequence), 0)::integer + 1 as sequence
+         from communication_contact_evidence_events where binding_id = $1`,
+        [input.bindingId],
+      )
+    )[0]?.sequence ?? 1;
+    await query(
+      tx,
+      `insert into communication_contact_evidence_events (
+        id, binding_id, sequence, event_kind, purpose, consent_state, fence_state,
+        binding_trust_state, review_resolution, evidence_receipt_id, receipt_kind,
+        owning_domain, authority_role, authority_version, contact_evidence_event_id,
+        triggering_event_id, policy_version, correlation_id, receipt_issued_at,
+        receipt_valid_until, occurred_at, created_at
+      ) values ($1, $2, $3, 'consent_withdrawn', $4, 'withdrawn', 'withdrawn',
+        null, null, null, null, null, null, $5, $6, null, null, null, null, null, $7, $7)`,
+      [
+        `evidence_${sha256(`${input.bindingId}:${sequence}`).slice(0, 24)}`,
+        input.bindingId,
+        sequence,
+        input.purpose,
+        input.authorityVersion,
+        input.contactEvidenceEventId,
         input.occurredAt,
       ],
     );
