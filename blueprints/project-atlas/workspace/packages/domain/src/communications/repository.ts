@@ -279,8 +279,12 @@ export type WithdrawalHistoryRecord = {
   bindingId: string;
   source: ContactWithdrawalEvidence["source"];
   receiptId: string;
+  owner: ContactWithdrawalEvidence["receipt"]["owner"];
+  operation: ContactWithdrawalEvidence["receipt"]["operation"];
   eventId?: string;
   correlationId: string;
+  issuedAt: Date;
+  expiresAt: Date;
   changedAt: Date;
 };
 

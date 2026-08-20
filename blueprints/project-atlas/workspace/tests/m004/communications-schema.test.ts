@@ -292,6 +292,7 @@ describe("M004 canonical communications Drizzle schema", () => {
         "communication_contact_evidence_events_receipt_valid",
         "communication_contact_evidence_events_state_shape_valid",
         "communication_contact_evidence_events_contact_link_valid",
+        "communication_contact_evidence_events_contact_kind_valid",
         "communication_contact_evidence_events_receipt_owner_valid",
         "communication_contact_evidence_events_sequence_positive",
       ],
@@ -391,6 +392,11 @@ describe("M004 canonical communications Drizzle schema", () => {
         (constraint) => constraint.name,
       ),
     ).toContain("communication_audit_events_conversation_sequence_unique");
+    expect(
+      tableConfig("communicationContactEvidenceEvents").uniqueConstraints.map(
+        (constraint) => constraint.name,
+      ),
+    ).toContain("communication_contact_evidence_events_id_binding_kind_unique");
 
     expect(
       tableConfig("communicationParticipants").foreignKeys.map((key) => key.getName()),
@@ -444,6 +450,9 @@ describe("M004 canonical communications Drizzle schema", () => {
         "communication_event_envelopes_binding_connection_channel_fk",
       ]),
     );
+    expect(
+      tableConfig("communicationContactEvidenceEvents").foreignKeys.map((key) => key.getName()),
+    ).toContain("communication_contact_evidence_events_typed_contact_binding_fk");
     expect(
       tableConfig("communicationConversations").indexes.map((value) => value.config.name),
     ).toEqual(
@@ -566,7 +575,7 @@ describe("M004 generated migration authority and canonical cutover", () => {
     const journal = JSON.parse(readFileSync(journalPath, "utf8")) as {
       entries: Array<{ idx: number; tag: string }>;
     };
-    expect(journal.entries.slice(-8).map(({ idx, tag }) => ({ idx, tag }))).toEqual([
+    expect(journal.entries.slice(-9).map(({ idx, tag }) => ({ idx, tag }))).toEqual([
       { idx: 6, tag: "0006_m004_communications_role_bootstrap" },
       { idx: 7, tag: migrations.structural.replace(/\.sql$/u, "") },
       { idx: 8, tag: "0008_m004_communications_backfill" },
@@ -575,14 +584,49 @@ describe("M004 generated migration authority and canonical cutover", () => {
       { idx: 11, tag: "0011_m004_receipt_security_hardening" },
       { idx: 12, tag: "0012_m004_inbound_processing_version_parity" },
       { idx: 13, tag: "0013_m004_contact_withdrawal_evidence" },
+      { idx: 14, tag: "0014_m004_typed_withdrawal_evidence" },
     ]);
-    for (const index of ["0006", "0007", "0008", "0009", "0010", "0011", "0012", "0013"]) {
+    for (const index of [
+      "0006",
+      "0007",
+      "0008",
+      "0009",
+      "0010",
+      "0011",
+      "0012",
+      "0013",
+      "0014",
+    ]) {
       expect(
         existsSync(
           fileURLToPath(new URL(`../../drizzle/meta/${index}_snapshot.json`, import.meta.url)),
         ),
       ).toBe(true);
     }
+  });
+
+  it("generates a typed composite relation for consent-withdrawal evidence", () => {
+    const path = fileURLToPath(
+      new URL("../../drizzle/0014_m004_typed_withdrawal_evidence.sql", import.meta.url),
+    );
+    const sql = readFileSync(path, "utf8");
+    expect(sql).toContain(
+      'ADD COLUMN "contact_evidence_event_kind" varchar(40) DEFAULT \'contact_withdrawal_recorded\' NOT NULL',
+    );
+    expect(sql).toContain(
+      'CONSTRAINT "communication_contact_evidence_events_contact_kind_valid" CHECK ("communication_contact_evidence_events"."contact_evidence_event_kind" = \'contact_withdrawal_recorded\')',
+    );
+    expect(sql).toContain(
+      'CONSTRAINT "communication_contact_evidence_events_id_binding_kind_unique" UNIQUE("id","binding_id","event_kind")',
+    );
+    expect(sql).toContain(
+      'CONSTRAINT "communication_contact_evidence_events_typed_contact_binding_fk" FOREIGN KEY ("contact_evidence_event_id","binding_id","contact_evidence_event_kind") REFERENCES "public"."communication_contact_evidence_events"("id","binding_id","event_kind")',
+    );
+    expect(
+      sql.indexOf("communication_contact_evidence_events_id_binding_kind_unique"),
+    ).toBeLessThan(
+      sql.indexOf("communication_contact_evidence_events_typed_contact_binding_fk"),
+    );
   });
 
   it("forces RLS, denies ambient roles, and grants only the two gateway roles", () => {
@@ -949,7 +993,7 @@ describe.sequential("M004 disposable real-Postgres migration and RLS contract", 
   );
 
   it.runIf(Boolean(freshPostgresUrl))(
-    "rejects PostgreSQL NULL bypasses and a public participant linked to a WhatsApp binding",
+    "rejects PostgreSQL NULL bypasses, untyped withdrawal evidence, and cross-channel bindings",
     async () => {
       if (!freshPostgresUrl) throw new Error("M004_POSTGRES_FRESH_URL_REQUIRED");
       assertDisposablePostgresUrl(freshPostgresUrl);
@@ -957,6 +1001,8 @@ describe.sequential("M004 disposable real-Postgres migration and RLS contract", 
       const suffix = crypto.randomUUID().replaceAll("-", "");
       const connectionId = `connection_null_contract_${suffix}`;
       const bindingId = `binding_null_contract_${suffix}`;
+      const contactWithdrawalEventId = `contact_withdrawal_${suffix}`;
+      const consentGrantEventId = `consent_grant_${suffix}`;
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 30 * 60_000);
       try {
@@ -980,7 +1026,71 @@ describe.sequential("M004 disposable real-Postgres migration and RLS contract", 
               'linked_contact', 'en', 1, 1, ${now}, ${now}
             )
           `;
+          await tx`
+            insert into communication_contact_evidence_events (
+              id, binding_id, sequence, event_kind, purpose, consent_state, fence_state,
+              evidence_receipt_id, receipt_kind, owning_domain, authority_role,
+              authority_version, contact_evidence_event_id, triggering_event_id,
+              policy_version, correlation_id, receipt_issued_at, receipt_valid_until,
+              occurred_at, created_at
+            ) values (
+              ${contactWithdrawalEventId}, ${bindingId}, 1, 'contact_withdrawal_recorded',
+              null, null, null, ${`withdrawal_receipt_${suffix}`}, 'contact_withdrawal',
+              'M078', 'consent', null, null, null, null, ${`withdrawal_correlation_${suffix}`},
+              ${now}, ${expiresAt}, ${now}, ${now}
+            )
+          `;
+          await tx`
+            insert into communication_contact_evidence_events (
+              id, binding_id, sequence, event_kind, purpose, consent_state, fence_state,
+              evidence_receipt_id, receipt_kind, owning_domain, authority_role,
+              authority_version, contact_evidence_event_id, triggering_event_id,
+              policy_version, correlation_id, receipt_issued_at, receipt_valid_until,
+              occurred_at, created_at
+            ) values (
+              ${consentGrantEventId}, ${bindingId}, 2, 'consent_granted', 'transactional',
+              'granted', 'normal', ${`grant_receipt_${suffix}`}, 'consent_evidence',
+              'M078', 'consent', 1, null, null, null, ${`grant_correlation_${suffix}`},
+              ${now}, ${expiresAt}, ${now}, ${now}
+            )
+          `;
+          await tx`
+            insert into communication_contact_evidence_events (
+              id, binding_id, sequence, event_kind, purpose, consent_state, fence_state,
+              evidence_receipt_id, receipt_kind, owning_domain, authority_role,
+              authority_version, contact_evidence_event_id, triggering_event_id,
+              policy_version, correlation_id, receipt_issued_at, receipt_valid_until,
+              occurred_at, created_at
+            ) values (
+              ${`valid_projection_${suffix}`}, ${bindingId}, 3, 'consent_withdrawn',
+              'transactional', 'withdrawn', 'withdrawn', null, null, null, null, 2,
+              ${contactWithdrawalEventId}, null, null, null, null, null, ${now}, ${now}
+            )
+          `;
         });
+
+        for (const kind of ["grant", "self"] as const) {
+          await expect(
+            sql.begin(async (tx) => {
+              await tx.unsafe("set local role atlas_communications_gateway");
+              const projectionId = `invalid_projection_${kind}_${suffix}`;
+              await tx`
+                insert into communication_contact_evidence_events (
+                  id, binding_id, sequence, event_kind, purpose, consent_state, fence_state,
+                  evidence_receipt_id, receipt_kind, owning_domain, authority_role,
+                  authority_version, contact_evidence_event_id, triggering_event_id,
+                  policy_version, correlation_id, receipt_issued_at, receipt_valid_until,
+                  occurred_at, created_at
+                ) values (
+                  ${projectionId}, ${bindingId}, 4, 'consent_withdrawn', 'service',
+                  'withdrawn', 'withdrawn', null, null, null, null, 2,
+                  ${kind === "self" ? projectionId : consentGrantEventId}, null, null, null,
+                  null, null, ${now}, ${now}
+                )
+              `;
+            }),
+          ).rejects.toThrow();
+        }
 
         const invalidEnvelopeCases = [
           {

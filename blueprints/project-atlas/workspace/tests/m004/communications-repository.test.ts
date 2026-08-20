@@ -115,7 +115,10 @@ describe("Postgres communications transaction contract", () => {
     expect(schemaSource).toContain(
       'unique("communication_contact_evidence_events_receipt_unique").on(table.evidenceReceiptId)',
     );
-    expect(schemaSource).toContain("communication_contact_evidence_events_contact_binding_fk");
+    expect(schemaSource).toContain(
+      "communication_contact_evidence_events_typed_contact_binding_fk",
+    );
+    expect(schemaSource).toContain("table.contactEvidenceEventKind");
     expect(withdrawSource.match(/appendContactWithdrawalEvidence\(/gu)).toHaveLength(1);
     expect(withdrawSource).toContain("contactEvidenceEventId: contactEvidence.id");
     expect(storeSource).toContain("on conflict (evidence_receipt_id) do nothing");

@@ -1094,8 +1094,12 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       prior &&
       (prior.bindingId !== input.bindingId ||
         prior.source !== evidence.source ||
+        prior.owner !== receipt.owner ||
+        prior.operation !== receipt.operation ||
         prior.correlationId !== receipt.correlationId ||
-        prior.eventId !== (evidence.source === "inbound_event" ? evidence.receipt.eventId : undefined))
+        prior.eventId !== (evidence.source === "inbound_event" ? evidence.receipt.eventId : undefined) ||
+        prior.issuedAt.getTime() !== receipt.issuedAt.getTime() ||
+        prior.expiresAt.getTime() !== receipt.expiresAt.getTime())
     ) {
       return { status: "denied", code: "withdrawal_evidence_invalid" };
     }
@@ -1105,8 +1109,12 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
         bindingId: input.bindingId,
         source: evidence.source,
         receiptId: receipt.receiptId,
+        owner: receipt.owner,
+        operation: receipt.operation,
         eventId: evidence.source === "inbound_event" ? evidence.receipt.eventId : undefined,
         correlationId: receipt.correlationId,
+        issuedAt: receipt.issuedAt,
+        expiresAt: receipt.expiresAt,
         changedAt: input.now,
       },
     };

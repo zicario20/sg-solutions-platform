@@ -937,6 +937,34 @@ export function runCommunicationsRepositoryConformance(
           evidence: { source: "authority", receipt },
           now: CONFORMANCE_NOW,
         })).resolves.toMatchObject({ status: "duplicate", cancelledCommandIds: [] });
+        const alteredWindowResults = await Promise.all([
+          repository.withdrawContact({
+            bindingId: value.bindingId,
+            evidence: {
+              source: "authority",
+              receipt: {
+                ...receipt,
+                issuedAt: new Date(receipt.issuedAt.getTime() - 1),
+              },
+            },
+            now: CONFORMANCE_NOW,
+          }),
+          repository.withdrawContact({
+            bindingId: value.bindingId,
+            evidence: {
+              source: "authority",
+              receipt: {
+                ...receipt,
+                expiresAt: new Date(receipt.expiresAt.getTime() + 1),
+              },
+            },
+            now: CONFORMANCE_NOW,
+          }),
+        ]);
+        expect(alteredWindowResults).toEqual([
+          { status: "denied", code: "withdrawal_evidence_invalid" },
+          { status: "denied", code: "withdrawal_evidence_invalid" },
+        ]);
         await expect(repository.withdrawContact({
           bindingId: value.bindingId,
           evidence: {
@@ -948,6 +976,12 @@ export function runCommunicationsRepositoryConformance(
         const finalState = inspectState ? await inspectState() : await repository.referenceState();
         expect(finalState.withdrawalHistory.filter((record) => record.receiptId === receipt.receiptId))
           .toHaveLength(1);
+        expect(finalState.withdrawalHistory.at(-1)).toMatchObject({
+          owner: receipt.owner,
+          operation: receipt.operation,
+          issuedAt: receipt.issuedAt,
+          expiresAt: receipt.expiresAt,
+        });
       });
     });
   });

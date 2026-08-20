@@ -481,6 +481,9 @@ export const communicationContactEvidenceEvents = pgTable(
     authorityRole: varchar("authority_role", { length: 32 }),
     authorityVersion: integer("authority_version"),
     contactEvidenceEventId: text("contact_evidence_event_id"),
+    contactEvidenceEventKind: varchar("contact_evidence_event_kind", { length: 40 })
+      .notNull()
+      .default("contact_withdrawal_recorded"),
     triggeringEventId: text("triggering_event_id"),
     policyVersion: varchar("policy_version", { length: 80 }),
     correlationId: text("correlation_id"),
@@ -495,11 +498,15 @@ export const communicationContactEvidenceEvents = pgTable(
       table.sequence,
     ),
     unique("communication_contact_evidence_events_receipt_unique").on(table.evidenceReceiptId),
-    unique("communication_contact_evidence_events_id_binding_unique").on(table.id, table.bindingId),
+    unique("communication_contact_evidence_events_id_binding_kind_unique").on(
+      table.id,
+      table.bindingId,
+      table.eventKind,
+    ),
     foreignKey({
-      name: "communication_contact_evidence_events_contact_binding_fk",
-      columns: [table.contactEvidenceEventId, table.bindingId],
-      foreignColumns: [table.id, table.bindingId],
+      name: "communication_contact_evidence_events_typed_contact_binding_fk",
+      columns: [table.contactEvidenceEventId, table.bindingId, table.contactEvidenceEventKind],
+      foreignColumns: [table.id, table.bindingId, table.eventKind],
     }).onDelete("restrict"),
     check(
       "communication_contact_evidence_events_kind_valid",
@@ -520,6 +527,10 @@ export const communicationContactEvidenceEvents = pgTable(
     check(
       "communication_contact_evidence_events_contact_link_valid",
       sql`(${table.eventKind} = 'consent_withdrawn' and ${table.contactEvidenceEventId} is not null) or (${table.eventKind} <> 'consent_withdrawn' and ${table.contactEvidenceEventId} is null)`,
+    ),
+    check(
+      "communication_contact_evidence_events_contact_kind_valid",
+      sql`${table.contactEvidenceEventKind} = 'contact_withdrawal_recorded'`,
     ),
     check(
       "communication_contact_evidence_events_receipt_owner_valid",
