@@ -260,7 +260,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
             (candidate) => candidate.envelope.event.conversationId === input.envelope.event.conversationId,
           ).length + 1,
         state: "persisted",
-        leaseVersion: 1,
+        leaseVersion: 0,
       };
       this.inboundByReplay.set(replayKey, record);
       this.inboundById.set(input.envelope.event.eventId, record);

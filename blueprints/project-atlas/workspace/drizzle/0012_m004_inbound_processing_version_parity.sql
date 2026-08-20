@@ -1,0 +1,2 @@
+ALTER TABLE "communication_provider_event_receipts" DROP CONSTRAINT "communication_provider_event_receipts_version_positive";--> statement-breakpoint
+ALTER TABLE "communication_provider_event_receipts" ADD CONSTRAINT "communication_provider_event_receipts_processing_version_nonnegative" CHECK ("communication_provider_event_receipts"."processing_version" >= 0);

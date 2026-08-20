@@ -401,13 +401,13 @@ describe("durable leases, attempts and recovery", () => {
       now: NOW,
       requiredPolicyVersion: 7,
     });
-    expect(claim).toMatchObject({ status: "claimed", leaseVersion: 2 });
+    expect(claim).toMatchObject({ status: "claimed", leaseVersion: 1 });
 
     expect(
       await repository.completeInbound({
         eventId: "event_1",
         leaseOwner: "worker_2",
-        leaseVersion: 2,
+        leaseVersion: 1,
         outcome: "applied",
         now: LATER,
       }),
@@ -474,12 +474,12 @@ describe("durable leases, attempts and recovery", () => {
       now: NOW,
       requiredPolicyVersion: 7,
     });
-    expect(inboundClaim).toMatchObject({ status: "claimed", leaseVersion: 2 });
+    expect(inboundClaim).toMatchObject({ status: "claimed", leaseVersion: 1 });
     expect(
       await repository.completeInbound({
         eventId: "event_expiry",
         leaseOwner: "worker_1",
-        leaseVersion: 2,
+        leaseVersion: 1,
         outcome: "applied",
         now: TOMORROW,
       }),
@@ -488,7 +488,7 @@ describe("durable leases, attempts and recovery", () => {
       await repository.completeInbound({
         eventId: "event_expiry",
         leaseOwner: "worker_1",
-        leaseVersion: 2,
+        leaseVersion: 1,
         outcome: "applied",
         now: new Date("invalid"),
       }),

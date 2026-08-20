@@ -513,6 +513,66 @@ export function runCommunicationsRepositoryConformance(
       });
     });
 
+    it("uses zero-based persisted inbound versions and increments every lease claim", async () => {
+      await withHarness(factory, `${label}-inbound-versions`, async ({ repository, inspectState }) => {
+        const scenario = `${label}-inbound-versions`;
+        const command = inbound(scenario);
+        await expect(repository.acceptInbound(command)).resolves.toMatchObject({ status: "accepted" });
+        if (inspectState) {
+          expect((await inspectState()).inbound).toContainEqual(
+            expect.objectContaining({ eventId: command.envelope.event.eventId, leaseVersion: 0 }),
+          );
+        }
+        await expect(repository.claimInbound({
+          eventId: command.envelope.event.eventId,
+          leaseOwner: "first-owner",
+          leaseExpiresAt: CONFORMANCE_LEASE_END,
+          now: CONFORMANCE_NOW,
+          requiredPolicyVersion: 7,
+        })).resolves.toMatchObject({ status: "claimed", leaseVersion: 1 });
+        const reclaimNow = new Date(CONFORMANCE_LEASE_END.getTime() + 1);
+        await expect(repository.claimInbound({
+          eventId: command.envelope.event.eventId,
+          leaseOwner: "second-owner",
+          leaseExpiresAt: new Date(reclaimNow.getTime() + 60_000),
+          now: reclaimNow,
+          requiredPolicyVersion: 7,
+        })).resolves.toMatchObject({ status: "claimed", leaseVersion: 2 });
+      });
+    });
+
+    it("rejects opposite cross-binding provider replays without binding-lock inversion", async () => {
+      await withHarness(factory, `${label}-opposite-replay`, async ({ repository }) => {
+        const scenario = `${label}-opposite-replay`;
+        const value = communicationsConformanceIds(scenario);
+        const primary = inbound(scenario);
+        const secondary = structuredClone(primary);
+        secondary.providerEventId = `meta_evt_${suffix(`${scenario}-secondary`).repeat(2)}`;
+        secondary.providerBodyDigest = "d".repeat(64);
+        secondary.envelope.event.eventId = `event_${suffix(`${scenario}-secondary`)}`;
+        secondary.envelope.event.messageId = `message_${suffix(`${scenario}-secondary`)}`;
+        secondary.envelope.event.bindingId = value.secondaryBindingId;
+        secondary.envelope.message.id = secondary.envelope.event.messageId;
+        secondary.envelope.participant.id = `participant_${suffix(`${scenario}-secondary`)}`;
+        secondary.envelope.participant.bindingId = value.secondaryBindingId;
+        await repository.acceptInbound(primary);
+        await repository.acceptInbound(secondary);
+        const primaryAsSecondary = structuredClone(primary);
+        primaryAsSecondary.envelope.event.bindingId = value.secondaryBindingId;
+        primaryAsSecondary.envelope.participant.bindingId = value.secondaryBindingId;
+        const secondaryAsPrimary = structuredClone(secondary);
+        secondaryAsPrimary.envelope.event.bindingId = value.bindingId;
+        secondaryAsPrimary.envelope.participant.bindingId = value.bindingId;
+        await expect(Promise.all([
+          repository.acceptInbound(primaryAsSecondary),
+          repository.acceptInbound(secondaryAsPrimary),
+        ])).resolves.toEqual([
+          { status: "replay_mismatch", code: "provider_replay_mismatch" },
+          { status: "replay_mismatch", code: "provider_replay_mismatch" },
+        ]);
+      });
+    });
+
     it("uses body identity for honest outbound duplicate states and binding-scoped keys", async () => {
       await withHarness(factory, `${label}-outbound-identity`, async ({ repository }) => {
         const scenario = `${label}-outbound-identity`;
@@ -554,6 +614,11 @@ export function runCommunicationsRepositoryConformance(
         await expect(
           repository.createOutbound({ ...draft, message: { ...draft.message, body: "ALTERED-BODY" } }),
         ).resolves.toEqual({ status: "conflict", code: "idempotency_mismatch" });
+        await expect(repository.createOutbound({
+          ...draft,
+          command: { ...draft.command, locale: "es" },
+          message: { ...draft.message, locale: "es" },
+        })).resolves.toEqual({ status: "conflict", code: "idempotency_mismatch" });
         await expect(repository.finalizeOutbound({
           commandId: value.commandId,
           fingerprint: "c".repeat(64),
@@ -590,6 +655,74 @@ export function runCommunicationsRepositoryConformance(
           },
         };
         await expect(repository.createOutbound(secondary)).resolves.toMatchObject({ status: "created" });
+      });
+    });
+
+    it("serializes concurrent outbound creation to one canonical winner", async () => {
+      const draftFor = (scenario: string, discriminator: string, body: string) => {
+        const value = communicationsConformanceIds(scenario);
+        const identity = suffix(`${scenario}-${discriminator}`);
+        return {
+          command: {
+            commandId: `command_${identity}`,
+            channel: "whatsapp" as const,
+            locale: "en" as const,
+            conversationId: value.conversationId,
+            bindingId: value.bindingId,
+            messageId: `message_${identity}`,
+            idempotencyKey: `race_${suffix(scenario)}`,
+            state: "draft" as const,
+            createdAt: CONFORMANCE_NOW,
+            correlationId: `correlation_${identity}`,
+          },
+          message: {
+            id: `message_${identity}`,
+            conversationId: value.conversationId,
+            channel: "whatsapp" as const,
+            direction: "outbound" as const,
+            senderParticipantId: `participant_system_${suffix(scenario)}`,
+            recipientParticipantId: value.participantId,
+            locale: "en" as const,
+            kind: "text" as const,
+            body,
+            createdAt: CONFORMANCE_NOW,
+          },
+          purpose: "transactional" as const,
+          templateId: `template_${suffix(scenario)}`,
+        };
+      };
+      await withHarness(factory, `${label}-outbound-race-same`, async ({ repository, inspectState }) => {
+        const scenario = `${label}-outbound-race-same`;
+        await repository.acceptInbound(inbound(scenario));
+        const draft = draftFor(scenario, "same", "SAME-BODY");
+        const results = await Promise.all([
+          repository.createOutbound(draft),
+          repository.createOutbound(structuredClone(draft)),
+        ]);
+        expect(results.map((result) => result.status).sort()).toEqual(["created", "duplicate"]);
+        if (inspectState) {
+          expect((await inspectState()).outbound).toEqual([
+            expect.objectContaining({ commandId: draft.command.commandId, state: "draft" }),
+          ]);
+        }
+      });
+      await withHarness(factory, `${label}-outbound-race-altered`, async ({ repository, inspectState }) => {
+        const scenario = `${label}-outbound-race-altered`;
+        await repository.acceptInbound(inbound(scenario));
+        const first = draftFor(scenario, "first", "FIRST-BODY");
+        const second = draftFor(scenario, "second", "SECOND-BODY");
+        const results = await Promise.all([
+          repository.createOutbound(first),
+          repository.createOutbound(second),
+        ]);
+        expect(results.map((result) => result.status).sort()).toEqual(["conflict", "created"]);
+        if (inspectState) {
+          const state = await inspectState();
+          expect(state.outbound).toHaveLength(1);
+          expect([first.command.commandId, second.command.commandId]).toContain(
+            state.outbound[0]?.commandId,
+          );
+        }
       });
     });
 
@@ -682,9 +815,14 @@ export function runCommunicationsRepositoryConformance(
           now: CONFORMANCE_NOW })).resolves.toEqual({ status: "denied", code: "provider_receipt_invalid" });
         if (inspectState) {
           const state = await inspectState();
-          expect(state.consentHistory.some(
-            (record) => record.authorityReceiptId === nextReceipt.receiptId && record.version === 2,
-          )).toBe(true);
+          expect(state.consentHistory
+            .filter((record) => record.bindingId === value.bindingId && record.purpose === "transactional")
+            .slice(-2)
+            .map(({ state, version, authorityReceiptId }) => ({ state, version, authorityReceiptId })))
+            .toEqual([
+              { state: "granted", version: 2, authorityReceiptId: nextReceipt.receiptId },
+              { state: "withdrawn", version: 3, authorityReceiptId: undefined },
+            ]);
           expect(state.withdrawalHistory.at(-1)).toMatchObject({
             bindingId: value.bindingId,
             source: "inbound_event",

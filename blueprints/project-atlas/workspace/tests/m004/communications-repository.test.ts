@@ -71,15 +71,29 @@ describe("Postgres communications transaction contract", () => {
     expect(COMMUNICATIONS_TRANSACTION_SQL.lockPolicy).toContain("for update");
   });
 
-  it("keeps deterministic SQL compatible with positive versions, lock ordering, and canonical references", () => {
-    expect(storeSource).toMatch(/processing_version[^;]+null, 1, null/su);
+  it("keeps deterministic SQL compatible with nonnegative versions, scoped locking, and canonical references", () => {
+    const acceptInboundSource = storeSource.slice(
+      storeSource.indexOf("async acceptInbound("),
+      storeSource.indexOf("async claimInbound("),
+    );
+    const createOutboundSource = storeSource.slice(
+      storeSource.indexOf("async createOutbound("),
+      storeSource.indexOf("async finalizeOutbound("),
+    );
+    expect(storeSource).toMatch(/processing_version[^;]+null, 0, null/su);
+    expect(storeSource).toContain("processing_version = processing_version + 1");
     expect(storeSource).toContain("select id from communication_conversations where id = $1 for update");
     expect(storeSource).toContain("coalesce(max(ordinal), 0)::integer + 1 as ordinal");
     expect(storeSource).toContain("canonicalEndpointReference(");
     expect(storeSource).toContain("then 'inbound_event' else 'authority' end as source");
-    expect(storeSource.indexOf("COMMUNICATIONS_TRANSACTION_SQL.lockBinding")).toBeLessThan(
-      storeSource.indexOf("where binding_id = $1 and idempotency_key = $2"),
+    expect(acceptInboundSource.match(/for update of receipt/gu)).toHaveLength(2);
+    expect(acceptInboundSource).not.toMatch(/limit 1 for update[`\r\n]/u);
+    expect(createOutboundSource.indexOf("COMMUNICATIONS_TRANSACTION_SQL.lockBinding")).toBeLessThan(
+      createOutboundSource.indexOf("where binding_id = $1 and idempotency_key = $2"),
     );
+    expect(createOutboundSource).toContain("existing.locale !== input.command.locale");
+    expect(createOutboundSource).toContain("raced.locale !== input.command.locale");
+    expect(schemaSource).toContain("sql`${table.processingVersion} >= 0`");
     expect(schemaSource).toContain('messageBodyDigest: char("message_body_digest", { length: 64 })');
   });
 

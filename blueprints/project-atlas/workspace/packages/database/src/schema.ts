@@ -867,8 +867,8 @@ export const communicationProviderEventReceipts = pgTable(
       sql`${table.leaseTokenHash} is null or ${table.leaseTokenHash} ~ '^[0-9a-f]{64}$'`,
     ),
     check(
-      "communication_provider_event_receipts_version_positive",
-      sql`${table.processingVersion} > 0`,
+      "communication_provider_event_receipts_processing_version_nonnegative",
+      sql`${table.processingVersion} >= 0`,
     ),
     check(
       "communication_provider_event_receipts_lease_valid",

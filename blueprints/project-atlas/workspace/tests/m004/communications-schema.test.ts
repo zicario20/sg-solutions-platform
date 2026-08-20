@@ -313,6 +313,7 @@ describe("M004 canonical communications Drizzle schema", () => {
         "communication_provider_event_receipts_state_valid",
         "communication_provider_event_receipts_schema_version_valid",
         "communication_provider_event_receipts_external_event_reference_valid",
+        "communication_provider_event_receipts_processing_version_nonnegative",
       ],
       communicationEventEnvelopes: [
         "communication_event_envelopes_kind_valid",
@@ -563,15 +564,16 @@ describe("M004 generated migration authority and canonical cutover", () => {
     const journal = JSON.parse(readFileSync(journalPath, "utf8")) as {
       entries: Array<{ idx: number; tag: string }>;
     };
-    expect(journal.entries.slice(-6).map(({ idx, tag }) => ({ idx, tag }))).toEqual([
+    expect(journal.entries.slice(-7).map(({ idx, tag }) => ({ idx, tag }))).toEqual([
       { idx: 6, tag: "0006_m004_communications_role_bootstrap" },
       { idx: 7, tag: migrations.structural.replace(/\.sql$/u, "") },
       { idx: 8, tag: "0008_m004_communications_backfill" },
       { idx: 9, tag: "0009_m004_communications_cutover_guard" },
       { idx: 10, tag: "0010_m004_communications_canonical_cutover" },
       { idx: 11, tag: "0011_m004_receipt_security_hardening" },
+      { idx: 12, tag: "0012_m004_inbound_processing_version_parity" },
     ]);
-    for (const index of ["0006", "0007", "0008", "0009", "0010", "0011"]) {
+    for (const index of ["0006", "0007", "0008", "0009", "0010", "0011", "0012"]) {
       expect(
         existsSync(
           fileURLToPath(new URL(`../../drizzle/meta/${index}_snapshot.json`, import.meta.url)),

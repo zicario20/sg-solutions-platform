@@ -304,7 +304,7 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
            join communication_event_envelopes envelope on envelope.receipt_id = receipt.id
            join communication_contact_bindings binding on binding.id = envelope.binding_id
            where receipt.connection_id = $1 and receipt.external_event_reference = $2
-           limit 1 for update`,
+           limit 1 for update of receipt`,
           [input.connectionId, input.providerEventId],
         )
       )[0];
@@ -339,7 +339,7 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
           outcome_reason, processing_version, lease_owner_id, lease_token_hash,
           lease_expires_at, received_at, persisted_at, processed_at, created_at, updated_at
         ) values ($1, $2, 'whatsapp', $3, $4, 'text_message', 'persisted',
-          'meta-envelope.v1', true, $5, null, 1, null, null, null, $6, $6, null, $6, $6)
+          'meta-envelope.v1', true, $5, null, 0, null, null, null, $6, $6, null, $6, $6)
         on conflict (connection_id, external_event_reference) do nothing returning id`,
         [envelope.event.eventId, input.connectionId, input.providerEventId,
           input.providerBodyDigest, envelope.event.correlationId, envelope.event.receivedAt],
@@ -604,6 +604,7 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       if (existing) {
         if (
           existing.conversation_id !== input.command.conversationId ||
+          existing.locale !== input.command.locale ||
           existing.message_body_digest !== messageBodyDigest ||
           existing.purpose !== input.purpose ||
           existing.template_key !== input.templateId
@@ -657,6 +658,7 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
             [input.command.bindingId, input.command.idempotencyKey])
         )[0];
         if (!raced || raced.conversation_id !== input.command.conversationId ||
+          raced.locale !== input.command.locale ||
           raced.message_body_digest !== messageBodyDigest || raced.purpose !== input.purpose ||
           raced.template_key !== input.templateId) {
           return { status: "conflict", code: "idempotency_mismatch" } as const;
@@ -1250,25 +1252,39 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
           cancelledCommandIds: [],
         } as const;
       }
-      const evidencePolicy = policies[0];
-      if (!evidencePolicy) return { status: "denied", code: "withdrawal_evidence_invalid" } as const;
-      await this.appendEvidence(tx, {
-        bindingId: input.bindingId,
-        eventKind: "consent_withdrawn",
-        purpose: evidencePolicy.purpose,
-        consentState: "withdrawn",
-        fenceState: "withdrawn",
-        receiptId: receipt.receiptId,
-        receiptKind: "contact_withdrawal",
-        owningDomain: evidence.source === "inbound_event" ? "M004" : "M078",
-        authorityRole: evidence.source === "inbound_event" ? "channel_policy_detection" : "consent",
-        authorityVersion: evidencePolicy.version + 1,
-        correlationId: receipt.correlationId,
-        issuedAt: receipt.issuedAt,
-        expiresAt: receipt.expiresAt,
-        occurredAt: input.now,
-        triggeringEventId: evidence.source === "inbound_event" ? evidence.receipt.eventId : undefined,
-      });
+      const evidencePolicies = policies.filter((policy) => policy.fence_state !== "withdrawn");
+      if (evidencePolicies.length === 0) {
+        return { status: "denied", code: "withdrawal_evidence_invalid" } as const;
+      }
+      for (const evidencePolicy of evidencePolicies) {
+        const latestConsent = (
+          await query<{ authority_version: number }>(
+            tx,
+            `select authority_version from communication_contact_evidence_events
+             where binding_id = $1 and purpose = $2
+               and event_kind in ('consent_granted', 'consent_regranted', 'consent_withdrawn')
+             order by sequence desc limit 1 for update`,
+            [input.bindingId, evidencePolicy.purpose],
+          )
+        )[0];
+        await this.appendEvidence(tx, {
+          bindingId: input.bindingId,
+          eventKind: "consent_withdrawn",
+          purpose: evidencePolicy.purpose,
+          consentState: "withdrawn",
+          fenceState: "withdrawn",
+          receiptId: receipt.receiptId,
+          receiptKind: "contact_withdrawal",
+          owningDomain: evidence.source === "inbound_event" ? "M004" : "M078",
+          authorityRole: evidence.source === "inbound_event" ? "channel_policy_detection" : "consent",
+          authorityVersion: (latestConsent?.authority_version ?? 0) + 1,
+          correlationId: receipt.correlationId,
+          issuedAt: receipt.issuedAt,
+          expiresAt: receipt.expiresAt,
+          occurredAt: input.now,
+          triggeringEventId: evidence.source === "inbound_event" ? evidence.receipt.eventId : undefined,
+        });
+      }
       const cancelled = await query<{ id: string }>(
         tx,
         `update communication_outbound_commands set state = 'cancelled',
@@ -1735,7 +1751,7 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
           query<Record<string, unknown>>(tx, `select id as "attemptId", command_id as "commandId", attempt_ordinal as ordinal, state, case result_code when 'failed' then 'known_failure' when 'dispatch_unknown' then 'unknown' else result_code end as "resultCode", lease_owner_hash as "leaseOwnerHash", lease_version as "leaseVersion", lease_expires_at as "leaseExpiresAt", provider_reference_digest as "providerReferenceDigest", started_at as "startedAt", completed_at as "completedAt" from communication_dispatch_attempts order by command_id, attempt_ordinal`),
           query<Record<string, unknown>>(tx, `select id as "policyId", binding_id as "bindingId", fence_state as state, version, fence, updated_at as "updatedAt" from communication_contact_policies order by id`),
           query<Record<string, unknown>>(tx, `select id as "bindingId", channel_kind as channel, trust_state as "trustState", verification_expires_at as "freshUntil", created_at as "createdAt", updated_at as "updatedAt" from communication_contact_bindings order by id`),
-          query<Record<string, unknown>>(tx, `select binding_id as "bindingId", purpose, consent_state as state, authority_version as version, evidence_receipt_id as "authorityReceiptId", occurred_at as "changedAt" from communication_contact_evidence_events where purpose is not null order by binding_id, sequence`),
+          query<Record<string, unknown>>(tx, `select binding_id as "bindingId", purpose, consent_state as state, authority_version as version, case when event_kind = 'consent_withdrawn' then null else evidence_receipt_id end as "authorityReceiptId", occurred_at as "changedAt" from communication_contact_evidence_events where purpose is not null order by binding_id, sequence`),
           query<Record<string, unknown>>(tx, `select template_key as "templateId", locale, definition_version as "definitionVersion", internally_approved as "internallyApproved", approval_receipt_id as "approvalReceiptId", provider_receipt_id as "providerReceiptId", provider_correlation_id as "providerCorrelationId", state as "providerState", projection_version as "providerVersion", updated_at as "updatedAt" from communication_message_templates order by template_key, locale`),
           query<Record<string, unknown>>(tx, `select command_id as "commandId", provider_event_id as "providerEventId", status, occurred_at as "occurredAt" from communication_provider_status_receipts order by command_id, provider_event_id`),
           query<Record<string, unknown>>(tx, `select binding_id as "bindingId", case when owning_domain = 'M004' then 'inbound_event' else 'authority' end as source, evidence_receipt_id as "receiptId", triggering_event_id as "eventId", correlation_id as "correlationId", occurred_at as "changedAt" from communication_contact_evidence_events where event_kind = 'consent_withdrawn' order by binding_id, sequence`),
@@ -1746,7 +1762,11 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         attempts,
         policies: policies as unknown as CommunicationsReferenceState["policies"],
         bindings: bindings as unknown as CommunicationsReferenceState["bindings"],
-        consentHistory: consentHistory as unknown as CommunicationsReferenceState["consentHistory"],
+        consentHistory: consentHistory.map((record) =>
+          record.authorityReceiptId === null
+            ? { ...record, authorityReceiptId: undefined }
+            : record,
+        ) as unknown as CommunicationsReferenceState["consentHistory"],
         templates: templates as unknown as CommunicationsReferenceState["templates"],
         providerStatuses: statuses as unknown as CommunicationsReferenceState["providerStatuses"],
         withdrawalHistory: withdrawals as unknown as CommunicationsReferenceState["withdrawalHistory"],
