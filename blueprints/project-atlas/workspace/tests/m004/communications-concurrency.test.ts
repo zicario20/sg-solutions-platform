@@ -159,7 +159,7 @@ function createService(repository: any, provider: Record<string, unknown>) {
   });
 }
 
-async function queueOutbound(service: any) {
+async function queueOutbound(service: any, overrides: Record<string, unknown> = {}) {
   return service.queueOutbound({
     channel: "whatsapp",
     locale: "en",
@@ -182,6 +182,7 @@ async function queueOutbound(service: any) {
       expiresAt: TOMORROW,
     },
     correlationId: "correlation_out_1",
+    ...overrides,
   });
 }
 
@@ -1058,5 +1059,160 @@ describe("controlled inbound opt-out and reconciliation races", () => {
       code: "reconciliation_receipt_mismatch",
     });
     expect(repository.referenceState()).toEqual(settledState);
+  });
+
+  it("rejects cross-command attempt pairings before locking or consuming receipt ids", async () => {
+    const base = repositoryOptions();
+    const reconciliationLocks: Array<{ bindingId: string; operation: string }> = [];
+    const repository = createRepository({
+      bindings: [
+        ...base.bindings,
+        {
+          bindingId: "binding_2",
+          channel: "whatsapp",
+          trustState: "reverified",
+          freshUntil: TOMORROW,
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
+      ],
+      policies: [
+        ...base.policies,
+        {
+          policyId: "policy_2",
+          bindingId: "binding_2",
+          state: "normal",
+          version: 7,
+          fence: 42,
+          updatedAt: NOW,
+        },
+      ],
+      consents: [
+        ...base.consents,
+        {
+          bindingId: "binding_2",
+          purpose: "transactional",
+          state: "granted",
+          version: 1,
+          receipt: {
+            receiptId: "consent_receipt_2",
+            owner: "consent",
+            operation: "consent_confirmation",
+            bindingId: "binding_2",
+            issuedAt: NOW,
+            expiresAt: TOMORROW,
+          },
+          changedAt: NOW,
+        },
+      ],
+      lockBoundary: async (input: { bindingId: string; operation: string }) => {
+        if (input.operation === "reconcile_outbound") reconciliationLocks.push(input);
+      },
+    });
+    const service = createService(repository, {
+      dispatch: async () => {
+        throw new Error("ambiguous");
+      },
+    });
+    const commandA = await queueOutbound(service);
+    const commandB = await queueOutbound(service, {
+      bindingId: "binding_2",
+      idempotencyKey: "outbound_key_2",
+      correlationId: "correlation_out_2",
+      authorizationReceipt: {
+        receiptId: "dispatch_receipt_2",
+        owner: "communications",
+        operation: "outbound_dispatch",
+        bindingId: "binding_2",
+        destinationKey: "endpoint_digest_v1",
+        issuedAt: NOW,
+        expiresAt: TOMORROW,
+      },
+    });
+    const attemptA = await service.dispatchOutbound({
+      commandId: commandA.commandId,
+      leaseOwner: "worker_a",
+      leaseExpiresAt: LATER,
+    });
+    const attemptB = await service.dispatchOutbound({
+      commandId: commandB.commandId,
+      leaseOwner: "worker_b",
+      leaseExpiresAt: LATER,
+    });
+    expect(attemptA).toMatchObject({ status: "dispatch_unknown" });
+    expect(attemptB).toMatchObject({ status: "dispatch_unknown" });
+    const beforeCrossPair = repository.referenceState();
+
+    await expect(
+      repository.reconcileOutbound({
+        commandId: commandA.commandId,
+        attemptId: attemptB.attemptId,
+        receipt: reconciliationReceipt({
+          commandId: commandA.commandId,
+          attemptId: attemptB.attemptId,
+          outcome: "reconciled_accepted",
+          receiptId: "receipt_cross_pair_a",
+        }),
+        now: NOW,
+      }),
+    ).resolves.toEqual({ status: "conflict", code: "reconciliation_binding_mismatch" });
+    expect(repository.referenceState()).toEqual(beforeCrossPair);
+    expect(reconciliationLocks).toEqual([]);
+
+    await expect(
+      repository.reconcileOutbound({
+        commandId: commandA.commandId,
+        attemptId: attemptA.attemptId,
+        receipt: reconciliationReceipt({
+          commandId: commandA.commandId,
+          attemptId: attemptA.attemptId,
+          outcome: "reconciled_accepted",
+          receiptId: "receipt_cross_pair_a",
+        }),
+        now: NOW,
+      }),
+    ).resolves.toEqual({ status: "reconciled", commandState: "reconciled_accepted" });
+    expect(reconciliationLocks).toEqual([
+      { bindingId: "binding_1", operation: "reconcile_outbound" },
+    ]);
+
+    const beforeReversePair = repository.referenceState();
+    await expect(
+      repository.reconcileOutbound({
+        commandId: commandB.commandId,
+        attemptId: attemptA.attemptId,
+        receipt: reconciliationReceipt({
+          commandId: commandB.commandId,
+          attemptId: attemptA.attemptId,
+          outcome: "confirmed_not_sent",
+          receiptId: "receipt_cross_pair_b",
+          bindingId: "binding_2",
+          correlationId: "correlation_out_2",
+        }),
+        now: NOW,
+      }),
+    ).resolves.toEqual({ status: "conflict", code: "reconciliation_binding_mismatch" });
+    expect(repository.referenceState()).toEqual(beforeReversePair);
+    expect(reconciliationLocks).toHaveLength(1);
+
+    await expect(
+      repository.reconcileOutbound({
+        commandId: commandB.commandId,
+        attemptId: attemptB.attemptId,
+        receipt: reconciliationReceipt({
+          commandId: commandB.commandId,
+          attemptId: attemptB.attemptId,
+          outcome: "confirmed_not_sent",
+          receiptId: "receipt_cross_pair_b",
+          bindingId: "binding_2",
+          correlationId: "correlation_out_2",
+        }),
+        now: NOW,
+      }),
+    ).resolves.toEqual({ status: "reconciled", commandState: "confirmed_not_sent" });
+    expect(reconciliationLocks).toEqual([
+      { bindingId: "binding_1", operation: "reconcile_outbound" },
+      { bindingId: "binding_2", operation: "reconcile_outbound" },
+    ]);
   });
 });
