@@ -110,8 +110,25 @@ export type FailOutboundDraftCommand = {
   now: Date;
 };
 
+export type OutboundDuplicateReason =
+  | FailOutboundDraftCommand["code"]
+  | "outbound_draft_unresolved"
+  | "outbound_dispatch_in_progress"
+  | "outbound_reconciliation_required"
+  | "outbound_command_failed"
+  | "outbound_command_cancelled"
+  | "outbound_confirmed_not_sent"
+  | "outbound_command_completed";
+
 export type CreateOutboundResult =
-  | { status: "created" | "duplicate"; commandId: string; messageId: string }
+  | { status: "created"; commandId: string; messageId: string }
+  | {
+      status: "duplicate";
+      commandId: string;
+      messageId: string;
+      commandState: OutboundCommandState;
+      reason?: OutboundDuplicateReason;
+    }
   | { status: "conflict"; code: "idempotency_mismatch" };
 
 export type ClaimOutboundCommand = {
@@ -212,6 +229,17 @@ export type ConsentChangeResult =
         | "authority_receipt_invalid"
         | "reconsent_receipt_required"
         | "policy_state_invalid";
+    };
+
+export type AmbiguousOptOutResolutionResult =
+  | {
+      status: "changed";
+      policyState: "normal_after_review";
+      policyVersion: number;
+    }
+  | {
+      status: "denied";
+      code: "authority_receipt_missing" | "authority_receipt_invalid" | "policy_state_invalid";
     };
 
 export type WithdrawContactCommand = {
@@ -421,6 +449,7 @@ export type DispatchReconciliationReceipt = {
   owner: "communications";
   operation: "dispatch_reconciliation";
   source: "provider_lookup" | "manual_authority";
+  bindingId: string;
   commandId: string;
   attemptId: string;
   outcome: DispatchReconciliationOutcome;
@@ -448,6 +477,15 @@ export type ReconcileOutboundResult =
         | "reconciliation_receipt_invalid"
         | "reconciliation_state_invalid";
     }
+  | {
+      status: "conflict";
+      code: "reconciliation_receipt_mismatch" | "reconciliation_binding_mismatch";
+    }
+  | {
+      status: "conflict";
+      code: "reconciliation_already_settled";
+      commandState: "reconciled_accepted" | "confirmed_not_sent" | "failed";
+    }
   | { status: "not_found" };
 
 export interface CommunicationsRepository {
@@ -464,7 +502,9 @@ export interface CommunicationsRepository {
   applyProviderStatus(input: ApplyProviderStatusCommand): Promise<ProviderStatusResult>;
   grantConsentFromReceipt(input: GrantConsentCommand): Promise<ConsentChangeResult>;
   withdrawContact(input: WithdrawContactCommand): Promise<WithdrawContactResult>;
-  resolveAmbiguousOptOutFromReceipt(input: ResolveOptOutCommand): Promise<ConsentChangeResult>;
+  resolveAmbiguousOptOutFromReceipt(
+    input: ResolveOptOutCommand,
+  ): Promise<AmbiguousOptOutResolutionResult>;
   suspendBinding(input: SuspendBindingCommand): Promise<BindingChangeResult>;
   revalidateBindingFromReceipt(input: RevalidateBindingCommand): Promise<BindingChangeResult>;
   reconcileTemplate(input: ReconcileTemplateCommand): Promise<TemplateReconciliationResult>;

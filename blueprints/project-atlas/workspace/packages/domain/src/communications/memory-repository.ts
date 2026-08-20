@@ -91,6 +91,11 @@ type StoredReconciliationResult = {
   commandState: ReconciledCommandState;
 };
 
+type StoredReconciliationReceipt = {
+  identity: string;
+  result: StoredReconciliationResult;
+};
+
 type LockOperation =
   | "accept_inbound"
   | "claim_inbound"
@@ -150,7 +155,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
   private readonly templates = new Map<string, TemplateRecord>();
   private readonly providerStatuses = new Map<string, ApplyProviderStatusCommand>();
   private readonly withdrawalHistory: WithdrawalHistoryRecord[] = [];
-  private readonly reconciliationReceipts = new Map<string, StoredReconciliationResult>();
+  private readonly reconciliationReceipts = new Map<string, StoredReconciliationReceipt>();
   private readonly bindingLockTails = new Map<string, Promise<void>>();
   private readonly lockBoundary?: MemoryCommunicationsRepositoryOptions["lockBoundary"];
 
@@ -272,13 +277,17 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
   async createOutbound(input: CreateOutboundCommand): Promise<CreateOutboundResult> {
     const existing = this.outboundByIdempotency.get(input.command.idempotencyKey);
     if (existing) {
-      return this.sameOutboundDraft(existing, input)
-        ? {
-            status: "duplicate",
-            commandId: existing.command.commandId,
-            messageId: existing.message.id,
-          }
-        : { status: "conflict", code: "idempotency_mismatch" };
+      if (!this.sameOutboundDraft(existing, input)) {
+        return { status: "conflict", code: "idempotency_mismatch" };
+      }
+      const reason = this.outboundDuplicateReason(existing);
+      return {
+        status: "duplicate",
+        commandId: existing.command.commandId,
+        messageId: existing.message.id,
+        commandState: existing.state,
+        ...(reason ? { reason } : {}),
+      };
     }
     const record: OutboundRecord = {
       ...clone(input),
@@ -580,7 +589,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
 
   async resolveAmbiguousOptOutFromReceipt(
     input: ResolveOptOutCommand,
-  ): Promise<ConsentChangeResult> {
+  ): Promise<import("./repository.ts").AmbiguousOptOutResolutionResult> {
     return this.withBindingLock(input.bindingId, "resolve_opt_out", async () => {
       const authority = evaluateAuthorityChange({
         operation: "ambiguous_opt_out_resolution",
@@ -597,13 +606,10 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       policy.version += 1;
       policy.fence += 1;
       policy.updatedAt = input.now;
-      const currentConsent = [...this.consents.values()]
-        .filter((consent) => consent.bindingId === input.bindingId)
-        .sort((left, right) => right.version - left.version)[0];
       return {
-        status: "unchanged",
-        state: currentConsent?.state ?? "not_requested",
-        version: currentConsent?.version ?? 0,
+        status: "changed",
+        policyState: "normal_after_review",
+        policyVersion: policy.version,
       };
     });
   }
@@ -733,18 +739,52 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
 
   async reconcileOutbound(input: ReconcileOutboundCommand): Promise<ReconcileOutboundResult> {
     const found = this.outboundById.get(input.commandId);
-    if (!found) return { status: "not_found" };
+    const foundAttempt = this.attempts.get(input.attemptId);
+    if (!found || !foundAttempt) return { status: "not_found" };
+    if (foundAttempt.commandId !== input.commandId) {
+      return { status: "conflict", code: "reconciliation_binding_mismatch" };
+    }
     return this.withBindingLock(found.command.bindingId, "reconcile_outbound", async () => {
-      if (!input.receipt) {
-        return { status: "denied", code: "reconciliation_receipt_missing" };
-      }
-      const prior = this.reconciliationReceipts.get(input.receipt.receiptId);
-      if (prior) return { status: "duplicate", commandState: prior.commandState };
       const record = this.outboundById.get(input.commandId);
       const attempt = this.attempts.get(input.attemptId);
       if (!record || !attempt) return { status: "not_found" };
-      if (!this.validReconciliationReceipt(input, input.receipt, record.command.correlationId)) {
+      if (
+        attempt.commandId !== input.commandId ||
+        record.command.bindingId !== found.command.bindingId
+      ) {
+        return { status: "conflict", code: "reconciliation_binding_mismatch" };
+      }
+      if (!input.receipt) {
+        return { status: "denied", code: "reconciliation_receipt_missing" };
+      }
+      if (
+        !this.validReconciliationReceipt(
+          input,
+          input.receipt,
+          record.command.bindingId,
+          record.command.correlationId,
+        )
+      ) {
         return { status: "denied", code: "reconciliation_receipt_invalid" };
+      }
+      const identity = this.reconciliationReceiptIdentity(input.receipt);
+      const prior = this.reconciliationReceipts.get(input.receipt.receiptId);
+      if (prior) {
+        if (prior.identity !== identity) {
+          return { status: "conflict", code: "reconciliation_receipt_mismatch" };
+        }
+        return { status: "duplicate", commandState: prior.result.commandState };
+      }
+      if (
+        record.state === "reconciled_accepted" ||
+        record.state === "confirmed_not_sent" ||
+        record.state === "failed"
+      ) {
+        return {
+          status: "conflict",
+          code: "reconciliation_already_settled",
+          commandState: record.state,
+        };
       }
       const expiredDispatch =
         record.state === "dispatching" &&
@@ -771,7 +811,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       attempt.state = commandState;
       attempt.completedAt = input.now;
       const result: StoredReconciliationResult = { status: "reconciled", commandState };
-      this.reconciliationReceipts.set(input.receipt.receiptId, result);
+      this.reconciliationReceipts.set(input.receipt.receiptId, { identity, result });
       return result;
     });
   }
@@ -968,18 +1008,53 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
   private validReconciliationReceipt(
     input: ReconcileOutboundCommand,
     receipt: NonNullable<ReconcileOutboundCommand["receipt"]>,
+    bindingId: string,
     correlationId: string,
   ): boolean {
     return (
       receipt.owner === "communications" &&
       receipt.operation === "dispatch_reconciliation" &&
       (receipt.source === "provider_lookup" || receipt.source === "manual_authority") &&
+      receipt.bindingId === bindingId &&
       receipt.commandId === input.commandId &&
       receipt.attemptId === input.attemptId &&
       receipt.correlationId === correlationId &&
       Boolean(receipt.receiptId) &&
       currentReceipt(receipt, input.now)
     );
+  }
+
+  private reconciliationReceiptIdentity(
+    receipt: NonNullable<ReconcileOutboundCommand["receipt"]>,
+  ): string {
+    return JSON.stringify([
+      receipt.receiptId,
+      receipt.owner,
+      receipt.operation,
+      receipt.source,
+      receipt.bindingId,
+      receipt.commandId,
+      receipt.attemptId,
+      receipt.outcome,
+      receipt.issuedAt.toISOString(),
+      receipt.expiresAt.toISOString(),
+      receipt.correlationId,
+    ]);
+  }
+
+  private outboundDuplicateReason(
+    record: OutboundRecord,
+  ): Extract<CreateOutboundResult, { status: "duplicate" }>["reason"] {
+    if (record.state === "queued") return undefined;
+    if (record.state === "draft") return "outbound_draft_unresolved";
+    if (record.state === "dispatching") return "outbound_dispatch_in_progress";
+    if (record.state === "dispatch_unknown" || record.state === "reconciliation_required") {
+      return "outbound_reconciliation_required";
+    }
+    if (record.state === "failed") return record.failureCode ?? "outbound_command_failed";
+    if (record.state === "cancelled") return "outbound_command_cancelled";
+    if (record.state === "confirmed_not_sent") return "outbound_confirmed_not_sent";
+    return "outbound_command_completed";
   }
 
   private async withBindingLock<T>(

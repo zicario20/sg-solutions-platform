@@ -230,7 +230,50 @@ export class CommunicationsService {
       purpose: input.purpose,
       templateId: input.templateId,
     });
-    if (draft.status !== "created") return draft;
+    if (draft.status === "conflict") return draft;
+    if (draft.status === "duplicate") {
+      if (draft.commandState === "queued") {
+        return {
+          status: "duplicate",
+          commandId: draft.commandId,
+          messageId: draft.messageId,
+        };
+      }
+      if (draft.reason === "outbound_draft_unresolved") {
+        return {
+          status: "in_progress",
+          code: draft.reason,
+          commandId: draft.commandId,
+        };
+      }
+      if (draft.reason === "outbound_dispatch_in_progress") {
+        return {
+          status: "in_progress",
+          code: draft.reason,
+          commandId: draft.commandId,
+        };
+      }
+      if (draft.reason === "outbound_reconciliation_required") {
+        return {
+          status: "recovery_required",
+          code: draft.reason,
+          commandId: draft.commandId,
+        };
+      }
+      if (draft.reason === "outbound_command_completed") {
+        return {
+          status: "already_completed",
+          commandState: draft.commandState,
+          commandId: draft.commandId,
+          messageId: draft.messageId,
+        };
+      }
+      return {
+        status: "unavailable",
+        code: draft.reason ?? "outbound_command_failed",
+        commandId: draft.commandId,
+      };
+    }
     const resolved = await this.resolveDestination(input.bindingId);
     if (resolved.status === "unavailable") {
       await this.dependencies.repository.failOutboundDraft({

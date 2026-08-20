@@ -697,21 +697,29 @@ describe("receipt-gated consent, binding and template behavior", () => {
       evidence: validWithdrawalReceipt(),
       now: NOW,
     });
+    const consentHistoryBeforeReview = repository.referenceState().consentHistory;
 
-    expect(
-      await repository.resolveAmbiguousOptOutFromReceipt({
+    const result = await repository.resolveAmbiguousOptOutFromReceipt({
+      bindingId: "binding_1",
+      receipt: {
+        receiptId: "receipt_opt_out_review_1",
+        owner: "consent",
+        operation: "ambiguous_opt_out_resolution",
         bindingId: "binding_1",
-        receipt: {
-          receiptId: "receipt_opt_out_review_1",
-          owner: "consent",
-          operation: "ambiguous_opt_out_resolution",
-          bindingId: "binding_1",
-          issuedAt: NOW,
-          expiresAt: TOMORROW,
-        },
-        now: NOW,
-      }),
-    ).toEqual({ status: "unchanged", state: "withdrawn", version: 2 });
+        issuedAt: NOW,
+        expiresAt: TOMORROW,
+      },
+      now: NOW,
+    });
+
+    expect(result).toEqual({
+      status: "changed",
+      policyState: "normal_after_review",
+      policyVersion: 9,
+    });
+    expect(result).not.toHaveProperty("state");
+    expect(result).not.toHaveProperty("version");
+    expect(repository.referenceState().consentHistory).toEqual(consentHistoryBeforeReview);
     expect(repository.referenceState().policies[0]).toMatchObject({
       state: "normal_after_review",
     });
@@ -793,5 +801,54 @@ describe("endpoint digest isolation and fail-closed dependencies", () => {
         endpointDigests: undefined,
       }),
     ]);
+    expect(await queueOutbound(fixture.service)).toEqual({
+      status: "unavailable",
+      code: "destination_unavailable",
+      commandId: "outbound_command_1",
+    });
+  });
+
+  it("reports an unresolved duplicate draft without re-running destination resolution", async () => {
+    let resolverCalls = 0;
+    let enterResolver!: () => void;
+    let releaseResolver!: () => void;
+    const resolverEntered = new Promise<void>((resolve) => {
+      enterResolver = resolve;
+    });
+    const resolverReleased = new Promise<void>((resolve) => {
+      releaseResolver = resolve;
+    });
+    const fixture = createService({
+      destinationResolver: {
+        resolve: async () => {
+          resolverCalls += 1;
+          enterResolver();
+          await resolverReleased;
+          return { status: "resolved", endpoint: "raw:endpoint:synthetic" };
+        },
+      },
+    });
+
+    const first = queueOutbound(fixture.service);
+    await resolverEntered;
+    await expect(queueOutbound(fixture.service)).resolves.toEqual({
+      status: "in_progress",
+      code: "outbound_draft_unresolved",
+      commandId: "outbound_command_1",
+    });
+    expect(resolverCalls).toBe(1);
+    releaseResolver();
+    await expect(first).resolves.toMatchObject({ status: "created", commandId: "outbound_command_1" });
+  });
+
+  it("accepts a duplicate only when the stored outbound command is queued", async () => {
+    const fixture = createService();
+    const first = await queueOutbound(fixture.service);
+
+    await expect(queueOutbound(fixture.service)).resolves.toEqual({
+      status: "duplicate",
+      commandId: first.commandId,
+      messageId: first.messageId,
+    });
   });
 });

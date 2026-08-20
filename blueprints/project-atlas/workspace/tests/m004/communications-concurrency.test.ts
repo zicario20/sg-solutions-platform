@@ -44,18 +44,22 @@ function reconciliationReceipt(input: {
   attemptId: string;
   outcome: "reconciled_accepted" | "confirmed_not_sent" | "terminal_failure";
   source?: "provider_lookup" | "manual_authority";
+  receiptId?: string;
+  bindingId?: string;
+  correlationId?: string;
 }) {
   return {
-    receiptId: `receipt_reconcile_${input.outcome}`,
+    receiptId: input.receiptId ?? `receipt_reconcile_${input.outcome}`,
     owner: "communications",
     operation: "dispatch_reconciliation",
     source: input.source ?? "provider_lookup",
+    bindingId: input.bindingId ?? "binding_1",
     commandId: input.commandId,
     attemptId: input.attemptId,
     outcome: input.outcome,
     issuedAt: NOW,
     expiresAt: TOMORROW,
-    correlationId: "correlation_out_1",
+    correlationId: input.correlationId ?? "correlation_out_1",
   };
 }
 
@@ -910,7 +914,7 @@ describe("controlled inbound opt-out and reconciliation races", () => {
     ).toMatchObject({ status: "reconciled", commandState: "confirmed_not_sent" });
   });
 
-  it("serializes competing reconciliation receipts to one converged result", async () => {
+  it("serializes contradictory reconciliation receipts so exactly one settles", async () => {
     const reconcileEntered = deferred();
     const releaseReconcile = deferred();
     const repository = createRepository({
@@ -933,28 +937,126 @@ describe("controlled inbound opt-out and reconciliation races", () => {
       leaseOwner: "worker_1",
       leaseExpiresAt: LATER,
     });
-    const receipt = reconciliationReceipt({
+    const acceptedReceipt = reconciliationReceipt({
       commandId: queued.commandId,
       attemptId: unknown.attemptId,
-      outcome: "terminal_failure",
+      outcome: "reconciled_accepted",
       source: "manual_authority",
+    });
+    const notSentReceipt = reconciliationReceipt({
+      commandId: queued.commandId,
+      attemptId: unknown.attemptId,
+      outcome: "confirmed_not_sent",
+      source: "provider_lookup",
     });
     const first = repository.reconcileOutbound({
       commandId: queued.commandId,
       attemptId: unknown.attemptId,
-      receipt,
+      receipt: acceptedReceipt,
       now: NOW,
     });
     await reconcileEntered.promise;
     const second = repository.reconcileOutbound({
       commandId: queued.commandId,
       attemptId: unknown.attemptId,
-      receipt,
+      receipt: notSentReceipt,
       now: NOW,
     });
     releaseReconcile.resolve();
 
-    await expect(first).resolves.toMatchObject({ status: "reconciled", commandState: "failed" });
-    await expect(second).resolves.toMatchObject({ status: "duplicate", commandState: "failed" });
+    await expect(first).resolves.toEqual({
+      status: "reconciled",
+      commandState: "reconciled_accepted",
+    });
+    await expect(second).resolves.toEqual({
+      status: "conflict",
+      code: "reconciliation_already_settled",
+      commandState: "reconciled_accepted",
+    });
+    expect(repository.referenceState().outbound[0]).toMatchObject({
+      state: "reconciled_accepted",
+    });
+    expect(repository.referenceState().attempts[0]).toMatchObject({
+      state: "reconciled_accepted",
+    });
+  });
+
+  it("replays an identical reconciliation receipt idempotently", async () => {
+    const repository = createRepository();
+    const service = createService(repository, {
+      dispatch: async () => {
+        throw new Error("ambiguous");
+      },
+    });
+    const queued = await queueOutbound(service);
+    const unknown = await service.dispatchOutbound({
+      commandId: queued.commandId,
+      leaseOwner: "worker_1",
+      leaseExpiresAt: LATER,
+    });
+    const receipt = reconciliationReceipt({
+      commandId: queued.commandId,
+      attemptId: unknown.attemptId,
+      outcome: "terminal_failure",
+      source: "manual_authority",
+    });
+
+    await expect(
+      repository.reconcileOutbound({
+        commandId: queued.commandId,
+        attemptId: unknown.attemptId,
+        receipt,
+        now: NOW,
+      }),
+    ).resolves.toEqual({ status: "reconciled", commandState: "failed" });
+    await expect(
+      repository.reconcileOutbound({
+        commandId: queued.commandId,
+        attemptId: unknown.attemptId,
+        receipt,
+        now: NOW,
+      }),
+    ).resolves.toEqual({ status: "duplicate", commandState: "failed" });
+  });
+
+  it("fails closed when a reconciliation receipt id is reused with a different identity", async () => {
+    const repository = createRepository();
+    const service = createService(repository, {
+      dispatch: async () => {
+        throw new Error("ambiguous");
+      },
+    });
+    const queued = await queueOutbound(service);
+    const unknown = await service.dispatchOutbound({
+      commandId: queued.commandId,
+      leaseOwner: "worker_1",
+      leaseExpiresAt: LATER,
+    });
+    const receipt = reconciliationReceipt({
+      commandId: queued.commandId,
+      attemptId: unknown.attemptId,
+      outcome: "reconciled_accepted",
+      receiptId: "receipt_reused",
+    });
+    await repository.reconcileOutbound({
+      commandId: queued.commandId,
+      attemptId: unknown.attemptId,
+      receipt,
+      now: NOW,
+    });
+    const settledState = repository.referenceState();
+
+    await expect(
+      repository.reconcileOutbound({
+        commandId: queued.commandId,
+        attemptId: unknown.attemptId,
+        receipt: { ...receipt, outcome: "confirmed_not_sent" },
+        now: NOW,
+      }),
+    ).resolves.toEqual({
+      status: "conflict",
+      code: "reconciliation_receipt_mismatch",
+    });
+    expect(repository.referenceState()).toEqual(settledState);
   });
 });
