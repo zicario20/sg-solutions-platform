@@ -2,7 +2,6 @@ import type {
   ChannelKind,
   ChannelLocale,
   ChannelMessage,
-  DomainReceipt,
 } from "./contracts.ts";
 import type {
   AcceptInboundResult,
@@ -10,7 +9,6 @@ import type {
   CommunicationsRepository,
   EndpointDigest,
   EvaluateTemplateEligibility,
-  HandoffRequestResult,
   MessageTemplateService,
   ReconcileOutboundCommand,
   ReconcileOutboundResult,
@@ -66,24 +64,10 @@ export interface OutboundProviderPort {
   >;
 }
 
-export interface PublicKnowledgePort {
-  answer(input: { prompt: string; locale: ChannelLocale }): Promise<
-    | { status: "available"; text: string; sourceReceipt?: string }
-    | { status: "unavailable" }
-  >;
-}
-
 export interface ContentPolicyPort {
   evaluate(input: { text: string }):
     | { allowed: true; code: "allowed" }
     | { allowed: false; code: string };
-}
-
-export interface HandoffPort {
-  request(input: {
-    conversationId: string;
-    idempotencyKey: string;
-  }): Promise<HandoffRequestResult>;
 }
 
 export type CommunicationsServiceDependencies = {
@@ -95,12 +79,7 @@ export type CommunicationsServiceDependencies = {
   destinationResolver: DestinationResolutionPort;
   boundedExecutor: BoundedExecutor;
   provider: OutboundProviderPort;
-  publicKnowledge: PublicKnowledgePort;
-  contentPolicy: ContentPolicyPort;
-  handoff: HandoffPort;
   providerTimeoutMs: number;
-  knowledgeTimeoutMs: number;
-  handoffTimeoutMs: number;
 };
 
 export type AcceptInboundApplicationCommand = {
@@ -139,31 +118,8 @@ type EndpointResolution =
     };
 
 const KEY_VERSION = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
-const RECEIPT_ID = /^[a-z][a-z0-9_-]{2,127}$/i;
 const ENDPOINT_DIGEST_DOMAIN = "communications:endpoint-digest:v1\u0000";
 const MAX_PRIOR_ENDPOINT_KEYS = 3;
-
-function validDate(value: Date): boolean {
-  return Number.isFinite(value.getTime());
-}
-
-function validHandoffReceipt(
-  receipt: DomainReceipt | undefined,
-  input: { conversationId: string; idempotencyKey: string; now: Date },
-): boolean {
-  return Boolean(
-    receipt &&
-      receipt.owner === "communications" &&
-      receipt.operation === "handoff" &&
-      RECEIPT_ID.test(receipt.receiptId) &&
-      receipt.resourceId === input.conversationId &&
-      receipt.idempotencyKey === input.idempotencyKey &&
-      validDate(receipt.issuedAt) &&
-      validDate(receipt.expiresAt) &&
-      receipt.issuedAt <= input.now &&
-      receipt.expiresAt > input.now,
-  );
-}
 
 export class CommunicationsService {
   constructor(private readonly dependencies: CommunicationsServiceDependencies) {}
@@ -394,132 +350,6 @@ export class CommunicationsService {
     }
   }
 
-  async processInbound(input: {
-    eventId: string;
-    leaseOwner: string;
-    leaseExpiresAt: Date;
-    requiredPolicyVersion: number;
-    action: "public_knowledge" | "handoff";
-    prompt?: string;
-    idempotencyKey?: string;
-  }): Promise<Record<string, unknown>> {
-    const claim = await this.dependencies.repository.claimInbound({
-      eventId: input.eventId,
-      leaseOwner: input.leaseOwner,
-      leaseExpiresAt: input.leaseExpiresAt,
-      requiredPolicyVersion: input.requiredPolicyVersion,
-      now: this.dependencies.clock.now(),
-    });
-    if (claim.status === "not_claimed") {
-      return { status: "conflict", code: claim.code };
-    }
-    if (claim.policyState === "opt_out_pending" || claim.policyState === "withdrawn") {
-      if (!(await this.completeInbound(claim, input, "applied"))) {
-        return this.inboundCompletionConflict(input.eventId);
-      }
-      return { status: "opt_out_pending", eventId: input.eventId };
-    }
-    if (input.action === "handoff") {
-      const idempotencyKey = input.idempotencyKey ?? "";
-      try {
-        const result = await this.dependencies.boundedExecutor.run(
-          "communications_handoff",
-          this.dependencies.handoffTimeoutMs,
-          () =>
-            this.dependencies.handoff.request({
-              conversationId: claim.envelope.conversation.id,
-              idempotencyKey,
-            }),
-        );
-        if (result.status !== "queued") {
-          if (!(await this.completeInbound(claim, input, "manual_review"))) {
-            return this.inboundCompletionConflict(input.eventId);
-          }
-          return { status: "manual", code: "handoff_unavailable" };
-        }
-        if (
-          !validHandoffReceipt(result.receipt, {
-            conversationId: claim.envelope.conversation.id,
-            idempotencyKey,
-            now: this.dependencies.clock.now(),
-          })
-        ) {
-          if (!(await this.completeInbound(claim, input, "manual_review"))) {
-            return this.inboundCompletionConflict(input.eventId);
-          }
-          return { status: "manual", code: "handoff_receipt_missing" };
-        }
-        if (!(await this.completeInbound(claim, input, "applied"))) {
-          return this.inboundCompletionConflict(input.eventId);
-        }
-        return { status: "handoff_queued", receiptId: result.receipt!.receiptId };
-      } catch {
-        if (!(await this.completeInbound(claim, input, "manual_review"))) {
-          return this.inboundCompletionConflict(input.eventId);
-        }
-        return { status: "manual", code: "handoff_unavailable" };
-      }
-    }
-
-    try {
-      const answer = await this.dependencies.boundedExecutor.run(
-        "communications_public_knowledge",
-        this.dependencies.knowledgeTimeoutMs,
-        () =>
-          this.dependencies.publicKnowledge.answer({
-            prompt: input.prompt ?? "",
-            locale: claim.envelope.event.locale,
-          }),
-      );
-      if (answer.status !== "available") {
-        if (!(await this.completeInbound(claim, input, "manual_review"))) {
-          return this.inboundCompletionConflict(input.eventId);
-        }
-        return { status: "manual", code: "knowledge_unavailable" };
-      }
-      if (!answer.sourceReceipt) {
-        if (!(await this.completeInbound(claim, input, "manual_review"))) {
-          return this.inboundCompletionConflict(input.eventId);
-        }
-        return { status: "manual", code: "knowledge_receipt_missing" };
-      }
-      const decision = this.dependencies.contentPolicy.evaluate({ text: answer.text });
-      if (!decision.allowed) {
-        if (!(await this.completeInbound(claim, input, "manual_review"))) {
-          return this.inboundCompletionConflict(input.eventId);
-        }
-        return { status: "manual", code: "prohibited_content" };
-      }
-      if (!(await this.completeInbound(claim, input, "applied"))) {
-        return this.inboundCompletionConflict(input.eventId);
-      }
-      return {
-        status: "answered",
-        text: answer.text,
-        sourceReceipt: answer.sourceReceipt,
-      };
-    } catch {
-      if (!(await this.completeInbound(claim, input, "manual_review"))) {
-        return this.inboundCompletionConflict(input.eventId);
-      }
-      return { status: "manual", code: "knowledge_unavailable" };
-    }
-  }
-
-  private async completeInbound(
-    claim: Extract<Awaited<ReturnType<CommunicationsRepository["claimInbound"]>>, { status: "claimed" }>,
-    input: { eventId: string; leaseOwner: string },
-    outcome: "applied" | "manual_review" | "dead_letter",
-  ): Promise<boolean> {
-    return (await this.dependencies.repository.completeInbound({
-      eventId: input.eventId,
-      leaseOwner: input.leaseOwner,
-      leaseVersion: claim.leaseVersion,
-      outcome,
-      now: this.dependencies.clock.now(),
-    })) === "completed";
-  }
-
   async reconcileOutbound(
     input: Omit<ReconcileOutboundCommand, "now">,
   ): Promise<ReconcileOutboundResult> {
@@ -527,10 +357,6 @@ export class CommunicationsService {
       ...input,
       now: this.dependencies.clock.now(),
     });
-  }
-
-  private inboundCompletionConflict(eventId: string): Record<string, unknown> {
-    return { status: "recovery_required", code: "inbound_completion_conflict", eventId };
   }
 
   private dispatchCompletionConflict(

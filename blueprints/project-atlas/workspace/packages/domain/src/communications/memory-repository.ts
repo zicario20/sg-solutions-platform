@@ -46,6 +46,11 @@ import type {
   WithdrawContactResult,
   WithdrawalHistoryRecord,
 } from "./repository.ts";
+import {
+  sameVerifiedProviderStatusRecord,
+  type VerifiedProviderStatusReceiptRecord,
+  type VerifiedProviderStatusReceiptResolver,
+} from "./provider-status.ts";
 import type {
   ChannelConnectionState,
   ChannelContactPolicy,
@@ -120,6 +125,7 @@ type LockOperation =
 
 export type MemoryCommunicationsRepositoryOptions = CommunicationsSeed & {
   lockBoundary?: (input: { bindingId: string; operation: LockOperation }) => Promise<void>;
+  providerStatusReceiptResolver?: VerifiedProviderStatusReceiptResolver;
 };
 
 const DELIVERY_RANK: Readonly<Record<"sent" | "delivered" | "read", number>> = {
@@ -192,14 +198,18 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     { channel: ChannelKind; state: ChannelConnectionState }
   >();
   private readonly templates = new Map<string, TemplateRecord>();
-  private readonly providerStatuses = new Map<string, ApplyProviderStatusCommand>();
+  private readonly providerStatuses = new Map<string, VerifiedProviderStatusReceiptRecord>();
   private readonly withdrawalHistory: WithdrawalHistoryRecord[] = [];
   private readonly reconciliationReceipts = new Map<string, StoredReconciliationReceipt>();
   private readonly bindingLockTails = new Map<string, Promise<void>>();
   private readonly lockBoundary?: MemoryCommunicationsRepositoryOptions["lockBoundary"];
+  private readonly providerStatusReceiptResolver: VerifiedProviderStatusReceiptResolver;
 
   constructor(options: MemoryCommunicationsRepositoryOptions = {}) {
     this.lockBoundary = options.lockBoundary;
+    this.providerStatusReceiptResolver = options.providerStatusReceiptResolver ?? {
+      resolve: () => null,
+    };
     for (const binding of options.bindings ?? []) {
       this.bindings.set(binding.bindingId, clone(binding));
     }
@@ -590,23 +600,48 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       attempt.state = state;
       attempt.resultCode = input.outcome;
       attempt.completedAt = input.now;
+      attempt.externalMessageReference = input.providerReference;
       return "completed";
     });
   }
 
   async applyProviderStatus(input: ApplyProviderStatusCommand): Promise<ProviderStatusResult> {
+    const evidence = this.providerStatusReceiptResolver.resolve(input.receipt);
+    if (!evidence) return { status: "denied", code: "verified_receipt_invalid" };
+
     const found = this.outboundById.get(input.commandId);
     if (!found) return { status: "not_found" };
     return this.withBindingLock(found.command.bindingId, "apply_provider_status", async () => {
       const record = this.outboundById.get(input.commandId)!;
-      const eventKey = `${input.commandId}\u0000${input.providerEventId}`;
-      if (this.providerStatuses.has(eventKey)) {
-        return { status: "duplicate", commandState: record.state };
+      const attempt = this.attempts.get(input.attemptId);
+      if (!attempt || attempt.commandId !== input.commandId) return { status: "not_found" };
+      if (
+        record.command.connectionId !== evidence.connectionId ||
+        attempt.externalMessageReference !== evidence.externalMessageReference
+      ) {
+        return { status: "denied", code: "provider_status_binding_mismatch" };
       }
-      this.providerStatuses.set(eventKey, clone(input));
-      if (input.status === "failed") {
+
+      const receiptRecord: VerifiedProviderStatusReceiptRecord = {
+        ...evidence,
+        commandId: input.commandId,
+        attemptId: input.attemptId,
+        externalMessageReferenceDigest: await sha256(evidence.externalMessageReference),
+      };
+      const eventKey = `${evidence.connectionId}\u0000${evidence.providerEventId}`;
+      const prior = this.providerStatuses.get(eventKey);
+      if (prior) {
+        return sameVerifiedProviderStatusRecord(prior, receiptRecord)
+          ? { status: "duplicate", commandState: record.state }
+          : { status: "conflict", code: "provider_status_replay_mismatch" };
+      }
+      this.providerStatuses.set(eventKey, clone(receiptRecord));
+      if (evidence.status === "failed") {
         if (["provider_accepted", "dispatching", "queued"].includes(record.state)) {
-          this.closeActiveAttempt(record, "failed", input.occurredAt);
+          record.state = "failed";
+          record.command.state = "failed";
+          attempt.state = "failed";
+          attempt.completedAt = clone(evidence.occurredAt);
           return { status: "applied", commandState: "failed" };
         }
         return { status: "regressive", commandState: record.state };
@@ -615,14 +650,17 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
         record.state === "sent" || record.state === "delivered" || record.state === "read"
           ? DELIVERY_RANK[record.state]
           : 0;
-      if (DELIVERY_RANK[input.status] <= currentRank) {
+      if (DELIVERY_RANK[evidence.status] <= currentRank) {
         return { status: "regressive", commandState: record.state };
       }
       if (["failed", "expired", "cancelled", "manual_review"].includes(record.state)) {
         return { status: "regressive", commandState: record.state };
       }
-      this.closeActiveAttempt(record, input.status, input.occurredAt);
-      return { status: "applied", commandState: input.status };
+      record.state = evidence.status;
+      record.command.state = evidence.status;
+      attempt.state = evidence.status;
+      attempt.completedAt = clone(evidence.occurredAt);
+      return { status: "applied", commandState: evidence.status };
     });
   }
 

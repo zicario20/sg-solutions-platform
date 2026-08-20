@@ -120,6 +120,7 @@ export type OutboundDispatchAttempt = {
   startedAt: Date;
   completedAt?: Date;
   correlationId: string;
+  externalMessageReference?: string;
 };
 
 export type ChannelContactPolicy = {

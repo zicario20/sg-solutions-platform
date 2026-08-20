@@ -20,6 +20,10 @@ import type {
   OutboundAuthorizationReceipt,
   OwningAuthorityReceipt,
 } from "./channel-policy.ts";
+import type {
+  VerifiedProviderStatusReceipt,
+  VerifiedProviderStatusReceiptRecord,
+} from "./provider-status.ts";
 
 export type EndpointDigest = {
   version: string;
@@ -186,9 +190,8 @@ export type MarkDispatchOutcomeCommand = {
 
 export type ApplyProviderStatusCommand = {
   commandId: string;
-  providerEventId: string;
-  status: "sent" | "delivered" | "read" | "failed";
-  occurredAt: Date;
+  attemptId: string;
+  receipt: VerifiedProviderStatusReceipt;
 };
 
 export type ProviderStatusResult =
@@ -196,7 +199,12 @@ export type ProviderStatusResult =
       status: "applied" | "duplicate" | "regressive";
       commandState: OutboundCommandState;
     }
-  | { status: "not_found" };
+  | { status: "not_found" }
+  | {
+      status: "denied";
+      code: "verified_receipt_invalid" | "provider_status_binding_mismatch";
+    }
+  | { status: "conflict"; code: "provider_status_replay_mismatch" };
 
 export type ConsentRecord = {
   bindingId: string;
@@ -557,7 +565,7 @@ export type CommunicationsReferenceState = {
   bindings: readonly (ContactChannelBinding & { freshUntil: Date })[];
   consentHistory: readonly ConsentRecord[];
   templates: readonly TemplateRecord[];
-  providerStatuses: readonly ApplyProviderStatusCommand[];
+  providerStatuses: readonly VerifiedProviderStatusReceiptRecord[];
   withdrawalHistory: readonly WithdrawalHistoryRecord[];
 };
 

@@ -15,9 +15,7 @@ import type {
 } from "./meta-contracts.ts";
 
 export type SafePersistedProviderEnvelope =
-  | (Omit<CanonicalInteractiveEnvelope, "senderEndpoint"> & { readonly senderBindingId: string })
   | (Omit<CanonicalMediaEnvelope, "senderEndpoint"> & { readonly senderBindingId: string })
-  | CanonicalStatusEnvelope
   | CanonicalTemplateProjectionEnvelope
   | UnsupportedVerifiedEnvelope;
 
@@ -25,8 +23,8 @@ export type ProviderEnvelopeDeserializationResult =
   | Readonly<{ status: "available"; envelope: SafePersistedProviderEnvelope }>
   | Readonly<{
       status: "not_reversible";
-      eventKind: "text_message";
-      reason: "metadata_only";
+      eventKind: "interactive_reply" | "message_status" | "text_message";
+      reason: "metadata_only" | "verified_context_required";
     }>;
 
 export type ProviderEnvelopePersistenceContext = Readonly<{
@@ -100,7 +98,7 @@ function isTemplateComponent(value: unknown): value is PersistedTemplateComponen
   const keys = Object.keys(value);
   if (
     !keys.includes("type") ||
-    keys.some((key) => !["type", "format", "text"].includes(key)) ||
+    keys.some((key) => !["type", "format"].includes(key)) ||
     !TEMPLATE_COMPONENT_TYPES.has(String(value.type))
   ) {
     return false;
@@ -108,7 +106,7 @@ function isTemplateComponent(value: unknown): value is PersistedTemplateComponen
   if (value.format !== undefined && !TEMPLATE_COMPONENT_FORMATS.has(String(value.format))) {
     return false;
   }
-  return value.text === undefined || typeof value.text === "string";
+  return true;
 }
 
 function assertProviderEnvelope(
@@ -334,8 +332,6 @@ export function serializeMetaCanonicalEnvelope(
         bindingId: context.senderBindingId,
         messageReference: envelope.messageReference,
         interactiveKind: envelope.replyKind,
-        interactiveId: envelope.replyId,
-        interactiveTitle: envelope.replyTitle,
       };
       break;
     case "message_status":
@@ -376,7 +372,6 @@ export function serializeMetaCanonicalEnvelope(
         templateComponents: envelope.projection.components.map((component) => ({
           type: component.type,
           ...(component.format === undefined ? {} : { format: component.format }),
-          ...(component.text === undefined ? {} : { text: component.text }),
         })),
       };
       break;
@@ -407,28 +402,15 @@ export function deserializeMetaCanonicalEnvelopeRecord(
       return { status: "not_reversible", eventKind: "text_message", reason: "metadata_only" };
     case "interactive_reply":
       return {
-        status: "available",
-        envelope: {
-          ...supportedBase(),
-          kind: "interactive_reply",
-          senderBindingId: required(record.bindingId),
-          messageReference: required(record.messageReference),
-          replyKind: required(record.interactiveKind),
-          replyId: required(record.interactiveId),
-          replyTitle: required(record.interactiveTitle),
-          occurredAt: record.occurredAt,
-        },
+        status: "not_reversible",
+        eventKind: "interactive_reply",
+        reason: "metadata_only",
       };
     case "message_status":
       return {
-        status: "available",
-        envelope: {
-          ...supportedBase(),
-          kind: "message_status",
-          externalMessageReference: required(record.externalMessageReference),
-          status: required(record.deliveryState),
-          occurredAt: record.occurredAt,
-        },
+        status: "not_reversible",
+        eventKind: "message_status",
+        reason: "verified_context_required",
       };
     case "media_reference":
       return {
@@ -468,7 +450,6 @@ export function deserializeMetaCanonicalEnvelopeRecord(
             components: required(record.templateComponents).map((component) => ({
               type: component.type,
               ...(component.format === undefined ? {} : { format: component.format }),
-              ...(component.text === undefined ? {} : { text: component.text }),
             })),
           },
         },

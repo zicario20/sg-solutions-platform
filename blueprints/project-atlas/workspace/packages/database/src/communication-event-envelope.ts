@@ -14,7 +14,6 @@ export type CommunicationEventKind =
 export type PersistedTemplateComponent = Readonly<{
   type: "header" | "body" | "footer" | "buttons";
   format?: "text" | "image" | "video" | "document";
-  text?: string;
 }>;
 
 export type CommunicationEventPersistenceRecord = Readonly<{
@@ -213,13 +212,13 @@ function isTemplateComponent(value: unknown): value is PersistedTemplateComponen
   if (!isObject(value)) return false;
   const keys = Object.keys(value);
   if (
-    keys.some((key) => !["type", "format", "text"].includes(key)) ||
+    keys.some((key) => !["type", "format"].includes(key)) ||
     !COMPONENT_TYPES.has(String(value.type))
   ) {
     return false;
   }
   if (value.format !== undefined && !COMPONENT_FORMATS.has(String(value.format))) return false;
-  return value.text === undefined || typeof value.text === "string";
+  return true;
 }
 
 const MESSAGE_ONLY_FIELDS = [
@@ -264,8 +263,8 @@ function hasValidTypedShape(record: Record<string, unknown>): boolean {
         isNonEmptyString(record.bindingId) &&
         isCanonicalOpaqueProviderReference(record.messageReference) &&
         INTERACTIVE_KINDS.has(String(record.interactiveKind)) &&
-        isNonEmptyString(record.interactiveId) &&
-        typeof record.interactiveTitle === "string" &&
+        isNull(record.interactiveId) &&
+        isNull(record.interactiveTitle) &&
         hasOnlyNulls(record, [
           "externalMessageReference",
           "deliveryState",

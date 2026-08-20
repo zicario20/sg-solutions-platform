@@ -1333,6 +1333,51 @@ export const communicationProviderStatusReceipts = pgTable(
   ],
 ).enableRLS();
 
+export const communicationProviderStatusVerifications = pgTable(
+  "communication_provider_status_verifications",
+  {
+    receiptId: text("receipt_id").primaryKey(),
+    commandId: text("command_id")
+      .notNull()
+      .references(() => communicationOutboundCommands.id, { onDelete: "cascade" }),
+    attemptId: text("attempt_id")
+      .notNull()
+      .references(() => communicationDispatchAttempts.id, { onDelete: "cascade" }),
+    connectionId: text("connection_id")
+      .notNull()
+      .references(() => communicationChannelConnections.id, { onDelete: "restrict" }),
+    externalMessageReferenceDigest: char("external_message_reference_digest", { length: 64 }).notNull(),
+    providerEventId: text("provider_event_id").notNull(),
+    status: varchar("status", { length: 24 }).notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true, mode: "date" }).notNull(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true, mode: "date" }).notNull(),
+    bodyDigest: char("body_digest", { length: 64 }).notNull(),
+    correlationId: text("correlation_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (table) => [
+    unique("communication_provider_status_verifications_connection_event_unique").on(
+      table.connectionId,
+      table.providerEventId,
+    ),
+    check(
+      "communication_provider_status_verifications_status_valid",
+      sql`${table.status} in ('sent', 'delivered', 'read', 'failed')`,
+    ),
+    check(
+      "communication_provider_status_verifications_digest_valid",
+      sql`${table.externalMessageReferenceDigest} ~ '^[0-9a-f]{64}$' and ${table.bodyDigest} ~ '^[0-9a-f]{64}$'`,
+    ),
+    pgPolicy("communication_provider_status_verifications_communications_scope", {
+      as: "permissive",
+      for: "all",
+      to: communicationsGatewayRole,
+      using: communicationsCommandScope(table.commandId),
+      withCheck: communicationsCommandScope(table.commandId),
+    }),
+  ],
+).enableRLS();
+
 export const communicationDispatchReconciliationReceipts = pgTable(
   "communication_dispatch_reconciliation_receipts",
   {

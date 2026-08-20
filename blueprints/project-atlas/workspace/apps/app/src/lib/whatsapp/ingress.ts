@@ -482,6 +482,7 @@ export function createWhatsAppIngressHandler(
   requirePositiveSafeInteger(dependencies.limits.maxRawBodyBytes, "max raw body bytes");
   requirePositiveSafeInteger(dependencies.limits.readTimeoutMilliseconds, "read timeout");
   requirePositiveSafeInteger(dependencies.limits.totalTimeoutMilliseconds, "total timeout");
+  let retiredCleanupCount = 0;
 
   return async (request, context) => {
     const correlationId = createSafeCorrelationId(dependencies);
@@ -510,6 +511,10 @@ export function createWhatsAppIngressHandler(
       if (error instanceof IngressFailure) {
         return failureResponse(dependencies, correlationId, error);
       }
+      return response(dependencies, correlationId, 503, "unavailable", "dependency_unavailable");
+    }
+
+    if (retiredCleanupCount > 0) {
       return response(dependencies, correlationId, 503, "unavailable", "dependency_unavailable");
     }
 
@@ -636,7 +641,25 @@ export function createWhatsAppIngressHandler(
         if (error instanceof IngressFailure) {
           if (error.cleanup) {
             releaseDeferred = true;
-            void error.cleanup.then(releaseOnce, releaseOnce);
+            let cleanupFinished = false;
+            let retired = false;
+            const finishCleanup = () => {
+              if (cleanupFinished) return;
+              cleanupFinished = true;
+              clearTimeout(retirementTimer);
+              if (retired) {
+                retiredCleanupCount = Math.max(0, retiredCleanupCount - 1);
+              } else {
+                releaseOnce();
+              }
+            };
+            const retirementTimer = setTimeout(() => {
+              if (cleanupFinished) return;
+              retired = true;
+              retiredCleanupCount += 1;
+              releaseOnce();
+            }, dependencies.limits.totalTimeoutMilliseconds);
+            void error.cleanup.then(finishCleanup, finishCleanup);
           }
           return failureResponse(dependencies, correlationId, error);
         }

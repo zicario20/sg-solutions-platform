@@ -44,6 +44,9 @@ import {
   type TemplateResult,
   type WithdrawContactCommand,
   type WithdrawContactResult,
+  sameVerifiedProviderStatusRecord,
+  type VerifiedProviderStatusReceiptRecord,
+  type VerifiedProviderStatusReceiptResolver,
 } from "@atlas/domain";
 import postgres from "postgres";
 
@@ -266,7 +269,12 @@ type InboundRow = {
 };
 
 export class PostgresCommunicationsRepository implements CommunicationsRepository {
-  constructor(private readonly sql: CommunicationsSql) {}
+  constructor(
+    private readonly sql: CommunicationsSql,
+    private readonly providerStatusReceiptResolver: VerifiedProviderStatusReceiptResolver = {
+      resolve: () => null,
+    },
+  ) {}
 
   async acceptInbound(input: AcceptInboundCommand): Promise<AcceptInboundResult> {
     const activeDigest = input.endpointDigests[0];
@@ -1080,6 +1088,8 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
   }
 
   async applyProviderStatus(input: ApplyProviderStatusCommand): Promise<ProviderStatusResult> {
+    const evidence = this.providerStatusReceiptResolver.resolve(input.receipt);
+    if (!evidence) return { status: "denied", code: "verified_receipt_invalid" };
     return withCommunicationsTransaction(this.sql, async (tx) => {
       const command = (
         await query<CommandRow>(
@@ -1089,30 +1099,73 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         )
       )[0];
       if (!command) return { status: "not_found" } as const;
-      const prior = await query<{ provider_event_id: string }>(
+      const attempt = (
+        await query<{ id: string; provider_reference_digest: string | null }>(
+          tx,
+          `select id, provider_reference_digest from communication_dispatch_attempts
+           where id = $1 and command_id = $2 for update`,
+          [input.attemptId, input.commandId],
+        )
+      )[0];
+      if (
+        !attempt ||
+        command.connection_id !== evidence.connectionId ||
+        attempt.provider_reference_digest !== sha256(evidence.externalMessageReference)
+      ) {
+        return { status: "denied", code: "provider_status_binding_mismatch" } as const;
+      }
+      const receiptRecord: VerifiedProviderStatusReceiptRecord = {
+        ...evidence,
+        commandId: input.commandId,
+        attemptId: input.attemptId,
+        externalMessageReferenceDigest: sha256(evidence.externalMessageReference),
+      };
+      const prior = await query<VerifiedProviderStatusReceiptRecord>(
         tx,
-        `select provider_event_id from communication_provider_status_receipts
-         where command_id = $1 and provider_event_id = $2`,
-        [input.commandId, input.providerEventId],
+        `select receipt_id as "receiptId", 'meta_hmac_sha256' as verification,
+           connection_id as "connectionId", command_id as "commandId", attempt_id as "attemptId",
+           external_message_reference_digest as "externalMessageReferenceDigest",
+           provider_event_id as "providerEventId", status, occurred_at as "occurredAt",
+           verified_at as "verifiedAt", body_digest as "bodyDigest", correlation_id as "correlationId"
+         from communication_provider_status_verifications
+         where connection_id = $1 and provider_event_id = $2 for update`,
+        [evidence.connectionId, evidence.providerEventId],
       );
-      if (prior[0]) return { status: "duplicate", commandState: command.state };
+      if (prior[0]) {
+        return sameVerifiedProviderStatusRecord(prior[0], receiptRecord)
+          ? { status: "duplicate", commandState: command.state }
+          : { status: "conflict", code: "provider_status_replay_mismatch" };
+      }
       await query(
         tx,
-        `insert into communication_provider_status_receipts (
-          command_id, provider_event_id, status, occurred_at, created_at
-        ) values ($1, $2, $3, $4, $4)`,
-        [input.commandId, input.providerEventId, input.status, input.occurredAt],
+        `insert into communication_provider_status_verifications (
+          receipt_id, command_id, attempt_id, connection_id, external_message_reference_digest,
+          provider_event_id, status, occurred_at, verified_at, body_digest, correlation_id, created_at
+        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $9)`,
+        [
+          evidence.receiptId,
+          input.commandId,
+          input.attemptId,
+          evidence.connectionId,
+          receiptRecord.externalMessageReferenceDigest,
+          evidence.providerEventId,
+          evidence.status,
+          evidence.occurredAt,
+          evidence.verifiedAt,
+          evidence.bodyDigest,
+          evidence.correlationId,
+        ],
       );
       const rank: Record<string, number> = { sent: 1, delivered: 2, read: 3 };
       let status: "applied" | "regressive" = "applied";
-      let nextState: OutboundCommandState = input.status;
-      if (input.status === "failed") {
+      let nextState: OutboundCommandState = evidence.status;
+      if (evidence.status === "failed") {
         if (!["provider_accepted", "dispatching", "queued"].includes(command.state)) {
           status = "regressive";
           nextState = command.state;
         }
       } else if (
-        (rank[input.status] ?? 0) <= (rank[command.state] ?? 0) ||
+        (rank[evidence.status] ?? 0) <= (rank[command.state] ?? 0) ||
         ["failed", "expired", "cancelled", "manual_review"].includes(command.state)
       ) {
         status = "regressive";
@@ -1127,10 +1180,9 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         );
         await query(
           tx,
-          `update communication_dispatch_attempts set state = $2, completed_at = $3, updated_at = $3
-           where id = (select id from communication_dispatch_attempts
-             where command_id = $1 order by attempt_ordinal desc limit 1)`,
-          [input.commandId, nextState, input.occurredAt],
+          `update communication_dispatch_attempts set state = $3, completed_at = $4, updated_at = $4
+           where id = $1 and command_id = $2`,
+           [input.attemptId, input.commandId, nextState, evidence.occurredAt],
         );
       }
       return { status, commandState: nextState };
@@ -1840,7 +1892,12 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
           query<Record<string, unknown>>(tx, `select id as "bindingId", channel_kind as channel, trust_state as "trustState", verification_expires_at as "freshUntil", created_at as "createdAt", updated_at as "updatedAt" from communication_contact_bindings order by id`),
           query<Record<string, unknown>>(tx, `select binding_id as "bindingId", purpose, consent_state as state, authority_version as version, case when event_kind = 'consent_withdrawn' then null else evidence_receipt_id end as "authorityReceiptId", occurred_at as "changedAt" from communication_contact_evidence_events where purpose is not null order by binding_id, sequence`),
           query<Record<string, unknown>>(tx, `select template_key as "templateId", locale, definition_version as "definitionVersion", internally_approved as "internallyApproved", approval_receipt_id as "approvalReceiptId", provider_receipt_id as "providerReceiptId", provider_correlation_id as "providerCorrelationId", state as "providerState", projection_version as "providerVersion", updated_at as "updatedAt" from communication_message_templates order by template_key, locale`),
-          query<Record<string, unknown>>(tx, `select command_id as "commandId", provider_event_id as "providerEventId", status, occurred_at as "occurredAt" from communication_provider_status_receipts order by command_id, provider_event_id`),
+          query<Record<string, unknown>>(tx, `select receipt_id as "receiptId", 'meta_hmac_sha256' as verification,
+            connection_id as "connectionId", command_id as "commandId", attempt_id as "attemptId",
+            external_message_reference_digest as "externalMessageReferenceDigest",
+            provider_event_id as "providerEventId", status, occurred_at as "occurredAt",
+            verified_at as "verifiedAt", body_digest as "bodyDigest", correlation_id as "correlationId"
+            from communication_provider_status_verifications order by connection_id, provider_event_id`),
           query<Record<string, unknown>>(tx, `select binding_id as "bindingId", case when owning_domain = 'M004' then 'inbound_event' else 'authority' end as source, evidence_receipt_id as "receiptId", case when owning_domain = 'M004' then 'communications' else 'consent' end as owner, case when owning_domain = 'M004' then 'inbound_opt_out' else 'contact_withdrawal' end as operation, triggering_event_id as "eventId", correlation_id as "correlationId", receipt_issued_at as "issuedAt", receipt_valid_until as "expiresAt", occurred_at as "changedAt" from communication_contact_evidence_events where event_kind = 'contact_withdrawal_recorded' order by binding_id, sequence`),
         ]);
       return {
