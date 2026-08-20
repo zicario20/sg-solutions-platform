@@ -2,7 +2,6 @@ import {
   classifyInboundOptOut,
   evaluateAuthorityChange,
   evaluateOutboundPolicy,
-  type ChannelCopyCatalog,
   type OutboundPolicyInput,
 } from "../../packages/domain/src/communications/channel-policy.ts";
 import { describe, expect, it } from "vitest";
@@ -72,6 +71,49 @@ describe("evaluateOutboundPolicy", () => {
     expect(decision).toEqual({ allowed: false, code });
     expect(JSON.stringify(decision)).not.toContain(protectedInput);
   });
+
+  it("denies an invalid binding freshness date before allowing dispatch", () => {
+    expect(
+      evaluateOutboundPolicy(
+        outboundInput({
+          binding: { bindingId: "binding_1", trustState: "reverified", freshUntil: new Date("invalid") },
+        }),
+      ),
+    ).toEqual({ allowed: false, code: "binding_freshness_invalid" });
+  });
+
+  it.each(["", " ", "bad receipt", "receipt!", "r".repeat(129)])(
+    "rejects malformed receipt identifier %j across consent and authority gates",
+    (receiptId) => {
+      const base = outboundInput();
+      const consentReceipt = base.consent.receipt;
+      const dispatchReceipt = base.authorizationReceipt;
+
+      expect(
+        evaluateOutboundPolicy(
+          outboundInput({ consent: { state: "granted", receipt: { ...consentReceipt!, receiptId } } }),
+        ),
+      ).toEqual({ allowed: false, code: "consent_receipt_invalid" });
+      expect(
+        evaluateOutboundPolicy(outboundInput({ authorizationReceipt: { ...dispatchReceipt!, receiptId } })),
+      ).toEqual({ allowed: false, code: "authority_receipt_invalid" });
+      expect(
+        evaluateAuthorityChange({
+          operation: "consent_grant",
+          bindingId: "binding_1",
+          now,
+          receipt: {
+            receiptId,
+            owner: "consent",
+            operation: "consent_grant",
+            bindingId: "binding_1",
+            issuedAt: now,
+            expiresAt: new Date("2026-08-21T12:00:00.000Z"),
+          },
+        }),
+      ).toEqual({ allowed: false, code: "authority_receipt_invalid" });
+    },
+  );
 });
 
 describe("authority and opt-out gates", () => {
@@ -106,26 +148,24 @@ describe("authority and opt-out gates", () => {
       lexiconVersion: "fixture-v1",
       match: () => ((called = true), "matched" as const),
     };
-    expect(classifyInboundOptOut({ text: "STOP", matcher })).toEqual({
+    expect(Reflect.apply(classifyInboundOptOut, undefined, [{ text: "STOP", matcher }])).toEqual({
       action: "none",
       code: "opt_out_policy_disabled",
     });
     expect(called).toBe(false);
   });
 
-  it("routes ambiguous injected matches to manual review without consent mutation", () => {
+  it("does not let an arbitrary injected policy and lexicon activate opt-out behavior", () => {
     const policy = {
       policyId: "WA-004",
       version: "approved-test-fixture",
       lexiconVersion: "fixture-v1",
     } as const;
     expect(
-      classifyInboundOptOut({
-        text: "STOP",
-        policy,
-        matcher: { lexiconVersion: "fixture-v1", match: () => "ambiguous" },
-      }),
-    ).toEqual({ action: "manual_review", consentMutation: "none", code: "opt_out_ambiguous" });
+      Reflect.apply(classifyInboundOptOut, undefined, [
+        { text: "STOP", policy, matcher: { lexiconVersion: "fixture-v1", match: () => "ambiguous" } },
+      ]),
+    ).toEqual({ action: "none", code: "opt_out_policy_disabled" });
   });
 
   it("disables an injected matcher whose lexicon version is not approved", () => {
@@ -135,16 +175,9 @@ describe("authority and opt-out gates", () => {
       lexiconVersion: "fixture-v1",
     } as const;
     expect(
-      classifyInboundOptOut({
-        text: "STOP",
-        policy,
-        matcher: { lexiconVersion: "fixture-v2", match: () => "matched" },
-      }),
+      Reflect.apply(classifyInboundOptOut, undefined, [
+        { text: "STOP", policy, matcher: { lexiconVersion: "fixture-v2", match: () => "matched" } },
+      ]),
     ).toEqual({ action: "none", code: "opt_out_policy_disabled" });
-  });
-
-  it("does not make production copy available from a typed empty catalog", () => {
-    const catalog: ChannelCopyCatalog = {};
-    expect(catalog).toEqual({});
   });
 });

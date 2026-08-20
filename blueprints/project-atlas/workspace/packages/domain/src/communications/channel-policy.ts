@@ -6,19 +6,6 @@ import type {
   ContactPurpose,
 } from "./contracts.ts";
 
-export type ChannelCopyKey =
-  | "automated_identity"
-  | "sensitive_data_refusal"
-  | "unsupported_media"
-  | "portal_fallback"
-  | "provider_unavailable"
-  | "human_unavailable"
-  | "opt_out_receipt"
-  | "reconsent_guidance";
-export type ChannelCopyCatalog = Readonly<
-  Partial<Record<ChannelCopyKey, Readonly<Partial<Record<"es" | "en", string>>>>>
->;
-
 export type OwningAuthorityOperation =
   | "reconsent"
   | "consent_grant"
@@ -70,6 +57,7 @@ export type OutboundPolicyDecision =
       code:
         | "marketing_denied"
         | "binding_not_reverified"
+        | "binding_freshness_invalid"
         | "binding_stale"
         | "contact_policy_denied"
         | "consent_not_granted"
@@ -86,17 +74,31 @@ export type OutboundPolicyDecision =
 
 function isCurrent(receipt: { issuedAt: Date; expiresAt: Date }, now: Date): boolean {
   return (
-    Number.isFinite(receipt.issuedAt.getTime()) &&
-    Number.isFinite(receipt.expiresAt.getTime()) &&
+    isFiniteDate(receipt.issuedAt) &&
+    isFiniteDate(receipt.expiresAt) &&
+    isFiniteDate(now) &&
     receipt.issuedAt <= now &&
     receipt.expiresAt > now
   );
+}
+
+const CANONICAL_RECEIPT_ID = /^[a-z][a-z0-9_-]{2,127}$/i;
+
+function isFiniteDate(value: unknown): value is Date {
+  return value instanceof Date && Number.isFinite(value.getTime());
+}
+
+function hasCanonicalReceiptId(receiptId: string): boolean {
+  return CANONICAL_RECEIPT_ID.test(receiptId);
 }
 
 export function evaluateOutboundPolicy(input: OutboundPolicyInput): OutboundPolicyDecision {
   if (input.purpose === "marketing") return { allowed: false, code: "marketing_denied" };
   if (input.binding.trustState !== "reverified") {
     return { allowed: false, code: "binding_not_reverified" };
+  }
+  if (!isFiniteDate(input.binding.freshUntil)) {
+    return { allowed: false, code: "binding_freshness_invalid" };
   }
   if (input.binding.freshUntil <= input.now) return { allowed: false, code: "binding_stale" };
   if (input.contactPolicy.state !== "normal" && input.contactPolicy.state !== "normal_after_review") {
@@ -107,6 +109,7 @@ export function evaluateOutboundPolicy(input: OutboundPolicyInput): OutboundPoli
   if (
     input.consent.receipt.owner !== "consent" ||
     input.consent.receipt.operation !== "consent_confirmation" ||
+    !hasCanonicalReceiptId(input.consent.receipt.receiptId) ||
     input.consent.receipt.bindingId !== input.binding.bindingId ||
     !isCurrent(input.consent.receipt, input.now)
   ) {
@@ -124,6 +127,7 @@ export function evaluateOutboundPolicy(input: OutboundPolicyInput): OutboundPoli
   if (
     input.authorizationReceipt.owner !== "communications" ||
     input.authorizationReceipt.operation !== "outbound_dispatch" ||
+    !hasCanonicalReceiptId(input.authorizationReceipt.receiptId) ||
     input.authorizationReceipt.bindingId !== input.binding.bindingId ||
     !isCurrent(input.authorizationReceipt, input.now)
   ) {
@@ -149,6 +153,7 @@ export function evaluateAuthorityChange(input: {
   if (
     input.receipt.owner !== expectedOwner ||
     input.receipt.operation !== input.operation ||
+    !hasCanonicalReceiptId(input.receipt.receiptId) ||
     input.receipt.bindingId !== input.bindingId ||
     !isCurrent(input.receipt, input.now)
   ) {
@@ -157,28 +162,9 @@ export function evaluateAuthorityChange(input: {
   return { allowed: true, code: "allowed" };
 }
 
-export type OptOutMatch = "matched" | "not_matched" | "ambiguous";
-export type OptOutMatcher = { lexiconVersion: string; match(text: string): OptOutMatch };
-export type ApprovedOptOutPolicy = { policyId: "WA-004"; version: string; lexiconVersion: string };
 export type OptOutClassification =
-  | { action: "none"; code: "opt_out_policy_disabled" | "opt_out_not_matched" }
-  | { action: "withdrawal_requested"; consentMutation: "none"; code: "opt_out_matched" }
-  | { action: "manual_review"; consentMutation: "none"; code: "opt_out_ambiguous" };
+  { action: "none"; code: "opt_out_policy_disabled" };
 
-export function classifyInboundOptOut(input: {
-  text: string;
-  policy?: ApprovedOptOutPolicy;
-  matcher: OptOutMatcher;
-}): OptOutClassification {
-  if (!input.policy || input.policy.lexiconVersion !== input.matcher.lexiconVersion) {
-    return { action: "none", code: "opt_out_policy_disabled" };
-  }
-  switch (input.matcher.match(input.text)) {
-    case "matched":
-      return { action: "withdrawal_requested", consentMutation: "none", code: "opt_out_matched" };
-    case "ambiguous":
-      return { action: "manual_review", consentMutation: "none", code: "opt_out_ambiguous" };
-    default:
-      return { action: "none", code: "opt_out_not_matched" };
-  }
+export function classifyInboundOptOut(): OptOutClassification {
+  return { action: "none", code: "opt_out_policy_disabled" };
 }

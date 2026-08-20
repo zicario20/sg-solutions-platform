@@ -162,21 +162,11 @@ export function parseWhatsAppInboundInput(input: unknown): WhatsAppInboundInput 
   return result;
 }
 
-export function resolveChannelCopy(
-  catalog: ChannelCopyCatalog,
-  locale: WhatsAppLocale,
-  key: ChannelCopyKey,
-): { available: true; text: string } | { available: false; code: "copy_unavailable" } {
-  if (!validateChannelCopyCatalog(catalog).valid) {
-    return { available: false, code: "copy_unavailable" };
-  }
-  const text = catalog[key]?.[locale];
-  return typeof text === "string" && text.trim().length > 0
-    ? { available: true, text }
-    : { available: false, code: "copy_unavailable" };
+export function resolveChannelCopy(): { available: false; code: "copy_unavailable" } {
+  return { available: false, code: "copy_unavailable" };
 }
 
-export function validateChannelCopyCatalog(
+export function validateSyntheticChannelCopyCatalog(
   catalog: ChannelCopyCatalog,
 ): { valid: true } | { valid: false; code: "copy_locale_missing" | "copy_invalid" } {
   for (const key of COPY_KEYS) {

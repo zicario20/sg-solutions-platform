@@ -3,8 +3,8 @@ import {
   parseWhatsAppInboundInput,
   parseWhatsAppText,
   resolveChannelCopy,
-  validateChannelCopyCatalog,
 } from "@atlas/validation";
+import { validateSyntheticChannelCopyCatalog } from "../../packages/validation/src/whatsapp.ts";
 import { describe, expect, it } from "vitest";
 
 describe("WhatsApp validation", () => {
@@ -88,7 +88,7 @@ describe("WhatsApp validation", () => {
 describe("channel safe-copy contracts", () => {
   it("keeps the runtime catalog empty and fail-closed", () => {
     expect(EMPTY_CHANNEL_COPY_CATALOG).toEqual({});
-    expect(resolveChannelCopy(EMPTY_CHANNEL_COPY_CATALOG, "en", "provider_unavailable")).toEqual({
+    expect(resolveChannelCopy()).toEqual({
       available: false,
       code: "copy_unavailable",
     });
@@ -96,12 +96,30 @@ describe("channel safe-copy contracts", () => {
 
   it("does not resolve a partially localized catalog", () => {
     expect(
-      resolveChannelCopy(
+      Reflect.apply(resolveChannelCopy, undefined, [
         { provider_unavailable: { en: "Channel unavailable" } },
         "en",
         "provider_unavailable",
-      ),
+      ]),
     ).toEqual({ available: false, code: "copy_unavailable" });
+  });
+
+  it("does not activate a complete caller-supplied catalog while the runtime gate is closed", () => {
+    const catalog = {
+      automated_identity: { es: "Asistente automatizado", en: "Automated assistant" },
+      sensitive_data_refusal: { es: "No envie datos sensibles", en: "Do not send sensitive data" },
+      unsupported_media: { es: "Use el portal", en: "Use the portal" },
+      portal_fallback: { es: "Portal seguro", en: "Secure portal" },
+      provider_unavailable: { es: "Canal no disponible", en: "Channel unavailable" },
+      human_unavailable: { es: "Equipo no disponible", en: "Team unavailable" },
+      opt_out_receipt: { es: "Solicitud recibida", en: "Request received" },
+      reconsent_guidance: { es: "Solicite consentimiento", en: "Request consent" },
+    } as const;
+
+    expect(Reflect.apply(resolveChannelCopy, undefined, [catalog, "en", "provider_unavailable"])).toEqual({
+      available: false,
+      code: "copy_unavailable",
+    });
   });
 
   it("requires complete Spanish and English parity in injected fixture copy", () => {
@@ -116,12 +134,17 @@ describe("channel safe-copy contracts", () => {
       reconsent_guidance: { es: "Solicite consentimiento", en: "Request consent" },
     } as const;
 
-    expect(validateChannelCopyCatalog(fixture)).toEqual({ valid: true });
+    expect(validateSyntheticChannelCopyCatalog(fixture)).toEqual({ valid: true });
     expect(
-      validateChannelCopyCatalog({
+      validateSyntheticChannelCopyCatalog({
         ...fixture,
         provider_unavailable: { en: "Channel unavailable" },
       }),
     ).toEqual({ valid: false, code: "copy_locale_missing" });
+  });
+
+  it("does not export synthetic copy validation through the runtime package", async () => {
+    const runtime = await import("@atlas/validation");
+    expect(runtime).not.toHaveProperty("validateChannelCopyCatalog");
   });
 });
