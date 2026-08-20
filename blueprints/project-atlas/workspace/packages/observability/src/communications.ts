@@ -32,6 +32,12 @@ export type CommunicationsDurationBucket =
   | "over_10s"
   | "not_applicable";
 
+declare const communicationsCorrelationIdBrand: unique symbol;
+
+export type CommunicationsCorrelationId = Readonly<{
+  [communicationsCorrelationIdBrand]: true;
+}>;
+
 export type CommunicationsTelemetryEvent = Readonly<{
   operation: CommunicationsTelemetryOperation;
   result: CommunicationsTelemetryResult;
@@ -83,6 +89,20 @@ const ALLOWED_KEYS = new Set([
 ]);
 const REQUIRED_KEYS = ["operation", "result", "correlationId", "durationBucket"] as const;
 const CORRELATION_ID = /^correlation_[0-9a-f]{32}$/u;
+const CORRELATION_VALUES = new WeakMap<object, string>();
+
+export function createCommunicationsCorrelationId(): CommunicationsCorrelationId {
+  if (!globalThis.crypto || typeof globalThis.crypto.randomUUID !== "function") {
+    throw new Error("COMMUNICATIONS_CORRELATION_UNAVAILABLE");
+  }
+  const value = `correlation_${globalThis.crypto.randomUUID().replaceAll("-", "")}`;
+  if (!CORRELATION_ID.test(value)) {
+    throw new Error("COMMUNICATIONS_CORRELATION_UNAVAILABLE");
+  }
+  const token = Object.freeze(Object.create(null)) as CommunicationsCorrelationId;
+  CORRELATION_VALUES.set(token, value);
+  return token;
+}
 
 function invalid(): never {
   throw new Error("COMMUNICATIONS_TELEMETRY_INVALID");
@@ -106,13 +126,17 @@ export function projectCommunicationsTelemetryEvent(
   const descriptors = Object.getOwnPropertyDescriptors(record);
   if (Object.values(descriptors).some((descriptor) => !("value" in descriptor))) invalid();
 
+  const correlationId =
+    record.correlationId !== null && typeof record.correlationId === "object"
+      ? CORRELATION_VALUES.get(record.correlationId)
+      : undefined;
+
   if (
     typeof record.operation !== "string" ||
     !OPERATIONS.has(record.operation as CommunicationsTelemetryOperation) ||
     typeof record.result !== "string" ||
     !RESULTS.has(record.result as CommunicationsTelemetryResult) ||
-    typeof record.correlationId !== "string" ||
-    !CORRELATION_ID.test(record.correlationId) ||
+    correlationId === undefined ||
     typeof record.durationBucket !== "string" ||
     !DURATION_BUCKETS.has(record.durationBucket as CommunicationsDurationBucket) ||
     (Object.hasOwn(record, "connectionState") &&
@@ -125,7 +149,7 @@ export function projectCommunicationsTelemetryEvent(
   return Object.freeze({
     operation: record.operation as CommunicationsTelemetryOperation,
     result: record.result as CommunicationsTelemetryResult,
-    correlationId: record.correlationId,
+    correlationId,
     durationBucket: record.durationBucket as CommunicationsDurationBucket,
     ...(record.connectionState === undefined
       ? {}
