@@ -10,6 +10,7 @@ import {
   communicationsConformanceSeed,
   runCommunicationsRepositoryConformance,
 } from "../support/communications-repository-conformance.ts";
+import { createVerifiedProviderStatusReceiptAuthority } from "@atlas/domain";
 
 const integrationUrl = process.env.M004_POSTGRES_INTEGRATION_URL;
 const sql = integrationUrl ? createCommunicationsSql(integrationUrl) : null;
@@ -114,8 +115,15 @@ runCommunicationsRepositoryConformance(
   async (scenario) => {
     if (!sql) throw new Error("M004_POSTGRES_INTEGRATION_URL_REQUIRED");
     await seedScenario(scenario);
-    const repository = createPostgresCommunicationsRepository(sql);
-    return { repository, inspectState: () => repository.referenceState() };
+    const providerStatusAuthority = createVerifiedProviderStatusReceiptAuthority();
+    const repository = createPostgresCommunicationsRepository(sql, {
+      providerStatusReceiptResolver: providerStatusAuthority.resolver,
+    });
+    return {
+      repository,
+      providerStatusReceiptIssuer: providerStatusAuthority.issuer,
+      inspectState: () => repository.referenceState(),
+    };
   },
   Boolean(integrationUrl),
 );

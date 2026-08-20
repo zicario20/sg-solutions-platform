@@ -9,12 +9,14 @@ type RuntimeApi = {
   MemoryCommunicationsRepository: new (options?: Record<string, unknown>) => any;
   CommunicationsService: new (dependencies: Record<string, unknown>) => any;
   CanonicalMessageTemplateService: new (dependencies: Record<string, unknown>) => any;
+  processInboundChannelEvent: (input: Record<string, unknown>) => Promise<Record<string, unknown>>;
 };
 
 function runtimeApi(): RuntimeApi {
   expect(communicationsModule).toHaveProperty("MemoryCommunicationsRepository");
   expect(communicationsModule).toHaveProperty("CommunicationsService");
   expect(communicationsModule).toHaveProperty("CanonicalMessageTemplateService");
+  expect(communicationsModule).toHaveProperty("processInboundChannelEvent");
   return communicationsModule as unknown as RuntimeApi;
 }
 
@@ -279,6 +281,45 @@ async function acceptInbound(service: any, overrides: Record<string, unknown> = 
   });
 }
 
+async function processInbound(
+  repository: any,
+  input: Record<string, unknown>,
+  overrides: Record<string, unknown> = {},
+) {
+  return runtimeApi().processInboundChannelEvent({
+    repository,
+    executor: {
+      run: async (_operation: string, _timeout: number, action: () => Promise<unknown>) => action(),
+    },
+    contentPolicy: { evaluate: () => ({ allowed: true, code: "allowed" }) },
+    eventId: "event_1",
+    leaseOwner: "worker_1",
+    leaseExpiresAt: LATER,
+    requiredPolicyVersion: 7,
+    intent: "public_orientation",
+    now: NOW,
+    knowledgeTimeoutMs: 500,
+    ownerTimeoutMs: 500,
+    ...overrides,
+    ...input,
+  });
+}
+
+function validM002Receipt() {
+  return {
+    receiptId: "m002_receipt_1",
+    owner: "public_knowledge",
+    source: "M002",
+    sourceId: "source_1",
+    sourceVersion: "v1",
+    reviewVersion: "v1",
+    disclosureVersion: "v1",
+    issuedAt: NOW,
+    expiresAt: TOMORROW,
+    correlationId: "correlation_1",
+  };
+}
+
 async function queueOutbound(service: any, overrides: Record<string, unknown> = {}) {
   return service.queueOutbound({
     channel: "whatsapp",
@@ -325,28 +366,19 @@ describe("canonical inbound and application behavior", () => {
   });
 
   it("establishes opt_out_pending atomically and prioritizes it before knowledge", async () => {
-    let knowledgeCalls = 0;
-    const fixture = createService({
-      publicKnowledge: {
-        answer: async () => {
-          knowledgeCalls += 1;
-          return { status: "available", text: "must not be used", sourceReceipt: "receipt" };
-        },
-      },
-    });
+    const fixture = createService();
     await acceptInbound(fixture.service, { optOutSignal: "pending" });
 
-    const result = await fixture.service.processInbound({
-      eventId: "event_1",
-      leaseOwner: "worker_1",
-      leaseExpiresAt: LATER,
+    const result = await processInbound(fixture.repository, {
       requiredPolicyVersion: 8,
-      action: "public_knowledge",
-      prompt: "Synthetic question",
+      intent: "opt_out",
     });
 
-    expect(result).toEqual({ status: "opt_out_pending", eventId: "event_1" });
-    expect(knowledgeCalls).toBe(0);
+    expect(result).toEqual({
+      status: "manual_review",
+      code: "opt_out_evidence_required",
+      eventId: "event_1",
+    });
     expect(fixture.repository.referenceState().policies[0]).toMatchObject({
       state: "opt_out_pending",
       version: 8,
@@ -359,72 +391,54 @@ describe("canonical inbound and application behavior", () => {
     await acceptInbound(fixture.service);
 
     await expect(
-      fixture.service.processInbound({
-        eventId: "event_1",
-        leaseOwner: "worker_1",
-        leaseExpiresAt: LATER,
+      processInbound(fixture.repository, {
         requiredPolicyVersion: 6,
-        action: "public_knowledge",
-        prompt: "Synthetic question",
       }),
-    ).resolves.toEqual({ status: "conflict", code: "policy_version_mismatch" });
+    ).resolves.toEqual({
+      status: "recovery_required",
+      code: "policy_version_mismatch",
+      eventId: "event_1",
+    });
   });
 
   it("maps disabled knowledge and absent handoff receipts to honest manual outcomes", async () => {
-    const disabled = createService({
-      publicKnowledge: { answer: async () => ({ status: "unavailable" }) },
-    });
+    const disabled = createService();
     await acceptInbound(disabled.service);
     expect(
-      await disabled.service.processInbound({
-        eventId: "event_1",
-        leaseOwner: "worker_1",
-        leaseExpiresAt: LATER,
-        requiredPolicyVersion: 7,
-        action: "public_knowledge",
-        prompt: "Synthetic question",
-      }),
-    ).toEqual({ status: "manual", code: "knowledge_unavailable" });
+      await processInbound(disabled.repository, {}),
+    ).toEqual({ status: "manual_review", code: "knowledge_unavailable" });
 
-    const noReceipt = createService({
-      handoff: { request: async () => ({ status: "queued" }) },
-    });
+    const noReceipt = createService();
     await acceptInbound(noReceipt.service);
     expect(
-      await noReceipt.service.processInbound({
-        eventId: "event_1",
+      await processInbound(noReceipt.repository, {
         leaseOwner: "worker_2",
-        leaseExpiresAt: LATER,
-        requiredPolicyVersion: 7,
-        action: "handoff",
+        intent: "handoff",
         idempotencyKey: "handoff_key_1",
       }),
-    ).toEqual({ status: "manual", code: "handoff_receipt_missing" });
+    ).toEqual({ status: "manual_review", code: "handoff_unavailable" });
   });
 
   it("rejects prohibited generated copy without persisting an outbound command", async () => {
-    const fixture = createService({
-      publicKnowledge: {
+    const fixture = createService();
+    await acceptInbound(fixture.service);
+
+    const result = await processInbound(
+      fixture.repository,
+      { prompt: "Synthetic question" },
+      {
+        publicOrientation: {
         answer: async () => ({
           status: "available",
           text: "Send private identity and payment details here",
-          sourceReceipt: "knowledge_receipt_1",
+            receipt: validM002Receipt(),
         }),
+        },
+        contentPolicy: { evaluate: () => ({ allowed: false, code: "protected_content" }) },
       },
-      contentPolicy: { evaluate: () => ({ allowed: false, code: "protected_content" }) },
-    });
-    await acceptInbound(fixture.service);
+    );
 
-    const result = await fixture.service.processInbound({
-      eventId: "event_1",
-      leaseOwner: "worker_1",
-      leaseExpiresAt: LATER,
-      requiredPolicyVersion: 7,
-      action: "public_knowledge",
-      prompt: "Synthetic question",
-    });
-
-    expect(result).toEqual({ status: "manual", code: "prohibited_content" });
+    expect(result).toEqual({ status: "manual_review", code: "prohibited_content" });
     expect(fixture.repository.referenceState().outbound).toEqual([]);
   });
 });

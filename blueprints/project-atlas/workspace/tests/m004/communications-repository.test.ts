@@ -1,4 +1,7 @@
-import { MemoryCommunicationsRepository } from "@atlas/domain";
+import {
+  createVerifiedProviderStatusReceiptAuthority,
+  MemoryCommunicationsRepository,
+} from "@atlas/domain";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
@@ -12,9 +15,14 @@ import {
 } from "../support/communications-repository-conformance.ts";
 
 runCommunicationsRepositoryConformance("memory", async (scenario) => {
-  const repository = new MemoryCommunicationsRepository(communicationsConformanceSeed(scenario));
+  const providerStatusAuthority = createVerifiedProviderStatusReceiptAuthority();
+  const repository = new MemoryCommunicationsRepository({
+    ...communicationsConformanceSeed(scenario),
+    providerStatusReceiptResolver: providerStatusAuthority.resolver,
+  });
   return {
     repository,
+    providerStatusReceiptIssuer: providerStatusAuthority.issuer,
     inspectState: () => repository.referenceState(),
   };
 });

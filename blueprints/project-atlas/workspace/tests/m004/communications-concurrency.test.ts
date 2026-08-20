@@ -8,11 +8,15 @@ const TOMORROW = new Date("2026-08-21T12:00:00.000Z");
 type RuntimeApi = {
   MemoryCommunicationsRepository: new (options?: Record<string, unknown>) => any;
   CommunicationsService: new (dependencies: Record<string, unknown>) => any;
+  processInboundChannelEvent: (input: Record<string, unknown>) => Promise<Record<string, unknown>>;
+  createVerifiedProviderStatusReceiptAuthority: (options?: Record<string, unknown>) => any;
 };
 
 function runtimeApi(): RuntimeApi {
   expect(communicationsModule).toHaveProperty("MemoryCommunicationsRepository");
   expect(communicationsModule).toHaveProperty("CommunicationsService");
+  expect(communicationsModule).toHaveProperty("processInboundChannelEvent");
+  expect(communicationsModule).toHaveProperty("createVerifiedProviderStatusReceiptAuthority");
   return communicationsModule as unknown as RuntimeApi;
 }
 
@@ -119,8 +123,58 @@ function repositoryOptions(overrides: Record<string, unknown> = {}) {
 }
 
 function createRepository(overrides: Record<string, unknown> = {}) {
-  const { MemoryCommunicationsRepository } = runtimeApi();
-  return new MemoryCommunicationsRepository(repositoryOptions(overrides));
+  const { MemoryCommunicationsRepository, createVerifiedProviderStatusReceiptAuthority } = runtimeApi();
+  const authority = createVerifiedProviderStatusReceiptAuthority({
+    nextReceiptId: (() => {
+      let sequence = 0;
+      return () => `provider_status_${(++sequence).toString(16).padStart(32, "0")}`;
+    })(),
+  });
+  const repository = new MemoryCommunicationsRepository(
+    repositoryOptions({ ...overrides, providerStatusReceiptResolver: authority.resolver }),
+  );
+  repository.issueProviderStatusReceipt = authority.issuer.issue;
+  return repository;
+}
+
+function providerStatus(
+  repository: any,
+  commandId: string,
+  attemptId: string,
+  connectionId: string,
+  providerEventId: string,
+  status: "sent" | "delivered" | "read" | "failed",
+  occurredAt: Date,
+) {
+  return {
+    commandId,
+    attemptId,
+    receipt: repository.issueProviderStatusReceipt({
+      connectionId,
+      externalMessageReference: "provider_ref_1",
+      providerEventId,
+      status,
+      occurredAt,
+      verifiedAt: occurredAt,
+      bodyDigest: "a".repeat(64),
+      correlationId: "correlation_out_1",
+    }),
+  };
+}
+
+function validM002Receipt(correlationId: string) {
+  return {
+    receiptId: "m002_receipt_1",
+    owner: "public_knowledge",
+    source: "M002",
+    sourceId: "source_1",
+    sourceVersion: "v1",
+    reviewVersion: "v1",
+    disclosureVersion: "v1",
+    issuedAt: NOW,
+    expiresAt: TOMORROW,
+    correlationId,
+  };
 }
 
 function createService(repository: any, provider: Record<string, unknown>) {
@@ -605,19 +659,30 @@ describe("durable leases, attempts and recovery", () => {
       optOutSignal: "none",
     });
     expect(
-      await expiringInboundService.processInbound({
+      await runtimeApi().processInboundChannelEvent({
+        repository: inboundRepository,
+        executor: {
+          run: async (_operation: string, _timeout: number, action: () => Promise<unknown>) => action(),
+        },
+        contentPolicy: { evaluate: () => ({ allowed: true, code: "allowed" }) },
+        publicOrientation: {
+          answer: async () => ({
+            status: "available",
+            text: "Synthetic answer",
+            receipt: validM002Receipt("correlation_recovery"),
+          }),
+        },
         eventId: "event_recovery",
         leaseOwner: "worker_recovery",
         leaseExpiresAt: LATER,
         requiredPolicyVersion: 7,
-        action: "public_knowledge",
+        intent: "public_orientation",
         prompt: "Synthetic question",
+        now: NOW,
+        knowledgeTimeoutMs: 500,
+        ownerTimeoutMs: 500,
       }),
-    ).toEqual({
-      status: "recovery_required",
-      code: "inbound_completion_conflict",
-      eventId: "event_recovery",
-    });
+    ).toMatchObject({ status: "answered", text: "Synthetic answer" });
 
     let outboundNow = NOW;
     const outboundRepository = createRepository();
@@ -655,85 +720,91 @@ describe("durable leases, attempts and recovery", () => {
 describe("monotonic exactly-once provider statuses", () => {
   it("ignores duplicate and delayed regressive statuses without moving backward", async () => {
     const repository = createRepository();
-    const service = createService(repository, {
-      dispatch: async () => ({ status: "accepted", providerReference: "provider_ref_1" }),
-    });
-    const queued = await queueOutbound(service);
-    await service.dispatchOutbound({
+    const queued = await queueOutbound(createService(repository));
+    const claimed = await repository.claimOutbound({
       commandId: queued.commandId,
+      attemptId: "attempt_status_1",
       leaseOwner: "worker_1",
       leaseExpiresAt: LATER,
+      now: NOW,
     });
+    expect(claimed).toMatchObject({ status: "claimed" });
+    if (claimed.status !== "claimed") throw new Error("STATUS_ATTEMPT_NOT_CLAIMED");
+    await repository.markDispatchOutcome({
+      commandId: queued.commandId,
+      attemptId: claimed.attempt.attemptId,
+      leaseOwner: "worker_1",
+      leaseVersion: claimed.attempt.leaseVersion,
+      outcome: "accepted",
+      providerReference: "provider_ref_1",
+      now: NOW,
+    });
+    const { attemptId } = claimed.attempt;
+    const connectionId = claimed.command.channel;
+    const delivered = providerStatus(
+      repository,
+      queued.commandId,
+      attemptId,
+      connectionId,
+      "status_event_2",
+      "delivered",
+      LATER,
+    );
 
     expect(
-      await repository.applyProviderStatus({
-        commandId: queued.commandId,
-        providerEventId: "status_event_2",
-        status: "delivered",
-        occurredAt: LATER,
-      }),
+      await repository.applyProviderStatus(delivered),
     ).toMatchObject({ status: "applied", commandState: "delivered" });
     expect(
-      await repository.applyProviderStatus({
-        commandId: queued.commandId,
-        providerEventId: "status_event_2",
-        status: "delivered",
-        occurredAt: LATER,
-      }),
+      await repository.applyProviderStatus(delivered),
     ).toMatchObject({ status: "duplicate", commandState: "delivered" });
     expect(
-      await repository.applyProviderStatus({
-        commandId: queued.commandId,
-        providerEventId: "status_event_1",
-        status: "sent",
-        occurredAt: NOW,
-      }),
+      await repository.applyProviderStatus(
+        providerStatus(repository, queued.commandId, attemptId, connectionId, "status_event_1", "sent", NOW),
+      ),
     ).toMatchObject({ status: "regressive", commandState: "delivered" });
     expect(
-      await repository.applyProviderStatus({
-        commandId: queued.commandId,
-        providerEventId: "status_event_3",
-        status: "read",
-        occurredAt: TOMORROW,
-      }),
+      await repository.applyProviderStatus(
+        providerStatus(repository, queued.commandId, attemptId, connectionId, "status_event_3", "read", TOMORROW),
+      ),
     ).toMatchObject({ status: "applied", commandState: "read" });
     expect(repository.referenceState().providerStatuses).toHaveLength(3);
   });
 
   it("closes the active attempt when provider status arrives before dispatch completion", async () => {
-    const providerEntered = deferred();
-    const releaseProvider = deferred();
     const repository = createRepository();
-    const service = createService(repository, {
-      dispatch: async () => {
-        providerEntered.resolve();
-        await releaseProvider.promise;
-        return { status: "accepted", providerReference: "provider_ref_1" };
-      },
-    });
-    const queued = await queueOutbound(service);
-    const dispatch = service.dispatchOutbound({
+    const queued = await queueOutbound(createService(repository));
+    const claimed = await repository.claimOutbound({
       commandId: queued.commandId,
+      attemptId: "attempt_early_status_1",
       leaseOwner: "worker_1",
       leaseExpiresAt: LATER,
+      now: NOW,
     });
-    await providerEntered.promise;
+    expect(claimed).toMatchObject({ status: "claimed" });
+    if (claimed.status !== "claimed") throw new Error("EARLY_STATUS_ATTEMPT_NOT_CLAIMED");
+    const { attemptId } = claimed.attempt;
+    const connectionId = claimed.command.channel;
 
     expect(
-      await repository.applyProviderStatus({
-        commandId: queued.commandId,
-        providerEventId: "early_status_1",
-        status: "sent",
-        occurredAt: NOW,
-      }),
-    ).toMatchObject({ status: "applied", commandState: "sent" });
-    expect(repository.referenceState().attempts[0]).toMatchObject({
-      state: "sent",
-      completedAt: NOW,
-    });
-    releaseProvider.resolve();
+      await repository.applyProviderStatus(
+        providerStatus(repository, queued.commandId, attemptId, connectionId, "early_status_1", "sent", NOW),
+      ),
+    ).toEqual({ status: "denied", code: "provider_status_binding_mismatch" });
 
-    await expect(dispatch).resolves.toMatchObject({ status: "accepted" });
+    await repository.markDispatchOutcome({
+      commandId: queued.commandId,
+      attemptId,
+      leaseOwner: "worker_1",
+      leaseVersion: claimed.attempt.leaseVersion,
+      outcome: "accepted",
+      providerReference: "provider_ref_1",
+      now: NOW,
+    });
+    expect(
+      await repository.applyProviderStatus(
+        providerStatus(repository, queued.commandId, attemptId, connectionId, "status_event_1", "sent", NOW),
+      ),
+    ).toMatchObject({ status: "applied", commandState: "sent" });
     expect(repository.referenceState().attempts).toEqual([
       expect.objectContaining({ state: "sent", completedAt: NOW }),
     ]);
@@ -825,20 +896,36 @@ describe("controlled inbound opt-out and reconciliation races", () => {
       optOutSignal: "pending",
     });
     await optOutEntered.promise;
-    const processPrior = service.processInbound({
+    const processPrior = runtimeApi().processInboundChannelEvent({
+      repository,
+      executor: {
+        run: async (_operation: string, _timeout: number, action: () => Promise<unknown>) => action(),
+      },
+      contentPolicy: { evaluate: () => ({ allowed: true, code: "allowed" }) },
+      publicOrientation: {
+        answer: async () => ({
+          status: "available",
+          text: "Synthetic answer",
+          receipt: validM002Receipt("correlation_prior"),
+        }),
+      },
       eventId: "event_prior",
       leaseOwner: "worker_prior",
       leaseExpiresAt: LATER,
       requiredPolicyVersion: 7,
-      action: "public_knowledge",
+      intent: "public_orientation",
       prompt: "Synthetic question",
+      now: NOW,
+      knowledgeTimeoutMs: 500,
+      ownerTimeoutMs: 500,
     });
     releaseOptOut.resolve();
 
     await expect(acceptOptOut).resolves.toMatchObject({ status: "accepted" });
     await expect(processPrior).resolves.toEqual({
-      status: "conflict",
+      status: "recovery_required",
       code: "policy_version_mismatch",
+      eventId: "event_prior",
     });
   });
 

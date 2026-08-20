@@ -3,11 +3,13 @@ import type {
   CommunicationsReferenceState,
   CommunicationsRepository,
   CommunicationsSeed,
+  VerifiedProviderStatusReceiptIssuer,
 } from "@atlas/domain";
 import { describe, expect, it } from "vitest";
 
 export type CommunicationsRepositoryHarness = {
   repository: CommunicationsRepository;
+  providerStatusReceiptIssuer: VerifiedProviderStatusReceiptIssuer;
   inspectState?: () => Promise<CommunicationsReferenceState> | CommunicationsReferenceState;
   close?: () => Promise<void>;
 };
@@ -766,7 +768,7 @@ export function runCommunicationsRepositoryConformance(
           }
         });
       }
-      await withHarness(factory, `${label}-provider-status`, async ({ repository, inspectState }) => {
+      await withHarness(factory, `${label}-provider-status`, async ({ repository, inspectState, providerStatusReceiptIssuer }) => {
         const scenario = `${label}-provider-status`;
         const value = await queueOutbound(repository, scenario);
         const attemptId = `attempt_${suffix(scenario)}`;
@@ -775,12 +777,33 @@ export function runCommunicationsRepositoryConformance(
         if (claimed.status !== "claimed") throw new Error("CONFORMANCE_OUTBOUND_NOT_CLAIMED");
         await repository.markDispatchOutcome({ commandId: value.commandId, attemptId,
           leaseOwner: "status-owner", leaseVersion: claimed.attempt.leaseVersion,
-          outcome: "accepted", now: CONFORMANCE_NOW });
-        const status = { commandId: value.commandId, providerEventId: `status_${suffix(scenario)}`,
-          status: "delivered" as const, occurredAt: CONFORMANCE_NOW };
+          outcome: "accepted", providerReference: `provider_ref_${suffix(scenario)}`, now: CONFORMANCE_NOW });
+        const status = {
+          commandId: value.commandId,
+          attemptId,
+          receipt: providerStatusReceiptIssuer.issue({
+            connectionId: claimed.command.channel,
+            externalMessageReference: `provider_ref_${suffix(scenario)}`,
+            providerEventId: `status_${suffix(scenario)}`,
+            status: "delivered",
+            occurredAt: CONFORMANCE_NOW,
+            verifiedAt: CONFORMANCE_NOW,
+            bodyDigest: "a".repeat(64),
+            correlationId: `correlation_out_${suffix(scenario)}`,
+          }),
+        };
         await expect(repository.applyProviderStatus(status)).resolves.toMatchObject({ status: "applied" });
         await expect(repository.applyProviderStatus(status)).resolves.toMatchObject({ status: "duplicate" });
-        if (inspectState) expect((await inspectState()).providerStatuses).toContainEqual(status);
+        if (inspectState) {
+          expect((await inspectState()).providerStatuses).toContainEqual(
+            expect.objectContaining({
+              commandId: value.commandId,
+              attemptId,
+              providerEventId: `status_${suffix(scenario)}`,
+              status: "delivered",
+            }),
+          );
+        }
       });
     });
 

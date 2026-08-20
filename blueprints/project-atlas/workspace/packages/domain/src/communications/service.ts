@@ -79,6 +79,7 @@ export type CommunicationsServiceDependencies = {
   destinationResolver: DestinationResolutionPort;
   boundedExecutor: BoundedExecutor;
   provider: OutboundProviderPort;
+  contentPolicy: ContentPolicyPort;
   providerTimeoutMs: number;
 };
 

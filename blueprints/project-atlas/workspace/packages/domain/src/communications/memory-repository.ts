@@ -600,7 +600,9 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       attempt.state = state;
       attempt.resultCode = input.outcome;
       attempt.completedAt = input.now;
-      attempt.externalMessageReference = input.providerReference;
+      attempt.externalMessageReferenceDigest = input.providerReference
+        ? await sha256(input.providerReference)
+        : undefined;
       return "completed";
     });
   }
@@ -614,10 +616,12 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     return this.withBindingLock(found.command.bindingId, "apply_provider_status", async () => {
       const record = this.outboundById.get(input.commandId)!;
       const attempt = this.attempts.get(input.attemptId);
+      const connection = this.connections.get(record.command.channel);
       if (!attempt || attempt.commandId !== input.commandId) return { status: "not_found" };
       if (
-        record.command.connectionId !== evidence.connectionId ||
-        attempt.externalMessageReference !== evidence.externalMessageReference
+        !connection ||
+        connection.channel !== evidence.connectionId ||
+        attempt.externalMessageReferenceDigest !== await sha256(evidence.externalMessageReference)
       ) {
         return { status: "denied", code: "provider_status_binding_mismatch" };
       }

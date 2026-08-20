@@ -658,7 +658,7 @@ export function createWhatsAppIngressHandler(
             const finishCleanup = () => {
               if (cleanupFinished) return;
               cleanupFinished = true;
-              clearTimeout(retirementTimer);
+              dependencies.clock.clearTimeout(retirementTimer);
               if (queuedRetirement) {
                 queuedRetirement.active = false;
                 const index = pendingRetirements.indexOf(queuedRetirement);
@@ -681,7 +681,7 @@ export function createWhatsAppIngressHandler(
               releaseOnce();
               return true;
             };
-            const retirementTimer = setTimeout(() => {
+            const retirementTimer = dependencies.clock.setTimeout(() => {
               if (cleanupFinished) return;
               if (!retireCleanup()) {
                 queuedRetirement = { active: true, retire: retireCleanup };

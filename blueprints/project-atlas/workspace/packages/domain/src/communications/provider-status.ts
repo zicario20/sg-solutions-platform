@@ -106,7 +106,7 @@ export function createVerifiedProviderStatusReceiptAuthority(options: {
   });
 
   const issuer: VerifiedProviderStatusReceiptIssuer = Object.freeze({
-    issue(input) {
+    issue(input: Omit<VerifiedProviderStatusEvidence, "receiptId" | "verification">) {
       const evidence = cloneEvidence({
         ...input,
         receiptId: nextReceiptId(),
@@ -119,7 +119,7 @@ export function createVerifiedProviderStatusReceiptAuthority(options: {
     },
   });
   const resolver: VerifiedProviderStatusReceiptResolver = Object.freeze({
-    resolve(receipt) {
+    resolve(receipt: unknown) {
       if (typeof receipt !== "object" || receipt === null) return null;
       const evidence = evidenceByReceipt.get(receipt);
       return evidence ? cloneEvidence(evidence) : null;
