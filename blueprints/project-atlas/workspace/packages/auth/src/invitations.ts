@@ -1,4 +1,5 @@
 import type { MemoryAuthAccountRepository } from "./memory-repository.ts";
+import { createOpaqueValue, digestOpaqueProof } from "./crypto.ts";
 
 export class InvitationService {
   private sequence = 0;
@@ -15,4 +16,12 @@ export class InvitationService {
     if (command.method !== "POST") return { kind: "inert" };
     return { kind: await this.repository.consumeInvitation(command.invitationId) };
   }
+}
+
+export function createSecureInvitationService() {
+  const invitations = new Map<string, { proofDigest: string; expiresAt: number; consumed: boolean; intendedReceipt: string }>();
+  return {
+    async issue(input: { intendedMembershipReceipt: string }) { const proof = createOpaqueValue(); const id = createOpaqueValue(); invitations.set(id, { proofDigest: digestOpaqueProof(proof), expiresAt: Date.now() + 15 * 60_000, consumed: false, intendedReceipt: input.intendedMembershipReceipt }); return { id, proof }; },
+    async consume(input: { id: string; proof: string; method: "POST" | "GET" }) { const invitation = invitations.get(input.id); if (input.method !== "POST") return { kind: "inert" as const }; if (!invitation || invitation.consumed || invitation.expiresAt <= Date.now() || invitation.proofDigest !== digestOpaqueProof(input.proof)) return { kind: "replay_denied" as const }; invitation.consumed = true; return { kind: "consumed" as const }; },
+  };
 }

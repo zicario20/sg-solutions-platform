@@ -22,8 +22,8 @@ const authGatewayOnly = (name: string) =>
     as: "permissive",
     for: "all",
     to: authGatewayRole,
-    using: sql`true`,
-    withCheck: sql`true`,
+    using: sql`current_setting('atlas.auth_context_verified', true) = '1'`,
+    withCheck: sql`current_setting('atlas.auth_context_verified', true) = '1'`,
   });
 
 const timestamps = {

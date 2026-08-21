@@ -15,6 +15,7 @@ export * from "./party-linking.ts";
 export * from "./password-flows.ts";
 export * from "./providers.ts";
 export * from "./session-service.ts";
+export * from "./runtime.ts";
 export * from "./service-identities.ts";
 export * from "./step-up.ts";
 export * from "./supabase-provider.ts";

@@ -1,12 +1,11 @@
-type SessionRecord = { accountId: string; familyId: string; generation: number; state: "active" | "rotated" | "revoked" };
+import { createOpaqueValue, digestOpaqueProof } from "./crypto.ts";
+type SessionRecord = { accountId: string; familyId: string; handleDigest: string; generation: number; state: "active" | "rotated" | "revoked"; idleExpiresAt: number; absoluteExpiresAt: number };
 
 export class MemorySessionStore {
   readonly sessions = new Map<string, SessionRecord>();
-  private nextId = 0;
-
-  create(accountId: string, familyId = `family_${++this.nextId}`, generation = 1): { handle: string; record: SessionRecord } {
-    const handle = `session_${++this.nextId}`;
-    const record: SessionRecord = { accountId, familyId, generation, state: "active" };
+  create(accountId: string, familyId = createOpaqueValue(), generation = 1): { handle: string; record: SessionRecord } {
+    const handle = createOpaqueValue();
+    const record: SessionRecord = { accountId, familyId, handleDigest: digestOpaqueProof(handle), generation, state: "active", idleExpiresAt: Date.now() + 30 * 60_000, absoluteExpiresAt: Date.now() + 8 * 60 * 60_000 };
     this.sessions.set(handle, record);
     return { handle, record };
   }
@@ -25,7 +24,7 @@ export class ApplicationSessionService {
 
   async refresh(handle: string): Promise<{ readonly kind: "refreshed"; readonly handle: string } | { readonly kind: "family_revoked" }> {
     const current = this.store.sessions.get(handle);
-    if (!current || current.state !== "active") {
+    if (!current || current.state !== "active" || current.idleExpiresAt <= Date.now() || current.absoluteExpiresAt <= Date.now()) {
       if (current) this.store.revokeFamily(current.familyId);
       return { kind: "family_revoked" };
     }

@@ -1,4 +1,5 @@
 import { digestOpaqueProof } from "./crypto.ts";
+import { createOpaqueValue } from "./crypto.ts";
 
 type Transaction = { state: string; nonce: string; pkceVerifierDigest: string; browserBinding: string; returnIntent: string; consumed: boolean };
 
@@ -23,4 +24,23 @@ export class OAuthTransactionService {
     transaction.consumed = true;
     return { kind: "consumed" };
   }
+}
+
+type SecureTransaction = { provider: "google"; purpose: "sign_in" | "link"; callbackUrl: string; returnIntent: string; browserBindingDigest: string; stateDigest: string; nonceDigest: string; pkceVerifierDigest: string; expiresAt: number; consumed: boolean };
+export function createSecureOAuthTransactionService() {
+  const transactions = new Map<string, SecureTransaction>();
+  return {
+    async begin(input: { provider: "google"; purpose: "sign_in" | "link"; callbackUrl: string; returnIntent: string; browserBinding: string }) {
+      if (!/^https:\/\/[^/?#]+\/api\/auth\/oauth\/google\/callback$/u.test(input.callbackUrl) || !/^\/(?!\/)[^\r\n]*$/u.test(input.returnIntent)) throw new Error("OAUTH_RETURN_INTENT_DENIED");
+      const state = createOpaqueValue(); const nonce = createOpaqueValue(); const pkceVerifier = createOpaqueValue(); const id = createOpaqueValue();
+      transactions.set(id, { provider: input.provider, purpose: input.purpose, callbackUrl: input.callbackUrl, returnIntent: input.returnIntent, browserBindingDigest: digestOpaqueProof(input.browserBinding), stateDigest: digestOpaqueProof(state), nonceDigest: digestOpaqueProof(nonce), pkceVerifierDigest: digestOpaqueProof(pkceVerifier), expiresAt: Date.now() + 10 * 60_000, consumed: false });
+      return { id, state, nonce, pkceVerifier };
+    },
+    async consume(input: { id: string; state: string; nonce: string; pkceVerifier: string; browserBinding: string }) {
+      const transaction = transactions.get(input.id);
+      if (!transaction || transaction.consumed || transaction.expiresAt <= Date.now()) return { kind: "replay_denied" as const };
+      if (transaction.stateDigest !== digestOpaqueProof(input.state) || transaction.nonceDigest !== digestOpaqueProof(input.nonce) || transaction.pkceVerifierDigest !== digestOpaqueProof(input.pkceVerifier) || transaction.browserBindingDigest !== digestOpaqueProof(input.browserBinding)) return { kind: "denied" as const };
+      transaction.consumed = true; return { kind: "consumed" as const };
+    },
+  };
 }

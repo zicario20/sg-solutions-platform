@@ -6,7 +6,7 @@ describe("M007 account lifecycle", () => {
     const repository = new MemoryAuthAccountRepository();
     const service = new AccountService(repository);
 
-    await expect(service.registerProspect({ subject: "subject-1" })).resolves.toMatchObject({
+    await expect(service.registerProspect({ subject: "subject-1", verifiedSubjectReceipt: { subject: "subject-1", verifiedAt: Date.now() } })).resolves.toMatchObject({
       resourceGrants: [],
       status: "pending_verification",
     });

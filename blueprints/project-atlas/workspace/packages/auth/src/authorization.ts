@@ -9,11 +9,18 @@ export type AuthorizationActor = Readonly<{
 
 export class AuthorizationService {
   async authorize(actor: AuthorizationActor, permission: string): Promise<{ readonly kind: "allowed" | "denied" }> {
-    if (!actor.activeSession || !actor.accountId || !actor.resourceReceipt) return { kind: "denied" };
-    if (!actor.permissions.includes(permission)) return { kind: "denied" };
-    if (actor.resourceReceipt.accountId !== actor.accountId) return { kind: "denied" };
-    if (actor.organizationId && actor.resourceReceipt.organizationId !== actor.organizationId) return { kind: "denied" };
-    if (permission.startsWith("admin.") && actor.assurance !== "aal2") return { kind: "denied" };
+    void actor;
+    void permission;
+    return { kind: "denied" };
+  }
+}
+
+export type AuthoritativeGrant = { activeSession: boolean; accountId: string; accessEpoch: number; permissions: readonly string[]; resource: { accountId: string; organizationId: string; accessEpoch: number } };
+export class AuthoritativeAuthorizationService {
+  constructor(private readonly repository: { load(input: { sessionId: string; resourceId: string }): Promise<AuthoritativeGrant | undefined> }) {}
+  async authorize(input: { sessionId: string; resourceId: string; permission: string }): Promise<{ kind: "allowed" | "denied" }> {
+    const grant = await this.repository.load({ sessionId: input.sessionId, resourceId: input.resourceId });
+    if (!grant || !grant.activeSession || grant.resource.accountId !== grant.accountId || grant.resource.accessEpoch !== grant.accessEpoch || !grant.permissions.includes(input.permission)) return { kind: "denied" };
     return { kind: "allowed" };
   }
 }

@@ -52,6 +52,9 @@ importers:
 
   apps/app:
     dependencies:
+      '@atlas/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@atlas/config':
         specifier: workspace:*
         version: link:../../packages/config

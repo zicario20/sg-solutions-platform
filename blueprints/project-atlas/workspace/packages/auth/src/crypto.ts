@@ -1,4 +1,4 @@
-import { createHash, createHmac } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 
 function assertNonEmpty(value: string, label: string): void {
   if (value.length === 0) {
@@ -18,4 +18,9 @@ export function hmacIdentifier(key: string, purpose: string, identifier: string)
   return createHmac("sha256", key)
     .update(`${purpose}\u0000${identifier.trim().toLowerCase()}`, "utf8")
     .digest("base64url");
+}
+
+export function createOpaqueValue(bytes = 32): string {
+  if (!Number.isSafeInteger(bytes) || bytes < 32) throw new Error("opaque_value_bytes_invalid");
+  return randomBytes(bytes).toString("base64url");
 }
