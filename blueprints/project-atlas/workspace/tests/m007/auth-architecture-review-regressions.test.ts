@@ -17,9 +17,11 @@ import { describe, expect, it } from "vitest";
 
 describe("M007 architecture-review security regressions", () => {
   it("dispatches a route-specific backend facade with the configured canonical origin", async () => {
-    const runtime = createAuthRuntime({ canonicalOrigin: "https://portal.example", sessionStore: {} });
+    const runtime = createAuthRuntime({ canonicalOrigin: "https://portal.example", sessionStore: {}, controls: { consumeRate: async () => true, appendAudit: async () => undefined, enqueue: async () => undefined } });
     const response = await createAuthRouteHandler(runtime, "register")(new Request("https://portal.example/api/auth/register", { method: "POST", headers: { origin: "https://portal.example" } }));
     expect(response.status).toBe(202);
+    const unavailable = createAuthRuntime({ canonicalOrigin: "https://portal.example", sessionStore: {} });
+    await expect(unavailable.execute("register", { origin: "https://portal.example" })).resolves.toEqual({ status: 503, body: { kind: "unavailable" } });
   });
 
   it("generates high-entropy opaque values rather than counters", () => {
