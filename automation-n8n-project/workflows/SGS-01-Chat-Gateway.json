@@ -1,0 +1,329 @@
+{
+  "name": "SGS-01 Chat Gateway",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "sgs-chat",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "chat-webhook",
+      "name": "Chat Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        220,
+        240
+      ],
+      "webhookId": "sgs-chat-main-webhook-id"
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.body || $json;\nconst message = (payload.message || payload.text || payload.body || payload.query || payload.input || payload.content || '').toString().trim();\n\nconst normalize = (value) => (value || '').toString().trim().toLowerCase();\nconst fromPayloadLang = normalize(payload.language || payload.lang || payload.locale || payload.preferred_language || payload.user_language);\nconst fromSessionLang = normalize(payload.session_state && payload.session_state.language ? payload.session_state.language : payload.session_language);\nconst rawHeaderLang = payload.headers?.['accept-language'] || payload.headers?.acceptLanguage || payload.headers?.accept_language || '';\nconst fromHeaderLang = normalize(typeof rawHeaderLang === 'string' ? rawHeaderLang.split(',')[0].split('-')[0] : rawHeaderLang);\nconst defaultLang = normalize(\n  payload.default_language ||\n  payload.defaultLanguage ||\n  payload.config?.default_language ||\n  payload.config?.language ||\n  'es'\n);\n\nconst detectLanguageFromMessage = (text) => {\n  const content = String(text || '');\n  if (!content) return '';\n\n  const accentCount = (content.normalize('NFD').replace(/[^\\p{L}]/gu, '').match(/[áéíóúüñ¿¡]/gi) || []).length;\n  const tokenized = content\n    .toLowerCase()\n    .replace(/[^a-záéíóúüñ¿¡0-9\\s]+/gi, ' ')\n    .split(/\\s+/)\n    .filter(Boolean);\n  const tokenSet = new Set(tokenized);\n\n  const spanishWords = ['hola', 'gracias', 'cómo', 'como', 'quiero', 'necesito', 'puedo', 'quieres', 'ayuda', 'servicios', 'credito', 'crédito', 'impuesto', 'impuestos', 'empresa', 'negocio', 'cita', 'citas', 'agendar', 'consulta'];\n  const englishWords = ['hello', 'hi', 'thanks', 'thank', 'help', 'you', 'can', 'need', 'want', 'service', 'services', 'what', 'how', 'please', 'when', 'where', 'consultation', 'schedule', 'appointment', 'tax', 'credit', 'loan'];\n\n  const countMatches = (keywords) => keywords.reduce((total, word) => tokenSet.has(word) ? total + 1 : total, 0);\n  const spanishScore = countMatches(spanishWords) + Math.min(accentCount, 2);\n  const englishScore = countMatches(englishWords);\n\n  if (spanishScore > englishScore) return 'es';\n  if (englishScore > spanishScore) return 'en';\n  if (accentCount > 0) return 'es';\n\n  return '';\n};\n\nconst detectedLang = detectLanguageFromMessage(message);\nconst resolvedLang = (detectedLang === 'en' || detectedLang === 'es') ? detectedLang : ((fromPayloadLang === 'en' || fromPayloadLang === 'es') ? fromPayloadLang : ((fromSessionLang === 'en' || fromSessionLang === 'es') ? fromSessionLang : ((fromHeaderLang === 'en' || fromHeaderLang === 'es') ? fromHeaderLang : ((defaultLang === 'en' || defaultLang === 'es') ? defaultLang : 'es'))));\n\nconst sessionId = (payload.session_id || payload.sessionId || payload.customer_id || '').toString();\nconst finalSessionId = sessionId || ('sgs_' + Date.now());\n\nreturn [{\n  json: {\n    workflow_execution_id: $execution.id,\n    session_id: finalSessionId,\n    customer_id: (payload.customer_id || '').toString(),\n    channel: (payload.channel || 'web').toString(),\n    message,\n    language: resolvedLang,\n    conversation_stage: payload.conversation_stage || '',\n    collected_fields: payload.collected_fields || {},\n    recent_context: Array.isArray(payload.recent_context) ? payload.recent_context : [],\n    session_state: payload.session_state || {},\n    previous_intent: payload.previous_intent || '',\n    session_update_hint: payload.session_update_hint || {},\n    language_detected: detectedLang || '',\n    language_source: fromPayloadLang ? 'payload' : (detectedLang ? 'message' : (fromSessionLang ? 'session' : (fromHeaderLang ? 'header' : 'default'))),\n    orchestration_payload: {\n      session_id: finalSessionId,\n      customer_id: payload.customer_id || '',\n      channel: payload.channel || 'web',\n      message,\n      language: resolvedLang,\n      language_source: fromPayloadLang ? 'payload' : (detectedLang ? 'message' : (fromSessionLang ? 'session' : (fromHeaderLang ? 'header' : 'default'))),\n      language_detected: detectedLang || '',\n      session_state: payload.session_state || {},\n      collected_fields: payload.collected_fields || {},\n      recent_messages: Array.isArray(payload.recent_messages) ? payload.recent_messages : [],\n      default_language: defaultLang\n    },\n    sessionApiEnabled: !!(payload.sessionApiEnabled || payload.sessionApi || payload.session_api_enabled),\n    loggerEnabled: !!(payload.loggerEnabled || payload.logEnabled || payload.logger_enabled)\n  }\n}];"
+      },
+      "id": "normalize-input",
+      "name": "Normalize Incoming Message",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        460,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.orchestration_payload || $json || {};\nconst preferredLanguage = (payload.language || payload.lang || payload.locale || payload.preferred_language || payload.user_language || '').toString().toLowerCase();\nconst resolvedLang = (preferredLanguage === 'en' || preferredLanguage === 'es') ? preferredLanguage : 'es';\nreturn [{\n  json: {\n    workflow_execution_id: payload.workflow_execution_id || $execution.id,\n    session_id: payload.session_id || '',\n    customer_id: payload.customer_id || '',\n    channel: payload.channel || 'web',\n    message: (payload.message || '').toString().trim(),\n    language: resolvedLang,\n    conversation_stage: payload.conversation_stage || '',\n    current_service: payload.current_service || payload.service || 'general',\n    pending_action: payload.pending_action || '',\n    collected_fields: payload.collected_fields || {},\n    recent_messages: Array.isArray(payload.recent_messages) ? payload.recent_messages : [],\n    session_state: payload.session_state || {},\n    sessionApiEnabled: !!(payload.sessionApiEnabled || payload.sessionApi || payload.session_api_enabled),\n    loggerEnabled: !!(payload.loggerEnabled || payload.logEnabled || payload.logger_enabled),\n    default_language: payload.default_language || resolvedLang\n  }\n}];"
+      },
+      "id": "call-orchestrator",
+      "name": "Call AI Orchestrator",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        700,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "qFQt5ojfJ19uzMvk",
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-orchestrator",
+      "name": "Execute AI Orchestrator",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        940,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const rawInput = $json || {};\nconst responseCandidate = rawInput?.body || rawInput?.data || rawInput?.payload || rawInput?.response || rawInput?.result || rawInput;\n\nconst hasOrchestratorShape = (obj) => obj && typeof obj === 'object' && (obj.intent || obj.response || obj.reply || obj.session_id || obj.tool || obj.message || obj.final_message || obj.output);\n\nlet response = responseCandidate;\nlet result = null;\n\nif (hasOrchestratorShape(response)) {\n  result = response;\n} else if (typeof response === 'string' || response instanceof String) {\n  const text = response.toString().trim();\n  const match = text.match(/\\{[\\s\\S]*\\}/);\n  if (match) {\n    try {\n      const parsed = JSON.parse(match[0]);\n      if (hasOrchestratorShape(parsed)) {\n        result = parsed;\n        response = parsed;\n      }\n    } catch (err) {}\n  }\n} else if (response && typeof response === 'object' && hasOrchestratorShape(response?.payload)) {\n  result = response.payload;\n  response = response.payload;\n} else if (response && typeof response === 'object') {\n  const nested = response.body || response.data || response.result;\n  if (hasOrchestratorShape(nested)) {\n    result = nested;\n    response = nested;\n  }\n}\n\nif (!result) {\n  // Try to extract JSON from common LLM response shapes\n  const candidateText =\n    (response?.choices?.[0]?.message?.content) ||\n    response?.content ||\n    response?.message ||\n    response?.text ||\n    response?.reply ||\n    response?.final_message ||\n    response?.output ||\n    '';\n\n  let parsed = null;\n  if (typeof candidateText === 'string' && candidateText.trim()) {\n    try {\n      const match = candidateText.match(/\\{[\\s\\S]*\\}/);\n      parsed = match ? JSON.parse(match[0]) : null;\n    } catch (err) {\n      parsed = null;\n    }\n  }\n\n  if (parsed && hasOrchestratorShape(parsed)) {\n    result = parsed;\n    response = parsed;\n  }\n}\n\nconst langSource = (result?.language || response?.language || rawInput?.language || 'es').toString().toLowerCase();\nconst inputLanguage = ($node['Normalize Incoming Message'].json.language || $node['Prepare Orchestrator Payload'].json.language || 'es').toString().toLowerCase();\nconst lang = (langSource === 'en' || langSource === 'es') ? langSource : (inputLanguage === 'en' ? 'en' : 'es');\n\nconst responseText =\n  (result?.response ||\n   result?.reply ||\n   result?.final_message ||\n   result?.output ||\n   response?.response ||\n   response?.reply ||\n   response?.message ||\n   response?.final_message ||\n   response?.output ||\n   responseTextFallback(rawInput) ||\n   '').toString();\n\nfunction responseTextFallback(input) {\n  const candidateText =\n    (input?.body && (input.body.response || input.body.reply || input.body.message || input.body.final_message || input.body.output)) ||\n    (input?.data && (input.data.response || input.data.reply || input.data.message || input.data.final_message || input.data.output)) ||\n    '';\n  return candidateText?.toString() || '';\n}\n\nconst hasError = Boolean(result?.error || rawInput?.error || response === null || response === undefined);\nconst parsedResponseText = responseText.trim();\nconst success = !hasError && hasOrchestratorShape(result) && (parsedResponseText.length > 0 || (typeof result.response === 'string' && result.response.trim().length > 0));\nconst fallbackText = lang === 'en'\n  ? 'I could not process the request right now. Please try again in a few seconds.'\n  : 'No pude procesar la solicitud en este momento. Intenta en unos segundos.';\n\nconst finalResponseText = (parsedResponseText.length > 0)\n  ? parsedResponseText\n  : ((result?.response && result.response.toString().trim().length > 0) ? result.response.toString().trim() : fallbackText);\n\nconst finalIntent = result?.intent || (hasError ? 'UNCLEAR' : 'UNCLEAR');\nconst finalTool = result?.tool || 'NONE';\nconst finalSession = result?.session_id || rawInput?.session_id || rawInput?.sessionId || '';\nconst finalCustomer = result?.customer_id || rawInput?.customer_id || '';\nconst finalChannel = result?.channel || rawInput?.channel || 'web';\n\nreturn [{\n  json: {\n    workflow_execution_id: result?.workflow_execution_id || rawInput?.workflow_execution_id || $execution.id,\n    session_id: finalSession.toString(),\n    customer_id: finalCustomer.toString(),\n    channel: finalChannel.toString(),\n    language: lang,\n    intent: finalIntent,\n    tool: finalTool,\n    handoff_required: result?.handoff_required === true,\n    response: finalResponseText || fallbackText,\n    session_update: result?.session_update || {\n      conversation_stage: success ? 'orchestrated' : 'error',\n      current_intent: finalIntent || 'UNCLEAR',\n      current_service: result?.service || result?.current_service || 'general',\n      pending_action: finalTool || 'NONE',\n      collected_fields: result?.collected_fields || {}\n    },\n    log_payload: result?.log_payload || {\n      event_type: 'MESSAGE_RECEIVED',\n      intent: finalIntent || 'UNCLEAR',\n      selected_tool: finalTool || 'NONE',\n      duration: Number(result?.duration || 0),\n      success: success,\n      error_type: hasError ? 'orchestrator_error' : ''\n    },\n    orchestration_raw: result || response,\n    success: success\n  }\n}];"
+      },
+      "id": "parse-orchestrator",
+      "name": "Parse Orchestrator Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1180,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "if": {
+          "conditions": {
+            "boolean": [
+              {
+                "value1": "={{$json.success}}",
+                "operation": "equal",
+                "value2": true
+              }
+            ]
+          }
+        }
+      },
+      "id": "if-orchestrator-success",
+      "name": "Response available",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1180,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const lang = $json.language === 'en' ? 'en' : 'es';\nconst responseText = ($json.response || '').toString().trim();\nconst replyText = responseText.length > 0\n  ? responseText\n  : (lang === 'en'\n      ? 'I could not generate a valid response from the assistant. Please retry.'\n      : 'No pude generar una respuesta valida. Intenta nuevamente.');\n\nreturn [{\n  json: {\n    session_id: $json.session_id || '',\n    customer_id: $json.customer_id || '',\n    channel: $json.channel || 'web',\n    language: lang,\n    reply: replyText,\n    response: replyText,\n    intent: 'UNCLEAR',\n    tool: 'NONE',\n    handoff_required: true,\n    session_update: { current_intent: 'UNCLEAR', conversation_stage: 'error', pending_action: 'NONE', collected_fields: {}, last_messages: [] },\n    log_payload: { event_type: 'TOOL_ERROR', intent: 'UNCLEAR', selected_tool: 'NONE', duration: 0, success: false, error_type: 'orchestrator_parse_failure' },\n    workflow_execution_id: $json.workflow_execution_id || '',\n    success: false\n  }\n}];"
+      },
+      "id": "fallback-response",
+      "name": "Fallback Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        940,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.sessionApiEnabled}}",
+              "operation": "equal",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-session-api",
+      "name": "Session API enabled",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1420,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SGS_SESSION_API_URL }}/sessions/{{$json.session_id}}",
+        "method": "PUT",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ JSON.stringify({ session_id: $json.session_id, customer_id: $json.customer_id, language: $json.language, channel: $json.channel, updated_at: new Date().toISOString(), session_update: $json.session_update, last_reply: $json.response, context_events: [$json.log_payload] }) }}",
+        "options": {
+          "responseFormat": "json"
+        }
+      },
+      "id": "update-session",
+      "name": "Update Session State",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1660,
+        220
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "functionCode": "const input = $json || {};\nconst payload = input.body || input;\nreturn [{\n  json: {\n    logged: true,\n    session_id: input.session_id || payload.session_id || '',\n    customer_id: input.customer_id || payload.customer_id || '',\n    channel: input.channel || payload.channel || 'web',\n    language: input.language || payload.language || 'es',\n    intent: input.intent || payload.intent || 'UNCLEAR',\n    tool: input.tool || payload.tool || 'NONE',\n    duration: Number(input.duration || payload.duration || 0),\n    success: input.success || payload.success || true,\n    error_type: input.error_type || payload.error_type || '',\n    reply: input.reply || payload.reply || '',\n    workflow_execution_id: input.workflow_execution_id || payload.workflow_execution_id || ''\n  }\n}];"
+      },
+      "id": "log-session-result",
+      "name": "Normalize Final Payload",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "responseCode": 200,
+        "options": {},
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson"
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2120,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "responseCode": 200,
+        "options": {},
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson"
+      },
+      "id": "respond-fallback",
+      "name": "Respond Fallback",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1660,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Chat Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Incoming Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Incoming Message": {
+      "main": [
+        [
+          {
+            "node": "Call AI Orchestrator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call AI Orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Parse Orchestrator Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Orchestrator Response": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Fallback Response",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Response available",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Response available": {
+      "main": [
+        [
+          {
+            "node": "Session API enabled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session API enabled": {
+      "main": [
+        [
+          {
+            "node": "Update Session State",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normalize Final Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Session State": {
+      "main": [
+        [
+          {
+            "node": "Normalize Final Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Final Payload": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fallback Response": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Respond Fallback",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Respond": {
+      "main": []
+    },
+    "Respond Fallback": {
+      "main": []
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "Sxgdt57Qh03ATIRf"
+}

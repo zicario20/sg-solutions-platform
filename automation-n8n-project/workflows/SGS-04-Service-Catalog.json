@@ -1,0 +1,221 @@
+{
+  "name": "SGS-04 Service Catalog",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "sgs-service-catalog",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-catalog",
+      "name": "Service Catalog Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.body || $json;\nconst limit = Number(payload.limit || 12);\nconst query = ((payload.query || payload.message || '').toString() || '').trim().toLowerCase();\nreturn [{\n  json: {\n    workflow_execution_id: $execution.id,\n    query: query,\n    category: (payload.category || '').toString(),\n    serviceId: (payload.service || payload.service_id || '').toString(),\n    language: ((payload.language || 'es').toString().toLowerCase() === 'en') ? 'en' : 'es',\n    session_id: (payload.session_id || '').toString(),\n    customer_id: (payload.customer_id || '').toString(),\n    channel: (payload.channel || 'web').toString(),\n    intent: (payload.intent || 'SERVICE_INFORMATION').toString(),\n    selected_tool: (payload.selected_tool || payload.tool || 'SERVICE_CATALOG').toString(),\n    limit: Number.isFinite(limit) && limit > 0 ? limit : 12,\n    useApi: ((payload.service_catalog_url || payload.serviceCatalogUrl || payload.config?.service_catalog_url || '').toString().trim().length > 4)\n  }\n}];"
+      },
+      "id": "normalize-catalog-input",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        520,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.useApi}}",
+              "operation": "equal",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "catalog-route-source",
+      "name": "Catalog API configured",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        760,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SGS_SERVICE_CATALOG_URL }}",
+        "method": "GET",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{$json.query}}"
+            },
+            {
+              "name": "category",
+              "value": "={{$json.category}}"
+            },
+            {
+              "name": "service",
+              "value": "={{$json.serviceId}}"
+            },
+            {
+              "name": "language",
+              "value": "={{$json.language}}"
+            }
+          ]
+        },
+        "responseFormat": "json",
+        "options": {
+          "retry": {
+            "maxTries": 1
+          }
+        }
+      },
+      "id": "remote-catalog",
+      "name": "Remote Catalog",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        980,
+        160
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "functionCode": "const catalog = [\n  { id: 'credit_education', name: 'Credit education', category: 'Credit Services', description: 'Credit education, review and educational guidance.', active: true, price: null, requires_consultation: true, appointment_type: 'consultation_credit', required_documents: ['ID', 'Income source'], faq_tags: ['credit','education'] },\n  { id: 'credit_analysis', name: 'Credit analysis', category: 'Credit Services', description: 'Credit analysis and readiness review.', active: true, price: null, requires_consultation: true, appointment_type: 'consultation_credit', required_documents: ['Credit report'], faq_tags: ['credit','analysis'] },\n  { id: 'credit_repair_assistance', name: 'Credit repair assistance', category: 'Credit Services', description: 'Guidance on credit improvement steps and cleanup strategy.', active: true, price: null, requires_consultation: true, appointment_type: 'consultation_credit', required_documents: ['ID', 'Credit report'], faq_tags: ['repair','dispute'] },\n  { id: 'tax_individual', name: 'Individual tax preparation', category: 'Tax Services', description: 'Individual tax preparation support and intake.', active: true, price: null, requires_consultation: true, appointment_type: 'tax_preparation', required_documents: ['W-2', '1099'], faq_tags: ['tax','individual'] },\n  { id: 'tax_self_employed', name: 'Self-employed tax preparation', category: 'Tax Services', description: 'Tax prep support for self-employed clients.', active: true, price: null, requires_consultation: true, appointment_type: 'tax_preparation', required_documents: ['Form 1099', 'Income logs'], faq_tags: ['tax','self-employed'] },\n  { id: 'tax_small_business', name: 'Small business tax preparation', category: 'Tax Services', description: 'Tax prep support for small business filings.', active: true, price: null, requires_consultation: true, appointment_type: 'tax_preparation', required_documents: ['Profit and loss', 'Bank statements'], faq_tags: ['tax','smb'] },\n  { id: 'llc_formation', name: 'LLC formation', category: 'Business Formation', description: 'Guidance on LLC formation and filing readiness.', active: true, price: null, requires_consultation: true, appointment_type: 'business_formation', required_documents: ['ID', 'State address'], faq_tags: ['llc','formation'] },\n  { id: 'ein_assistance', name: 'EIN assistance', category: 'Business Formation', description: 'Guidance for obtaining an EIN and business readiness.', active: true, price: null, requires_consultation: true, appointment_type: 'business_formation', required_documents: ['ID', 'Business info'], faq_tags: ['ein','formation'] },\n  { id: 'business_funding_preparation', name: 'Business funding preparation', category: 'Business Funding', description: 'Preparation of documents and lender matching readiness.', active: true, price: null, requires_consultation: true, appointment_type: 'funding', required_documents: ['Credit report', 'Bank statements'], faq_tags: ['funding','loan'] },\n  { id: 'loan_document_preparation', name: 'Loan document preparation', category: 'Loan Preparation', description: 'Loan document readiness and preparation support.', active: true, price: null, requires_consultation: true, appointment_type: 'loan_preparation', required_documents: ['ID', 'Income proof'], faq_tags: ['loan','documents'] },\n  { id: 'usda_homebuying', name: 'USDA assistance', category: 'Home Buying Assistance', description: 'USDA-style home buying readiness and guidance.', active: true, price: null, requires_consultation: true, appointment_type: 'home_buying', required_documents: ['Credit report', 'ID'], faq_tags: ['home','usda'] },\n  { id: 'fha_homebuying', name: 'FHA assistance', category: 'Home Buying Assistance', description: 'FHA program guidance and preparation support.', active: true, price: null, requires_consultation: true, appointment_type: 'home_buying', required_documents: ['Credit report', 'ID'], faq_tags: ['home','fha'] },\n  { id: 'conventional_homebuying', name: 'Conventional financing guidance', category: 'Home Buying Assistance', description: 'General financing guidance for conventional home loans.', active: true, price: null, requires_consultation: true, appointment_type: 'home_buying', required_documents: ['Credit report', 'Income proof'], faq_tags: ['home','conventional'] }\n];\n\nconst q = $json.query || '';\nconst lower = q.toLowerCase();\nconst terms = lower.split(/\\s+/).filter(Boolean);\nconst catFilter = ($json.category || '').toLowerCase();\nconst idFilter = ($json.serviceId || '').toLowerCase();\nconst limit = Number($json.limit || 12);\n\nlet filtered = catalog.filter((s) => s.active);\nif (catFilter) {\n  filtered = filtered.filter((s) => s.category.toLowerCase().includes(catFilter));\n}\nif (idFilter) {\n  filtered = filtered.filter((s) => s.id.toLowerCase() === idFilter || s.name.toLowerCase().includes(idFilter));\n}\nif (lower) {\n  filtered = filtered.filter((s) => {\n    const all = `${s.name} ${s.category} ${s.description} ${s.faq_tags.join(' ')}`.toLowerCase();\n    return terms.some((t) => all.includes(t));\n  });\n}\nfiltered = filtered.slice(0, Math.max(1, limit));\n\nreturn [{\n  json: {\n    found: filtered.length > 0,\n    results: filtered,\n    confidence: filtered.length > 0 ? 0.93 : 0,\n    query: q,\n    language: $json.language,\n    intent: $json.intent,\n    selected_tool: 'SERVICE_CATALOG',\n    tool: 'SERVICE_CATALOG',\n    service: $json.serviceId || $json.category || 'general',\n    session_id: $json.session_id,\n    customer_id: $json.customer_id,\n    channel: $json.channel\n  }\n}];"
+      },
+      "id": "local-catalog-search",
+      "name": "Local Catalog Search",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        980,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const base = $json || {};\nconst response = base.body || base.data || base;\nconst results = Array.isArray(response.results) ? response.results : (Array.isArray(base.results) ? base.results : []);\nconst found = Boolean(response.found ?? base.found ?? (results.length > 0));\n\nreturn [{\n  json: {\n    found: found,\n    results: found ? results : [],\n    confidence: Number(response.confidence || base.confidence || 0),\n    query: response.query || base.query || '',\n    language: response.language || base.language || 'es',\n    intent: response.intent || base.intent || 'SERVICE_INFORMATION',\n    selected_tool: response.selected_tool || base.selected_tool || 'SERVICE_CATALOG',\n    tool: response.tool || base.tool || 'SERVICE_CATALOG',\n    service: response.service || base.service || 'general',\n    session_id: response.session_id || base.session_id || '',\n    customer_id: response.customer_id || base.customer_id || '',\n    channel: response.channel || base.channel || 'web',\n    raw: response\n  }\n}];"
+      },
+      "id": "normalize-catalog",
+      "name": "Normalize Catalog Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1220,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "responseCode": 200,
+        "options": {},
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson"
+      },
+      "id": "respond-catalog",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1460,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "Service Catalog Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Catalog API configured",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Catalog API configured": {
+      "main": [
+        [
+          {
+            "node": "Remote Catalog",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Local Catalog Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remote Catalog": {
+      "main": [
+        [
+          {
+            "node": "Normalize Catalog Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Local Catalog Search": {
+      "main": [
+        [
+          {
+            "node": "Normalize Catalog Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Catalog Response": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "bFJx94aQa4FbUgrp"
+}
+
+

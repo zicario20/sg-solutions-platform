@@ -8,6 +8,77 @@ interface PageDefinition {
   en: Pick<PublicPage, "path" | "title" | "description">;
 }
 
+export const CLIENT_ROUTE_KEYS = new Set<PublicPage["routeKey"]>([
+  "portal-auth",
+  "customer-dashboard",
+  "my-services",
+  "process-status",
+  "portal-documents",
+  "secure-messaging",
+  "client-appointments",
+  "client-billing",
+  "financial-profile",
+]);
+
+export const ADMIN_ROUTE_KEYS = new Set<PublicPage["routeKey"]>([
+  "admin-contacts",
+  "admin-dashboard",
+  "crm",
+  "client-management",
+  "company-management",
+  "lead-management",
+  "service-orders",
+  "admin-forms",
+  "admin-work-queues",
+  "admin-approvals",
+  "admin-ai-hub",
+  "admin-operations",
+  "admin-governance",
+  "admin-analytics",
+  "admin-tradelines",
+  "admin-bookkeeping",
+  "admin-tax-services",
+  "admin-recommendation-engine",
+  "admin-creditcardbroker-integration",
+  "admin-partner-management",
+  "admin-provider-abstraction",
+]);
+
+const resolveSurface = (routeKey: PublicPage["routeKey"]): PublicPage["surface"] => {
+  if (CLIENT_ROUTE_KEYS.has(routeKey)) return "client";
+  if (ADMIN_ROUTE_KEYS.has(routeKey)) return "admin";
+  return "public";
+};
+
+const ensureSearchIndex = (
+  surface: PublicPage["surface"],
+  publicationState: PublicPage["publicationState"],
+) => (surface === "public" ? publicationState : "review-required");
+
+const buildLocalePage = (
+  definition: PageDefinition,
+  locale: PublicPage["locale"],
+) => {
+  const surface = resolveSurface(definition.routeKey);
+  const copy = locale === "es" ? definition.es : definition.en;
+  const experience = createPageExperience({
+    routeKey: definition.routeKey,
+    kind: definition.kind,
+    locale,
+    title: copy.title,
+    description: copy.description,
+  });
+  return {
+    routeKey: definition.routeKey,
+    surface,
+    kind: definition.kind,
+    locale,
+    ...copy,
+    ...experience,
+    publicationState: ensureSearchIndex(surface, experience.publicationState),
+  } satisfies PublicPage;
+};
+
 const pageDefinitions: PageDefinition[] = [
   {
     routeKey: "home",
@@ -202,6 +273,38 @@ const pageDefinitions: PageDefinition[] = [
     },
   },
   {
+    routeKey: "help-center",
+    kind: "standard",
+    es: {
+      path: "/centro-de-ayuda/",
+      title: "Centro de ayuda | SG Solutions",
+      description:
+        "Guías prácticas y respuestas organizadas para avanzar paso a paso en crédito, taxes, negocios y cumplimiento.",
+    },
+    en: {
+      path: "/en/help-center/",
+      title: "Help Center | SG Solutions",
+      description:
+        "Practical guides and organized answers to move forward step by step in credit, taxes, business and compliance.",
+    },
+  },
+  {
+    routeKey: "academy",
+    kind: "standard",
+    es: {
+      path: "/academia/",
+      title: "Academia financiera | SG Solutions",
+      description:
+        "Material educativo público con listas de verificación, glosarios y rutas de preparación para decisiones financieras y empresariales.",
+    },
+    en: {
+      path: "/en/academy/",
+      title: "Financial Academy | SG Solutions",
+      description:
+        "Public educational material with checklists, glossaries and preparation paths for financial and business decisions.",
+    },
+  },
+  {
     routeKey: "faq",
     kind: "standard",
     es: {
@@ -247,6 +350,500 @@ const pageDefinitions: PageDefinition[] = [
       title: "Contact | SG Solutions",
       description:
         "Choose a safe next step to discuss the service you need without sharing sensitive information.",
+    },
+  },
+  {
+    routeKey: "admin-contacts",
+    kind: "standard",
+    es: {
+      path: "/admin/contactos/",
+      title: "Contactos | SG Solutions",
+      description:
+        "Panel de contacto para operaciones con Chat, WhatsApp y agente telefónico.",
+    },
+    en: {
+      path: "/en/admin/contacts/",
+      title: "Contacts | SG Solutions",
+      description:
+        "Administrative contacts panel with chat, WhatsApp and phone agent tools.",
+    },
+  },
+  {
+    routeKey: "public-forms",
+    kind: "standard",
+    es: {
+      path: "/formularios/",
+      title: "Formularios públicos | SG Solutions",
+      description:
+        "Canales para solicitar contacto, asesoría inicial y cuestionarios con validación y protección básica.",
+    },
+    en: {
+      path: "/en/forms/",
+      title: "Public forms | SG Solutions",
+      description:
+        "Public request channels for contact, advisory intake, and questionnaires with validation and basic protection.",
+    },
+  },
+  {
+    routeKey: "portal-auth",
+    kind: "standard",
+    es: {
+      path: "/client/acceso/",
+      title: "Acceso del cliente | SG Solutions",
+      description:
+        "Punto de entrada al portal con opciones de cuenta, sesiones y preferencias del cliente.",
+    },
+    en: {
+      path: "/en/client/access/",
+      title: "Client access | SG Solutions",
+      description:
+        "Client portal entry with account, sessions and preference options.",
+    },
+  },
+  {
+    routeKey: "customer-dashboard",
+    kind: "standard",
+    es: {
+      path: "/client/dashboard/",
+      title: "Dashboard del cliente | SG Solutions",
+      description:
+        "Vista central del estado de servicios, pagos, documentos y próximas acciones del cliente.",
+    },
+    en: {
+      path: "/en/client/dashboard/",
+      title: "Client dashboard | SG Solutions",
+      description:
+        "Client hub for service status, payments, documents and upcoming actions.",
+    },
+  },
+  {
+    routeKey: "my-services",
+    kind: "standard",
+    es: {
+      path: "/client/mis-servicios/",
+      title: "Mis servicios | SG Solutions",
+      description:
+        "Resumen de servicios contratados, responsable, estado y próximos hitos por servicio.",
+    },
+    en: {
+      path: "/en/client/my-services/",
+      title: "My services | SG Solutions",
+      description:
+        "Summary of contracted services, owner, status and key milestones per service.",
+    },
+  },
+  {
+    routeKey: "process-status",
+    kind: "standard",
+    es: {
+      path: "/client/estado-de-proceso/",
+      title: "Estado de mi proceso | SG Solutions",
+      description:
+        "Estados operativos para orientar al cliente sobre avance, pendientes y siguientes pasos.",
+    },
+    en: {
+      path: "/en/client/process-status/",
+      title: "My process status | SG Solutions",
+      description:
+        "Operational states to orient the client on progress, pending items and next steps.",
+    },
+  },
+  {
+    routeKey: "portal-documents",
+    kind: "standard",
+    es: {
+      path: "/client/documentos/",
+      title: "Portal de documentos | SG Solutions",
+      description:
+        "Carga y consulta documentos del expediente con control de estado, historial y solicitudes por faltantes.",
+    },
+    en: {
+      path: "/en/client/documents/",
+      title: "Document hub | SG Solutions",
+      description:
+        "Upload and view case documents with state control, history and missing-document requests.",
+    },
+  },
+  {
+    routeKey: "secure-messaging",
+    kind: "standard",
+    es: {
+      path: "/client/mensajeria/",
+      title: "Mensajería segura | SG Solutions",
+      description:
+        "Canal privado para conversaciones del expediente con historial, adjuntos y derivación.",
+    },
+    en: {
+      path: "/en/client/secure-messaging/",
+      title: "Secure messaging | SG Solutions",
+      description:
+        "Private case messaging with timeline, attachments and handoff tracking.",
+    },
+  },
+  {
+    routeKey: "client-appointments",
+    kind: "standard",
+    es: {
+      path: "/client/citas/",
+      title: "Citas del cliente | SG Solutions",
+      description:
+        "Agenda, reprograma y da seguimiento a citas con tipo, canal y recordatorios.",
+    },
+    en: {
+      path: "/en/client/appointments/",
+      title: "Client appointments | SG Solutions",
+      description:
+        "Schedule, reschedule and follow client appointments by type, channel and reminders.",
+    },
+  },
+  {
+    routeKey: "client-billing",
+    kind: "standard",
+    es: {
+      path: "/client/facturacion/",
+      title: "Pagos y facturación | SG Solutions",
+      description:
+        "Consulta facturas, estado de pagos y opciones de cobro en un flujo de preparación financiera.",
+    },
+    en: {
+      path: "/en/client/billing/",
+      title: "Client billing | SG Solutions",
+      description:
+        "View invoices, payment state and finance preparation flow for active services.",
+    },
+  },
+  {
+    routeKey: "financial-profile",
+    kind: "standard",
+    es: {
+      path: "/client/perfil-financiero/",
+      title: "Perfil financiero y empresarial | SG Solutions",
+      description:
+        "Perfil consolidado por cliente con campos de finanzas, vivienda, negocios y preferencias.",
+    },
+    en: {
+      path: "/en/client/financial-profile/",
+      title: "Financial and business profile | SG Solutions",
+      description:
+        "Consolidated client profile with financial, housing, business fields and preferences.",
+    },
+  },
+  {
+    routeKey: "admin-dashboard",
+    kind: "standard",
+    es: {
+      path: "/admin/dashboard/",
+      title: "Dashboard administrativo | SG Solutions",
+      description:
+        "Panel de operación con métricas de leads, citas, pagos y actividad reciente.",
+    },
+    en: {
+      path: "/en/admin/dashboard/",
+      title: "Admin dashboard | SG Solutions",
+      description:
+        "Operations panel with lead, appointment, payment and recent activity metrics.",
+    },
+  },
+  {
+    routeKey: "crm",
+    kind: "standard",
+    es: {
+      path: "/admin/crm/",
+      title: "CRM | SG Solutions",
+      description:
+        "Seguimiento comercial de oportunidades, notas, responsable y acción siguiente.",
+    },
+    en: {
+      path: "/en/admin/crm/",
+      title: "CRM | SG Solutions",
+      description:
+        "Commercial pipeline tracking with opportunities, notes, ownership and next action.",
+    },
+  },
+  {
+    routeKey: "client-management",
+    kind: "standard",
+    es: {
+      path: "/admin/clientes/",
+      title: "Gestión de clientes | SG Solutions",
+      description:
+        "Administración de clientes activos, servicios asociados y notas operativas.",
+    },
+    en: {
+      path: "/en/admin/client-management/",
+      title: "Client management | SG Solutions",
+      description:
+        "Manage active clients, associated services and operational notes.",
+    },
+  },
+  {
+    routeKey: "company-management",
+    kind: "standard",
+    es: {
+      path: "/admin/empresas/",
+      title: "Gestión de empresas | SG Solutions",
+      description:
+        "Control de datos empresariales, estado legal y reportes asociados.",
+    },
+    en: {
+      path: "/en/admin/companies/",
+      title: "Company management | SG Solutions",
+      description:
+        "Track company records, legal status and linked reports.",
+    },
+  },
+  {
+    routeKey: "lead-management",
+    kind: "standard",
+    es: {
+      path: "/admin/leads/",
+      title: "Gestión de leads | SG Solutions",
+      description:
+        "Clasificación, scoring y conversión de leads para priorizar seguimiento comercial.",
+    },
+    en: {
+      path: "/en/admin/leads/",
+      title: "Lead management | SG Solutions",
+      description:
+        "Lead scoring, classification and conversion workflow to prioritize follow-up.",
+    },
+  },
+  {
+    routeKey: "service-orders",
+    kind: "standard",
+    es: {
+      path: "/admin/ordenes-de-servicio/",
+      title: "Órdenes de servicio | SG Solutions",
+      description:
+        "Control de órdenes por cliente, estado, pagos, aprobaciones y cierre operativo.",
+    },
+    en: {
+      path: "/en/admin/service-orders/",
+      title: "Service orders | SG Solutions",
+      description:
+        "Manage client service orders with status, payment, approvals and closure lifecycle.",
+    },
+  },
+  {
+    routeKey: "admin-forms",
+    kind: "standard",
+    es: {
+      path: "/admin/formularios/",
+      title: "Centro de formularios (demo) | SG Solutions",
+      description:
+        "Diseña, versiona y administra formularios de intake y cuestionarios por servicio.",
+    },
+    en: {
+      path: "/en/admin/forms/",
+      title: "Forms center (demo) | SG Solutions",
+      description:
+        "Design, version and manage intake and questionnaire forms by service.",
+    },
+  },
+  {
+    routeKey: "admin-work-queues",
+    kind: "standard",
+    es: {
+      path: "/admin/colas-y-tareas/",
+      title: "Colas y tareas (demo) | SG Solutions",
+      description:
+        "Centro de priorización de tareas, seguimiento de colas y estados de operación interna.",
+    },
+    en: {
+      path: "/en/admin/work-queues/",
+      title: "Work queues and tasks (demo) | SG Solutions",
+      description:
+        "Prioritization hub for tasks, queue tracking and internal work states.",
+    },
+  },
+  {
+    routeKey: "admin-approvals",
+    kind: "standard",
+    es: {
+      path: "/admin/aprobaciones/",
+      title: "Aprobaciones humanas (demo) | SG Solutions",
+      description:
+        "Controles de aprobación humana para acciones sensibles y propuestas de cambio.",
+    },
+    en: {
+      path: "/en/admin/approvals/",
+      title: "Human approvals (demo) | SG Solutions",
+      description:
+        "Human approval controls for sensitive actions and change proposals.",
+    },
+  },
+  {
+    routeKey: "admin-ai-hub",
+    kind: "standard",
+    es: {
+      path: "/admin/ai-hub/",
+      title: "AI Hub (demo) | SG Solutions",
+      description:
+        "Centro de habilidades especializadas, prompts y trazabilidad de asistencia IA.",
+    },
+    en: {
+      path: "/en/admin/ai-hub/",
+      title: "AI Hub (demo) | SG Solutions",
+      description:
+        "Specialized skill center, prompts and AI assistant traceability.",
+    },
+  },
+  {
+    routeKey: "admin-operations",
+    kind: "standard",
+    es: {
+      path: "/admin/operaciones/",
+      title: "Operaciones y despliegue (demo) | SG Solutions",
+      description:
+        "Control de estado operativo, readiness y checklist de despliegue local.",
+    },
+    en: {
+      path: "/en/admin/operations/",
+      title: "Operations and deployment (demo) | SG Solutions",
+      description:
+        "Operational status control, readiness and local deployment checklist.",
+    },
+  },
+  {
+    routeKey: "admin-governance",
+    kind: "standard",
+    es: {
+      path: "/admin/gobernanza/",
+      title: "Gobernanza y cumplimiento (admin) | SG Solutions",
+      description:
+        "Catálogo de políticas, controles, riesgos y excepciones con trazabilidad local.",
+    },
+    en: {
+      path: "/en/admin/governance/",
+      title: "Governance and compliance (admin) | SG Solutions",
+      description:
+        "Policy catalog, controls, risks and exception tracking in a local admin workspace.",
+    },
+  },
+  {
+    routeKey: "admin-analytics",
+    kind: "standard",
+    es: {
+      path: "/admin/analitica/",
+      title: "Analítica operativa y KPIs (admin) | SG Solutions",
+      description:
+        "Panel local de métricas, alertas y rendimiento para seguimiento operativo.",
+    },
+    en: {
+      path: "/en/admin/analytics/",
+      title: "Operational analytics and KPIs (admin) | SG Solutions",
+      description:
+        "Local KPIs, alerts, and performance signal tracking for internal operations.",
+    },
+  },
+  {
+    routeKey: "admin-tradelines",
+    kind: "standard",
+    es: {
+      path: "/admin/tradelines/",
+      title: "Mercado de tradelines y proveedores (admin) | SG Solutions",
+      description:
+        "Control local de proveedores, ofertas y control de cumplimiento para productos credit-building.",
+    },
+    en: {
+      path: "/en/admin/tradelines/",
+      title: "Tradelines and providers marketplace (admin) | SG Solutions",
+      description:
+        "Local control of providers, products, and compliance checks for credit-building offers.",
+    },
+  },
+  {
+    routeKey: "admin-tax-services",
+    kind: "standard",
+    es: {
+      path: "/admin/servicios-tributarios/",
+      title: "Servicios tributarios (admin) | SG Solutions",
+      description:
+        "Administración demo de casos de impuestos, integraciones y control pre-filing.",
+    },
+    en: {
+      path: "/en/admin/tax-services/",
+      title: "Tax services (admin) | SG Solutions",
+      description:
+        "Demo administration for tax engagements, cases, readiness and pre-filing controls.",
+    },
+  },
+  {
+    routeKey: "admin-bookkeeping",
+    kind: "standard",
+    es: {
+      path: "/admin/bookkeeping/",
+      title: "Bookkeeping y contabilidad (admin) | SG Solutions",
+      description:
+        "Administración demo de engagement, books, chart of accounts, periodos y asientos contables.",
+    },
+    en: {
+      path: "/en/admin/bookkeeping/",
+      title: "Bookkeeping and accounting (admin) | SG Solutions",
+      description:
+        "Local admin workflow for engagement setup, books, chart of accounts, periods and accounting entries.",
+    },
+  },
+  {
+    routeKey: "admin-recommendation-engine",
+    kind: "standard",
+    es: {
+      path: "/admin/recomendaciones/",
+      title: "Motor de recomendaciones (admin) | SG Solutions",
+      description:
+        "Panel interno para priorizar candidatos, correr recomendaciones y revisar trazabilidad local.",
+    },
+    en: {
+      path: "/en/admin/recommendation-engine/",
+      title: "Recommendation engine (admin) | SG Solutions",
+      description:
+        "Admin workspace for candidate prioritization, recommendation runs and local traceability.",
+    },
+  },
+  {
+    routeKey: "admin-creditcardbroker-integration",
+    kind: "standard",
+    es: {
+      path: "/admin/creditcardbroker/",
+      title: "Integración CreditCardBroker (admin) | SG Solutions",
+      description:
+        "Administración de reglas, offers aprobadas y rutas de atribución de afiliación de forma local.",
+    },
+    en: {
+      path: "/en/admin/creditcardbroker/",
+      title: "CreditCardBroker integration (admin) | SG Solutions",
+      description:
+        "Admin for integration rules, approved offers and affiliate attribution paths in local mode.",
+    },
+  },
+  {
+    routeKey: "admin-partner-management",
+    kind: "standard",
+    es: {
+      path: "/admin/partner-management/",
+      title: "Gestión de partners (admin) | SG Solutions",
+      description: "Panel interno para onboarding, estados y acceso operativo de socios externos.",
+    },
+    en: {
+      path: "/en/admin/partner-management/",
+      title: "Partner management (admin) | SG Solutions",
+      description: "Internal workspace for onboarding, health and operational access of external partners.",
+    },
+  },
+  {
+    routeKey: "admin-provider-abstraction",
+    kind: "standard",
+    es: {
+      path: "/admin/provider-abstraction/",
+      title: "Abstracción de proveedores (admin) | SG Solutions",
+      description:
+        "Consola interna para adapters, health checks, límites de capacidad y fallback de proveedores.",
+    },
+    en: {
+      path: "/en/admin/provider-abstraction/",
+      title: "Provider abstraction (admin) | SG Solutions",
+      description:
+        "Internal console for adapters, health checks, capability limits and provider fallback.",
     },
   },
   {
@@ -310,32 +907,8 @@ const pageDefinitions: PageDefinition[] = [
 ];
 
 export const PUBLIC_PAGES: PublicPage[] = pageDefinitions.flatMap((definition) => [
-  {
-    routeKey: definition.routeKey,
-    kind: definition.kind,
-    locale: "es",
-    ...definition.es,
-    ...createPageExperience({
-      routeKey: definition.routeKey,
-      kind: definition.kind,
-      locale: "es",
-      title: definition.es.title,
-      description: definition.es.description,
-    }),
-  },
-  {
-    routeKey: definition.routeKey,
-    kind: definition.kind,
-    locale: "en",
-    ...definition.en,
-    ...createPageExperience({
-      routeKey: definition.routeKey,
-      kind: definition.kind,
-      locale: "en",
-      title: definition.en.title,
-      description: definition.en.description,
-    }),
-  },
+  buildLocalePage(definition, "es"),
+  buildLocalePage(definition, "en"),
 ]);
 
 const serviceDefinitions: Array<{

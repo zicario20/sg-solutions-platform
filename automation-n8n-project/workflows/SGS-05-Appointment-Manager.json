@@ -1,0 +1,591 @@
+{
+  "name": "SGS-05 Appointment Manager",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "sgs-appointment-manager",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-apt",
+      "name": "Appointment Manager Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.body || $json;\nconst actionIn = (payload.action || payload.intent || 'CHECK_AVAILABILITY').toString().toUpperCase();\nconst action = ['CHECK_AVAILABILITY', 'BOOK_APPOINTMENT', 'RESCHEDULE_APPOINTMENT', 'CANCEL_APPOINTMENT'].includes(actionIn) ? actionIn : 'CHECK_AVAILABILITY';\nconst collected = payload.collected_fields || payload.collectedFields || {};\n\nreturn [{\n  json: {\n    workflow_execution_id: $execution.id,\n    action: action,\n    language: ((payload.language || payload.lang || 'es').toString().toLowerCase() === 'en') ? 'en' : 'es',\n    session_id: (payload.session_id || '').toString(),\n    customer_id: (payload.customer_id || '').toString(),\n    customer_name: (collected.name || payload.customer_name || payload.name || '').toString().trim(),\n    email: (collected.email || payload.email || '').toString().trim(),\n    phone: (collected.phone || payload.phone || '').toString().trim(),\n    service: (collected.service || payload.service || 'general').toString().trim(),\n    timezone: (collected.timezone || payload.timezone || payload.default_timezone || payload.defaultTimezone || 'America/Chicago').toString().trim(),\n    date: (collected.date || payload.date || '').toString().trim(),\n    start_time: (collected.start_time || payload.start_time || '').toString().trim(),\n    end_time: (collected.end_time || payload.end_time || '').toString().trim(),\n    appointment_id: (collected.appointment_id || payload.appointment_id || '').toString().trim(),\n    channel: (payload.channel || 'web').toString(),\n    intent: (payload.intent || '').toString(),\n    selected_tool: (payload.selected_tool || 'CALENDAR').toString(),\n    confidence: Number(payload.confidence || 0),\n    maxRetries: Number(payload.max_tool_retries || payload.maxToolRetries || payload.max_retries || 1),\n    retry_count: Number(payload.retry_count || 0),\n    calendarConfigured: Boolean(((payload.calendar_api_url || payload.calendarApiUrl || payload.config?.calendar_api_url || '').toString().trim().length > 4) || payload.calendarConfigured || payload.calendar_configured),\n    request_payload: payload\n  }\n}];"
+      },
+      "id": "normalize-apt",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        500,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const p = $json;\nconst req = [];\nif (p.action === 'CHECK_AVAILABILITY') {\n  if (!p.service) req.push('service');\n  if (!p.date) req.push('date');\n  if (!p.timezone) req.push('timezone');\n}\nif (p.action === 'BOOK_APPOINTMENT') {\n  if (!p.customer_name) req.push('name');\n  if (!p.email) req.push('email');\n  if (!p.phone) req.push('phone');\n  if (!p.service) req.push('service');\n  if (!p.date) req.push('date');\n  if (!p.start_time) req.push('time');\n  if (!p.timezone) req.push('timezone');\n}\nif (p.action === 'RESCHEDULE_APPOINTMENT') {\n  if (!p.appointment_id) req.push('appointment_id');\n  if (!p.date && !p.start_time) req.push('date_time');\n  if (!p.timezone) req.push('timezone');\n}\nif (p.action === 'CANCEL_APPOINTMENT') {\n  if (!p.appointment_id) req.push('appointment_id');\n}\n\nreturn [{\n  json: {\n    ...p,\n    missing_fields: req,\n    has_required_fields: req.length === 0\n  }\n}];"
+      },
+      "id": "validate-fields",
+      "name": "Validate Required Fields",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        760,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.has_required_fields}}",
+              "operation": "equal",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-fields-ready",
+      "name": "Fields ready",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        980,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": [
+          {
+            "name": "found",
+            "value": "={{false}}",
+            "type": "boolean"
+          },
+          {
+            "name": "success",
+            "value": "={{false}}",
+            "type": "boolean"
+          },
+          {
+            "name": "status",
+            "value": "={{'needs_confirmation'}}",
+            "type": "string"
+          },
+          {
+            "name": "found_slots",
+            "value": "=[]",
+            "type": "array"
+          },
+          {
+            "name": "error",
+            "value": "={{'missing_fields'}}",
+            "type": "string"
+          },
+          {
+            "name": "message",
+            "value": "={{$json.language === 'en' ? 'Missing required fields: ' + $json.missing_fields.join(', ') : 'Faltan campos obligatorios: ' + $json.missing_fields.join(', ')}}",
+            "type": "string"
+          }
+        ],
+        "options": {}
+      },
+      "id": "missing-fields",
+      "name": "Missing Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        1180,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.calendarConfigured}}",
+              "operation": "equal",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-calendar-configured",
+      "name": "Calendar configured",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.action}}",
+              "operation": "equal",
+              "value2": "CHECK_AVAILABILITY"
+            }
+          ]
+        }
+      },
+      "id": "action-check",
+      "name": "Action CHECK_AVAILABILITY",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1620,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.action}}",
+              "operation": "equal",
+              "value2": "BOOK_APPOINTMENT"
+            }
+          ]
+        }
+      },
+      "id": "action-book",
+      "name": "Action BOOK_APPOINTMENT",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1620,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.action}}",
+              "operation": "equal",
+              "value2": "RESCHEDULE_APPOINTMENT"
+            }
+          ]
+        }
+      },
+      "id": "action-reschedule",
+      "name": "Action RESCHEDULE_APPOINTMENT",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1620,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.action}}",
+              "operation": "equal",
+              "value2": "CANCEL_APPOINTMENT"
+            }
+          ]
+        }
+      },
+      "id": "action-cancel",
+      "name": "Action CANCEL_APPOINTMENT",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1620,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SGS_CALENDAR_API_URL }}/availability",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ JSON.stringify({ action: 'CHECK_AVAILABILITY', service:$json.service, timezone:$json.timezone, date:$json.date, session_id:$json.session_id, customer_id:$json.customer_id, language:$json.language, ...$json.request_payload }) }}",
+        "options": {
+          "responseFormat": "json",
+          "timeout": 60000
+        },
+        "retry": {
+          "maxTries": 1
+        }
+      },
+      "id": "remote-check",
+      "name": "Check Calendar Availability",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1840,
+        200
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SGS_CALENDAR_API_URL }}/appointments",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ JSON.stringify({ action: 'BOOK_APPOINTMENT', customer_name:$json.customer_name, email:$json.email, phone:$json.phone, service:$json.service, timezone:$json.timezone, date:$json.date, start_time:$json.start_time, end_time:$json.end_time, channel:$json.channel, language:$json.language, ...$json.request_payload }) }}",
+        "options": {
+          "responseFormat": "json",
+          "timeout": 60000
+        },
+        "retry": {
+          "maxTries": 1
+        }
+      },
+      "id": "remote-book",
+      "name": "Create Appointment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1840,
+        280
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SGS_CALENDAR_API_URL }}/appointments/reschedule",
+        "method": "PUT",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ JSON.stringify({ action: 'RESCHEDULE_APPOINTMENT', appointment_id:$json.appointment_id, date:$json.date, start_time:$json.start_time, end_time:$json.end_time, timezone:$json.timezone, channel:$json.channel, language:$json.language, ...$json.request_payload }) }}",
+        "options": {
+          "responseFormat": "json",
+          "timeout": 60000
+        },
+        "retry": {
+          "maxTries": 1
+        }
+      },
+      "id": "remote-reschedule",
+      "name": "Reschedule Appointment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1840,
+        360
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SGS_CALENDAR_API_URL }}/appointments/cancel",
+        "method": "DELETE",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ JSON.stringify({ action: 'CANCEL_APPOINTMENT', appointment_id:$json.appointment_id, language:$json.language, session_id:$json.session_id, customer_id:$json.customer_id, ...$json.request_payload }) }}",
+        "options": {
+          "responseFormat": "json",
+          "timeout": 60000
+        },
+        "retry": {
+          "maxTries": 1
+        }
+      },
+      "id": "remote-cancel",
+      "name": "Cancel Appointment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1840,
+        440
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "functionCode": "const p = $json || {};\nconst base = {\n  workflow_execution_id: p.workflow_execution_id,\n  session_id: p.session_id || '',\n  customer_id: p.customer_id || '',\n  customer_name: p.customer_name || '',\n  email: p.email || '',\n  phone: p.phone || '',\n  service: p.service || 'general',\n  timezone: p.timezone || 'America/Chicago',\n  date: p.date || '',\n  start_time: p.start_time || '',\n  end_time: p.end_time || '',\n  appointment_id: p.appointment_id || '',\n  action: p.action,\n  language: p.language || 'es',\n  intent: p.intent || '',\n  selected_tool: p.selected_tool || 'CALENDAR'\n};\n\nconst raw = p.body || p.data || p;\nconst failed = p.error !== undefined || p.message || (typeof raw === 'string');\nconst resp = typeof raw === 'object' ? raw : {};\n\nif (base.action === 'CHECK_AVAILABILITY') {\n  const directSlots = Array.isArray(resp.available_slots) ? resp.available_slots : [];\n  const candidate = Array.isArray(resp.slots) ? resp.slots : [];\n  const slots = directSlots.length ? directSlots : candidate;\n  const success = Array.isArray(slots) && slots.length > 0;\n  return [{\n    json: {\n      ...base,\n      found: success,\n      success: success,\n      status: success ? 'proposed' : 'failed',\n      available_slots: success ? slots : [],\n      available_days: Array.isArray(resp.available_days) ? resp.available_days : [],\n      found_count: slots.length,\n      message: success ? '' : (base.language === 'en' ? 'No availability found for the selected window.' : 'No hay disponibilidad para esa fecha/horario.'),\n      error: success ? '' : 'no_availability'\n    }\n  }];\n}\n\nif (base.action === 'BOOK_APPOINTMENT') {\n  const status = resp.status || (resp.confirmed === true ? 'confirmed' : '');\n  const success = status === 'confirmed' || resp.success === true || resp.id;\n  return [{\n    json: {\n      ...base,\n      found: success,\n      success: success,\n      status: success ? 'confirmed' : 'failed',\n      appointment_id: resp.appointment_id || resp.id || base.appointment_id || '',\n      message: success ? '' : (base.language === 'en' ? 'Could not confirm the appointment yet.' : 'Aún no pude confirmar la cita. Verifica disponibilidad y vuelve a intentar.'),\n      error: success ? '' : 'calendar_create_failed'\n    }\n  }];\n}\n\nif (base.action === 'RESCHEDULE_APPOINTMENT') {\n  const status = resp.status || (resp.success === true ? 'rescheduled' : '');\n  const success = status === 'rescheduled';\n  return [{\n    json: {\n      ...base,\n      found: success,\n      success: success,\n      status: success ? 'rescheduled' : 'failed',\n      appointment_id: resp.appointment_id || resp.id || base.appointment_id || '',\n      message: success ? '' : (base.language === 'en' ? 'Could not reschedule the appointment.' : 'No pude reprogramar la cita con los datos recibidos.'),\n      error: success ? '' : 'calendar_reschedule_failed'\n    }\n  }];\n}\n\nif (base.action === 'CANCEL_APPOINTMENT') {\n  const status = resp.status || (resp.success === true ? 'cancelled' : '');\n  const success = status === 'cancelled';\n  return [{\n    json: {\n      ...base,\n      found: success,\n      success: success,\n      status: success ? 'cancelled' : 'failed',\n      appointment_id: resp.appointment_id || resp.id || base.appointment_id || '',\n      message: success ? '' : (base.language === 'en' ? 'Could not cancel the appointment.' : 'No pude cancelar la cita con la información disponible.'),\n      error: success ? '' : 'calendar_cancel_failed'\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    ...base,\n    found: false,\n    success: false,\n    status: 'failed',\n    message: base.language === 'en' ? 'Unsupported appointment action.' : 'Acción de cita no soportada.',\n    error: 'unsupported_action'\n  }\n}];"
+      },
+      "id": "normalize-calendar-output",
+      "name": "Normalize Calendar Output",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2100,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const p = $json || {};\nreturn [{\n  json: {\n    found: false,\n    success: false,\n    status: 'failed',\n    customer_name: p.customer_name || '',\n    email: p.email || '',\n    phone: p.phone || '',\n    service: p.service || 'general',\n    timezone: p.timezone || 'America/Chicago',\n    date: p.date || '',\n    start_time: p.start_time || '',\n    end_time: p.end_time || '',\n    appointment_id: p.appointment_id || '',\n    action: p.action || 'CHECK_AVAILABILITY',\n    workflow_execution_id: p.workflow_execution_id,\n    session_id: p.session_id || '',\n    customer_id: p.customer_id || '',\n    channel: p.channel || 'web',\n    language: p.language || 'es',\n    intent: p.intent || '',\n    selected_tool: p.selected_tool || 'CALENDAR',\n    message: p.language === 'en' ? 'Appointment engine not configured. Escalate to support to continue this request.' : 'El motor de calendario no está configurado. Lo escalo para que soporte lo continúe.',\n    error: 'calendar_not_configured'\n  }\n}];"
+      },
+      "id": "local-fallback",
+      "name": "Local Fallback",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2100,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "responseCode": 200,
+        "options": {},
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson"
+      },
+      "id": "respond-appointment",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2320,
+        320
+      ]
+    }
+  ],
+  "connections": {
+    "Appointment Manager Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Validate Required Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Required Fields": {
+      "main": [
+        [
+          {
+            "node": "Missing Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fields ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fields ready": {
+      "main": [
+        [
+          {
+            "node": "Calendar configured",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missing Fields": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar configured": {
+      "main": [
+        [
+          {
+            "node": "Action CHECK_AVAILABILITY",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Local Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Action CHECK_AVAILABILITY": {
+      "main": [
+        [
+          {
+            "node": "Check Calendar Availability",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Action BOOK_APPOINTMENT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Action BOOK_APPOINTMENT": {
+      "main": [
+        [
+          {
+            "node": "Create Appointment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Action RESCHEDULE_APPOINTMENT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Action RESCHEDULE_APPOINTMENT": {
+      "main": [
+        [
+          {
+            "node": "Reschedule Appointment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Action CANCEL_APPOINTMENT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Action CANCEL_APPOINTMENT": {
+      "main": [
+        [
+          {
+            "node": "Cancel Appointment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normalize Calendar Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Calendar Availability": {
+      "main": [
+        [
+          {
+            "node": "Normalize Calendar Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Appointment": {
+      "main": [
+        [
+          {
+            "node": "Normalize Calendar Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reschedule Appointment": {
+      "main": [
+        [
+          {
+            "node": "Normalize Calendar Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancel Appointment": {
+      "main": [
+        [
+          {
+            "node": "Normalize Calendar Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Calendar Output": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Local Fallback": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "n4hqWpeIDzcAA3js"
+}
+
+

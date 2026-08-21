@@ -1,0 +1,202 @@
+{
+  "name": "SGS-08 Conversation Logger",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "sgs-conversation-logger",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-logger",
+      "name": "Conversation Logger Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        220,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.body || $json;\nconst now = new Date().toISOString();\nconst sensitive = ['email','phone','ssn','password','ccn','card_number','social_security'];\nconst sanitize = (obj) => {\n  if (!obj || typeof obj !== 'object') return obj;\n  const copy = Array.isArray(obj) ? obj.slice() : { ...obj };\n  for (const key of Object.keys(copy)) {\n    const lower = key.toLowerCase();\n    if (sensitive.includes(lower) || lower.includes('secret') || lower.includes('token') || lower.includes('password')) {\n      copy[key] = 'REDACTED';\n      continue;\n    }\n    if (typeof copy[key] === 'object') copy[key] = sanitize(copy[key]);\n  }\n  return copy;\n};\n\nconst eventPayload = sanitize(payload.event || payload);\n\nreturn [{\n  json: {\n    workflow_execution_id: (eventPayload.workflow_execution_id || $execution.id).toString(),\n    session_id: (eventPayload.session_id || '').toString(),\n    customer_id: (eventPayload.customer_id || '').toString(),\n    channel: (eventPayload.channel || 'web').toString(),\n    intent: (eventPayload.intent || 'UNKNOWN').toString(),\n    selected_tool: (eventPayload.selected_tool || 'NONE').toString(),\n    duration: Number(eventPayload.duration_ms || 0),\n    success: eventPayload.success !== false,\n    error_type: eventPayload.error_type || '',\n    timestamp: now,\n    event_type: (eventPayload.event_type || 'MESSAGE_RECEIVED').toString(),\n    extra: eventPayload\n  }\n}];"
+      },
+      "id": "normalize-log",
+      "name": "Normalize Event",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        520,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{!!($env.SGS_LOGGING_API_URL && String($env.SGS_LOGGING_API_URL).trim().length > 4)}}",
+              "operation": "equal",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-logging",
+      "name": "Logging API configured",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        760,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SGS_LOGGING_API_URL }}",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseFormat": "json"
+        }
+      },
+      "id": "call-logging-service",
+      "name": "Log to Service",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        980,
+        160
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "functionCode": "const p = $json;\nreturn [{\n  json: {\n    logged: true,\n    storage: 'external',\n    workflow_execution_id: p.workflow_execution_id,\n    session_id: p.session_id,\n    customer_id: p.customer_id,\n    channel: p.channel,\n    intent: p.intent,\n    selected_tool: p.selected_tool,\n    duration: p.duration,\n    success: p.success,\n    error_type: p.error_type || '',\n    timestamp: p.timestamp,\n    event_type: p.event_type\n  }\n}];"
+      },
+      "id": "normalize-logging-output",
+      "name": "Normalize Logging Output",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1220,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const p = $json;\nreturn [{\n  json: {\n    logged: false,\n    storage: 'local',\n    workflow_execution_id: p.workflow_execution_id,\n    session_id: p.session_id,\n    customer_id: p.customer_id,\n    channel: p.channel,\n    intent: p.intent,\n    selected_tool: p.selected_tool,\n    duration: p.duration,\n    success: p.success,\n    error_type: p.error_type || '',\n    timestamp: p.timestamp,\n    event_type: p.event_type\n  }\n}];"
+      },
+      "id": "local-logging-output",
+      "name": "Local Logging Stub",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        980,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "responseCode": 200,
+        "options": {},
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson"
+      },
+      "id": "respond-logger",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1460,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "Conversation Logger Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Event": {
+      "main": [
+        [
+          {
+            "node": "Logging API configured",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Logging API configured": {
+      "main": [
+        [
+          {
+            "node": "Log to Service",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Local Logging Stub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log to Service": {
+      "main": [
+        [
+          {
+            "node": "Normalize Logging Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Logging Output": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Local Logging Stub": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "CxYR3dPcGuchkAz9"
+}
+
+
+

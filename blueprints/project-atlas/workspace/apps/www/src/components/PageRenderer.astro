@@ -1,18 +1,28 @@
----
-import { SITE_CHROME } from "../content/site-chrome";
+import { getChromeBySurface } from "../content/site-chrome";
 import type { PublicPage } from "../domain/public-site";
 import ActionLink from "./ActionLink.astro";
 import Breadcrumbs from "./Breadcrumbs.astro";
 import ContentSection from "./ContentSection.astro";
 import Hero from "./Hero.astro";
 import TrustRail from "./TrustRail.astro";
+import ModuleWorkbench from "./ModuleWorkbench.astro";
+import { CLIENT_ROUTE_KEYS, ADMIN_ROUTE_KEYS } from "../content/site-content";
 
 interface Props {
   page: PublicPage;
 }
 const { page } = Astro.props;
-const copy = SITE_CHROME[page.locale];
+const copy = getChromeBySurface(page.locale, page.surface);
 const showUnavailable = page.routeKey === "contact";
+const isInteractiveDemo = (() => {
+  if (page.surface === "public") {
+    return page.routeKey === "help-center" || page.routeKey === "public-forms";
+  }
+  if (page.surface === "client") {
+    return Array.from(CLIENT_ROUTE_KEYS).includes(page.routeKey);
+  }
+  return Array.from(ADMIN_ROUTE_KEYS).includes(page.routeKey);
+})();
 ---
 
 <Breadcrumbs page={page} />
@@ -28,7 +38,7 @@ const showUnavailable = page.routeKey === "contact";
   </div>
 )}
 
-{page.sections.map((section, index) => <ContentSection section={section} locale={page.locale} index={index} />)}
+{isInteractiveDemo ? <ModuleWorkbench routeKey={page.routeKey} locale={page.locale} surface={page.surface} /> : page.sections.map((section, index) => <ContentSection section={section} locale={page.locale} index={index} />)}
 
 {showUnavailable && (
   <section class="integration-notice" aria-labelledby="integration-title">

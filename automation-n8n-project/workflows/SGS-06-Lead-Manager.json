@@ -1,0 +1,201 @@
+{
+  "name": "SGS-06 Lead Manager",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "sgs-lead-manager",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-lead",
+      "name": "Lead Manager Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        220,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.body || $json;\nconst now = new Date().toISOString();\nconst preferredLanguage = ((payload.preferred_language || payload.language || payload.lang || 'es').toString().toLowerCase() === 'en') ? 'en' : 'es';\nconst requestedService = (payload.requested_service || payload.service || payload.current_service || 'general').toString();\nconst leadStatus = (payload.lead_status || 'NEW').toString();\n\nreturn [{\n  json: {\n    workflow_execution_id: $execution.id,\n    lead_id: (payload.lead_id || '').toString(),\n    name: (payload.name || '').toString(),\n    phone: (payload.phone || '').toString(),\n    email: (payload.email || '').toString(),\n    preferred_language: preferredLanguage,\n    requested_service: requestedService,\n    lead_source: (payload.lead_source || payload.channel || 'web').toString(),\n    conversation_summary: (payload.conversation_summary || '').toString(),\n    lead_status: leadStatus,\n    appointment_status: (payload.appointment_status || '').toString(),\n    created_date: (payload.created_date || now).toString(),\n    last_interaction: now,\n    extra_data: payload.extra_data || {},\n    session_id: (payload.session_id || '').toString(),\n    customer_id: (payload.customer_id || '').toString(),\n    crmConfigured: Boolean(((payload.crm_api_url || payload.crmApiUrl || payload.config?.crm_api_url || '').toString().trim().length > 4) || payload.crmConfigured || payload.crm_configured)\n  }\n}];"
+      },
+      "id": "normalize-lead",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        500,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.crmConfigured}}",
+              "operation": "equal",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-crm",
+      "name": "CRM configured",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        740,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SGS_CRM_API_URL + $env.SGS_CRM_LEADS_PATH }}",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ JSON.stringify({\n  lead_id: $json.lead_id,\n  name: $json.name,\n  phone: $json.phone,\n  email: $json.email,\n  preferred_language: $json.preferred_language,\n  requested_service: $json.requested_service,\n  lead_source: $json.lead_source,\n  conversation_summary: $json.conversation_summary,\n  lead_status: $json.lead_status,\n  appointment_status: $json.appointment_status,\n  created_date: $json.created_date,\n  last_interaction: $json.last_interaction,\n  extra_data: $json.extra_data\n}) }}",
+        "options": {
+          "responseFormat": "json"
+        }
+      },
+      "id": "call-crm",
+      "name": "CRM Upsert Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        980,
+        160
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "functionCode": "const p = $json;\nconst lead = p?.json || p;\nconst response = (lead.body && typeof lead.body === 'object') ? lead.body : lead;\n\nreturn [{\n  json: {\n    success: response.success !== false,\n    lead_id: response.lead_id || response.id || lead.lead_id || `lead_${Date.now()}`,\n    status: response.lead_status || lead.lead_status || 'NEW',\n    service: lead.requested_service || 'general',\n    workflow_execution_id: lead.workflow_execution_id,\n    source: lead.lead_source,\n    session_id: lead.session_id,\n    customer_id: lead.customer_id,\n    message: 'lead_saved',\n    payload: {\n      name: lead.name,\n      phone: lead.phone,\n      email: lead.email,\n      preferred_language: lead.preferred_language\n    }\n  }\n}];"
+      },
+      "id": "crm-output",
+      "name": "Normalize CRM Output",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1220,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const lead = $json;\nreturn [{\n  json: {\n    success: false,\n    lead_id: lead.lead_id || `lead_${Date.now()}`,\n    status: lead.lead_status || 'NEW',\n    service: lead.requested_service || 'general',\n    workflow_execution_id: lead.workflow_execution_id,\n    source: lead.lead_source || 'web',\n    session_id: lead.session_id || '',\n    customer_id: lead.customer_id || '',\n    message: 'crm_not_configured',\n    payload: {\n      name: lead.name || '',\n      phone: lead.phone || '',\n      email: lead.email || '',\n      preferred_language: lead.preferred_language || 'es'\n    }\n  }\n}];"
+      },
+      "id": "local-output",
+      "name": "Local Lead Fallback",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        980,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "responseCode": 200,
+        "options": {},
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson"
+      },
+      "id": "respond-lead",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1420,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "Lead Manager Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "CRM configured",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CRM configured": {
+      "main": [
+        [
+          {
+            "node": "CRM Upsert Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Local Lead Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CRM Upsert Lead": {
+      "main": [
+        [
+          {
+            "node": "Normalize CRM Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize CRM Output": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Local Lead Fallback": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "9iEQzgRxEg9jP570"
+}
+
+

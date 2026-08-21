@@ -1,5 +1,7 @@
 export type Locale = "es" | "en";
 
+export type Surface = "public" | "client" | "admin";
+
 export type RouteKey =
   | "home"
   | "services"
@@ -13,9 +15,42 @@ export type RouteKey =
   | "service-home-buying"
   | "marketplace"
   | "pricing"
+  | "help-center"
+  | "academy"
   | "faq"
   | "about"
   | "contact"
+  | "public-forms"
+  | "portal-auth"
+  | "customer-dashboard"
+  | "my-services"
+  | "process-status"
+  | "portal-documents"
+  | "secure-messaging"
+  | "client-appointments"
+  | "client-billing"
+  | "financial-profile"
+  | "admin-contacts"
+  | "admin-dashboard"
+  | "crm"
+  | "client-management"
+  | "company-management"
+  | "lead-management"
+  | "service-orders"
+  | "admin-forms"
+  | "admin-work-queues"
+  | "admin-approvals"
+  | "admin-ai-hub"
+  | "admin-operations"
+  | "admin-governance"
+  | "admin-analytics"
+  | "admin-tradelines"
+  | "admin-bookkeeping"
+  | "admin-recommendation-engine"
+  | "admin-creditcardbroker-integration"
+  | "admin-partner-management"
+  | "admin-provider-abstraction"
+  | "admin-tax-services"
   | "privacy"
   | "terms"
   | "accessibility"
@@ -72,6 +107,7 @@ export interface PublicService {
 export interface PublicPage {
   routeKey: RouteKey;
   locale: Locale;
+  surface: Surface;
   path: string;
   kind: PageKind;
   title: string;

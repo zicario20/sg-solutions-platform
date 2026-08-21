@@ -1,12 +1,15 @@
 node_modules/
 .next/
 .astro/
+.tmp/
+apps/.tmp/
 *.tsbuildinfo
 dist/
 coverage/
 playwright-report/
 test-results/
 .turbo/
+snapshots/
 .workspace-applied
 .env
 .env.*

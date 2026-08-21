@@ -1,15 +1,19 @@
 ---
-import { SITE_CHROME } from "../content/site-chrome";
-import type { Locale } from "../domain/public-site";
+import { getChromeBySurface } from "../content/site-chrome";
+import type { PublicPage } from "../domain/public-site";
 import LogoLockup from "./LogoLockup.astro";
 
 interface Props {
-  locale: Locale;
+  page: PublicPage;
 }
 
-const { locale } = Astro.props;
-const copy = SITE_CHROME[locale];
-const homeHref = locale === "es" ? "/" : "/en/";
+const { page } = Astro.props;
+const copy = getChromeBySurface(page.locale, page.surface);
+const homeHref = page.surface === "client"
+  ? page.locale === "es" ? "/client/dashboard/" : "/en/client/dashboard/"
+  : page.surface === "admin"
+    ? page.locale === "es" ? "/admin/dashboard/" : "/en/admin/dashboard/"
+    : page.locale === "es" ? "/" : "/en/";
 ---
 
 <footer class="site-footer">

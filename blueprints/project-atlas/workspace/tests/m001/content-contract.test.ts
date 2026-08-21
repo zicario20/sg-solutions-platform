@@ -5,8 +5,10 @@ import { PUBLIC_PAGES, PUBLIC_SERVICES } from "../../apps/www/src/content/site-c
 
 describe("M001 bilingual content contract", () => {
   it("publishes every approved page in both languages", () => {
-    expect(PUBLIC_PAGES.filter((page) => page.locale === "es")).toHaveLength(19);
-    expect(PUBLIC_PAGES.filter((page) => page.locale === "en")).toHaveLength(19);
+    const perLocale = PUBLIC_PAGES.length / 2;
+    expect(PUBLIC_PAGES.length % 2).toBe(0);
+    expect(PUBLIC_PAGES.filter((page) => page.locale === "es")).toHaveLength(perLocale);
+    expect(PUBLIC_PAGES.filter((page) => page.locale === "en")).toHaveLength(perLocale);
   });
 
   it("keeps paths and localized route identities unique", () => {

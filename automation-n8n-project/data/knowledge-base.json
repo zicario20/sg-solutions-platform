@@ -1,0 +1,68 @@
+{
+  "entries": [
+    {
+      "id": "kb_welcome_services",
+      "topic": "services_overview",
+      "language": "es",
+      "tags": ["servicios", "inicio", "general"],
+      "title": "Servicios de SG Solutions",
+      "content": "SG Solutions ofrece servicios de asesoria crediticia, impuestos, formacion de negocio, financiamiento, preparacion de prestamos y asistencia para compra de vivienda. No incluye aprobaciones garantizadas ni pagos automaticos."
+    },
+    {
+      "id": "kb_services_en",
+      "topic": "services_overview",
+      "language": "en",
+      "tags": ["services", "intro"],
+      "title": "SG Solutions Services",
+      "content": "SG Solutions provides credit education and readiness support, tax preparation and consultation, business formation guidance, business funding preparation, loan preparation, and home-buying support."
+    },
+    {
+      "id": "kb_billing_policy_es",
+      "topic": "pricing",
+      "language": "es",
+      "tags": ["precios", "costo"],
+      "title": "Politica de precios",
+      "content": "Los precios dependen de la necesidad y el servicio. Si no hay precio publicado, se recomienda agendar consulta y revisar cada caso con un agente."
+    },
+    {
+      "id": "kb_billing_policy_en",
+      "topic": "pricing",
+      "language": "en",
+      "tags": ["pricing", "cost"],
+      "title": "Pricing policy",
+      "content": "Pricing depends on the requested package and case complexity. If no published amount exists, route to an appointment."
+    },
+    {
+      "id": "kb_handoff",
+      "topic": "handoff",
+      "language": "es",
+      "tags": ["representante", "agente", "humano"],
+      "title": "Escalacion a humano",
+      "content": "Cuando la consulta requiere revision humana, disputa, error tecnico repetido o solicitud sensible, escala el caso a un agente."
+    },
+    {
+      "id": "kb_handoff_en",
+      "topic": "handoff",
+      "language": "en",
+      "tags": ["handoff", "support", "agent"],
+      "title": "Human escalation",
+      "content": "Escalate to a human rep when sensitive legal/tax interpretation is required, low confidence, complaint, anger escalation, or repeated tool failure."
+    },
+    {
+      "id": "kb_appointments",
+      "topic": "appointments",
+      "language": "es",
+      "tags": ["cita", "agenda", "agendar"],
+      "title": "Agendamiento",
+      "content": "Antes de confirmar una cita valida servicio, nombre, email, timezone y disponibilidad real. Nunca confirmes sin respuesta positiva del sistema de calendario."
+    },
+    {
+      "id": "kb_appointments_en",
+      "topic": "appointments",
+      "language": "en",
+      "tags": ["appointment", "schedule", "booking"],
+      "title": "Booking",
+      "content": "Before confirming an appointment validate service, name, email, timezone and real availability. Never confirm until calendar API returns confirmation."
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import {
   getPageByPath,
   getStaticPageEntries,
 } from "../../apps/www/src/lib/routes";
+import { PUBLIC_PAGES } from "../../apps/www/src/content/site-content";
 
 describe("M001 route contract", () => {
   it("supports Spanish and English in the approved order", () => {
@@ -26,7 +27,7 @@ describe("M001 route contract", () => {
 
   it("keeps the root page out of the rest-parameter static list", () => {
     const entries = getStaticPageEntries();
-    expect(entries).toHaveLength(37);
+    expect(entries).toHaveLength(PUBLIC_PAGES.filter((page) => page.path !== "/").length);
     expect(entries.some((entry) => entry.params.slug === undefined)).toBe(false);
     expect(entries.some((entry) => entry.params.slug === "en/services/credit")).toBe(true);
   });

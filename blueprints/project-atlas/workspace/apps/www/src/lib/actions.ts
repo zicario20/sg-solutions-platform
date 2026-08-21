@@ -24,12 +24,12 @@ export function resolvePublicAction(
     es: {
       evaluation: "/contacto/?intent=evaluacion",
       quote: "/contacto/?intent=cotizacion",
-      clientPortal: "/contacto/?intent=portal",
+      clientPortal: "/client/acceso/",
     },
     en: {
       evaluation: "/en/contact/?intent=evaluation",
       quote: "/en/contact/?intent=quote",
-      clientPortal: "/en/contact/?intent=portal",
+      clientPortal: "/en/client/access/",
     },
   };
   const configured = {

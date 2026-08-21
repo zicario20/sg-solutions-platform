@@ -1,0 +1,202 @@
+{
+  "name": "SGS-07 Human Handoff",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "sgs-human-handoff",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-handoff",
+      "name": "Human Handoff Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        220,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.body || $json;\nreturn [{\n  json: {\n    workflow_execution_id: $execution.id,\n    session_id: (payload.session_id || '').toString(),\n    customer_id: (payload.customer_id || '').toString(),\n    channel: (payload.channel || 'web').toString(),\n    language: ((payload.language || 'es').toString().toLowerCase() === 'en') ? 'en' : 'es',\n    priority: (payload.priority || 'normal').toString(),\n    reason: (payload.reason || 'Customer requested escalation').toString(),\n    conversation_summary: (payload.conversation_summary || '').toString(),\n    handoff_required: true,\n    handoff_endpoint: (payload.handoff_endpoint || payload.human_inbox_webhook || payload.humanInboxWebhook || '').toString(),\n    lead_id: (payload.lead_id || '').toString(),\n    customer_name: (payload.customer_name || payload.name || '').toString(),\n    customer_email: (payload.email || '').toString(),\n    customer_phone: (payload.phone || '').toString(),\n    hasInboxEndpoint: Boolean(((payload.handoff_endpoint || payload.human_inbox_webhook || payload.humanInboxWebhook || '').toString().trim().length > 0))\n  }\n}];"
+      },
+      "id": "normalize-handoff",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        520,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.hasInboxEndpoint}}",
+              "operation": "equal",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-handoff-endpoint",
+      "name": "Human inbox configured",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        760,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.handoff_endpoint }}",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ JSON.stringify({\n  session_id: $json.session_id,\n  customer_id: $json.customer_id,\n  channel: $json.channel,\n  reason: $json.reason,\n  priority: $json.priority,\n  conversation_summary: $json.conversation_summary,\n  customer_name: $json.customer_name,\n  email: $json.customer_email,\n  phone: $json.customer_phone\n}) }}",
+        "options": {
+          "responseFormat": "json"
+        }
+      },
+      "id": "call-human-inbox",
+      "name": "Send to Human Inbox",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1020,
+        160
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "functionCode": "const p = $json;\nconst source = p.data && typeof p.data === 'object' ? p.data : p;\nreturn [{\n  json: {\n    handoff_required: true,\n    reason: p.reason || source.reason || 'Customer requested escalation',\n    priority: p.priority || 'normal',\n    conversation_summary: p.conversation_summary || '',\n    handoff_status: (source.success === false) ? 'queued_with_warning' : 'queued',\n    session_id: p.session_id || '',\n    customer_id: p.customer_id || '',\n    channel: p.channel || 'web',\n    workflow_execution_id: p.workflow_execution_id,\n    language: p.language || 'es'\n  }\n}];"
+      },
+      "id": "normalize-handoff-output",
+      "name": "Normalize Inbox Output",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1240,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const p = $json;\nreturn [{\n  json: {\n    handoff_required: true,\n    reason: p.reason || 'Human review requested',\n    priority: p.priority || 'normal',\n    conversation_summary: p.conversation_summary || '',\n    handoff_status: 'queued_local',\n    session_id: p.session_id || '',\n    customer_id: p.customer_id || '',\n    channel: p.channel || 'web',\n    workflow_execution_id: p.workflow_execution_id,\n    language: p.language || 'es'\n  }\n}];"
+      },
+      "id": "fallback-handoff-output",
+      "name": "Fallback Handoff",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "responseCode": 200,
+        "options": {},
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson"
+      },
+      "id": "respond-handoff",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1460,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "Human Handoff Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Human inbox configured",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human inbox configured": {
+      "main": [
+        [
+          {
+            "node": "Send to Human Inbox",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fallback Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to Human Inbox": {
+      "main": [
+        [
+          {
+            "node": "Normalize Inbox Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Inbox Output": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fallback Handoff": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "ij6aD85fYHVgxFHt"
+}
+
+
+

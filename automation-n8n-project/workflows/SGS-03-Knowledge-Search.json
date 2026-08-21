@@ -1,0 +1,204 @@
+{
+  "name": "SGS-03 Knowledge Search",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "sgs-knowledge-search",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-kb",
+      "name": "Knowledge Search Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = $json.body || $json;\nconst query = ((payload.query || payload.message || '').toString() || '').trim();\nconst language = ((payload.language || 'es').toString().toLowerCase() === 'en') ? 'en' : 'es';\nreturn [{\n  json: {\n    workflow_execution_id: $execution.id,\n    query: query,\n    queryNormalized: query.toLowerCase(),\n    service: (payload.service || payload.category || 'general').toString(),\n    language: language,\n    session_id: (payload.session_id || '').toString(),\n    customer_id: (payload.customer_id || '').toString(),\n    channel: (payload.channel || 'web').toString(),\n    intent: (payload.intent || payload.current_intent || 'SERVICE_INFORMATION').toString(),\n    selected_tool: (payload.selected_tool || payload.tool || 'KB_SEARCH').toString(),\n    conversation_stage: (payload.conversation_stage || '').toString(),\n    useRemote: ((payload.kb_api_url || payload.kbApiUrl || payload.config?.kb_api_url || '').toString().trim().length > 4)\n  }\n}];"
+      },
+      "id": "normalize-kb-input",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        520,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.useRemote}}",
+              "operation": "equal",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "kb-route-source",
+      "name": "Use remote KB",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        760,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SGS_KB_API_URL }}",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ JSON.stringify({ query: $json.query, service: $json.service, language: $json.language, intent: $json.intent, selected_tool: $json.selected_tool, session_id: $json.session_id, customer_id: $json.customer_id, channel: $json.channel }) }}",
+        "options": {
+          "responseFormat": "json",
+          "retry": {
+            "maxTries": 1
+          }
+        }
+      },
+      "id": "remote-kb",
+      "name": "Remote KB",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        980,
+        160
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "functionCode": "const catalog = [\n  { id: 'kb_credit_services', topic: 'services', language: 'es', title: 'Servicios de crédito', content: 'Atendemos servicios de credit education, credit repair assistance y credit improvement planning con enfoque educativo.' },\n  { id: 'kb_tax_services', topic: 'services', language: 'es', title: 'Servicios de impuestos', content: 'Brindamos asistencia para preparación de impuestos: individual, self-employed y small business.' },\n  { id: 'kb_business_formation', topic: 'services', language: 'es', title: 'Formación de negocio', content: 'Te guiamos en LLC formation, EIN assistance y documentación inicial.' },\n  { id: 'kb_funding', topic: 'services', language: 'es', title: 'Financiamiento empresarial', content: 'Disponemos de apoyo para business funding, loan readiness y preparación de documentos.' },\n  { id: 'kb_home', topic: 'services', language: 'es', title: 'Asistencia para vivienda', content: 'Te guiamos en programas USDA, FHA y Conventional y la preparación de documentos.' },\n  { id: 'kb_pricing', topic: 'pricing', language: 'es', title: 'Precios', content: 'No se publican precios fijos para todos los casos; se confirman en consulta.' },\n  { id: 'kb_appointments', topic: 'appointments', language: 'es', title: 'Citas', content: 'Validamos disponibilidad real, no confirmamos citas sin confirmación del calendario.' },\n  { id: 'kb_language', topic: 'language', language: 'en', title: 'Language support', content: 'The bot supports Spanish and English responses based on customer language.' }\n];\n\nconst base = $json;\nconst q = (base.queryNormalized || '').toLowerCase();\nconst terms = q.split(/\\s+/).filter(Boolean);\nconst matches = catalog.filter((item) => {\n  const content = `${item.topic} ${item.title} ${item.content}`.toLowerCase();\n  if (item.language !== base.language && !(item.language === 'en' && base.language === 'es')) {\n    return false;\n  }\n  return q.length === 0 || terms.some((t) => content.includes(t));\n});\n\nreturn [{\n  json: {\n    found: matches.length > 0,\n    results: matches,\n    confidence: matches.length > 0 ? 0.9 : 0,\n    query: base.query,\n    language: base.language,\n    intent: base.intent,\n    selected_tool: 'KB_SEARCH',\n    tool: 'KB_SEARCH',\n    service: base.service,\n    session_id: base.session_id,\n    customer_id: base.customer_id,\n    channel: base.channel\n  }\n}];"
+      },
+      "id": "local-kb-search",
+      "name": "Local KB Search",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        980,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const base = $json || {};\nconst source = base.body || base.data || base;\nconst response = (typeof source === 'object' && !Array.isArray(source)) ? source : {};\n\nif (base.found !== undefined || response && response.results !== undefined) {\n  return [{\n    json: {\n      found: Boolean(base.found ?? response.found ?? false),\n      results: Array.isArray(base.results || response.results) ? (base.results || response.results) : [],\n      confidence: Number(base.confidence || response.confidence || 0),\n      query: base.query || response.query || '',\n      language: base.language || response.language || 'es',\n      intent: base.intent || response.intent || 'SERVICE_INFORMATION',\n      selected_tool: base.selected_tool || response.selected_tool || response.tool || 'KB_SEARCH',\n      tool: base.tool || response.tool || 'KB_SEARCH',\n      service: base.service || response.service || 'general',\n      session_id: base.session_id || response.session_id || '',\n      customer_id: base.customer_id || response.customer_id || '',\n      channel: base.channel || response.channel || 'web',\n      raw: response\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    found: false,\n    results: [],\n    confidence: 0,\n    query: base.query || '',\n    language: base.language || 'es',\n    intent: base.intent || 'SERVICE_INFORMATION',\n    selected_tool: 'KB_SEARCH',\n    tool: 'KB_SEARCH',\n    service: base.service || 'general',\n    session_id: base.session_id || '',\n    customer_id: base.customer_id || '',\n    channel: base.channel || 'web',\n    raw: base\n  }\n}];"
+      },
+      "id": "normalize-kb",
+      "name": "Normalize KB Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1220,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "responseCode": 200,
+        "options": {},
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson"
+      },
+      "id": "respond-kb",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1460,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "Knowledge Search Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Use remote KB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use remote KB": {
+      "main": [
+        [
+          {
+            "node": "Remote KB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Local KB Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remote KB": {
+      "main": [
+        [
+          {
+            "node": "Normalize KB Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Local KB Search": {
+      "main": [
+        [
+          {
+            "node": "Normalize KB Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize KB Response": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "PbOmGnpbBRO4rvJY"
+}
+
+

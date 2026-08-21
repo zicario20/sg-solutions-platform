@@ -1,0 +1,72 @@
+{
+  "name": "Inbound Lead Template",
+  "id": "inbound-lead-template",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ingreso-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [240, 280],
+      "webhookId": "f4d4e8be-b0b2-4f2a-91e0-8a2f8b4f7c11",
+      "id": "a1"
+    },
+    {
+      "parameters": {
+        "functionCode": "return items.map((item) => ({\n  json: {\n    ...item.json,\n    recibidoEn: new Date().toISOString(),\n    estado: 'capturado',\n  },\n}));"
+      },
+      "name": "Procesar Evento",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [520, 280],
+      "id": "a2"
+    },
+    {
+      "parameters": {
+        "responseCode": 200,
+        "options": {},
+        "responseData": "firstEntryJson",
+        "responseBody": "=\"Evento recibido con id: \" + ($json.id || 'sin_id')",
+        "responseMode": "lastNode"
+      },
+      "name": "Responder",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [800, 280],
+      "id": "a3"
+    }
+  ],
+  "connections": {
+    "Webhook Entrada": {
+      "main": [
+        [
+          {
+            "node": "Procesar Evento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Evento": {
+      "main": [
+        [
+          {
+            "node": "Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

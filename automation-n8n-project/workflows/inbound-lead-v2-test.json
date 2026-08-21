@@ -1,0 +1,43 @@
+{
+  "id": "8c7f8b3e-1a22-4d1f-8b4a-111111111111",
+  "name": "Inbound Lead Template V2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ingreso-lead-v2",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Entrada V2",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [240,280],
+      "webhookId": "8c7f8b3e-1a22-4d1f-8b4a-111111111111",
+      "id": "a1"
+    },
+    {
+      "parameters": {
+        "responseCode": 200,
+        "options": {},
+        "responseData": "firstEntryJson",
+        "responseBody": "={\"ok\":true,\"id\":$json.id}",
+        "responseMode": "lastNode"
+      },
+      "name": "Responder V2",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [520,280],
+      "id": "a2"
+    }
+  ],
+  "connections": {
+    "Webhook Entrada V2": {
+      "main": [[{"node": "Responder V2", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": true
+}
