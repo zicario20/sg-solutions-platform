@@ -20,4 +20,5 @@ export * from "./runtime.ts";
 export * from "./service-identities.ts";
 export * from "./step-up.ts";
 export * from "./supabase-provider.ts";
+export * from "./server-oauth-lifecycle.ts";
 export * from "./synthetic-ports.ts";
