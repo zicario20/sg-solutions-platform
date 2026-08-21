@@ -1,6 +1,8 @@
 export const DATABASE_PACKAGE_ID = "@atlas/database";
 
+export * from "./auth-repository.ts";
 export * from "./communication-contact-evidence.ts";
+export * from "./schema/auth.ts";
 export * from "./communication-event-envelope.ts";
 export * from "./communications-repository.ts";
 export * from "./postgres-public-chat-store.ts";
