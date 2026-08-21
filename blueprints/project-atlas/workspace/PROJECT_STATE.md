@@ -7,13 +7,13 @@
 
 Version: `0.1.0-alpha.24`
 
-Current phase: **M005 Voice Agent provider-disabled implementation complete in its isolated branch;
-Product Owner acceptance, merge and external activation pending**
+Current phase: **M006 Public Forms provider-disabled Build design approved in its isolated branch;
+implementation has not started**
 
-Module status: **M005's seven implementation tasks, four architecture remediations, three Cyber Neo
-remediations and Task 8 documentation closure are complete under Decision 033.** The implementation
-remains provider-disabled in `codex/m005-voice-agent-rebuild`. This closure does not open a successor
-module; the Decision 032 prohibition on module 39 remains in force.
+Module status: **M005 remains formally accepted provider-disabled at `b8db282`; M006 is authorized
+under Decision 034 only for a real but provider-disabled public-form engine in
+`codex/m006-public-forms-rebuild`.** M006 code, tests, external activation, merge and release have
+not started. The Decision 032 prohibition on module 39 remains in force.
 
 Implemented boundary: authoritative TypeScript voice domain/persistence and scoped facade;
 Python/FastAPI gateway scaffold behind platform ports; provider-disabled mocks and authenticated
@@ -48,6 +48,12 @@ consent, identity and audit ownership remain unchanged.
 Role model: Product Owner decides; Codex Architecture Agent architects; separately scoped Codex
 Implementation Agents implement approved work; ChatGPT/independent reviewers audit and do not
 architect or self-approve implementation.
-## Current gate — M005 accepted, activation remains blocked
+## Current gate — M006 Build authorized; activation remains blocked
 
-M005 Voice Agent is formally accepted by the Product Owner in `provider-disabled` scope at head `4c6177c`. External activation, shared durable nonce backend, live PostgreSQL/RLS/ledger evidence, provider credentials/numbers, legal recording/consent/retention approvals, merge, deploy and release remain blocked or pending. No authorization to start M006 is implied.
+M005 Voice Agent is formally accepted provider-disabled. Decision 034 authorizes M006 architecture
+and future isolated implementation only: immutable bilingual public definitions, same-origin
+admission, server-authoritative validation/persistence, consent/receipt/audit/outbox evidence,
+privacy-preserving anti-abuse, accessible rendering, encrypted ephemeral drafts and synthetic owner
+ports. Live Postgres evidence, CRM/M020, consent/M078, calendar/M013, Stripe/M042-M045,
+notifications/channels, uploads, retention policy, external providers, merge, deploy and release
+remain blocked or pending.

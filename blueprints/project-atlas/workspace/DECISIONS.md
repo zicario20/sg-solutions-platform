@@ -504,3 +504,21 @@ remain prohibited pending Product Owner activation approval and EXTERNAL_ACTIVAT
 Decision: The Product Owner formally accepts M005 Voice Agent in its provider-disabled scope at current head `4c6177c`.
 
 Impact: External activation, a shared durable nonce backend, live PostgreSQL/RLS/migration-ledger evidence, provider credentials and numbers, legal recording/consent/retention approvals, merge, deployment and release remain blocked or pending. This acceptance does not authorize starting M006.
+## Decision 034 — M006 Public Forms provider-disabled Build gate
+
+- Date: 2026-08-20
+- Owner: Product Owner
+- Status: Approved for isolated implementation
+- Scope: M006 may build only in `codex/m006-public-forms-rebuild` from accepted M005 head `b8db282`.
+
+M006 may add the reusable ES/EN public-form engine, same-origin Astro admission gateway, restricted
+application facade, TypeScript domain/validation contracts, Drizzle/Postgres persistence/RLS,
+ephemeral encrypted drafts, consent evidence, privacy-preserving abuse controls, accessible renderer,
+staff synthetic preview, observability and mock/synthetic owner ports. It must reuse the existing
+public Website conventions and establish no parallel CRM, consent, scheduling, payment, channel,
+upload or analytics authority.
+
+No live provider, deployment, activation, real notification, appointment/slot, Stripe Checkout,
+payment state, upload, sensitive intake, external CAPTCHA, persistent marketing recovery, service
+start, merge or release is authorized. Product/legal disclosure text, service policy, retention
+durations, provider accounts and external endpoints remain governed by their owner decisions.

@@ -648,3 +648,12 @@
 - The Product Owner formally accepted M005 Voice Agent in `provider-disabled` scope at current head `4c6177c`.
 - External activation, shared durable nonce backend, live PostgreSQL/RLS/ledger evidence, provider credentials/numbers, legal recording/consent/retention approvals, merge, deploy and release remain blocked or pending.
 - This acceptance does not authorize starting M006.
+## 2026-08-20 — Decision 034: M006 Public Forms Build design
+
+The Product Owner approved the M006 supplied specification and a provider-disabled Build gate on
+accepted M005 base `b8db282`. Architecture selected one reusable immutable bilingual form engine in
+the existing Astro/TypeScript/Drizzle workspace, with public same-origin admission, a restricted
+facade, atomic submission/consent/idempotency/outbox persistence and mock owner ports. No live
+provider, Stripe/calendar/CRM/channel traffic, upload, sensitive intake, service start, merge,
+deployment or release was authorized. The M006 design and eight-task focused-TDD plan were added
+before implementation.
