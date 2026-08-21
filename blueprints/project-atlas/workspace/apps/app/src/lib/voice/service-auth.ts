@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import type { VoiceCommand, VoiceCommandOperation } from "@atlas/domain";
 
 const ISSUER = "atlas-platform";
@@ -22,20 +22,141 @@ type CredentialClaims = {
   expiresAt: number;
 };
 
-export interface VoiceServiceNonceStore {
-  consume(nonce: string, expiresAt: Date, now: Date): Promise<boolean>;
+export type VoiceCredentialRepositoryResult =
+  | "issued"
+  | "consumed"
+  | "replay"
+  | "capacity"
+  | "unavailable";
+export type VoiceCredentialRepositoryDurability =
+  | "shared_durable"
+  | "bounded_test"
+  | "unavailable";
+
+type VoiceCredentialRepositoryInput = Readonly<{
+  namespace: string;
+  token: string;
+  expiresAt: Date;
+  now: Date;
+}>;
+
+export interface VoiceCredentialRepository {
+  readonly durability: VoiceCredentialRepositoryDurability;
+  consumeNonce(input: VoiceCredentialRepositoryInput): Promise<VoiceCredentialRepositoryResult>;
+  issueCredential(input: VoiceCredentialRepositoryInput): Promise<VoiceCredentialRepositoryResult>;
+  consumeCredential(input: VoiceCredentialRepositoryInput): Promise<VoiceCredentialRepositoryResult>;
 }
 
-export class MemoryVoiceServiceNonceStore implements VoiceServiceNonceStore {
-  private readonly consumed = new Map<string, number>();
+type MemoryCredentialEntry = {
+  state: "pending" | "consumed";
+  expiresAt: number;
+};
 
-  async consume(nonce: string, expiresAt: Date, now: Date): Promise<boolean> {
-    for (const [key, expiry] of this.consumed) {
-      if (expiry <= now.getTime()) this.consumed.delete(key);
+const credentialNamespace = /^[a-z][a-z0-9_.:-]{2,63}$/u;
+const MAX_REPOSITORY_TOKEN_BYTES = 4_096;
+const MAX_TEST_REPOSITORY_CAPACITY = 100_000;
+
+function validRepositoryInput(input: VoiceCredentialRepositoryInput): boolean {
+  return (
+    credentialNamespace.test(input.namespace) &&
+    Buffer.byteLength(input.token, "utf8") > 0 &&
+    Buffer.byteLength(input.token, "utf8") <= MAX_REPOSITORY_TOKEN_BYTES &&
+    Number.isFinite(input.expiresAt.getTime()) &&
+    Number.isFinite(input.now.getTime()) &&
+    input.expiresAt > input.now
+  );
+}
+
+function repositoryKey(input: VoiceCredentialRepositoryInput): string {
+  return createHash("sha256")
+    .update(`${input.namespace}\u0000${input.token}`)
+    .digest("hex");
+}
+
+export class UnavailableVoiceCredentialRepository
+  implements VoiceCredentialRepository
+{
+  readonly durability = "unavailable" as const;
+
+  async consumeNonce(): Promise<VoiceCredentialRepositoryResult> {
+    return "unavailable";
+  }
+  async issueCredential(): Promise<VoiceCredentialRepositoryResult> {
+    return "unavailable";
+  }
+  async consumeCredential(): Promise<VoiceCredentialRepositoryResult> {
+    return "unavailable";
+  }
+}
+
+export class BoundedMemoryVoiceCredentialRepository
+  implements VoiceCredentialRepository
+{
+  readonly durability = "bounded_test" as const;
+  private readonly entries = new Map<string, MemoryCredentialEntry>();
+  private readonly capacity: number;
+
+  constructor(options: { capacity: number }) {
+    if (
+      !Number.isSafeInteger(options.capacity) ||
+      options.capacity < 1 ||
+      options.capacity > MAX_TEST_REPOSITORY_CAPACITY
+    ) {
+      throw new Error("VOICE_CREDENTIAL_CAPACITY_INVALID");
     }
-    if (this.consumed.has(nonce)) return false;
-    this.consumed.set(nonce, expiresAt.getTime());
-    return true;
+    this.capacity = options.capacity;
+  }
+
+  get entryCount(): number {
+    return this.entries.size;
+  }
+
+  private cleanup(now: Date): void {
+    for (const [key, entry] of this.entries) {
+      if (entry.expiresAt <= now.getTime()) this.entries.delete(key);
+    }
+  }
+
+  async consumeNonce(
+    input: VoiceCredentialRepositoryInput,
+  ): Promise<VoiceCredentialRepositoryResult> {
+    if (!validRepositoryInput(input)) return "unavailable";
+    this.cleanup(input.now);
+    const key = repositoryKey(input);
+    if (this.entries.has(key)) return "replay";
+    if (this.entries.size >= this.capacity) return "capacity";
+    this.entries.set(key, {
+      state: "consumed",
+      expiresAt: input.expiresAt.getTime(),
+    });
+    return "consumed";
+  }
+
+  async issueCredential(
+    input: VoiceCredentialRepositoryInput,
+  ): Promise<VoiceCredentialRepositoryResult> {
+    if (!validRepositoryInput(input)) return "unavailable";
+    this.cleanup(input.now);
+    const key = repositoryKey(input);
+    if (this.entries.has(key)) return "replay";
+    if (this.entries.size >= this.capacity) return "capacity";
+    this.entries.set(key, {
+      state: "pending",
+      expiresAt: input.expiresAt.getTime(),
+    });
+    return "issued";
+  }
+
+  async consumeCredential(
+    input: VoiceCredentialRepositoryInput,
+  ): Promise<VoiceCredentialRepositoryResult> {
+    if (!validRepositoryInput(input)) return "unavailable";
+    this.cleanup(input.now);
+    const key = repositoryKey(input);
+    const entry = this.entries.get(key);
+    if (!entry || entry.state !== "pending") return "replay";
+    entry.state = "consumed";
+    return "consumed";
   }
 }
 
@@ -140,16 +261,24 @@ function parseCredential(token: string, secret: Buffer): CredentialClaims | unde
 
 export class VoiceServiceAuthenticator {
   private readonly secret: Buffer;
+  private readonly repository: VoiceCredentialRepository;
+  private readonly repositoryReady: boolean;
 
   constructor(
     secret: string | Uint8Array,
-    private readonly nonces: VoiceServiceNonceStore,
+    repository: VoiceCredentialRepository | undefined,
+    options: { allowBoundedTestRepository?: boolean } = {},
   ) {
     this.secret = secretBytes(secret);
+    this.repository = repository ?? new UnavailableVoiceCredentialRepository();
+    this.repositoryReady =
+      this.repository.durability === "shared_durable" ||
+      (options.allowBoundedTestRepository === true &&
+        this.repository.durability === "bounded_test");
   }
 
   async verify(token: string, command: VoiceCommand, now: Date): Promise<boolean> {
-    if (!Number.isFinite(now.getTime())) return false;
+    if (!this.repositoryReady || !Number.isFinite(now.getTime())) return false;
     const claims = parseCredential(token, this.secret);
     if (
       !claims ||
@@ -168,6 +297,17 @@ export class VoiceServiceAuthenticator {
     ) {
       return false;
     }
-    return this.nonces.consume(claims.nonce, new Date(claims.expiresAt), now);
+    try {
+      return (
+        (await this.repository.consumeNonce({
+          namespace: "voice_service_nonce",
+          token: claims.nonce,
+          expiresAt: new Date(claims.expiresAt),
+          now,
+        })) === "consumed"
+      );
+    } catch {
+      return false;
+    }
   }
 }

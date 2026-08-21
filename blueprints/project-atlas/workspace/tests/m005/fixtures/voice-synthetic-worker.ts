@@ -6,7 +6,7 @@ import {
 import { VoiceOperationsFacade } from "../../../apps/app/src/lib/voice/operations-facade.ts";
 import { createFailClosedOwnerPorts } from "../../../apps/app/src/lib/voice/owner-ports.ts";
 import {
-  MemoryVoiceServiceNonceStore,
+  BoundedMemoryVoiceCredentialRepository,
   VoiceServiceAuthenticator,
 } from "../../../apps/app/src/lib/voice/service-auth.ts";
 import { SyntheticVoicePlatform } from "../../../apps/app/src/lib/voice/synthetic-platform.ts";
@@ -36,10 +36,12 @@ const owners = {
   },
 };
 const lifecycle = new MemoryVoiceLifecycleRepository();
+const credentials = new BoundedMemoryVoiceCredentialRepository({ capacity: 128 });
 const facade = new VoiceOperationsFacade({
   authenticator: new VoiceServiceAuthenticator(
     secret,
-    new MemoryVoiceServiceNonceStore(),
+    credentials,
+    { allowBoundedTestRepository: true },
   ),
   receipts: new MemoryVoiceCommandReceiptRepository(),
   owners,
@@ -48,6 +50,8 @@ const platform = new SyntheticVoicePlatform({
   facade,
   lifecycle,
   serviceSecret: secret,
+  credentials,
+  allowBoundedTestRepository: true,
 });
 
 function write(value: unknown): void {

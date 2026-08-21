@@ -3,16 +3,13 @@ from __future__ import annotations
 from fastapi import APIRouter, WebSocket
 
 from app.security.session_ticket import SessionTicketVerifier, TicketReject
-
-_SUBPROTOCOL_PREFIX = "atlas.voice.ticket."
+from app.security.websocket_protocol import ticket_from_subprotocol_header
 
 
 def _ticket_from_websocket(websocket: WebSocket) -> tuple[str | None, str | None]:
-    protocols = websocket.headers.get("sec-websocket-protocol", "")
-    for protocol in (item.strip() for item in protocols.split(",")):
-        if protocol.startswith(_SUBPROTOCOL_PREFIX):
-            return protocol.removeprefix(_SUBPROTOCOL_PREFIX), protocol
-    return websocket.query_params.get("ticket"), None
+    return ticket_from_subprotocol_header(
+        websocket.headers.get("sec-websocket-protocol", "")
+    )
 
 
 def build_media_router(verifier: SessionTicketVerifier) -> APIRouter:

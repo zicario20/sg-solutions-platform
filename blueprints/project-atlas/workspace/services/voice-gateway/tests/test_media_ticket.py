@@ -6,6 +6,8 @@ from app.security.session_ticket import (
     TicketReject,
     issue_synthetic_session_ticket,
 )
+from app.security.replay_repository import BoundedMemoryAtomicNonceRepository
+from app.security.websocket_protocol import ticket_from_subprotocol_header
 
 NOW = datetime(2026, 8, 20, 12, 0, tzinfo=UTC)
 SECRET = b"synthetic-media-ticket-secret-00000000000000000000000000"
@@ -33,7 +35,19 @@ def verifier(*, enabled: bool = True) -> SessionTicketVerifier:
         secret=SECRET,
         synthetic_media_enabled=enabled,
         clock=lambda: NOW,
+        nonce_repository=BoundedMemoryAtomicNonceRepository(capacity=8),
+        allow_bounded_test_repository=True,
     )
+
+
+def test_websocket_ticket_is_accepted_only_from_dedicated_subprotocol() -> None:
+    value = ticket()
+    assert ticket_from_subprotocol_header(f"other, atlas.voice.ticket.{value}") == (
+        value,
+        f"atlas.voice.ticket.{value}",
+    )
+    assert ticket_from_subprotocol_header("") == (None, None)
+    assert ticket_from_subprotocol_header(f"ticket={value}") == (None, None)
 
 
 def test_wrong_call_stream_or_version_does_not_consume_ticket() -> None:
@@ -84,3 +98,17 @@ def test_expired_and_disabled_tickets_fail_closed() -> None:
         "mock_stream_001",
         3,
     ) == TicketReject(code="media_disabled")
+
+
+def test_enabled_media_without_shared_or_explicit_test_store_fails_closed() -> None:
+    active = SessionTicketVerifier(
+        secret=SECRET,
+        synthetic_media_enabled=True,
+        clock=lambda: NOW,
+    )
+    assert active.consume(
+        ticket(nonce="media_ticket_nonce_0000000005"),
+        "voice_call_001",
+        "mock_stream_001",
+        3,
+    ) == TicketReject(code="replay_store_unavailable")

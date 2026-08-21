@@ -8,6 +8,7 @@ from app.composition.synthetic import (
     default_synthetic_verifier,
 )
 from app.config import VoiceGatewaySettings
+from app.runtime.admission import BoundedOperationRunner
 
 
 def create_app(
@@ -37,6 +38,10 @@ def create_app(
             synthetic_composition.on_verified
             if synthetic_composition is not None
             else None,
+            operation_runner=BoundedOperationRunner[str | None](
+                capacity=active_settings.max_concurrent_operations,
+                timeout_milliseconds=active_settings.max_operation_milliseconds,
+            ),
         ),
         prefix="/__synthetic__",
     )

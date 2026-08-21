@@ -12,7 +12,7 @@ import { createFailClosedOwnerPorts } from "../../apps/app/src/lib/voice/owner-p
 import { recoverVoiceCall } from "../../apps/app/src/lib/voice/recovery-jobs.ts";
 import {
   issueVoiceServiceCredential,
-  MemoryVoiceServiceNonceStore,
+  BoundedMemoryVoiceCredentialRepository,
   VoiceServiceAuthenticator,
 } from "../../apps/app/src/lib/voice/service-auth.ts";
 
@@ -27,7 +27,8 @@ function setup() {
   const facade = new VoiceOperationsFacade({
     authenticator: new VoiceServiceAuthenticator(
       secret,
-      new MemoryVoiceServiceNonceStore(),
+      new BoundedMemoryVoiceCredentialRepository({ capacity: 128 }),
+      { allowBoundedTestRepository: true },
     ),
     receipts: new MemoryVoiceCommandReceiptRepository(),
     owners: {

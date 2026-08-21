@@ -6,8 +6,12 @@ from datetime import UTC, datetime
 from hashlib import sha256
 import hmac
 import re
-from threading import Lock
 from typing import Literal
+
+from app.security.replay_repository import (
+    AtomicNonceRepository,
+    UnavailableAtomicNonceRepository,
+)
 
 ConnectionState = Literal["disabled", "synthetic_verified"]
 ProviderRejectCode = Literal[
@@ -21,6 +25,7 @@ ProviderRejectCode = Literal[
     "proof_invalid",
     "proof_expired",
     "replay_rejected",
+    "replay_store_unavailable",
 ]
 
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
@@ -129,13 +134,18 @@ class ProviderProofVerifier:
         connections: Mapping[str, ProviderConnectionBinding],
         synthetic_admission_enabled: bool = False,
         clock: Callable[[], datetime] = lambda: datetime.now(tz=UTC),
+        nonce_repository: AtomicNonceRepository | None = None,
+        allow_bounded_test_repository: bool = False,
     ) -> None:
         self._secret = _secret_bytes(secret)
         self._connections = dict(connections)
         self._enabled = synthetic_admission_enabled
         self._clock = clock
-        self._consumed_nonces: set[str] = set()
-        self._nonce_lock = Lock()
+        self._nonces = nonce_repository or UnavailableAtomicNonceRepository()
+        self._nonce_repository_ready = self._nonces.durability == "shared_durable" or (
+            allow_bounded_test_repository
+            and self._nonces.durability == "bounded_test"
+        )
 
     def preflight(
         self, request: ProviderRequest
@@ -195,10 +205,25 @@ class ProviderProofVerifier:
         ).hexdigest()
         if not hmac.compare_digest(expected, request.signature):
             return ProviderReject(code="proof_invalid")
-        with self._nonce_lock:
-            if request.nonce in self._consumed_nonces:
-                return ProviderReject(code="replay_rejected")
-            self._consumed_nonces.add(request.nonce)
+        if not self._nonce_repository_ready:
+            return ProviderReject(code="replay_store_unavailable")
+        expires_at = datetime.fromtimestamp(
+            timestamp + _MAX_CLOCK_SKEW_SECONDS + 1,
+            tz=UTC,
+        )
+        try:
+            replay = self._nonces.consume(
+                "mock_provider_proof",
+                f"{request.connection_id}:{request.nonce}",
+                expires_at,
+                now,
+            )
+        except Exception:
+            replay = "unavailable"
+        if replay == "replay":
+            return ProviderReject(code="replay_rejected")
+        if replay != "consumed":
+            return ProviderReject(code="replay_store_unavailable")
         return VerifiedProviderRequest(
             connection_id=request.connection_id,
             body=request.body,

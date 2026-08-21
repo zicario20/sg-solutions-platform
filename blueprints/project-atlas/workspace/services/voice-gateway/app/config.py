@@ -14,3 +14,4 @@ class VoiceGatewaySettings(BaseModel):
     transcription_enabled: Literal[False] = False
     database_access_enabled: Literal[False] = False
     max_operation_milliseconds: int = 5_000
+    max_concurrent_operations: int = 4

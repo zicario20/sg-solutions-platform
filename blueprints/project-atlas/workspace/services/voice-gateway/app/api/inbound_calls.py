@@ -7,6 +7,7 @@ from dataclasses import replace
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
+from app.runtime.admission import BoundedOperationRunner
 from app.security.provider_proof import (
     ProviderProofVerifier,
     ProviderReject,
@@ -46,8 +47,13 @@ async def _read_bounded_body(request: Request, maximum: int) -> bytes:
 def build_inbound_router(
     verifier: ProviderProofVerifier,
     on_verified: VerifiedInboundHandler | None = None,
+    operation_runner: BoundedOperationRunner[str | None] | None = None,
 ) -> APIRouter:
     router = APIRouter()
+    runner = operation_runner or BoundedOperationRunner[str | None](
+        capacity=4,
+        timeout_milliseconds=5_000,
+    )
 
     @router.post("/v1/inbound", include_in_schema=False)
     async def inbound(request: Request) -> JSONResponse:
@@ -62,10 +68,21 @@ def build_inbound_router(
             return JSONResponse(status_code=413, content={"status": "rejected"})
         verified = verifier.verify(replace(shell, body=body))
         if isinstance(verified, ProviderReject):
+            if verified.code == "replay_store_unavailable":
+                return JSONResponse(
+                    status_code=503,
+                    content={"status": "platform_unavailable"},
+                )
             return JSONResponse(status_code=401, content={"status": "rejected"})
         if on_verified is None:
             return JSONResponse(status_code=503, content={"status": "platform_unavailable"})
-        receipt_id = await on_verified(verified)
+        operation = await runner.run(lambda: on_verified(verified))
+        if operation.status != "completed":
+            return JSONResponse(
+                status_code=503,
+                content={"status": "platform_unavailable"},
+            )
+        receipt_id = operation.value
         if not receipt_id:
             return JSONResponse(status_code=503, content={"status": "platform_unavailable"})
         return JSONResponse(status_code=202, content={"status": "accepted"})

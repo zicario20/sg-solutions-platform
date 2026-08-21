@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -169,7 +170,7 @@ class SyntheticVoiceComposition:
         return self._compose(verified)
 
     async def on_verified(self, verified: VerifiedProviderRequest) -> str | None:
-        result = self._compose(verified)
+        result = await asyncio.to_thread(self._compose, verified)
         return result.receipt_id if result.status == "accepted" else None
 
     def _compose(

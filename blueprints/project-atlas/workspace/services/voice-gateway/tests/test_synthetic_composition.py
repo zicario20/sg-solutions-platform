@@ -20,6 +20,7 @@ from app.security.provider_proof import (
     ProviderRequest,
     sign_synthetic_provider_request,
 )
+from app.security.replay_repository import BoundedMemoryAtomicNonceRepository
 from app.tools.facade_client import FacadeCommand, FacadeResult
 
 NOW = datetime(2026, 8, 20, 12, 0, tzinfo=UTC)
@@ -173,6 +174,8 @@ def test_authenticated_composition_persists_handoff_in_typescript() -> None:
         },
         synthetic_admission_enabled=True,
         clock=lambda: NOW,
+        nonce_repository=BoundedMemoryAtomicNonceRepository(capacity=8),
+        allow_bounded_test_repository=True,
     )
     bridge = JsonLineSyntheticBridge()
     try:

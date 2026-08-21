@@ -8,8 +8,12 @@ import hashlib
 import hmac
 import json
 import re
-from threading import Lock
 from typing import Literal, cast
+
+from app.security.replay_repository import (
+    AtomicNonceRepository,
+    UnavailableAtomicNonceRepository,
+)
 
 TicketRejectCode = Literal[
     "media_disabled",
@@ -17,6 +21,7 @@ TicketRejectCode = Literal[
     "ticket_expired",
     "binding_mismatch",
     "replay_rejected",
+    "replay_store_unavailable",
 ]
 
 _ISSUER = "atlas-platform"
@@ -103,12 +108,17 @@ class SessionTicketVerifier:
         secret: bytes,
         synthetic_media_enabled: bool = False,
         clock: Callable[[], datetime] = lambda: datetime.now(tz=UTC),
+        nonce_repository: AtomicNonceRepository | None = None,
+        allow_bounded_test_repository: bool = False,
     ) -> None:
         self._secret = _secret_bytes(secret)
         self._enabled = synthetic_media_enabled
         self._clock = clock
-        self._consumed_nonces: set[str] = set()
-        self._nonce_lock = Lock()
+        self._nonces = nonce_repository or UnavailableAtomicNonceRepository()
+        self._nonce_repository_ready = self._nonces.durability == "shared_durable" or (
+            allow_bounded_test_repository
+            and self._nonces.durability == "bounded_test"
+        )
 
     def consume(
         self,
@@ -144,16 +154,35 @@ class SessionTicketVerifier:
             )
         ):
             return TicketReject(code="binding_mismatch")
-        nonce = claims["nonce"]
-        with self._nonce_lock:
-            if nonce in self._consumed_nonces:
-                return TicketReject(code="replay_rejected")
-            self._consumed_nonces.add(nonce)
+        if not self._nonce_repository_ready:
+            return TicketReject(code="replay_store_unavailable")
+        nonce = cast(str, claims["nonce"])
+        expires_at_value = datetime.fromtimestamp(expires_at / 1_000, tz=UTC)
+        try:
+            replay = self._nonces.consume(
+                "voice_media_session",
+                ":".join(
+                    (
+                        cast(str, claims["callId"]),
+                        cast(str, claims["providerStreamId"]),
+                        str(cast(int, claims["authorizationVersion"])),
+                        nonce,
+                    )
+                ),
+                expires_at_value,
+                self._clock(),
+            )
+        except Exception:
+            replay = "unavailable"
+        if replay == "replay":
+            return TicketReject(code="replay_rejected")
+        if replay != "consumed":
+            return TicketReject(code="replay_store_unavailable")
         return SessionGrant(
             call_id=claims["callId"],
             provider_stream_id=claims["providerStreamId"],
             authorization_version=claims["authorizationVersion"],
-            expires_at=datetime.fromtimestamp(expires_at / 1_000, tz=UTC),
+            expires_at=expires_at_value,
         )
 
     def _parse(self, ticket: str) -> dict[str, object] | None:

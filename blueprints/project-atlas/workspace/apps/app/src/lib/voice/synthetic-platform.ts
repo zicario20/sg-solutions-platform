@@ -2,7 +2,10 @@ import type { VoiceCommand, VoiceOperationResult } from "@atlas/domain";
 import { VOICE_COMMAND_OPERATIONS } from "@atlas/domain";
 import type { VoiceLifecycleRepository } from "@atlas/database";
 import type { VoiceOperationsFacade } from "./operations-facade.ts";
-import { issueVoiceServiceCredential } from "./service-auth.ts";
+import {
+  issueVoiceServiceCredential,
+  type VoiceCredentialRepository,
+} from "./service-auth.ts";
 
 const canonicalId = /^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$/u;
 const digest = /^[0-9a-f]{64}$/u;
@@ -66,15 +69,22 @@ function parseCommand(value: unknown): VoiceCommand {
 
 export class SyntheticVoicePlatform {
   private sequence = 0;
-  private readonly issued = new Map<string, string>();
+  private readonly credentialRepositoryReady: boolean;
 
   constructor(
     private readonly dependencies: {
       facade: VoiceOperationsFacade;
       lifecycle: VoiceLifecycleRepository;
       serviceSecret: string | Uint8Array;
+      credentials: VoiceCredentialRepository;
+      allowBoundedTestRepository?: boolean;
     },
-  ) {}
+  ) {
+    this.credentialRepositoryReady =
+      dependencies.credentials.durability === "shared_durable" ||
+      (dependencies.allowBoundedTestRepository === true &&
+        dependencies.credentials.durability === "bounded_test");
+  }
 
   async startCall(value: unknown): Promise<string> {
     const record = exactRecord(value, [
@@ -129,7 +139,18 @@ export class SyntheticVoicePlatform {
       },
       this.dependencies.serviceSecret,
     );
-    this.issued.set(credential, `${command.callId}\u0000${command.commandId}`);
+    if (!this.credentialRepositoryReady) {
+      throw new Error("SYNTHETIC_CREDENTIAL_REPOSITORY_UNAVAILABLE");
+    }
+    const issued = await this.dependencies.credentials.issueCredential({
+      namespace: "synthetic_pending_credential",
+      token: credential,
+      expiresAt: new Date(command.requestedAt.getTime() + 60_000),
+      now: command.requestedAt,
+    });
+    if (issued !== "issued") {
+      throw new Error("SYNTHETIC_CREDENTIAL_REPOSITORY_UNAVAILABLE");
+    }
     return credential;
   }
 
@@ -137,11 +158,17 @@ export class SyntheticVoicePlatform {
     const command = parseCommand(value);
     if (
       typeof credential !== "string" ||
-      this.issued.get(credential) !== `${command.callId}\u0000${command.commandId}`
+      !this.credentialRepositoryReady
     ) {
       return { kind: "denied" };
     }
-    this.issued.delete(credential);
+    const consumed = await this.dependencies.credentials.consumeCredential({
+      namespace: "synthetic_pending_credential",
+      token: credential,
+      expiresAt: new Date(command.requestedAt.getTime() + 60_000),
+      now: command.requestedAt,
+    });
+    if (consumed !== "consumed") return { kind: "denied" };
     const result = await this.dependencies.facade.execute(command, {
       credential,
       now: command.requestedAt,

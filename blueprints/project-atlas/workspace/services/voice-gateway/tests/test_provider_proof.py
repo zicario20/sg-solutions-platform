@@ -10,6 +10,7 @@ from app.security.provider_proof import (
     VerifiedProviderRequest,
     sign_synthetic_provider_request,
 )
+from app.security.replay_repository import BoundedMemoryAtomicNonceRepository
 
 NOW = datetime(2026, 8, 20, 12, 0, tzinfo=UTC)
 SECRET = b"synthetic-provider-proof-secret-000000000000000000000000"
@@ -55,6 +56,8 @@ def verifier(*, enabled: bool = True) -> ProviderProofVerifier:
         },
         synthetic_admission_enabled=enabled,
         clock=lambda: NOW,
+        nonce_repository=BoundedMemoryAtomicNonceRepository(capacity=8),
+        allow_bounded_test_repository=True,
     )
 
 
@@ -101,3 +104,22 @@ def test_encoding_and_size_are_rejected_before_proof_work() -> None:
     oversized = request(body=b"x" * 65_537, nonce="provider_nonce_000000000002")
     assert verifier().verify(encoded) == ProviderReject(code="content_encoding_rejected")
     assert verifier().verify(oversized) == ProviderReject(code="body_too_large")
+
+
+def test_enabled_provider_without_shared_or_explicit_test_store_fails_closed() -> None:
+    active = ProviderProofVerifier(
+        secret=SECRET,
+        connections={
+            "mock_connection": ProviderConnectionBinding(
+                connection_id="mock_connection",
+                state="synthetic_verified",
+                account_binding_digest=ACCOUNT_DIGEST,
+                number_binding_digest=NUMBER_DIGEST,
+            )
+        },
+        synthetic_admission_enabled=True,
+        clock=lambda: NOW,
+    )
+    assert active.verify(
+        request(nonce="provider_nonce_no_store_000001")
+    ) == ProviderReject(code="replay_store_unavailable")
