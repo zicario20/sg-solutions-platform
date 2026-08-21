@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "atlas-voice-gateway"
+version = "0.0.0"
+description = "Provider-disabled M005 voice protocol gateway"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+  "fastapi==0.116.1",
+  "pydantic==2.11.7",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx==0.28.1",
+  "mypy==1.17.1",
+  "pytest==8.4.1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["app"]
+
+[[tool.mypy.overrides]]
+module = ["fastapi.*"]
+disallow_untyped_decorators = false
