@@ -1,2 +1,2 @@
-import { AuthField, AuthShell } from "@atlas/ui";
-export default function Page() { return <AuthShell title="Restablecer contraseña"><form><AuthField label="Nueva contraseña" type="password" autoComplete="new-password" /><button>Continuar</button></form></AuthShell>; }
+import { AuthField, authFormAttributes, AuthShell } from "@atlas/ui";
+export default function Page() { return <AuthShell title="Restablecer contraseña"><form {...authFormAttributes("recovery")}><AuthField label="Nueva contraseña" name="new_password" type="password" autoComplete="new-password" /><button type="submit">Continuar</button><p aria-live="polite">Si el enlace es válido, el cambio se procesará de forma segura.</p></form></AuthShell>; }

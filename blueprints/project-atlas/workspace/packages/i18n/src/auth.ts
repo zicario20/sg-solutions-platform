@@ -1,4 +1,4 @@
 export const authCopy = {
-  es: { title: "Acceso seguro", email: "Correo electrónico", password: "Contraseña", unavailable: "El acceso está temporalmente no disponible", continue: "Continuar" },
-  en: { title: "Secure access", email: "Email", password: "Password", unavailable: "Access is temporarily unavailable", continue: "Continue" },
+  es: { title: "Acceso seguro", email: "Correo electrónico", password: "Contraseña", unavailable: "El acceso está temporalmente no disponible", continue: "Continuar", register: "Crear acceso", recovery: "Recuperar acceso", reset: "Restablecer contraseña", verify: "Verificar correo", security: "Seguridad", sessions: "Sesiones", neutralRecovery: "Si existe una cuenta elegible, recibirá instrucciones." },
+  en: { title: "Secure access", email: "Email", password: "Password", unavailable: "Access is temporarily unavailable", continue: "Continue", register: "Create access", recovery: "Recover access", reset: "Reset password", verify: "Verify email", security: "Security", sessions: "Sessions", neutralRecovery: "If an eligible account exists, it will receive instructions." },
 } as const;
