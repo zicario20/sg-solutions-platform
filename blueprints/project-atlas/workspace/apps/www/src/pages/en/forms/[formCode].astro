@@ -1,0 +1,22 @@
+---
+import PublicFormExperience from "../../../components/forms/PublicFormExperience.astro";
+import type { PublicFormRenderProjection } from "../../../components/forms/types";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import type { PublicPage } from "../../../domain/public-site";
+
+interface Props {
+  page: PublicPage;
+  projection: PublicFormRenderProjection;
+  alternatePath: string;
+}
+
+export function getStaticPaths() {
+  return [];
+}
+
+const { page, projection, alternatePath } = Astro.props as Props;
+---
+
+<BaseLayout page={page} alternatePath={alternatePath} suppressFloatingChat>
+  <PublicFormExperience projection={projection} />
+</BaseLayout>

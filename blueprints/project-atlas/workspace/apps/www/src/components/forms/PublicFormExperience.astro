@@ -1,0 +1,126 @@
+---
+import FormReview from "./FormReview.astro";
+import FormStep from "./FormStep.astro";
+import type { PublicFormRenderProjection } from "./types";
+import "../../styles/public-form.css";
+
+interface Props {
+  projection: PublicFormRenderProjection;
+  draftReference?: string;
+}
+
+const { projection, draftReference } = Astro.props;
+const totalSteps = projection.steps.length + 1;
+---
+
+<section class="public-form-shell" data-public-form-root
+  data-form-code={projection.formCode}
+  data-form-version={projection.version}
+  data-form-locale={projection.locale}
+  data-form-purpose={projection.purpose}
+  data-form-draft-reference={draftReference}
+  data-copy-progress={projection.copy.progress}
+  data-copy-step={projection.copy.step}
+  data-copy-of={projection.copy.of}
+  data-copy-required={projection.copy.requiredError}
+  data-copy-invalid={projection.copy.invalidError}
+  data-copy-sending={projection.copy.sending}
+  data-copy-unavailable={projection.copy.unavailable}
+>
+  <div class="public-form-shell__glow" aria-hidden="true"></div>
+  <div class="site-container public-form-layout">
+    <header class="public-form-intro">
+      <p class="eyebrow"><span></span>{projection.eyebrow}</p>
+      <h1>{projection.title}</h1>
+      <p class="public-form-intro__lead">{projection.introduction}</p>
+      <div class="public-form-intro__assurance">
+        <span aria-hidden="true">✓</span>
+        <p>{projection.privacyNote}</p>
+      </div>
+      <aside class="public-form-intro__portal">
+        <p>{projection.portalNote}</p>
+      </aside>
+    </header>
+
+    <div class="public-form-card">
+      <div class="public-form__progress-wrap">
+        <div class="public-form__progress-copy">
+          <span>{projection.copy.progress}</span>
+          <strong data-form-progress-label>{projection.copy.step} 1 {projection.copy.of} {totalSteps}</strong>
+        </div>
+        <div
+          class="public-form__progress"
+          role="progressbar"
+          aria-label={projection.copy.progress}
+          aria-valuemin="1"
+          aria-valuemax={totalSteps}
+          aria-valuenow="1"
+          data-form-progress
+        ><span data-form-progress-bar style={`--form-progress: ${100 / totalSteps}%`}></span></div>
+      </div>
+
+      <div class="public-form__error-summary" data-form-error-summary role="alert" tabindex="-1" hidden>
+        <h2>{projection.copy.errorsTitle}</h2>
+        <ul data-form-error-list></ul>
+      </div>
+
+      <form data-public-form novalidate>
+        {projection.steps.map((step, index) => <FormStep step={step} active={index === 0} />)}
+
+        <fieldset class="public-form__step public-form__consents" data-form-step={totalSteps} hidden>
+          <legend>{projection.copy.consentTitle}</legend>
+          <p class="public-form__step-intro">{projection.copy.consentIntro}</p>
+          <div class="public-form__consent-list">
+            {projection.consents.map((consent) => {
+              const inputId = `public-form-consent-${consent.consentType}`;
+              const errorId = `${inputId}-error`;
+              return (
+                <div class="public-form__consent" data-form-consent={consent.consentType} data-consent-version={consent.version}>
+                  <label class="public-form__choice" for={inputId}>
+                    <input
+                      id={inputId}
+                      name={`consent:${consent.consentType}`}
+                      type="checkbox"
+                      required={consent.required}
+                      aria-describedby={errorId}
+                    />
+                    <span>{consent.label}</span>
+                  </label>
+                  <p>{consent.disclosure}</p>
+                  <p id={errorId} class="public-form__field-error" data-field-error aria-live="polite"></p>
+                </div>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <div class="public-form__honeypot" aria-hidden="true">
+          <label for="public-form-company-website">Company website</label>
+          <input id="public-form-company-website" name="company_website" type="text" tabindex="-1" autocomplete="off" />
+        </div>
+
+        <div class="public-form__navigation" data-form-navigation>
+          <button class="public-form__button public-form__button--secondary" type="button" data-form-back hidden>
+            {projection.copy.back}
+          </button>
+          <button class="public-form__button public-form__button--primary" type="button" data-form-next>
+            {projection.copy.next}
+          </button>
+        </div>
+
+        <FormReview projection={projection} />
+      </form>
+
+      <section class="public-form__success" data-form-success hidden tabindex="-1">
+        <span class="public-form__success-mark" aria-hidden="true">✓</span>
+        <h2>{projection.copy.successTitle}</h2>
+        <p>{projection.copy.successBody}</p>
+        <p class="public-form__receipt" data-form-receipt></p>
+      </section>
+
+      <p class="public-form__status sr-only" aria-live="polite" aria-atomic="true" data-form-status></p>
+    </div>
+  </div>
+</section>
+
+<script src="../../scripts/public-form.ts"></script>

@@ -1,0 +1,114 @@
+---
+import type { PublicFormStepProjection } from "./types";
+
+interface Props {
+  step: PublicFormStepProjection;
+  active: boolean;
+}
+
+const { step, active } = Astro.props;
+const inputType = (fieldType: PublicFormStepProjection["fields"][number]["fieldType"]) => {
+  if (fieldType === "email") return "email";
+  if (fieldType === "tel") return "tel";
+  if (fieldType === "date") return "date";
+  if (fieldType === "number" || fieldType === "currency") return "number";
+  return "text";
+};
+---
+
+<fieldset class="public-form__step" data-form-step={step.step} hidden={!active}>
+  <legend>{step.title}</legend>
+  {step.description && <p class="public-form__step-intro">{step.description}</p>}
+  <div class="public-form__fields">
+    {step.fields.map((field) => {
+      const inputId = `public-form-${field.fieldCode}`;
+      const helpId = `${inputId}-help`;
+      const errorId = `${inputId}-error`;
+      const describedBy = field.helpText ? `${helpId} ${errorId}` : errorId;
+      const condition = field.visibleWhen ? JSON.stringify(field.visibleWhen) : undefined;
+      return (
+        <div
+          class="public-form__field"
+          data-form-field={field.fieldCode}
+          data-condition={condition}
+          hidden={field.visibleWhen ? true : undefined}
+        >
+          {field.fieldType === "boolean" || field.fieldType === "checkbox" ? (
+            <label class="public-form__choice public-form__choice--single" for={inputId}>
+              <input
+                id={inputId}
+                name={field.fieldCode}
+                type="checkbox"
+                required={field.required}
+                aria-describedby={describedBy}
+              />
+              <span>{field.label}</span>
+            </label>
+          ) : field.fieldType === "select" ? (
+            <>
+              <label for={inputId}>{field.label}{field.required && <span aria-hidden="true"> *</span>}</label>
+              <select
+                id={inputId}
+                name={field.fieldCode}
+                required={field.required}
+                aria-describedby={describedBy}
+              >
+                <option value="">--</option>
+                {field.options?.map((option) => <option value={option.code}>{option.label}</option>)}
+              </select>
+            </>
+          ) : field.fieldType === "radio" ? (
+            <fieldset class="public-form__choice-group" aria-describedby={describedBy}>
+              <legend>{field.label}{field.required && <span aria-hidden="true"> *</span>}</legend>
+              {field.options?.map((option, index) => (
+                <label class="public-form__choice" for={`${inputId}-${option.code}`}>
+                  <input
+                    id={`${inputId}-${option.code}`}
+                    name={field.fieldCode}
+                    type="radio"
+                    value={option.code}
+                    required={field.required && index === 0}
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </fieldset>
+          ) : field.fieldType === "textarea" ? (
+            <>
+              <label for={inputId}>{field.label}{field.required && <span aria-hidden="true"> *</span>}</label>
+              <textarea
+                id={inputId}
+                name={field.fieldCode}
+                rows="5"
+                required={field.required}
+                maxlength={field.maxLength}
+                autocomplete={field.autocomplete}
+                aria-describedby={describedBy}
+              ></textarea>
+            </>
+          ) : (
+            <>
+              <label for={inputId}>{field.label}{field.required && <span aria-hidden="true"> *</span>}</label>
+              <input
+                id={inputId}
+                name={field.fieldCode}
+                type={inputType(field.fieldType)}
+                required={field.required}
+                minlength={field.required && field.fieldType === "text" ? 1 : undefined}
+                maxlength={field.maxLength}
+                min={field.minimum}
+                max={field.maximum}
+                step={field.fieldType === "currency" ? "0.01" : undefined}
+                autocomplete={field.autocomplete}
+                inputmode={field.inputMode}
+                aria-describedby={describedBy}
+              />
+            </>
+          )}
+          {field.helpText && <p id={helpId} class="public-form__help">{field.helpText}</p>}
+          <p id={errorId} class="public-form__field-error" data-field-error aria-live="polite"></p>
+        </div>
+      );
+    })}
+  </div>
+</fieldset>

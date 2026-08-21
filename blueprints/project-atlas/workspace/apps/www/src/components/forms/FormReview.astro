@@ -1,0 +1,26 @@
+---
+import type { PublicFormRenderProjection } from "./types";
+
+interface Props {
+  projection: PublicFormRenderProjection;
+}
+
+const { projection } = Astro.props;
+---
+
+<section class="public-form__review" data-form-review hidden aria-labelledby="public-form-review-title">
+  <div class="public-form__section-heading">
+    <p class="public-form__kicker">{projection.copy.review}</p>
+    <h2 id="public-form-review-title">{projection.copy.reviewTitle}</h2>
+    <p>{projection.copy.reviewIntro}</p>
+  </div>
+  <dl class="public-form__review-list" data-form-review-list></dl>
+  <div class="public-form__review-actions">
+    <button class="public-form__button public-form__button--secondary" type="button" data-form-edit>
+      {projection.copy.edit}
+    </button>
+    <button class="public-form__button public-form__button--primary" type="submit" data-form-submit>
+      {projection.copy.submit}
+    </button>
+  </div>
+</section>
