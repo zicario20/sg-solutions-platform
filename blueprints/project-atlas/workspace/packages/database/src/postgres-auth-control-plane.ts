@@ -28,4 +28,10 @@ export class PostgresAuthControlPlaneRepository {
       await query(transaction, `insert into auth_outbox (command_id, account_id, purpose, idempotency_key, state, attempt_count, lease_version, available_at, payload, created_at, updated_at) values ($1,$2,$3,$1,'pending',0,0,$4,'{}'::jsonb,$4,$4) on conflict (command_id) do nothing`, [input.commandId, input.accountId, input.purpose, input.now]);
     });
   }
+  async revokeByHandleDigest(handleDigest: string, now: Date): Promise<boolean> {
+    return this.sql.begin(async (transaction) => {
+      const rows = await query<readonly { id: string }[]>(transaction, `update auth_sessions set state = 'revoked', revoked_at = $2, updated_at = $2, version = version + 1 where handle_digest = $1 and state in ('active','rotating') returning id`, [handleDigest, now]);
+      return Boolean(rows[0]);
+    });
+  }
 }

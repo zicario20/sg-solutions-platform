@@ -1,46 +1,21 @@
 import { digestOpaqueProof } from "./crypto.ts";
 import { createOpaqueValue } from "./crypto.ts";
 
-type Transaction = { state: string; nonce: string; pkceVerifierDigest: string; browserBinding: string; returnIntent: string; consumed: boolean };
+export type DurableOAuthTransactionRepository = Readonly<{
+  issue(input: { readonly id: string; readonly purpose: "sign_in" | "link"; readonly provider: "google"; readonly stateDigest: string; readonly nonceDigest: string; readonly pkceVerifierDigest: string; readonly browserBindingDigest: string; readonly redirectHash: string; readonly returnIntent: string; readonly callbackUrl: string; readonly expiresAt: Date; readonly now: Date }): Promise<void>;
+  consume(input: { readonly stateDigest: string; readonly nonceDigest: string; readonly pkceVerifierDigest: string; readonly browserBindingDigest: string; readonly redirectHash: string; readonly now: Date }): Promise<{ readonly kind: "consumed" | "denied" | "replay_denied" }>;
+}>;
 
-export class OAuthTransactionService {
-  private readonly transactions = new Map<string, Transaction>();
-  private sequence = 0;
-
-  async begin(input: { readonly browserBinding: string; readonly returnIntent: string }): Promise<{ readonly id: string; readonly state: string; readonly nonce: string; readonly pkceVerifierDigest: string; readonly browserBinding: string; readonly returnIntent: string }> {
-    if (!input.returnIntent.startsWith("/")) throw new Error("OAUTH_RETURN_INTENT_DENIED");
-    const id = `oauth_${++this.sequence}`;
-    const state = `state_${id}`;
-    const nonce = `nonce_${id}`;
-    const transaction = { state, nonce, pkceVerifierDigest: digestOpaqueProof(`pkce_${id}`), browserBinding: input.browserBinding, returnIntent: input.returnIntent, consumed: false };
-    this.transactions.set(id, transaction);
-    return { id, ...transaction };
-  }
-
-  async consume(input: { readonly id: string; readonly state: string; readonly nonce: string; readonly pkceVerifierDigest: string; readonly browserBinding: string; readonly returnIntent: string }): Promise<{ readonly kind: "consumed" | "denied" | "replay_denied" }> {
-    const transaction = this.transactions.get(input.id);
-    if (!transaction || transaction.state !== input.state || transaction.nonce !== input.nonce || transaction.pkceVerifierDigest !== input.pkceVerifierDigest || transaction.browserBinding !== input.browserBinding || transaction.returnIntent !== input.returnIntent) return { kind: "denied" };
-    if (transaction.consumed) return { kind: "replay_denied" };
-    transaction.consumed = true;
-    return { kind: "consumed" };
-  }
-}
-
-type SecureTransaction = { provider: "google"; purpose: "sign_in" | "link"; callbackUrl: string; returnIntent: string; browserBindingDigest: string; stateDigest: string; nonceDigest: string; pkceVerifierDigest: string; expiresAt: number; consumed: boolean };
-export function createSecureOAuthTransactionService() {
-  const transactions = new Map<string, SecureTransaction>();
+export function createDurableOAuthTransactionService(repository: DurableOAuthTransactionRepository, now = () => new Date()) {
   return {
-    async begin(input: { provider: "google"; purpose: "sign_in" | "link"; callbackUrl: string; returnIntent: string; browserBinding: string }) {
+    async begin(input: { readonly provider: "google"; readonly purpose: "sign_in" | "link"; readonly callbackUrl: string; readonly returnIntent: string; readonly browserBinding: string }) {
       if (!/^https:\/\/[^/?#]+\/api\/auth\/oauth\/google\/callback$/u.test(input.callbackUrl) || !/^\/(?!\/)[^\r\n]*$/u.test(input.returnIntent)) throw new Error("OAUTH_RETURN_INTENT_DENIED");
-      const state = createOpaqueValue(); const nonce = createOpaqueValue(); const pkceVerifier = createOpaqueValue(); const id = createOpaqueValue();
-      transactions.set(id, { provider: input.provider, purpose: input.purpose, callbackUrl: input.callbackUrl, returnIntent: input.returnIntent, browserBindingDigest: digestOpaqueProof(input.browserBinding), stateDigest: digestOpaqueProof(state), nonceDigest: digestOpaqueProof(nonce), pkceVerifierDigest: digestOpaqueProof(pkceVerifier), expiresAt: Date.now() + 10 * 60_000, consumed: false });
+      const state = createOpaqueValue(); const nonce = createOpaqueValue(); const pkceVerifier = createOpaqueValue(); const id = createOpaqueValue(); const issuedAt = now();
+      await repository.issue({ id, purpose: input.purpose, provider: input.provider, stateDigest: digestOpaqueProof(state), nonceDigest: digestOpaqueProof(nonce), pkceVerifierDigest: digestOpaqueProof(pkceVerifier), browserBindingDigest: digestOpaqueProof(input.browserBinding), redirectHash: digestOpaqueProof(input.callbackUrl), returnIntent: input.returnIntent, callbackUrl: input.callbackUrl, expiresAt: new Date(issuedAt.getTime() + 10 * 60_000), now: issuedAt });
       return { id, state, nonce, pkceVerifier };
     },
-    async consume(input: { id: string; state: string; nonce: string; pkceVerifier: string; browserBinding: string }) {
-      const transaction = transactions.get(input.id);
-      if (!transaction || transaction.consumed || transaction.expiresAt <= Date.now()) return { kind: "replay_denied" as const };
-      if (transaction.stateDigest !== digestOpaqueProof(input.state) || transaction.nonceDigest !== digestOpaqueProof(input.nonce) || transaction.pkceVerifierDigest !== digestOpaqueProof(input.pkceVerifier) || transaction.browserBindingDigest !== digestOpaqueProof(input.browserBinding)) return { kind: "denied" as const };
-      transaction.consumed = true; return { kind: "consumed" as const };
+    async consume(input: { readonly state: string; readonly nonce: string; readonly pkceVerifier: string; readonly browserBinding: string; readonly callbackUrl: string }) {
+      return repository.consume({ stateDigest: digestOpaqueProof(input.state), nonceDigest: digestOpaqueProof(input.nonce), pkceVerifierDigest: digestOpaqueProof(input.pkceVerifier), browserBindingDigest: digestOpaqueProof(input.browserBinding), redirectHash: digestOpaqueProof(input.callbackUrl), now: now() });
     },
   };
 }
