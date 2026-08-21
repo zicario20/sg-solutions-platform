@@ -782,7 +782,7 @@ export function runCommunicationsRepositoryConformance(
           commandId: value.commandId,
           attemptId,
           receipt: providerStatusReceiptIssuer.issue({
-            connectionId: claimed.command.channel,
+            connectionId: value.connectionId,
             externalMessageReference: `provider_ref_${suffix(scenario)}`,
             providerEventId: `status_${suffix(scenario)}`,
             status: "delivered",
@@ -792,6 +792,24 @@ export function runCommunicationsRepositoryConformance(
             correlationId: `correlation_out_${suffix(scenario)}`,
           }),
         };
+        const crossConnectionStatus = {
+          commandId: value.commandId,
+          attemptId,
+          receipt: providerStatusReceiptIssuer.issue({
+            connectionId: `connection_other_${suffix(scenario)}`,
+            externalMessageReference: `provider_ref_${suffix(scenario)}`,
+            providerEventId: `status_other_${suffix(scenario)}`,
+            status: "delivered",
+            occurredAt: CONFORMANCE_NOW,
+            verifiedAt: CONFORMANCE_NOW,
+            bodyDigest: "a".repeat(64),
+            correlationId: `correlation_out_${suffix(scenario)}`,
+          }),
+        };
+        await expect(repository.applyProviderStatus(crossConnectionStatus)).resolves.toEqual({
+          status: "denied",
+          code: "provider_status_binding_mismatch",
+        });
         await expect(repository.applyProviderStatus(status)).resolves.toMatchObject({ status: "applied" });
         await expect(repository.applyProviderStatus(status)).resolves.toMatchObject({ status: "duplicate" });
         if (inspectState) {

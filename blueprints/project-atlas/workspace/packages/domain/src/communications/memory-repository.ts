@@ -62,6 +62,7 @@ import type {
 
 type InboundRecord = {
   replayKey: string;
+  connectionId: string;
   providerBodyDigest: string;
   endpointDigests: AcceptInboundCommand["endpointDigests"];
   envelope: AcceptInboundCommand["envelope"];
@@ -73,6 +74,7 @@ type InboundRecord = {
 };
 
 type OutboundRecord = CreateOutboundCommand & {
+  connectionId?: string;
   messageBodyDigest: string;
   fingerprint?: string;
   requiredPolicyVersion?: number;
@@ -265,6 +267,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       }
       const record: InboundRecord = {
         replayKey,
+        connectionId: input.connectionId,
         providerBodyDigest: input.providerBodyDigest,
         endpointDigests: clone(input.endpointDigests),
         envelope: metadataOnlyEnvelope(input.envelope),
@@ -390,8 +393,14 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
         ...(reason ? { reason } : {}),
       };
     }
+    const inbound = [...this.inboundById.values()].find(
+      (candidate) =>
+        candidate.envelope.event.bindingId === input.command.bindingId &&
+        candidate.envelope.event.conversationId === input.command.conversationId,
+    );
     const record: OutboundRecord = {
       ...clone(input),
+      connectionId: inbound?.connectionId,
       message: metadataOnlyMessage(input.message),
       messageBodyDigest,
       state: "draft",
@@ -616,11 +625,10 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     return this.withBindingLock(found.command.bindingId, "apply_provider_status", async () => {
       const record = this.outboundById.get(input.commandId)!;
       const attempt = this.attempts.get(input.attemptId);
-      const connection = this.connections.get(record.command.channel);
       if (!attempt || attempt.commandId !== input.commandId) return { status: "not_found" };
       if (
-        !connection ||
-        connection.channel !== evidence.connectionId ||
+        !record.connectionId ||
+        record.connectionId !== evidence.connectionId ||
         attempt.externalMessageReferenceDigest !== await sha256(evidence.externalMessageReference)
       ) {
         return { status: "denied", code: "provider_status_binding_mismatch" };

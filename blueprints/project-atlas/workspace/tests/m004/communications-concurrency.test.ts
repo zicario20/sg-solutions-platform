@@ -740,7 +740,7 @@ describe("monotonic exactly-once provider statuses", () => {
       now: NOW,
     });
     const { attemptId } = claimed.attempt;
-    const connectionId = claimed.command.channel;
+    const connectionId = "connection_1";
     const delivered = providerStatus(
       repository,
       queued.commandId,
@@ -783,7 +783,7 @@ describe("monotonic exactly-once provider statuses", () => {
     expect(claimed).toMatchObject({ status: "claimed" });
     if (claimed.status !== "claimed") throw new Error("EARLY_STATUS_ATTEMPT_NOT_CLAIMED");
     const { attemptId } = claimed.attempt;
-    const connectionId = claimed.command.channel;
+    const connectionId = "connection_1";
 
     expect(
       await repository.applyProviderStatus(
