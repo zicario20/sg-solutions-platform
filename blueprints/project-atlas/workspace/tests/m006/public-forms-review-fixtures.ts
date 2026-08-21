@@ -71,6 +71,7 @@ export function createReviewService(definition = reviewDefinition()) {
       protect: async ({ value }) => ({
         ciphertext: Buffer.from(JSON.stringify(value), "utf8").toString("base64url"),
         keyReference: "test-key-v1",
+        encryptionContextVersion: "m006.answer.v1" as const,
       }),
     },
   });

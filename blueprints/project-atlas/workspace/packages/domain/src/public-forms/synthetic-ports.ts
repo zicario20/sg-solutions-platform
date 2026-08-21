@@ -67,6 +67,7 @@ function commandSignature(command: FormOutboxCommand): string {
     serviceCode: command.serviceCode ?? null,
     consentType: command.consentType ?? null,
     channel: command.channel ?? null,
+    revocationId: command.revocationId ?? null,
     idempotencyKey: command.idempotencyKey,
   });
 }
@@ -110,6 +111,8 @@ export function createProviderDisabledPublicFormPorts(): ProviderDisabledPublicF
     recorded.push(receipt);
     return result;
   };
+  const lookup = (command: FormOutboxCommand): OwnerPortResult | undefined =>
+    results.get(command.idempotencyKey)?.result;
 
   return Object.freeze({
     mode: "synthetic_provider_disabled" as const,
@@ -119,14 +122,17 @@ export function createProviderDisabledPublicFormPorts(): ProviderDisabledPublicF
     lead: {
       accept: async (command) =>
         receive(command, "pending", "crm_lead_contact_activity", "crm_owner_required"),
+      queryByIdempotency: async (command) => lookup(command),
     },
     consent: {
       record: async (command) =>
         receive(command, "pending", "consent_evidence", "consent_owner_required"),
+      queryByIdempotency: async (command) => lookup(command),
     },
     appointment: {
       request: async (command) =>
         receive(command, "unavailable", "calendar_availability", "calendar_provider_required"),
+      queryByIdempotency: async (command) => lookup(command),
     },
     payment: {
       request: async (command) =>
@@ -136,10 +142,12 @@ export function createProviderDisabledPublicFormPorts(): ProviderDisabledPublicF
           "stripe_preliminary_order_checkout_intent",
           "stripe_webhook_required",
         ),
+      queryByIdempotency: async (command) => lookup(command),
     },
     channel: {
       queue: async (command) =>
         receive(command, "unavailable", channelBoundary(command), "communications_owner_required"),
+      queryByIdempotency: async (command) => lookup(command),
     },
     analytics: {
       record: async (command) => {
@@ -149,6 +157,7 @@ export function createProviderDisabledPublicFormPorts(): ProviderDisabledPublicF
     notification: {
       request: async (command) =>
         receive(command, "unavailable", "notification", "notification_owner_required"),
+      queryByIdempotency: async (command) => lookup(command),
     },
   });
 }
@@ -169,6 +178,7 @@ type SyntheticOutboxJob = {
   maxAttempts: number;
   leaseVersion: number;
   grantedConsentTypes: readonly string[];
+  verifiedRevocation: boolean;
   availableAt: number;
   leaseId?: string;
   leaseExpiresAt?: number;
@@ -216,6 +226,7 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
         maxAttempts: this.options.maxAttempts ?? 3,
         leaseVersion: 0,
         grantedConsentTypes: Object.freeze([...new Set(input.grantedConsentTypes)]),
+        verifiedRevocation: Boolean(command.revocationId),
         availableAt: input.now.getTime(),
       });
     }
@@ -260,8 +271,37 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
           leaseOwner: this.options.workerId ?? "synthetic_form_worker",
           leaseVersion: job.leaseVersion,
           grantedConsentTypes: job.grantedConsentTypes,
+          verifiedRevocation: job.verifiedRevocation,
         }),
       );
+    }
+    return Object.freeze(leases);
+  }
+
+  async claimUnknown(input: {
+    submissionRef?: string;
+    now: Date;
+    leaseMs: number;
+    limit: number;
+  }): Promise<readonly FormOutboxLease[]> {
+    const now = input.now.getTime();
+    const leases: FormOutboxLease[] = [];
+    for (const job of this.jobs.values()) {
+      if (input.submissionRef && job.command.submissionRef !== input.submissionRef) continue;
+      if (job.state !== "unknown" || leases.length >= input.limit) continue;
+      job.leaseVersion += 1;
+      job.state = "leased";
+      job.leaseId = `form_reconcile_${stableToken(`${job.command.idempotencyKey}:${job.leaseVersion}`)}`;
+      job.leaseExpiresAt = now + input.leaseMs;
+      leases.push(Object.freeze({
+        leaseId: job.leaseId,
+        command: job.command,
+        attempts: job.attempts,
+        leaseOwner: this.options.workerId ?? "synthetic_form_worker",
+        leaseVersion: job.leaseVersion,
+        grantedConsentTypes: job.grantedConsentTypes,
+        verifiedRevocation: job.verifiedRevocation,
+      }));
     }
     return Object.freeze(leases);
   }

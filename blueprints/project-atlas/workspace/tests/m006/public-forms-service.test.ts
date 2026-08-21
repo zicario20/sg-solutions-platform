@@ -72,6 +72,7 @@ function harness() {
       protect: async ({ fieldCode, value }) => ({
         ciphertext: `ciphertext:${fieldCode}:${String(value).length}`,
         keyReference: "forms_key_v1",
+        encryptionContextVersion: "m006.answer.v1" as const,
       }),
     },
   };

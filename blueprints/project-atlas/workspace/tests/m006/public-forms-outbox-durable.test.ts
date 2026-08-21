@@ -103,6 +103,7 @@ describe("M006 durable form outbox", () => {
       leaseOwner: "worker_m006_01",
       leaseVersion: 4,
       grantedConsentTypes: Object.freeze(["privacy_policy"]),
+      verifiedRevocation: false,
     }) satisfies FormOutboxLease;
     const receipt = Object.freeze({
       commandId: lease.command.commandId,

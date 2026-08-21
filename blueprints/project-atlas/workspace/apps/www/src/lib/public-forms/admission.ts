@@ -51,8 +51,11 @@ export interface FormAdmissionTokens {
   }): { valid: true; sessionBinding: string } | { valid: false };
 }
 
+export type FormAdmissionOperation = "bootstrap" | "submit" | "draft_save" | "draft_resume" | "consent_revoke";
+
 export interface FormRateLimiter {
-  allow(bucket: string, now: Date): boolean;
+  readonly scope: "local" | "shared";
+  allow(input: { bucket: string; operation: FormAdmissionOperation; now: Date }): Promise<boolean>;
 }
 
 type SignedPayload = {
@@ -162,10 +165,12 @@ export function createMemoryFormRateLimiter(input: {
   const buckets = new Map<string, { count: number; expiresAt: number }>();
   const maxBuckets = input.maxBuckets ?? 4_096;
   return {
-    allow(bucket, now) {
+    scope: "local" as const,
+    async allow({ bucket, operation, now }) {
       if (!/^[0-9a-f]{64}$/u.test(bucket)) return false;
+      const partition = `${operation}:${bucket}`;
       const currentTime = now.getTime();
-      const current = buckets.get(bucket);
+      const current = buckets.get(partition);
       if (!current || current.expiresAt <= currentTime) {
         if (buckets.size >= maxBuckets) {
           for (const [key, value] of buckets) {
@@ -173,7 +178,7 @@ export function createMemoryFormRateLimiter(input: {
           }
           if (buckets.size >= maxBuckets) buckets.delete(buckets.keys().next().value as string);
         }
-        buckets.set(bucket, { count: 1, expiresAt: currentTime + input.windowSeconds * 1_000 });
+        buckets.set(partition, { count: 1, expiresAt: currentTime + input.windowSeconds * 1_000 });
         return true;
       }
       current.count += 1;
@@ -340,6 +345,21 @@ function json(status: number, payload: Record<string, unknown>, headers?: Header
   });
 }
 
+function deriveAttribution(request: Request, canonicalOrigin: string) {
+  try {
+    const canonical = new URL(canonicalOrigin);
+    const referrer = request.headers.get("referer");
+    if (!referrer) return undefined;
+    const source = new URL(referrer);
+    if (source.origin !== canonical.origin || !/^\/[A-Za-z0-9/_-]{0,180}$/u.test(source.pathname)) {
+      return undefined;
+    }
+    return Object.freeze({ referrer: `${source.origin}${source.pathname}`, landingPage: source.pathname });
+  } catch {
+    return undefined;
+  }
+}
+
 const invalid = () => json(400, { ok: false, code: "invalid_request" });
 const review = () => json(202, { ok: true, code: "request_received_for_review" });
 
@@ -373,7 +393,7 @@ export function createFormAdmissionHandlers(dependencies: {
   canonicalOrigin: string;
   tokens: FormAdmissionTokens;
   rateLimiter: FormRateLimiter;
-  networkBucket(request: Request): Promise<string>;
+  networkBucket(request: Request, operation: FormAdmissionOperation): Promise<string | undefined>;
   facade: PublicFormsFacadePort;
   clock?: { now(): Date };
   correlationId?: () => string;
@@ -382,11 +402,16 @@ export function createFormAdmissionHandlers(dependencies: {
   const correlationId =
     dependencies.correlationId ?? (() => `form_correlation_${randomBytes(16).toString("hex")}`);
 
-  async function admitted(request: Request): Promise<string | undefined> {
+  async function admitted(
+    request: Request,
+    operation: FormAdmissionOperation,
+  ): Promise<string | undefined> {
     if (!requestIsSameOrigin(request, dependencies.canonicalOrigin)) return undefined;
     try {
-      const bucket = await dependencies.networkBucket(request);
-      return dependencies.rateLimiter.allow(bucket, clock.now()) ? bucket : undefined;
+      const bucket = await dependencies.networkBucket(request, operation);
+      return bucket && (await dependencies.rateLimiter.allow({ bucket, operation, now: clock.now() }))
+        ? bucket
+        : undefined;
     } catch {
       return undefined;
     }
@@ -394,7 +419,7 @@ export function createFormAdmissionHandlers(dependencies: {
 
   return {
     async bootstrap(request: Request): Promise<Response> {
-      if (!(await admitted(request))) return invalid();
+      if (!(await admitted(request, "bootstrap"))) return invalid();
       try {
         const binding = parseBootstrap(await readBoundedJson(request));
         const existingSessionToken = cookieValue(request);
@@ -419,7 +444,7 @@ export function createFormAdmissionHandlers(dependencies: {
     },
 
     async submit(request: Request): Promise<Response> {
-      if (!(await admitted(request))) return invalid();
+      if (!(await admitted(request, "submit"))) return invalid();
       let raw: Record<string, unknown>;
       try {
         raw = await readBoundedJson(request);
@@ -441,6 +466,7 @@ export function createFormAdmissionHandlers(dependencies: {
           locale: envelope.locale,
         });
         if (!binding.valid) return invalid();
+        const attribution = deriveAttribution(request, dependencies.canonicalOrigin);
         const result = await dependencies.facade.acceptPublicSubmission({
           formCode: envelope.formCode,
           formVersion: envelope.formVersion,
@@ -451,7 +477,7 @@ export function createFormAdmissionHandlers(dependencies: {
           correlationId: correlationId(),
           answers: envelope.answers,
           consents: envelope.consents,
-          ...(envelope.attribution ? { attribution: envelope.attribution } : {}),
+          ...(attribution ? { attribution } : {}),
         });
         if (result.status === "accepted") {
           return json(202, { ok: true, status: "accepted", receiptId: result.receiptId });
@@ -465,7 +491,7 @@ export function createFormAdmissionHandlers(dependencies: {
     },
 
     async saveDraft(request: Request): Promise<Response> {
-      if (!(await admitted(request))) return invalid();
+      if (!(await admitted(request, "draft_save"))) return invalid();
       try {
         const raw = await readBoundedJson(request);
         if (
@@ -535,7 +561,7 @@ export function createFormAdmissionHandlers(dependencies: {
     },
 
     async resumeDraft(request: Request): Promise<Response> {
-      if (!(await admitted(request))) return invalid();
+      if (!(await admitted(request, "draft_resume"))) return invalid();
       try {
         const raw = await readBoundedJson(request);
         if (
@@ -578,7 +604,7 @@ export function createFormAdmissionHandlers(dependencies: {
     },
 
     async revokeConsent(request: Request): Promise<Response> {
-      if (!(await admitted(request))) return invalid();
+      if (!(await admitted(request, "consent_revoke"))) return invalid();
       try {
         const raw = await readBoundedJson(request);
         if (

@@ -64,6 +64,7 @@ type ClaimedRow = {
   service_code: string | null;
   consent_type: string | null;
   channel: FormOutboxCommand["channel"] | null;
+  revocation_id: string | null;
   idempotency_key: string;
   attempt_count: number;
   lease_owner: string;
@@ -118,49 +119,39 @@ export class PostgresFormOutboxStore implements FormOutboxStore {
         from candidates where item.command_id = candidates.command_id
         returning item.command_id, item.submission_id, item.owner, item.operation,
           item.form_code, item.locale, item.service_code, item.consent_type,
-          item.channel, item.idempotency_key, item.attempt_count,
+          item.channel, item.revocation_id, item.idempotency_key, item.attempt_count,
           item.lease_owner, item.lease_version`,
         [input.now, this.options.workerId, leaseExpiresAt, input.submissionRef ?? null, input.limit],
       );
-      const leases: FormOutboxLease[] = [];
-      for (const row of rows) {
-        const consentRows = await query<{ consent_type: string }>(
-          tx,
-          `select consent.consent_type from form_consent_evidence consent
-           where consent.submission_id = $1 and consent.granted = true
-             and not exists (
-               select 1 from form_consent_revocations revocation
-               where revocation.submission_id = consent.submission_id
-                 and revocation.consent_type = consent.consent_type
-                 and revocation.consent_version = consent.consent_version
-             )`,
-          [row.submission_id],
-        );
-        const command: FormOutboxCommand = Object.freeze({
-          commandId: row.command_id,
-          owner: row.owner,
-          operation: row.operation,
-          submissionRef: row.submission_id,
-          formCode: row.form_code,
-          locale: row.locale,
-          ...(row.service_code ? { serviceCode: row.service_code } : {}),
-          ...(row.consent_type ? { consentType: row.consent_type } : {}),
-          ...(row.channel ? { channel: row.channel } : {}),
-          idempotencyKey: row.idempotency_key,
-          state: "pending",
-        });
-        leases.push(
-          Object.freeze({
-            leaseId: `${row.command_id}:${row.lease_version}`,
-            command,
-            attempts: row.attempt_count,
-            leaseOwner: row.lease_owner,
-            leaseVersion: row.lease_version,
-            grantedConsentTypes: Object.freeze(consentRows.map((item) => item.consent_type)),
-          }),
-        );
-      }
-      return Object.freeze(leases);
+      return Object.freeze(await Promise.all(rows.map((row) => this.toLease(tx, row))));
+    });
+  }
+
+  async claimUnknown(input: {
+    submissionRef?: string;
+    now: Date;
+    leaseMs: number;
+    limit: number;
+  }): Promise<readonly FormOutboxLease[]> {
+    return withOutboxRole(this.sql, async (tx) => {
+      const leaseExpiresAt = new Date(input.now.getTime() + input.leaseMs);
+      const rows = await query<ClaimedRow>(
+        tx,
+        `with candidates as (
+          select command_id from form_outbox
+          where state = 'unknown' and ($4::text is null or submission_id = $4)
+          order by updated_at, command_id for update skip locked limit $5
+        )
+        update form_outbox item set state = 'dispatching', lease_owner = $2,
+          lease_version = item.lease_version + 1, lease_expires_at = $3, updated_at = $1
+        from candidates where item.command_id = candidates.command_id
+        returning item.command_id, item.submission_id, item.owner, item.operation,
+          item.form_code, item.locale, item.service_code, item.consent_type,
+          item.channel, item.revocation_id, item.idempotency_key, item.attempt_count,
+          item.lease_owner, item.lease_version`,
+        [input.now, this.options.workerId, leaseExpiresAt, input.submissionRef ?? null, input.limit],
+      );
+      return Object.freeze(await Promise.all(rows.map((row) => this.toLease(tx, row))));
     });
   }
 
@@ -246,6 +237,55 @@ export class PostgresFormOutboxStore implements FormOutboxStore {
         ],
       );
       if (!rows[0]) throw new Error("FORM_OUTBOX_LEASE_CONFLICT");
+    });
+  }
+
+  private async toLease(tx: PublicFormsTransaction, row: ClaimedRow): Promise<FormOutboxLease> {
+    const consentRows = await query<{ consent_type: string }>(
+      tx,
+      `select consent.consent_type from form_consent_evidence consent
+       where consent.submission_id = $1 and consent.granted = true
+         and not exists (
+           select 1 from form_consent_revocations revocation
+           where revocation.submission_id = consent.submission_id
+             and revocation.consent_type = consent.consent_type
+             and revocation.consent_version = consent.consent_version
+         )`,
+      [row.submission_id],
+    );
+    const verified = row.revocation_id
+      ? (await query<{ verified: boolean }>(
+          tx,
+          `select exists (
+             select 1 from form_consent_revocations revocation
+             where revocation.id = $1 and revocation.submission_id = $2
+               and revocation.consent_type = $3
+           ) as verified`,
+          [row.revocation_id, row.submission_id, row.consent_type],
+        ))[0]?.verified === true
+      : false;
+    const command: FormOutboxCommand = Object.freeze({
+      commandId: row.command_id,
+      owner: row.owner,
+      operation: row.operation,
+      submissionRef: row.submission_id,
+      formCode: row.form_code,
+      locale: row.locale,
+      ...(row.service_code ? { serviceCode: row.service_code } : {}),
+      ...(row.consent_type ? { consentType: row.consent_type } : {}),
+      ...(row.channel ? { channel: row.channel } : {}),
+      ...(row.revocation_id ? { revocationId: row.revocation_id } : {}),
+      idempotencyKey: row.idempotency_key,
+      state: "pending",
+    });
+    return Object.freeze({
+      leaseId: `${row.command_id}:${row.lease_version}`,
+      command,
+      attempts: row.attempt_count,
+      leaseOwner: row.lease_owner,
+      leaseVersion: row.lease_version,
+      grantedConsentTypes: Object.freeze(consentRows.map((item) => item.consent_type)),
+      verifiedRevocation: verified,
     });
   }
 }

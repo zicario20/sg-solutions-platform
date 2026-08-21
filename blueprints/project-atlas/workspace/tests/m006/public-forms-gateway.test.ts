@@ -87,7 +87,6 @@ describe("M006 public form admission gateway", () => {
           idempotencyKey: "idem_0123456789abcdef",
           answers: { email: "person@example.com" },
           consents: { service_contact: true },
-          attribution: { landingPage: "/contact" },
           honeypot: "",
         }),
         { cookie: boot.cookie, "x-atlas-csrf": boot.payload.csrfToken },
@@ -98,6 +97,7 @@ describe("M006 public form admission gateway", () => {
     expect(instance.received).toHaveLength(1);
     expect(instance.received[0]).toMatchObject({ formCode: "contact", locale: "es" });
     expect(instance.received[0]).not.toHaveProperty("price");
+    expect(instance.received[0]).not.toHaveProperty("attribution");
   });
 
   it("rejects foreign origins and invalid CSRF with the same generic shape", async () => {

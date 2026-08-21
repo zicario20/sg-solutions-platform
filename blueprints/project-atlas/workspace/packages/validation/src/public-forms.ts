@@ -21,20 +21,6 @@ const consents = z
   .refine((record) => Object.keys(record).every((key) => !forbiddenKeys.has(key)))
   .transform((record) => Object.freeze({ ...record }));
 
-const attribution = z
-  .object({
-    referrer: z.string().trim().max(240).optional(),
-    landingPage: z.string().trim().max(180).regex(/^\/[A-Za-z0-9/_-]*$/u).optional(),
-    utmSource: z.string().trim().max(80).optional(),
-    utmMedium: z.string().trim().max(80).optional(),
-    utmCampaign: z.string().trim().max(100).optional(),
-    utmTerm: z.string().trim().max(100).optional(),
-    utmContent: z.string().trim().max(100).optional(),
-    partnerCode: safeCode.optional(),
-  })
-  .strict()
-  .optional();
-
 export const publicSubmissionEnvelopeSchema = z
   .object({
     formCode: safeCode,
@@ -47,7 +33,6 @@ export const publicSubmissionEnvelopeSchema = z
     idempotencyKey: safeOpaqueToken,
     answers,
     consents,
-    attribution,
     honeypot: z.literal("").optional(),
   })
   .strict();

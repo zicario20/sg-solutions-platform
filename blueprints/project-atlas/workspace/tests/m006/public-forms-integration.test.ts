@@ -6,6 +6,7 @@ import {
   dispatchFormOutbox,
   KnownNoEffectFormOwnerError,
   reconcileFormOutbox,
+  reconcileUnknownPersistedFormOutbox,
 } from "../../packages/domain/src/public-forms/jobs.ts";
 import {
   SyntheticFormOutboxStore,
@@ -270,5 +271,52 @@ describe("M006 synthetic owner integration flow", () => {
     expect(store.snapshot("form_submission_01")).toEqual([
       expect.objectContaining({ state: "unknown", attempts: 1 }),
     ]);
+  });
+
+  it("propagates a verified channel revocation once while ordinary channel work remains consent-gated", async () => {
+    const store = new SyntheticFormOutboxStore();
+    const ports = createProviderDisabledPublicFormPorts();
+    const revocation = Object.freeze({
+      ...command("channel", "apply_consent_revocation", "revoke_whatsapp", "whatsapp"),
+      consentType: "whatsapp_contact",
+      revocationId: "form_consent_revocation_01",
+    });
+    const ordinary = command("channel", "queue_handoff", "ordinary_whatsapp", "whatsapp");
+    const result = await dispatchFormOutbox(
+      acceptedSubmission({ consents: [consent("privacy_policy")], outbox: [revocation, ordinary] }),
+      { store, ports, now: () => NOW, correlationId: CORRELATION_ID },
+    );
+
+    expect(ports.receipts.filter((receipt) => receipt.owner === "channel").map((receipt) => receipt.operation)).toEqual([
+      "apply_consent_revocation",
+    ]);
+    expect(result.commandReceipts.find((receipt) => receipt.operation === "queue_handoff")?.status).toBe("blocked");
+  });
+
+  it("claims unknown work only to query the owner and never blind-redispatches it", async () => {
+    const store = new SyntheticFormOutboxStore();
+    const disabled = createProviderDisabledPublicFormPorts();
+    let dispatched = 0;
+    const ports = {
+      ...disabled,
+      lead: {
+        async accept() {
+          dispatched += 1;
+          throw new Error("ambiguous");
+        },
+        async queryByIdempotency(commandValue: FormOutboxCommand) {
+          return Object.freeze({ status: "linked" as const, receiptId: `query_${commandValue.idempotencyKey}` });
+        },
+      },
+    };
+    const submission = acceptedSubmission({ outbox: [command("lead", "accept_candidate", "unknown_query")] });
+    await dispatchFormOutbox(submission, { store, ports, now: () => NOW, correlationId: CORRELATION_ID });
+    const reconciled = await reconcileUnknownPersistedFormOutbox(
+      { submissionRef: submission.submissionId, formCode: submission.formCode, locale: submission.locale },
+      { store, ports, now: () => NOW, correlationId: CORRELATION_ID },
+    );
+
+    expect(dispatched).toBe(1);
+    expect(reconciled.lead).toBe("linked");
   });
 });

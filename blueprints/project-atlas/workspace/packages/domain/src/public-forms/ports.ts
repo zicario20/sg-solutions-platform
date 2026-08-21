@@ -19,9 +19,12 @@ export type FormOutboxCommand = Readonly<{
   serviceCode?: string;
   consentType?: string;
   channel?: "sms" | "whatsapp" | "email";
+  revocationId?: string;
   idempotencyKey: string;
   state: "pending";
 }>;
+
+export type FormOwnerInvocationOptions = Readonly<{ signal: AbortSignal }>;
 
 export type OwnerPortResult = Readonly<{
   status: "linked" | "duplicate_review" | "pending" | "queued" | "unavailable";
@@ -29,29 +32,35 @@ export type OwnerPortResult = Readonly<{
 }>;
 
 export interface LeadCandidatePort {
-  accept(command: FormOutboxCommand): Promise<OwnerPortResult>;
+  accept(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult>;
+  queryByIdempotency?(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult | undefined>;
 }
 
 export interface ConsentEvidencePort {
-  record(command: FormOutboxCommand): Promise<OwnerPortResult>;
+  record(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult>;
+  queryByIdempotency?(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult | undefined>;
 }
 
 export interface AppointmentIntentPort {
-  request(command: FormOutboxCommand): Promise<OwnerPortResult>;
+  request(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult>;
+  queryByIdempotency?(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult | undefined>;
 }
 
 export interface PaymentHandoffPort {
-  request(command: FormOutboxCommand): Promise<OwnerPortResult>;
+  request(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult>;
+  queryByIdempotency?(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult | undefined>;
 }
 
 export interface ChannelHandoffPort {
-  queue(command: FormOutboxCommand): Promise<OwnerPortResult>;
+  queue(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult>;
+  queryByIdempotency?(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult | undefined>;
 }
 
 export interface AnalyticsPort {
-  record(command: FormOutboxCommand): Promise<void>;
+  record(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<void>;
 }
 
 export interface NotificationPort {
-  request(command: FormOutboxCommand): Promise<OwnerPortResult>;
+  request(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult>;
+  queryByIdempotency?(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult | undefined>;
 }

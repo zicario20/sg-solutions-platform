@@ -12,7 +12,6 @@ import {
 } from "@atlas/database";
 import {
   createProviderDisabledPublicFormPorts,
-  dispatchPersistedFormOutbox,
   PublicFormsLifecycleService,
   PublicFormsService,
   SyntheticFormOutboxStore,
@@ -26,6 +25,8 @@ import {
   createFormAdmissionHandlers,
   createMemoryFormRateLimiter,
   createSignedFormAdmissionTokens,
+  type FormAdmissionOperation,
+  type FormRateLimiter,
   type PublicFormsFacadePort,
 } from "./admission.ts";
 
@@ -35,6 +36,9 @@ export type ProviderDisabledPublicFormsRuntimeConfig = Readonly<{
   canonicalOrigin: string;
   repository: PublicFormsRepository;
   outboxStore: FormOutboxStore;
+  admissionScope?: "local" | "public";
+  rateLimiter?: FormRateLimiter;
+  networkBucket?: (request: Request, operation: FormAdmissionOperation) => Promise<string | undefined>;
   clock?: Clock;
   secrets: Readonly<{
     admission: string;
@@ -73,19 +77,31 @@ function encryptedValueBoundary(input: {
       "utf8",
     );
   };
-  const matchDigest = (value: unknown) =>
+  const matchDigest = (fieldType: "email" | "tel", value: unknown) =>
     createHmac("sha256", input.digestSecret)
-      .update(`public-forms:match:v1\u0000${JSON.stringify(value)}`)
+      .update(`public-forms:contact-match:v1\u0000${fieldType}\u0000${JSON.stringify(value)}`)
       .digest("hex");
 
   return {
     answerProtection: {
       async protect(value) {
-        const context = `answer:${value.fieldCode}:${value.sensitivity}`;
+        const context = [
+          "m006.answer.v1",
+          value.submissionId,
+          value.formCode,
+          value.formVersion,
+          value.locale,
+          value.fieldCode,
+          value.sensitivity,
+          input.keyReference,
+        ].join("\u0000");
         return {
           ciphertext: seal(JSON.stringify(value.value), context),
           keyReference: input.keyReference,
-          matchDigest: matchDigest(value.value),
+          encryptionContextVersion: "m006.answer.v1" as const,
+          ...(value.matchDigestRequired && (value.fieldType === "email" || value.fieldType === "tel")
+            ? { matchDigest: matchDigest(value.fieldType, value.value) }
+            : {}),
         };
       },
     },
@@ -136,6 +152,13 @@ function localOutboxRepository(
 export function createProviderDisabledPublicFormsRuntime(
   config: ProviderDisabledPublicFormsRuntimeConfig,
 ) {
+  const admissionScope = config.admissionScope ?? "local";
+  if (
+    admissionScope === "public" &&
+    (!config.rateLimiter || config.rateLimiter.scope !== "shared" || !config.networkBucket)
+  ) {
+    throw new Error("PUBLIC_FORMS_SHARED_ADMISSION_REQUIRED");
+  }
   const clock = config.clock ?? { now: () => new Date() };
   const key = Buffer.from(config.secrets.encryptionKeyBase64, "base64");
   const protection = encryptedValueBoundary({
@@ -173,27 +196,7 @@ export function createProviderDisabledPublicFormsRuntime(
   const ports = createProviderDisabledPublicFormPorts();
   const facade: PublicFormsFacadePort = {
     async acceptPublicSubmission(command) {
-      const result = await service.accept(command);
-      if (result.status === "accepted" && result.submissionRef) {
-        try {
-          await dispatchPersistedFormOutbox(
-            {
-              submissionRef: result.submissionRef,
-              formCode: command.formCode,
-              locale: command.locale,
-            },
-            {
-              store: config.outboxStore,
-              ports,
-              now: () => clock.now(),
-              maxAttempts: 3,
-            },
-          );
-        } catch {
-          // Acceptance remains durable. The bounded worker can recover persisted pending commands.
-        }
-      }
-      return result;
+      return service.accept(command);
     },
     saveDraft: (command) => lifecycle.saveDraft(command),
     resumeDraft: (command) => lifecycle.resumeDraft(command),
@@ -206,14 +209,16 @@ export function createProviderDisabledPublicFormsRuntime(
       clock,
       ttlSeconds: 900,
     }),
-    rateLimiter: createMemoryFormRateLimiter({ limit: 20, windowSeconds: 60 }),
-    async networkBucket(request) {
-      const networkHint =
-        request.headers.get("x-vercel-forwarded-for") ??
-        request.headers.get("cf-connecting-ip") ??
-        request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-        "unknown";
-      return createHmac("sha256", config.secrets.networkBucket).update(networkHint).digest("hex");
+    rateLimiter: config.rateLimiter ?? createMemoryFormRateLimiter({ limit: 20, windowSeconds: 60 }),
+    async networkBucket(request, operation) {
+      const identity = config.networkBucket
+        ? await config.networkBucket(request, operation)
+        : "provider-disabled-local";
+      return identity
+        ? createHmac("sha256", config.secrets.networkBucket)
+            .update(`m006:admission:v1\u0000${operation}\u0000${identity}`)
+            .digest("hex")
+        : undefined;
     },
     facade,
     clock,
@@ -238,6 +243,13 @@ const unavailableFacade: PublicFormsFacadePort = {
 
 let unavailableRuntime: ReturnType<typeof createFormAdmissionHandlers> | undefined;
 let configuredRuntime: ReturnType<typeof createProviderDisabledPublicFormsRuntime> | undefined;
+
+export function configureAttestedPublicFormsRuntime(
+  config: ProviderDisabledPublicFormsRuntimeConfig & Readonly<{ admissionScope: "public" }>,
+) {
+  configuredRuntime ??= createProviderDisabledPublicFormsRuntime(config);
+  return configuredRuntime;
+}
 
 function configuredProviderDisabledRuntime(): ReturnType<typeof createProviderDisabledPublicFormsRuntime> | undefined {
   if (import.meta.env.PUBLIC_FORMS_DATABASE_URL) {
@@ -275,7 +287,6 @@ function configuredProviderDisabledRuntime(): ReturnType<typeof createProviderDi
 }
 
 export function getPublicFormsRuntime() {
-  configuredRuntime ??= configuredProviderDisabledRuntime();
   if (configuredRuntime) return configuredRuntime;
   unavailableRuntime ??= createFormAdmissionHandlers({
     canonicalOrigin: import.meta.env.PUBLIC_ORIGIN ?? "https://www.sgsolutions.com",

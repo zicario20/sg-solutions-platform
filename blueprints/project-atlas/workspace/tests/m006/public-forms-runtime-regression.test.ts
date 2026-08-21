@@ -82,9 +82,13 @@ describe("M006 configured provider-disabled runtime", () => {
     expect(response.status).toBe(202);
     expect(await response.json()).toMatchObject({ ok: true, status: "accepted" });
     expect(repository.acceptedSubmissions).toHaveLength(1);
+    expect(repository.acceptedSubmissions[0]?.answers[0]).toMatchObject({
+      encryptionContextVersion: "m006.answer.v1",
+    });
+    expect(repository.acceptedSubmissions[0]?.answers[0]).not.toHaveProperty("matchDigest");
     expect(outboxStore.snapshot(repository.acceptedSubmissions[0]!.submissionId)).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ state: "completed", receipt: expect.objectContaining({ status: "pending" }) }),
+        expect.objectContaining({ state: "pending" }),
       ]),
     );
   });

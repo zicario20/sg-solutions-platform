@@ -310,6 +310,9 @@ export const formResponses = pgTable(
     sensitivity: varchar("sensitivity", { length: 24 }).notNull(),
     ciphertext: text("ciphertext").notNull(),
     keyReference: text("key_reference").notNull(),
+    encryptionContextVersion: varchar("encryption_context_version", { length: 32 })
+      .notNull()
+      .default("m006.answer.v1"),
     matchDigest: char("match_digest", { length: 64 }),
     ...timestamps,
   },
@@ -517,6 +520,7 @@ export const formOutbox = pgTable(
     serviceCode: varchar("service_code", { length: 64 }),
     consentType: varchar("consent_type", { length: 64 }),
     channel: varchar("channel", { length: 16 }),
+    revocationId: text("revocation_id"),
     idempotencyKey: text("idempotency_key").notNull().unique(),
     state: varchar("state", { length: 24 }).notNull(),
     attemptCount: integer("attempt_count").notNull().default(0),
@@ -535,6 +539,11 @@ export const formOutbox = pgTable(
       name: "form_outbox_submission_scope_fk",
       columns: [table.submissionId, table.scopeDigest],
       foreignColumns: [formSubmissions.id, formSubmissions.scopeDigest],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "form_outbox_revocation_fk",
+      columns: [table.revocationId],
+      foreignColumns: [formConsentRevocations.id],
     }).onDelete("restrict"),
     check("form_outbox_scope_valid", digestCheck(table.scopeDigest)),
     check("form_outbox_owner_valid", sql`${table.owner} in ('lead', 'consent', 'appointment', 'payment', 'channel', 'analytics', 'notification')`),

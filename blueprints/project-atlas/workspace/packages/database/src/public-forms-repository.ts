@@ -359,8 +359,8 @@ export class PostgresPublicFormsRepository implements PublicFormsRepository {
             tx,
             `insert into form_responses (
               submission_id, scope_digest, field_code, value_type, sensitivity,
-              ciphertext, key_reference, match_digest, created_at, updated_at
-            ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)`,
+              ciphertext, key_reference, encryption_context_version, match_digest, created_at, updated_at
+            ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)`,
             [
               input.submission.submissionId,
               input.scope,
@@ -369,6 +369,7 @@ export class PostgresPublicFormsRepository implements PublicFormsRepository {
               answer.sensitivity,
               answer.ciphertext,
               answer.keyReference,
+              answer.encryptionContextVersion,
               answer.matchDigest ?? null,
               now,
             ],
@@ -424,10 +425,11 @@ export class PostgresPublicFormsRepository implements PublicFormsRepository {
             `insert into form_outbox (
               command_id, submission_id, scope_digest, owner, operation, form_code,
               locale, service_code, consent_type, channel, idempotency_key, state,
+              revocation_id,
               attempt_count, lease_owner, lease_version, lease_expires_at, available_at,
               completed_at, result_code, created_at, updated_at
-            ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending',
-              0, null, 0, null, $12, null, null, $12, $12)`,
+            ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending', $12,
+              0, null, 0, null, $13, null, null, $13, $13)`,
             [
               command.commandId,
               input.submission.submissionId,
@@ -440,6 +442,7 @@ export class PostgresPublicFormsRepository implements PublicFormsRepository {
               command.consentType ?? null,
               command.channel ?? null,
               command.idempotencyKey,
+              command.revocationId ?? null,
               now,
             ],
           );
@@ -700,10 +703,10 @@ export class PostgresPublicFormsRepository implements PublicFormsRepository {
             `insert into form_outbox (
               command_id, submission_id, scope_digest, owner, operation, form_code,
               locale, service_code, consent_type, channel, idempotency_key, state,
-              attempt_count, lease_owner, lease_version, lease_expires_at, available_at,
+              revocation_id, attempt_count, lease_owner, lease_version, lease_expires_at, available_at,
               completed_at, result_code, owner_receipt, created_at, updated_at
-            ) values ($1, $2, $3, $4, $5, $6, $7, null, $8, $9, $10, 'pending',
-              0, null, 0, null, $11, null, null, null, $11, $11)
+            ) values ($1, $2, $3, $4, $5, $6, $7, null, $8, $9, $10, 'pending', $11,
+              0, null, 0, null, $12, null, null, null, $12, $12)
             on conflict (idempotency_key) do nothing`,
             [
               command.commandId,
@@ -716,6 +719,7 @@ export class PostgresPublicFormsRepository implements PublicFormsRepository {
               command.consentType ?? null,
               command.channel ?? null,
               command.idempotencyKey,
+              command.revocationId ?? null,
               input.occurredAt,
             ],
           );

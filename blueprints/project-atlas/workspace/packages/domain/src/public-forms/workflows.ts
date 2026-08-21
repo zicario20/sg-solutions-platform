@@ -244,6 +244,7 @@ export class PublicFormsLifecycleService {
             formCode: "consent_revocation",
             locale: "es",
             consentType: command.consentType,
+            revocationId,
             ...(channel ? { channel } : {}),
             idempotencyKey: `${revocationId}:${owner}:${operation}:${command.consentType}`,
             state: "pending",

@@ -323,15 +323,24 @@ export class PublicFormsService {
     }
 
     try {
+      const submissionId = this.dependencies.ids.next("form_submission");
       const protectedAnswers: ProtectedFormAnswer[] = [];
       const fieldMap = new Map(definition.fields.map((field) => [field.fieldCode, field]));
       for (const [fieldCode, value] of Object.entries(normalized)) {
         const field = fieldMap.get(fieldCode);
         if (!field) throw new Error("invalid");
         const protectedValue = await this.dependencies.answerProtection.protect({
+          submissionId,
+          formCode: definition.formCode,
+          formVersion: definition.version,
+          locale: definition.locale,
           fieldCode,
+          fieldType: field.fieldType,
           value,
           sensitivity: field.sensitivity,
+          matchDigestRequired:
+            definition.approvedActions.includes("lead_candidate") &&
+            (field.fieldType === "email" || field.fieldType === "tel"),
         });
         protectedAnswers.push(
           Object.freeze({
@@ -347,7 +356,6 @@ export class PublicFormsService {
           }),
         );
       }
-      const submissionId = this.dependencies.ids.next("form_submission");
       const submission: AcceptedFormSubmission = Object.freeze({
         submissionId,
         receipt: proposedReceipt,

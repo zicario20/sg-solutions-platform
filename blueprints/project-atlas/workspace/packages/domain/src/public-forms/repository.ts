@@ -24,6 +24,7 @@ export type ProtectedFormAnswer = Readonly<{
   sensitivity: string;
   ciphertext: string;
   keyReference: string;
+  encryptionContextVersion: "m006.answer.v1";
   matchDigest?: string;
 }>;
 
@@ -305,10 +306,21 @@ export class MemoryPublicFormsRepository implements PublicFormsRepository {
 
 export type AnswerProtectionPort = {
   protect(input: {
+    submissionId: string;
+    formCode: string;
+    formVersion: string;
+    locale: PublicFormLocale;
     fieldCode: string;
+    fieldType: string;
     value: PublicAnswerValue;
     sensitivity: string;
-  }): Promise<{ ciphertext: string; keyReference: string; matchDigest?: string }>;
+    matchDigestRequired: boolean;
+  }): Promise<{
+    ciphertext: string;
+    keyReference: string;
+    encryptionContextVersion: "m006.answer.v1";
+    matchDigest?: string;
+  }>;
 };
 
 export type DraftProtectionPort = {

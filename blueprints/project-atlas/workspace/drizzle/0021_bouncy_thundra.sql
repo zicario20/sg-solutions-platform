@@ -1,0 +1,3 @@
+ALTER TABLE "form_outbox" ADD COLUMN "revocation_id" text;--> statement-breakpoint
+ALTER TABLE "form_responses" ADD COLUMN "encryption_context_version" varchar(32) DEFAULT 'm006.answer.v1' NOT NULL;--> statement-breakpoint
+ALTER TABLE "form_outbox" ADD CONSTRAINT "form_outbox_revocation_fk" FOREIGN KEY ("revocation_id") REFERENCES "public"."form_consent_revocations"("id") ON DELETE restrict ON UPDATE no action;

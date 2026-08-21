@@ -24,7 +24,8 @@ export type FormCommandDispatchStatus =
   | OwnerPortResult["status"]
   | "blocked"
   | "retry_scheduled"
-  | "unknown";
+  | "unknown"
+  | "manual_review";
 
 export type FormCommandDispatchReceipt = Readonly<{
   commandId: string;
@@ -42,6 +43,7 @@ export type FormOutboxLease = Readonly<{
   leaseOwner: string;
   leaseVersion: number;
   grantedConsentTypes: readonly string[];
+  verifiedRevocation: boolean;
 }>;
 
 export interface FormOutboxStore {
@@ -52,6 +54,12 @@ export interface FormOutboxStore {
     now: Date;
   }): Promise<void>;
   lease(input: {
+    submissionRef?: string;
+    now: Date;
+    leaseMs: number;
+    limit: number;
+  }): Promise<readonly FormOutboxLease[]>;
+  claimUnknown(input: {
     submissionRef?: string;
     now: Date;
     leaseMs: number;
@@ -101,6 +109,8 @@ export type FormOutboxJobDependencies = Readonly<{
   leaseMs?: number;
   retryDelayMs?: number;
   maxAttempts?: number;
+  ownerTimeoutMs?: number;
+  ownerConcurrency?: number;
 }>;
 
 export type FormOutboxDispatchResult = Readonly<{
@@ -124,6 +134,8 @@ type ResolvedDependencies = Readonly<{
   leaseMs: number;
   retryDelayMs: number;
   maxAttempts: number;
+  ownerTimeoutMs: number;
+  ownerConcurrency: number;
 }>; 
 
 export type PersistedFormOutboxContext = Readonly<{
@@ -172,6 +184,8 @@ function resolveDependencies(
   const leaseMs = input.leaseMs ?? 30_000;
   const retryDelayMs = input.retryDelayMs ?? 30_000;
   const maxAttempts = input.maxAttempts ?? 3;
+  const ownerTimeoutMs = input.ownerTimeoutMs ?? Math.min(8_000, leaseMs - 1_000);
+  const ownerConcurrency = input.ownerConcurrency ?? 4;
   if (
     !Number.isSafeInteger(batchSize) ||
     batchSize < 1 ||
@@ -184,7 +198,13 @@ function resolveDependencies(
     retryDelayMs > 86_400_000 ||
     !Number.isSafeInteger(maxAttempts) ||
     maxAttempts < 1 ||
-    maxAttempts > 10
+    maxAttempts > 10 ||
+    !Number.isSafeInteger(ownerTimeoutMs) ||
+    ownerTimeoutMs < 100 ||
+    ownerTimeoutMs >= leaseMs ||
+    !Number.isSafeInteger(ownerConcurrency) ||
+    ownerConcurrency < 1 ||
+    ownerConcurrency > 32
   ) {
     throw new Error("PUBLIC_FORM_JOB_POLICY_INVALID");
   }
@@ -199,10 +219,13 @@ function resolveDependencies(
     leaseMs,
     retryDelayMs,
     maxAttempts,
+    ownerTimeoutMs,
+    ownerConcurrency,
   });
 }
 
 function requiredConsent(command: FormOutboxCommand): string | undefined {
+  if (isVerifiedRevocationOperation(command)) return undefined;
   if (command.owner === "lead") return "privacy_policy";
   if (command.owner === "payment") return "financial_product_referral";
   if (command.owner === "channel" || command.owner === "notification") {
@@ -215,6 +238,15 @@ function requiredConsent(command: FormOutboxCommand): string | undefined {
     return "service_contact";
   }
   return undefined;
+}
+
+function isVerifiedRevocationOperation(command: FormOutboxCommand): boolean {
+  return (
+    command.owner === "channel" &&
+    command.operation === "apply_consent_revocation" &&
+    Boolean(command.consentType) &&
+    Boolean(command.revocationId)
+  );
 }
 
 function hasConsent(lease: FormOutboxLease, consentType: string): boolean {
@@ -237,7 +269,7 @@ function receiptFromResult(
 
 function localReceipt(
   command: FormOutboxCommand,
-  status: "blocked" | "retry_scheduled" | "queued" | "unavailable" | "unknown",
+  status: "blocked" | "retry_scheduled" | "queued" | "unavailable" | "unknown" | "manual_review",
 ): FormCommandDispatchReceipt {
   return Object.freeze({
     commandId: command.commandId,
@@ -251,30 +283,105 @@ function localReceipt(
 async function invokeOwner(
   command: FormOutboxCommand,
   ports: PublicFormOwnerPorts,
+  signal: AbortSignal,
 ): Promise<OwnerPortResult> {
   switch (command.owner) {
     case "lead":
-      return ports.lead.accept(command);
+      return ports.lead.accept(command, { signal });
     case "consent":
-      return ports.consent.record(command);
+      return ports.consent.record(command, { signal });
     case "appointment":
-      return ports.appointment.request(command);
+      return ports.appointment.request(command, { signal });
     case "payment":
-      return ports.payment.request(command);
+      return ports.payment.request(command, { signal });
     case "channel":
-      return ports.channel.queue(command);
+      return ports.channel.queue(command, { signal });
     case "notification":
-      return ports.notification.request(command);
+      return ports.notification.request(command, { signal });
     case "analytics":
-      await ports.analytics.record(command);
+      await ports.analytics.record(command, { signal });
       return Object.freeze({ status: "queued" });
+  }
+}
+
+async function queryOwner(
+  command: FormOutboxCommand,
+  ports: PublicFormOwnerPorts,
+  signal: AbortSignal,
+): Promise<OwnerPortResult | undefined> {
+  switch (command.owner) {
+    case "lead": return ports.lead.queryByIdempotency?.(command, { signal });
+    case "consent": return ports.consent.queryByIdempotency?.(command, { signal });
+    case "appointment": return ports.appointment.queryByIdempotency?.(command, { signal });
+    case "payment": return ports.payment.queryByIdempotency?.(command, { signal });
+    case "channel": return ports.channel.queryByIdempotency?.(command, { signal });
+    case "notification": return ports.notification.queryByIdempotency?.(command, { signal });
+    case "analytics": return undefined;
+  }
+}
+
+class OwnerTimeoutError extends Error {
+  constructor() {
+    super("PUBLIC_FORM_OWNER_TIMEOUT");
+    this.name = "OwnerTimeoutError";
+  }
+}
+
+class OwnerConcurrencyGate {
+  private active = 0;
+  private readonly waiting: (() => void)[] = [];
+
+  constructor(private readonly limit: number) {}
+
+  async run<T>(work: () => Promise<T>): Promise<T> {
+    if (this.active >= this.limit) await new Promise<void>((resolve) => this.waiting.push(resolve));
+    this.active += 1;
+    const pending = Promise.resolve().then(work);
+    void pending.finally(() => {
+      this.active -= 1;
+      this.waiting.shift()?.();
+    }).catch(() => undefined);
+    return pending;
+  }
+}
+
+async function invokeBounded(
+  command: FormOutboxCommand,
+  dependencies: ResolvedDependencies,
+  gate: OwnerConcurrencyGate,
+  queryOnly = false,
+): Promise<OwnerPortResult | undefined> {
+  const controller = new AbortController();
+  const pending = gate.run(() =>
+    queryOnly
+      ? queryOwner(command, dependencies.ports, controller.signal)
+      : invokeOwner(command, dependencies.ports, controller.signal),
+  );
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      pending,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          controller.abort();
+          reject(new OwnerTimeoutError());
+        }, dependencies.ownerTimeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
 async function processLease(
   lease: FormOutboxLease,
   dependencies: ResolvedDependencies,
+  gate: OwnerConcurrencyGate,
 ): Promise<void> {
+  if (isVerifiedRevocationOperation(lease.command) && !lease.verifiedRevocation) {
+    await dependencies.store.complete({ lease, receipt: localReceipt(lease.command, "blocked"), now: dependencies.now() });
+    return;
+  }
   const consentType = requiredConsent(lease.command);
   if (consentType && !hasConsent(lease, consentType)) {
     await dependencies.store.complete({
@@ -286,7 +393,8 @@ async function processLease(
   }
 
   try {
-    const result = await invokeOwner(lease.command, dependencies.ports);
+    const result = await invokeBounded(lease.command, dependencies, gate);
+    if (!result) throw new OwnerTimeoutError();
     await dependencies.store.complete({
       lease,
       receipt: receiptFromResult(lease.command, result),
@@ -312,6 +420,27 @@ async function processLease(
     await dependencies.store.markUnknown({
       lease,
       receipt: localReceipt(lease.command, "unknown"),
+      now: dependencies.now(),
+    });
+  }
+}
+
+async function processUnknownLease(
+  lease: FormOutboxLease,
+  dependencies: ResolvedDependencies,
+  gate: OwnerConcurrencyGate,
+): Promise<void> {
+  try {
+    const result = await invokeBounded(lease.command, dependencies, gate, true);
+    await dependencies.store.complete({
+      lease,
+      receipt: result ? receiptFromResult(lease.command, result) : localReceipt(lease.command, "manual_review"),
+      now: dependencies.now(),
+    });
+  } catch {
+    await dependencies.store.complete({
+      lease,
+      receipt: localReceipt(lease.command, "manual_review"),
       now: dependencies.now(),
     });
   }
@@ -354,7 +483,8 @@ async function runOutbox(
     leaseMs: dependencies.leaseMs,
     limit: dependencies.batchSize,
   });
-  for (const lease of leases) await processLease(lease, dependencies);
+  const gate = new OwnerConcurrencyGate(dependencies.ownerConcurrency);
+  await Promise.all(leases.map((lease) => processLease(lease, dependencies, gate)));
 
   const commandReceipts = await dependencies.store.listReceipts(submissionRef);
   const action = nextAction(commandReceipts);
@@ -419,4 +549,31 @@ export async function dispatchPersistedFormOutbox(
 ): Promise<FormOutboxDispatchResult> {
   const dependencies = resolveDependencies(context, input);
   return runOutbox("dispatch", context, dependencies);
+}
+
+export async function reconcileUnknownPersistedFormOutbox(
+  context: PersistedFormOutboxContext,
+  input: FormOutboxJobDependencies,
+): Promise<FormOutboxDispatchResult> {
+  const dependencies = resolveDependencies(context, input);
+  const submissionRef = contextSubmissionRef(context);
+  const leases = await dependencies.store.claimUnknown({
+    submissionRef,
+    now: dependencies.now(),
+    leaseMs: dependencies.leaseMs,
+    limit: dependencies.batchSize,
+  });
+  const gate = new OwnerConcurrencyGate(dependencies.ownerConcurrency);
+  await Promise.all(leases.map((lease) => processUnknownLease(lease, dependencies, gate)));
+  const commandReceipts = await dependencies.store.listReceipts(submissionRef);
+  const action = nextAction(commandReceipts);
+  return Object.freeze({
+    submissionRef,
+    lead: aggregateStatus(commandReceipts, "lead"),
+    calendar: aggregateStatus(commandReceipts, "appointment"),
+    payment: aggregateStatus(commandReceipts, "payment"),
+    nextAction: action,
+    commandReceipts,
+    correlationId: dependencies.correlationId,
+  });
 }
