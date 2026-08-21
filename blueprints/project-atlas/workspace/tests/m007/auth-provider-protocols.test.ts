@@ -14,8 +14,8 @@ describe("AR-001 route-specific Supabase email authority", () => {
       repository: { consumeProviderToken: async () => false, establishSession: async (input) => { established.push(input.subject); return { kind: "established" as const, accountId: "account-1" }; }, loadProviderToken: async () => undefined, clearProviderToken: async () => undefined },
       sealProviderToken: (value) => `sealed:${value}`,
     }, () => now);
-    await expect(service.signUp({ email: "unknown@example.com", password: "long-enough-password" })).resolves.toEqual({ kind: "accepted" });
-    await expect(service.requestRecovery({ email: "unknown@example.com" })).resolves.toEqual({ kind: "accepted" });
+    await expect(service.signUp({ email: "unknown@example.com", password: "long-enough-password" })).resolves.toEqual({ kind: "accepted", internalOutcome: "provider_denied" });
+    await expect(service.requestRecovery({ email: "unknown@example.com" })).resolves.toEqual({ kind: "accepted", internalOutcome: "provider_denied" });
     expect(established).toEqual([]);
   });
 

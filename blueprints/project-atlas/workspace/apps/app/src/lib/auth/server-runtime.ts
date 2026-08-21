@@ -3,9 +3,9 @@ import { createSessionCookieHeaders } from "./session-security.ts";
 
 type Admission = { readonly kind: "accepted" | "rate_limited" };
 export type AuthAuditPurpose = AuthCommand | "invitation_accept";
-export type AuthAuditOutcome = "accepted" | "authenticated" | "denied" | "manual_review" | "unavailable" | "rate_limited" | "revoked" | "rotated" | "redirected";
+export type AuthAuditOutcome = "accepted" | "succeeded" | "authenticated" | "denied" | "manual_review" | "unavailable" | "rate_limited" | "revoked" | "rotated" | "redirected" | "provider_denied" | "provider_unavailable" | "provider_error" | "provider_exception";
 export type ServerAuthControlPlane = Readonly<{
-  admit(input: { readonly purpose: AuthCommand; readonly risk: { readonly ip: string; readonly account: string; readonly email: string; readonly phone: string; readonly device: string }; readonly requestId: string; readonly now: Date }): Promise<Admission>;
+  admit(input: { readonly purpose: AuthCommand; readonly risk: { readonly ip: string; readonly account: string; readonly email: string; readonly phone: string; readonly device: string; readonly flow: string }; readonly requestId: string; readonly now: Date }): Promise<Admission>;
   revokeCurrent(input: { readonly sessionHandle: string; readonly now: Date }): Promise<{ readonly kind: "revoked" | "denied" }>;
   revokeOthers(input: { readonly sessionHandle: string; readonly now: Date }): Promise<{ readonly kind: "revoked" | "denied" }>;
   auditOutcome?(input: { readonly purpose: AuthAuditPurpose; readonly outcome: AuthAuditOutcome; readonly requestId: string; readonly now: Date }): Promise<void>;
@@ -15,7 +15,7 @@ export type ServerOAuthProvider = Readonly<{
   completeGoogle(input: { readonly state?: string; readonly nonce?: string; readonly pkceVerifier?: string }): Promise<{ readonly kind: "unavailable"; readonly reason: "provider_disabled" } | { readonly kind: "denied" } | { readonly kind: "verified"; readonly subject: string }>;
 }>;
 
-type EmailResult = { readonly kind: "accepted" } | { readonly kind: "authenticated"; readonly handle: string };
+type EmailResult = { readonly kind: "accepted"; readonly internalOutcome?: AuthAuditOutcome } | { readonly kind: "authenticated"; readonly handle: string; readonly internalOutcome?: AuthAuditOutcome };
 type RuntimeEmailAuth = Readonly<{ signUp(input: { email: string; password: string }): Promise<EmailResult>; signIn(input: { email: string; password: string }): Promise<EmailResult>; sendVerification(input: { email: string }): Promise<EmailResult>; consumeVerification(input: { token: string }): Promise<EmailResult>; requestRecovery(input: { email: string }): Promise<EmailResult>; consumeReset(input: { token: string; password: string }): Promise<EmailResult>; logout(input: { sessionHandle: string }): Promise<void> }>;
 type RuntimeOptions = Readonly<{ canonicalOrigin: string; csrfSecret?: string; trustProxyHeaders?: boolean; controlPlane?: ServerAuthControlPlane; oauthProvider?: ServerOAuthProvider; emailAuth?: RuntimeEmailAuth }>;
 
@@ -31,20 +31,27 @@ async function formValue(request: Request, name: string): Promise<string | undef
   try { const value = await request.clone().formData(); return String(value.get(name) ?? "") || undefined; } catch { return undefined; }
 }
 
-async function riskIdentifiers(request: Request, trustProxyHeaders = false): Promise<{ readonly ip: string; readonly account: string; readonly email: string; readonly phone: string; readonly device: string }> {
+async function riskIdentifiers(request: Request, command: AuthCommand, trustProxyHeaders = false): Promise<{ readonly ip: string; readonly account: string; readonly email: string; readonly phone: string; readonly device: string; readonly flow: string }> {
   let email = "";
   let phone = "";
+  let flow = "";
   try {
     const form = await request.clone().formData();
     email = String(form.get("email") ?? "").trim().toLowerCase();
     phone = String(form.get("phone") ?? "").trim();
+    if (command === "verify" || command === "reset" || command === "step_up") flow = String(form.get("code") ?? "").trim();
   } catch { /* A body-less command still receives missing-value risk buckets. */ }
+  if (command === "oauth_callback") {
+    const url = new URL(request.url); const state = url.searchParams.get("state")?.trim() ?? ""; const code = url.searchParams.get("code")?.trim() ?? "";
+    flow = state || code ? `${state}\u0000${code}` : "";
+  }
   return {
     ip: trustProxyHeaders ? (request.headers.get("x-forwarded-for")?.split(",")[0] ?? request.headers.get("x-real-ip") ?? "").trim() : "",
     account: cookie(request, "__Host-atlas_auth") ?? "",
     email,
     phone,
     device: cookie(request, "__Host-atlas_device") ?? cookie(request, "__Host-atlas_oauth") ?? "",
+    flow,
   };
 }
 
@@ -54,7 +61,7 @@ export function createServerAuthRuntime(options: RuntimeOptions) {
   const requestId = (request: Request) => { const existing = requestIds.get(request); if (existing) return existing; const value = request.headers.get("x-request-id") ?? crypto.randomUUID(); requestIds.set(request, value); return value; };
   const admitRequest = async (command: AuthCommand, request: Request): Promise<Admission | { kind: "unavailable" }> => {
     if (!options.controlPlane) return { kind: "unavailable" };
-    try { return await options.controlPlane.admit({ purpose: command, risk: await riskIdentifiers(request, options.trustProxyHeaders), requestId: requestId(request), now: new Date() }); } catch { return { kind: "unavailable" }; }
+    try { return await options.controlPlane.admit({ purpose: command, risk: await riskIdentifiers(request, command, options.trustProxyHeaders), requestId: requestId(request), now: new Date() }); } catch { return { kind: "unavailable" }; }
   };
   const auditOutcome = async (command: AuthAuditPurpose, outcome: AuthAuditOutcome, request: Request) => {
     if (!options.controlPlane?.auditOutcome) return;
@@ -103,9 +110,9 @@ export function createServerAuthRuntime(options: RuntimeOptions) {
           else if (command === "recovery") result = await options.emailAuth.requestRecovery({ email });
           else result = await options.emailAuth.consumeReset({ token, password });
         } catch { await auditOutcome(command, "unavailable", request); return unavailable(); }
-        if (result.kind !== "authenticated") { await auditOutcome(command, "accepted", request); return neutralAccepted(); }
+        if (result.kind !== "authenticated") { await auditOutcome(command, result.internalOutcome ?? "provider_error", request); return neutralAccepted(); }
         if (!options.csrfSecret) { await auditOutcome(command, "unavailable", request); return unavailable(); }
-        await auditOutcome(command, "authenticated", request);
+        await auditOutcome(command, result.internalOutcome ?? "succeeded", request);
         const headers = new Headers({ "cache-control": "private, no-store", "referrer-policy": "no-referrer" }); for (const value of createSessionCookieHeaders(result.handle, options.csrfSecret)) headers.append("set-cookie", value); return new Response(null, { status: 204, headers });
       }
       await auditOutcome(command, "accepted", request);

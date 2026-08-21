@@ -182,8 +182,14 @@ export function createConfiguredAuthControlPlane(environment: Record<string, str
   };
   return {
     admit: async (input) => {
-      const riskKeyDigests = buildAuthRiskKeyDigests(hmacKey, input.purpose, input.risk);
       const eventKey = digest("audit_event", `${input.purpose}:${input.requestId}`);
+      let riskKeyDigests: readonly string[];
+      try { riskKeyDigests = buildAuthRiskKeyDigests(hmacKey, input.purpose, input.risk); }
+      catch (error) {
+        if (!(error instanceof Error) || error.message !== "AUTH_RISK_DIMENSION_REQUIRED") throw error;
+        try { await controls.appendAudit({ eventKey, eventName: `${input.purpose}_admission`, outcome: "rate_limited", correlationId: input.requestId, metadata: { outcome: "rate_limited", reasonCode: "missing_risk_dimension" }, now: input.now }); } catch { /* Admission remains denied if audit storage is unavailable. */ }
+        return { kind: "rate_limited" as const };
+      }
       const providerEnabled = input.purpose === "verify" || input.purpose === "step_up" ? environment.AUTH_OTP_PROVIDER_ENABLED === "true" : input.purpose === "login" ? environment.AUTH_SECURITY_ALERT_PROVIDER_ENABLED === "true" : environment.AUTH_EMAIL_PROVIDER_ENABLED === "true";
       const result = await controls.admitAndEnqueue({ action: input.purpose, riskKeyDigests, ...profiles[input.purpose], eventKey, correlationId: input.requestId, metadata: { riskClass: "multi_key" }, outbox: notification(input.purpose, providerEnabled, eventKey, riskKeyDigests[0]!), now: input.now });
       return result;

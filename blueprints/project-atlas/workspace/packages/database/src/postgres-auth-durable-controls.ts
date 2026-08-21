@@ -3,6 +3,7 @@ import type { AuthSql, AuthTransactionSql } from "./auth-repository.ts";
 type AuditMetadata = Readonly<Record<string, string | number | boolean>>;
 type OutboxChannel = "email" | "otp" | "security_alert" | "invitation";
 const auditMetadataKeys = new Set(["outcome", "riskClass", "provider", "channel", "reasonCode", "policyVersion"]);
+const auditOutcomeKeys = new Set(["accepted", "succeeded", "authenticated", "denied", "manual_review", "unavailable", "rate_limited", "revoked", "rotated", "redirected", "provider_denied", "provider_unavailable", "provider_error", "provider_exception", "sent", "failed", "unknown"]);
 const query = <T>(transaction: AuthTransactionSql, statement: string, parameters: readonly unknown[]) => transaction.unsafe<T>(statement, parameters);
 function safeAuditMetadata(metadata: AuditMetadata): AuditMetadata {
   for (const [key, value] of Object.entries(metadata)) {
@@ -16,6 +17,7 @@ type AuditInput = Readonly<{ eventKey: string; eventName: string; outcome: strin
 export class PostgresDurableAuthControlsRepository {
   constructor(private readonly sql: AuthSql) {}
   async appendAudit(input: AuditInput): Promise<{ readonly kind: "appended" | "duplicate" }> {
+    if (!auditOutcomeKeys.has(input.outcome)) throw new Error("AUTH_AUDIT_OUTCOME_DENIED");
     const rows = await this.sql.begin((transaction) => query<readonly { appended: boolean }[]>(transaction, "select atlas_auth_append_audit($1,$2,$3,$4,$5,$6::jsonb,$7) as appended", [input.eventKey, input.eventName, input.outcome, input.correlationId, input.accountId ?? null, JSON.stringify(safeAuditMetadata(input.metadata)), input.now]));
     return { kind: rows[0]?.appended ? "appended" : "duplicate" };
   }

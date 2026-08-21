@@ -13,6 +13,7 @@ export const M007_MIGRATION_FILES = [
   "0032_m007_final_auth_trust_boundaries.sql",
   "0033_m007_auth_provider_protocols.sql",
   "0034_m007_cyber_neo_auth_remediation.sql",
+  "0035_m007_rate_audit_outcomes.sql",
 ];
 
 const sealHarnessOAuthSecret = (value) => {
