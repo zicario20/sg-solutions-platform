@@ -499,3 +499,8 @@ has no direct database/cache access; durable work passes through a scoped platfo
 number routing, credentials, webhooks, media streams, real calls, cloud STT/model/TTS, recording,
 transcription, real caller data, activation, deployment, default-branch merge and Operational status
 remain prohibited pending Product Owner activation approval and EXTERNAL_ACTIVATION_REGISTER evidence.
+## 2026-08-20 — Decision 034 — M005 provider-disabled acceptance
+
+Decision: The Product Owner formally accepts M005 Voice Agent in its provider-disabled scope at current head `4c6177c`.
+
+Impact: External activation, a shared durable nonce backend, live PostgreSQL/RLS/migration-ledger evidence, provider credentials and numbers, legal recording/consent/retention approvals, merge, deployment and release remain blocked or pending. This acceptance does not authorize starting M006.

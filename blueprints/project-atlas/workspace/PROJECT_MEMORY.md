@@ -643,3 +643,8 @@
 - No real call, provider traffic, media, audio, recording, transcript, voicemail or caller PII was
   used. Product Owner final acceptance, merge, deployment and release remain pending; documentation
   closure records implementation evidence but does not grant any of those approvals.
+## 2026-08-20 — M005 provider-disabled Product Owner acceptance
+
+- The Product Owner formally accepted M005 Voice Agent in `provider-disabled` scope at current head `4c6177c`.
+- External activation, shared durable nonce backend, live PostgreSQL/RLS/ledger evidence, provider credentials/numbers, legal recording/consent/retention approvals, merge, deploy and release remain blocked or pending.
+- This acceptance does not authorize starting M006.

@@ -122,9 +122,14 @@ validation host used Node `24.19.0` while the repository pins `24.18.1`.
 
 ## Product Owner acceptance and next gate
 
-Decision 033 authorized the provider-disabled Build only. Product Owner final acceptance, merge,
-deployment, external activation and production release remain pending. This PCR records implementation
-and review evidence but does not self-certify independent approval or open a successor module.
+The Product Owner formally accepted M005 Voice Agent in `provider-disabled` scope at current head
+`4c6177c`. This acceptance does not authorize external activation, merge, deployment, release or
+starting M006.
+
+External activation, the shared durable nonce backend, live PostgreSQL/RLS/migration-ledger evidence,
+provider credentials and numbers, legal recording/consent/retention approvals, merge, deploy and
+release remain blocked or pending. This PCR records the Product Owner acceptance without claiming
+provider readiness or independent approval of those deferred prerequisites.
 
 ## Final checklist
 

@@ -48,3 +48,6 @@ consent, identity and audit ownership remain unchanged.
 Role model: Product Owner decides; Codex Architecture Agent architects; separately scoped Codex
 Implementation Agents implement approved work; ChatGPT/independent reviewers audit and do not
 architect or self-approve implementation.
+## Current gate — M005 accepted, activation remains blocked
+
+M005 Voice Agent is formally accepted by the Product Owner in `provider-disabled` scope at head `4c6177c`. External activation, shared durable nonce backend, live PostgreSQL/RLS/ledger evidence, provider credentials/numbers, legal recording/consent/retention approvals, merge, deploy and release remain blocked or pending. No authorization to start M006 is implied.
