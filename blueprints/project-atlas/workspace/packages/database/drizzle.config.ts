@@ -5,7 +5,7 @@ const directDatabaseUrl = (globalThis as { process?: { env?: Record<string, stri
 
 export default defineConfig({
   dialect: "postgresql",
-  schema: "./packages/database/src/schema.ts",
+  schema: ["./packages/database/src/schema.ts", "./packages/database/src/schema/public-forms.ts"],
   out: "./drizzle",
   ...(directDatabaseUrl ? { dbCredentials: { url: directDatabaseUrl } } : {}),
 });

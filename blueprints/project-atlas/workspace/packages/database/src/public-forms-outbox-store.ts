@@ -69,6 +69,7 @@ type ClaimedRow = {
   attempt_count: number;
   lease_owner: string;
   lease_version: number;
+  lease_purpose: "dispatch" | "reconcile";
 };
 
 function receiptState(receipt: FormCommandDispatchReceipt): string {
@@ -105,14 +106,14 @@ export class PostgresFormOutboxStore implements FormOutboxStore {
         `with candidates as (
           select command_id from form_outbox
           where ((state = 'pending' and available_at <= $1)
-              or (state = 'dispatching' and lease_expires_at <= $1))
+              or (state = 'dispatching' and lease_purpose = 'dispatch' and lease_expires_at <= $1))
             and attempt_count < max_attempts
             and ($4::text is null or submission_id = $4)
           order by available_at, command_id
           for update skip locked limit $5
         )
         update form_outbox item set
-          state = 'dispatching', lease_owner = $2,
+          state = 'dispatching', lease_purpose = 'dispatch', lease_owner = $2,
           lease_version = item.lease_version + 1,
           lease_expires_at = $3, attempt_count = item.attempt_count + 1,
           updated_at = $1
@@ -120,7 +121,7 @@ export class PostgresFormOutboxStore implements FormOutboxStore {
         returning item.command_id, item.submission_id, item.owner, item.operation,
           item.form_code, item.locale, item.service_code, item.consent_type,
           item.channel, item.revocation_id, item.idempotency_key, item.attempt_count,
-          item.lease_owner, item.lease_version`,
+          item.lease_owner, item.lease_version, item.lease_purpose`,
         [input.now, this.options.workerId, leaseExpiresAt, input.submissionRef ?? null, input.limit],
       );
       return Object.freeze(await Promise.all(rows.map((row) => this.toLease(tx, row))));
@@ -139,16 +140,18 @@ export class PostgresFormOutboxStore implements FormOutboxStore {
         tx,
         `with candidates as (
           select command_id from form_outbox
-          where state = 'unknown' and ($4::text is null or submission_id = $4)
+          where ((state = 'unknown' and lease_purpose = 'reconcile')
+              or (state = 'dispatching' and lease_purpose = 'reconcile' and lease_expires_at <= $1))
+            and ($4::text is null or submission_id = $4)
           order by updated_at, command_id for update skip locked limit $5
         )
-        update form_outbox item set state = 'dispatching', lease_owner = $2,
+        update form_outbox item set state = 'dispatching', lease_purpose = 'reconcile', lease_owner = $2,
           lease_version = item.lease_version + 1, lease_expires_at = $3, updated_at = $1
         from candidates where item.command_id = candidates.command_id
         returning item.command_id, item.submission_id, item.owner, item.operation,
           item.form_code, item.locale, item.service_code, item.consent_type,
           item.channel, item.revocation_id, item.idempotency_key, item.attempt_count,
-          item.lease_owner, item.lease_version`,
+          item.lease_owner, item.lease_version, item.lease_purpose`,
         [input.now, this.options.workerId, leaseExpiresAt, input.submissionRef ?? null, input.limit],
       );
       return Object.freeze(await Promise.all(rows.map((row) => this.toLease(tx, row))));
@@ -169,23 +172,29 @@ export class PostgresFormOutboxStore implements FormOutboxStore {
     availableAt: Date;
   }): Promise<void> {
     await withOutboxRole(this.sql, async (tx) => {
+      const receipt = Object.freeze({
+        ...input.receipt,
+        ...(input.lease.leasePurpose === "reconcile" ? { status: "manual_review" as const } : {}),
+      });
       const rows = await query<{ command_id: string }>(
         tx,
         `update form_outbox set
-          state = case when attempt_count >= max_attempts then 'manual_review' else 'pending' end,
+          state = case when attempt_count >= max_attempts or $7 = 'reconcile' then 'manual_review' else 'pending' end,
+          lease_purpose = case when $7 = 'reconcile' then 'reconcile' else 'dispatch' end,
           available_at = $5, lease_owner = null, lease_expires_at = null,
-          completed_at = case when attempt_count >= max_attempts then $5 else null end,
-          result_code = case when attempt_count >= max_attempts then 'attempts_exhausted' else 'retry_scheduled' end,
+          completed_at = case when attempt_count >= max_attempts or $7 = 'reconcile' then $5 else null end,
+          result_code = case when $7 = 'reconcile' then 'reconciliation_manual_review' when attempt_count >= max_attempts then 'attempts_exhausted' else 'retry_scheduled' end,
           owner_receipt = $6::jsonb, updated_at = $5
          where command_id = $1 and idempotency_key = $2 and state = 'dispatching'
-           and lease_owner = $3 and lease_version = $4 returning command_id`,
+           and lease_owner = $3 and lease_version = $4 and lease_purpose = $7 returning command_id`,
         [
           input.lease.command.commandId,
           input.lease.command.idempotencyKey,
           input.lease.leaseOwner,
           input.lease.leaseVersion,
           input.availableAt,
-          JSON.stringify(input.receipt),
+          JSON.stringify(receipt),
+          input.lease.leasePurpose,
         ],
       );
       if (!rows[0]) throw new Error("FORM_OUTBOX_LEASE_CONFLICT");
@@ -221,10 +230,12 @@ export class PostgresFormOutboxStore implements FormOutboxStore {
     await withOutboxRole(this.sql, async (tx) => {
       const rows = await query<{ command_id: string }>(
         tx,
-        `update form_outbox set state = $5, lease_owner = null, lease_expires_at = null,
+        `update form_outbox set state = $5,
+          lease_purpose = case when $5 = 'unknown' then 'reconcile' else lease_purpose end,
+          lease_owner = null, lease_expires_at = null,
           completed_at = $6, result_code = $7, owner_receipt = $8::jsonb, updated_at = $6
          where command_id = $1 and idempotency_key = $2 and state = 'dispatching'
-           and lease_owner = $3 and lease_version = $4 returning command_id`,
+           and lease_owner = $3 and lease_version = $4 and lease_purpose = $9 returning command_id`,
         [
           lease.command.commandId,
           lease.command.idempotencyKey,
@@ -234,6 +245,7 @@ export class PostgresFormOutboxStore implements FormOutboxStore {
           now,
           receipt.status === "unknown" ? "dispatch_unknown" : receipt.status,
           JSON.stringify(receipt),
+          lease.leasePurpose,
         ],
       );
       if (!rows[0]) throw new Error("FORM_OUTBOX_LEASE_CONFLICT");
@@ -284,6 +296,7 @@ export class PostgresFormOutboxStore implements FormOutboxStore {
       attempts: row.attempt_count,
       leaseOwner: row.lease_owner,
       leaseVersion: row.lease_version,
+      leasePurpose: row.lease_purpose,
       grantedConsentTypes: Object.freeze(consentRows.map((item) => item.consent_type)),
       verifiedRevocation: verified,
     });

@@ -177,6 +177,7 @@ type SyntheticOutboxJob = {
   attempts: number;
   maxAttempts: number;
   leaseVersion: number;
+  leasePurpose: "dispatch" | "reconcile";
   grantedConsentTypes: readonly string[];
   verifiedRevocation: boolean;
   availableAt: number;
@@ -225,6 +226,7 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
         attempts: 0,
         maxAttempts: this.options.maxAttempts ?? 3,
         leaseVersion: 0,
+        leasePurpose: "dispatch",
         grantedConsentTypes: Object.freeze([...new Set(input.grantedConsentTypes)]),
         verifiedRevocation: Boolean(command.revocationId),
         availableAt: input.now.getTime(),
@@ -243,7 +245,7 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
     for (const job of this.jobs.values()) {
       if (input.submissionRef && job.command.submissionRef !== input.submissionRef) continue;
       if (job.state === "leased" && (job.leaseExpiresAt ?? Number.POSITIVE_INFINITY) <= now) {
-        job.state = "pending";
+        job.state = job.leasePurpose === "reconcile" ? "unknown" : "pending";
         delete job.leaseId;
         delete job.leaseExpiresAt;
       }
@@ -260,6 +262,7 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
       }
       job.attempts += 1;
       job.leaseVersion += 1;
+      job.leasePurpose = "dispatch";
       job.state = "leased";
       job.leaseId = `form_lease_${stableToken(`${job.command.idempotencyKey}:${job.attempts}`)}`;
       job.leaseExpiresAt = now + input.leaseMs;
@@ -270,6 +273,7 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
           attempts: job.attempts,
           leaseOwner: this.options.workerId ?? "synthetic_form_worker",
           leaseVersion: job.leaseVersion,
+          leasePurpose: job.leasePurpose,
           grantedConsentTypes: job.grantedConsentTypes,
           verifiedRevocation: job.verifiedRevocation,
         }),
@@ -288,7 +292,20 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
     const leases: FormOutboxLease[] = [];
     for (const job of this.jobs.values()) {
       if (input.submissionRef && job.command.submissionRef !== input.submissionRef) continue;
-      if (job.state !== "unknown" || leases.length >= input.limit) continue;
+      if (
+        job.state === "leased" &&
+        job.leasePurpose === "reconcile" &&
+        (job.leaseExpiresAt ?? Number.POSITIVE_INFINITY) <= now
+      ) {
+        job.state = "unknown";
+        delete job.leaseId;
+        delete job.leaseExpiresAt;
+      }
+      if (
+        job.state !== "unknown" ||
+        job.leasePurpose !== "reconcile" ||
+        leases.length >= input.limit
+      ) continue;
       job.leaseVersion += 1;
       job.state = "leased";
       job.leaseId = `form_reconcile_${stableToken(`${job.command.idempotencyKey}:${job.leaseVersion}`)}`;
@@ -299,6 +316,7 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
         attempts: job.attempts,
         leaseOwner: this.options.workerId ?? "synthetic_form_worker",
         leaseVersion: job.leaseVersion,
+        leasePurpose: job.leasePurpose,
         grantedConsentTypes: job.grantedConsentTypes,
         verifiedRevocation: job.verifiedRevocation,
       }));
@@ -325,14 +343,18 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
     availableAt: Date;
   }): Promise<void> {
     const job = this.assertLease(input.lease, input.receipt);
-    if (job.attempts >= job.maxAttempts) {
+    if (job.attempts >= job.maxAttempts || job.leasePurpose === "reconcile") {
       job.state = "manual_review";
-      job.receipt = Object.freeze({ ...input.receipt, status: "unavailable" });
+      job.receipt = Object.freeze({
+        ...input.receipt,
+        status: job.leasePurpose === "reconcile" ? "manual_review" : "unavailable",
+      });
       delete job.leaseId;
       delete job.leaseExpiresAt;
       return;
     }
     job.state = "waiting";
+    job.leasePurpose = "dispatch";
     job.availableAt = input.availableAt.getTime();
     job.receipt = Object.freeze({ ...input.receipt });
     delete job.leaseId;
@@ -346,6 +368,7 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
   }): Promise<void> {
     const job = this.assertLease(input.lease, input.receipt);
     job.state = "unknown";
+    job.leasePurpose = "reconcile";
     job.availableAt = input.now.getTime();
     job.receipt = Object.freeze({ ...input.receipt });
     delete job.leaseId;
@@ -384,6 +407,8 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
       !job ||
       job.state !== "leased" ||
       job.leaseId !== lease.leaseId ||
+      job.leaseVersion !== lease.leaseVersion ||
+      job.leasePurpose !== lease.leasePurpose ||
       receipt.idempotencyKey !== lease.command.idempotencyKey ||
       receipt.commandId !== lease.command.commandId
     ) {

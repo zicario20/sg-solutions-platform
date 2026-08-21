@@ -42,6 +42,7 @@ export type FormOutboxLease = Readonly<{
   attempts: number;
   leaseOwner: string;
   leaseVersion: number;
+  leasePurpose: "dispatch" | "reconcile";
   grantedConsentTypes: readonly string[];
   verifiedRevocation: boolean;
 }>;

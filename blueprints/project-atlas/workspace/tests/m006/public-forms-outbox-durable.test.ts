@@ -49,6 +49,7 @@ describe("M006 durable form outbox", () => {
                 attempt_count: 2,
                 lease_owner: "worker_m006_01",
                 lease_version: 7,
+                lease_purpose: "dispatch",
               }] as never;
             }
             if (statement.includes("from form_consent_evidence")) {
@@ -73,6 +74,7 @@ describe("M006 durable form outbox", () => {
         attempts: 2,
         leaseOwner: "worker_m006_01",
         leaseVersion: 7,
+        leasePurpose: "dispatch",
         grantedConsentTypes: ["privacy_policy"],
       }),
     ]);
@@ -102,6 +104,7 @@ describe("M006 durable form outbox", () => {
       attempts: 1,
       leaseOwner: "worker_m006_01",
       leaseVersion: 4,
+      leasePurpose: "dispatch",
       grantedConsentTypes: Object.freeze(["privacy_policy"]),
       verifiedRevocation: false,
     }) satisfies FormOutboxLease;
@@ -157,5 +160,60 @@ describe("M006 durable form outbox", () => {
         limit: 1,
       }),
     ).toEqual([]);
+  });
+
+  it("reserves expired reconciliation leases for query-only recovery", async () => {
+    const store = new SyntheticFormOutboxStore();
+    await store.enqueue({
+      submissionRef: "form_submission_durable_01",
+      commands: [command()],
+      grantedConsentTypes: ["privacy_policy"],
+      now: NOW,
+    });
+    const dispatchLease = (await store.lease({
+      submissionRef: "form_submission_durable_01",
+      now: NOW,
+      leaseMs: 1_000,
+      limit: 1,
+    }))[0];
+    if (!dispatchLease) throw new Error("missing dispatch lease");
+    await store.markUnknown({
+      lease: dispatchLease,
+      receipt: Object.freeze({
+        commandId: dispatchLease.command.commandId,
+        idempotencyKey: dispatchLease.command.idempotencyKey,
+        owner: dispatchLease.command.owner,
+        operation: dispatchLease.command.operation,
+        status: "unknown",
+      }),
+      now: NOW,
+    });
+    const reconciliationLease = (await store.claimUnknown({
+      submissionRef: "form_submission_durable_01",
+      now: NOW,
+      leaseMs: 1_000,
+      limit: 1,
+    }))[0];
+    if (!reconciliationLease) throw new Error("missing reconciliation lease");
+    expect(reconciliationLease.leasePurpose).toBe("reconcile");
+
+    const afterExpiry = new Date(NOW.getTime() + 2_000);
+    await expect(store.lease({
+      submissionRef: "form_submission_durable_01",
+      now: afterExpiry,
+      leaseMs: 1_000,
+      limit: 1,
+    })).resolves.toEqual([]);
+
+    const recoveredLease = (await store.claimUnknown({
+      submissionRef: "form_submission_durable_01",
+      now: afterExpiry,
+      leaseMs: 1_000,
+      limit: 1,
+    }))[0];
+    expect(recoveredLease).toEqual(expect.objectContaining({
+      leaseVersion: reconciliationLease.leaseVersion + 1,
+      leasePurpose: "reconcile",
+    }));
   });
 });
