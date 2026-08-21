@@ -66,7 +66,7 @@ expect(disabledIdentityProvider.signInWithPassword(command))
 
 - [ ] **Step 2: Run the focused test and confirm RED**
 
-Run: `corepack pnpm vitest run tests/m007/auth-contracts.test.ts`  
+Run: `corepack pnpm vitest run tests/m007/auth-contracts.test.ts`
 Expected: FAIL because M007 contracts and parsers do not exist.
 
 - [ ] **Step 3: Implement minimal contracts and disabled adapters**
@@ -77,7 +77,7 @@ enabled composition without explicit canonical origin, key references and provid
 
 - [ ] **Step 4: Run focused GREEN and affected typechecks**
 
-Run: `corepack pnpm vitest run tests/m007/auth-contracts.test.ts && corepack pnpm --filter @atlas/auth typecheck && corepack pnpm --filter @atlas/validation typecheck`  
+Run: `corepack pnpm vitest run tests/m007/auth-contracts.test.ts && corepack pnpm --filter @atlas/auth typecheck && corepack pnpm --filter @atlas/validation typecheck`
 Expected: PASS with no provider/network call.
 
 - [ ] **Step 5: Commit**
@@ -118,7 +118,7 @@ await expect(repository.consumeProofTwice(proof)).resolves.toEqual([
 
 - [ ] **Step 2: Run focused RED**
 
-Run: `corepack pnpm vitest run tests/m007/auth-schema.test.ts tests/m007/auth-repository.test.ts tests/m007/auth-rls-regression.test.ts`  
+Run: `corepack pnpm vitest run tests/m007/auth-schema.test.ts tests/m007/auth-repository.test.ts tests/m007/auth-rls-regression.test.ts`
 Expected: FAIL because schema/repository and restricted-role policies are absent.
 
 - [ ] **Step 3: Implement schema and atomic repository**
@@ -129,13 +129,13 @@ force RLS. Restrict runtime roles and derive transaction-local context only from
 
 - [ ] **Step 4: Generate migrations**
 
-Run: `corepack pnpm db:generate -- --name m007_auth_account`  
+Run: `corepack pnpm db:generate -- --name m007_auth_account`
 Expected: next Drizzle migration and metadata represent only M007 schema changes. Add a forward
 hardening migration only for FORCE RLS/grants not emitted by Drizzle; never edit old migrations.
 
 - [ ] **Step 5: Run focused GREEN and database typecheck**
 
-Run: `corepack pnpm vitest run tests/m007/auth-schema.test.ts tests/m007/auth-repository.test.ts tests/m007/auth-rls-regression.test.ts && corepack pnpm --filter @atlas/database typecheck`  
+Run: `corepack pnpm vitest run tests/m007/auth-schema.test.ts tests/m007/auth-repository.test.ts tests/m007/auth-rls-regression.test.ts && corepack pnpm --filter @atlas/database typecheck`
 Expected: PASS; forged actor GUC, inactive session and cross-account reads are denied in contracts.
 
 - [ ] **Step 6: Commit**
@@ -171,7 +171,7 @@ expect(await invitations.consume(scannerGetAttempt)).toEqual({ kind: "inert" });
 
 - [ ] **Step 2: Run focused RED**
 
-Run: `corepack pnpm vitest run tests/m007/account-lifecycle.test.ts tests/m007/account-linking.test.ts`  
+Run: `corepack pnpm vitest run tests/m007/account-lifecycle.test.ts tests/m007/account-linking.test.ts`
 Expected: FAIL because lifecycle and owner-link policy are absent.
 
 - [ ] **Step 3: Implement minimal lifecycle and owner ports**
@@ -182,7 +182,7 @@ merge CRM records.
 
 - [ ] **Step 4: Run focused GREEN**
 
-Run: `corepack pnpm vitest run tests/m007/account-lifecycle.test.ts tests/m007/account-linking.test.ts && corepack pnpm --filter @atlas/auth typecheck`  
+Run: `corepack pnpm vitest run tests/m007/account-lifecycle.test.ts tests/m007/account-linking.test.ts && corepack pnpm --filter @atlas/auth typecheck`
 Expected: PASS with no protected grant from registration, email or phone match.
 
 - [ ] **Step 5: Commit**
@@ -220,7 +220,7 @@ expect(await requestRecovery(knownEmail)).toEqual(await requestRecovery(unknownE
 
 - [ ] **Step 2: Run focused RED**
 
-Run: `corepack pnpm vitest run tests/m007/auth-session.test.ts tests/m007/auth-password-recovery.test.ts tests/m007/auth-csrf.test.ts`  
+Run: `corepack pnpm vitest run tests/m007/auth-session.test.ts tests/m007/auth-password-recovery.test.ts tests/m007/auth-csrf.test.ts`
 Expected: FAIL because session, neutral recovery and CSRF code do not exist.
 
 - [ ] **Step 3: Implement opaque session and password-provider orchestration**
@@ -231,7 +231,7 @@ login/recovery results and provider-disabled email/password outcomes. Never stor
 
 - [ ] **Step 4: Run focused GREEN and typecheck**
 
-Run: `corepack pnpm vitest run tests/m007/auth-session.test.ts tests/m007/auth-password-recovery.test.ts tests/m007/auth-csrf.test.ts && corepack pnpm --filter @atlas/auth typecheck`  
+Run: `corepack pnpm vitest run tests/m007/auth-session.test.ts tests/m007/auth-password-recovery.test.ts tests/m007/auth-csrf.test.ts && corepack pnpm --filter @atlas/auth typecheck`
 Expected: PASS; no token is returned to browser DTOs.
 
 - [ ] **Step 5: Commit**
@@ -266,7 +266,7 @@ expect(await link(providerAutoLinkedWithoutLocalRecord)).toEqual({ kind: "reconc
 
 - [ ] **Step 2: Run focused RED**
 
-Run: `corepack pnpm vitest run tests/m007/auth-oauth.test.ts tests/m007/auth-identity-link.test.ts`  
+Run: `corepack pnpm vitest run tests/m007/auth-oauth.test.ts tests/m007/auth-identity-link.test.ts`
 Expected: FAIL because state/nonce/PKCE and link-operation fences are absent.
 
 - [ ] **Step 3: Implement provider-disabled official adapter boundary**
@@ -278,7 +278,7 @@ must reject it.
 
 - [ ] **Step 4: Run focused GREEN**
 
-Run: `corepack pnpm vitest run tests/m007/auth-oauth.test.ts tests/m007/auth-identity-link.test.ts && corepack pnpm --filter @atlas/auth typecheck`  
+Run: `corepack pnpm vitest run tests/m007/auth-oauth.test.ts tests/m007/auth-identity-link.test.ts && corepack pnpm --filter @atlas/auth typecheck`
 Expected: PASS with substitution, replay, stale callback and ambiguous provider result denied.
 
 - [ ] **Step 5: Commit**
@@ -316,7 +316,7 @@ expect(await serviceIdentity.verify(overScopedToken)).toEqual({ kind: "denied" }
 
 - [ ] **Step 2: Run focused RED**
 
-Run: `corepack pnpm vitest run tests/m007/auth-authorization.test.ts tests/m007/auth-idor.test.ts tests/m007/auth-mfa-service.test.ts`  
+Run: `corepack pnpm vitest run tests/m007/auth-authorization.test.ts tests/m007/auth-idor.test.ts tests/m007/auth-mfa-service.test.ts`
 Expected: FAIL because authorization, MFA and canonical service verification are absent.
 
 - [ ] **Step 3: Implement backend policy and compatibility adapter**
@@ -328,7 +328,7 @@ call the canonical verifier while preserving existing callers.
 
 - [ ] **Step 4: Run focused GREEN and affected typechecks**
 
-Run: `corepack pnpm vitest run tests/m007/auth-authorization.test.ts tests/m007/auth-idor.test.ts tests/m007/auth-mfa-service.test.ts tests/m005/voice-facade.test.ts && corepack pnpm --filter @atlas/auth typecheck && corepack pnpm --filter @atlas/app typecheck`  
+Run: `corepack pnpm vitest run tests/m007/auth-authorization.test.ts tests/m007/auth-idor.test.ts tests/m007/auth-mfa-service.test.ts tests/m005/voice-facade.test.ts && corepack pnpm --filter @atlas/auth typecheck && corepack pnpm --filter @atlas/app typecheck`
 Expected: PASS; no UI/middleware-only permission and no M005 protocol regression.
 
 - [ ] **Step 5: Commit**
@@ -365,7 +365,7 @@ expect(await runtimeWithMissingSessionStore()).toEqual({ kind: "unavailable" });
 
 - [ ] **Step 2: Run focused RED**
 
-Run: `corepack pnpm vitest run tests/m007/auth-facade.test.ts tests/m007/auth-routes.integration.test.ts`  
+Run: `corepack pnpm vitest run tests/m007/auth-facade.test.ts tests/m007/auth-routes.integration.test.ts`
 Expected: FAIL because composition and endpoints are absent.
 
 - [ ] **Step 3: Implement facade and disabled runtime**
@@ -376,7 +376,7 @@ in tests, exact-origin HTTP parsing, private/no-store responses and server-deriv
 
 - [ ] **Step 4: Run focused GREEN and app typecheck**
 
-Run: `corepack pnpm vitest run tests/m007/auth-facade.test.ts tests/m007/auth-routes.integration.test.ts && corepack pnpm --filter @atlas/app typecheck`  
+Run: `corepack pnpm vitest run tests/m007/auth-facade.test.ts tests/m007/auth-routes.integration.test.ts && corepack pnpm --filter @atlas/app typecheck`
 Expected: PASS with all unavailable/ambiguous owner paths fail closed.
 
 - [ ] **Step 5: Commit**
@@ -415,7 +415,7 @@ expect(renderedSecurity).not.toContain("sessionToken");
 
 - [ ] **Step 2: Run focused RED**
 
-Run: `corepack pnpm vitest run tests/m007/auth-ui.test.ts tests/m007/auth-i18n.test.ts`  
+Run: `corepack pnpm vitest run tests/m007/auth-ui.test.ts tests/m007/auth-i18n.test.ts`
 Expected: FAIL because UI and copy do not exist.
 
 - [ ] **Step 3: Implement SG Solutions auth experience**
@@ -426,7 +426,7 @@ honest provider-disabled states. Admin actions require facade authorization and 
 
 - [ ] **Step 4: Run focused GREEN and UI typechecks**
 
-Run: `corepack pnpm vitest run tests/m007/auth-ui.test.ts tests/m007/auth-i18n.test.ts && corepack pnpm --filter @atlas/ui typecheck && corepack pnpm --filter @atlas/app typecheck`  
+Run: `corepack pnpm vitest run tests/m007/auth-ui.test.ts tests/m007/auth-i18n.test.ts && corepack pnpm --filter @atlas/ui typecheck && corepack pnpm --filter @atlas/app typecheck`
 Expected: PASS with ES/EN key/route parity and accessible semantic contracts.
 
 - [ ] **Step 5: Commit**
@@ -461,7 +461,7 @@ expect(() => recordAuthTelemetry({ event: "login_failed", email: "a@b.com" })).t
 
 - [ ] **Step 2: Run focused RED**
 
-Run: `corepack pnpm vitest run tests/m007/auth-outbox.test.ts tests/m007/auth-observability.test.ts tests/m007/auth-synthetic.integration.test.ts`  
+Run: `corepack pnpm vitest run tests/m007/auth-outbox.test.ts tests/m007/auth-observability.test.ts tests/m007/auth-synthetic.integration.test.ts`
 Expected: FAIL because durable jobs and telemetry allowlists are absent.
 
 - [ ] **Step 3: Implement durable provider-disabled recovery**
@@ -472,7 +472,7 @@ accepts only event/outcome/policy/latency/correlation metadata.
 
 - [ ] **Step 4: Run focused GREEN and affected typechecks**
 
-Run: `corepack pnpm vitest run tests/m007/auth-outbox.test.ts tests/m007/auth-observability.test.ts tests/m007/auth-synthetic.integration.test.ts && corepack pnpm --filter @atlas/auth typecheck && corepack pnpm --filter @atlas/observability typecheck`  
+Run: `corepack pnpm vitest run tests/m007/auth-outbox.test.ts tests/m007/auth-observability.test.ts tests/m007/auth-synthetic.integration.test.ts && corepack pnpm --filter @atlas/auth typecheck && corepack pnpm --filter @atlas/observability typecheck`
 Expected: PASS without provider/network effects.
 
 - [ ] **Step 5: Commit**
@@ -504,7 +504,7 @@ fail closed.
 
 - [ ] **Step 2: Run only the M007 focused gate**
 
-Run: `corepack pnpm vitest run tests/m007 && corepack pnpm --filter @atlas/auth typecheck && corepack pnpm --filter @atlas/database typecheck && corepack pnpm --filter @atlas/app typecheck`  
+Run: `corepack pnpm vitest run tests/m007 && corepack pnpm --filter @atlas/auth typecheck && corepack pnpm --filter @atlas/database typecheck && corepack pnpm --filter @atlas/app typecheck`
 Expected: all M007 focused tests and affected typechecks PASS. Record exact counts; do not claim a
 full repository suite or build unless separately executed.
 

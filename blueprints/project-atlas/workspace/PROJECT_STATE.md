@@ -48,4 +48,3 @@ gate; it has not been granted.
 
 The Product Owner decides. Codex Architecture directs. A separate implementation agent writes code.
 Independent reviewers and Cyber Neo audit work they did not implement.
-
