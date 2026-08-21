@@ -644,17 +644,20 @@ Architecture acceptance requires:
 14. Scheduling, payment, notifications, uploads, partners and AI remain separate gated handoffs.
 15. Spanish/English, responsive, keyboard, screen-reader and WCAG 2.2 AA requirements are testable.
 16. External accounts, providers, copy, routing and retention decisions remain explicitly deferred.
-17. No code, database, provider, form traffic, merge, deployment or Operational status is created by
-    this documentary package.
+17. The former documentary-only gate was superseded by Decision 034 and the completed
+    provider-disabled implementation. No live provider or form traffic, merge, deployment, release
+    or Operational status is created by that implementation.
 
-Future Build acceptance additionally requires contract/unit/browser/accessibility/security tests,
-threat-model review, migration/rollback plan, controlled rate/concurrency evidence, data-deletion
-tests and independent review. External activation requires its register evidence.
+Provider-disabled Build evidence and independent review are recorded in the M006 phase completion
+report; Product Owner acceptance remains pending. External activation still requires its register
+evidence, live-environment controls and separately approved owner gates.
 
 ## 18. Negative acceptance criteria
 
-- No `.NET`, FluentValidation or unapproved runtime/dependency is added by documentation.
-- No public form route, component, API, database table, email, cookie or tracking pixel is created.
+- The completed provider-disabled implementation adds no `.NET`, FluentValidation or unapproved
+  runtime/dependency.
+- Implemented public-form routes, components, APIs and database contracts remain local and
+  provider-disabled; no live traffic, email, tracking pixel or deployment is activated.
 - No SSN/ITIN/card/bank/password/credential/government ID/credit report/tax document is requested.
 - No public file upload or base64/binary answer is accepted.
 - No hidden/conditional browser value bypasses server-side condition/allowlist evaluation.
@@ -668,7 +671,8 @@ tests and independent review. External activation requires its register evidence
 - No anti-spam vendor, device fingerprint, abandonment recovery, persistent draft, public upload or AI
   classification is activated by architecture approval.
 - No external provider test double or generic receipt is reported as a live integration.
-- No M006 implementation starts without Product Owner approval of the PRD/ADR and explicit Build gate.
+- Historical prerequisite satisfied: Decision 034 supplied the Product Owner-approved explicit
+  provider-disabled Build gate. Any scope expansion or external activation requires a new approval.
 
 ## 19. Dependencies
 
@@ -767,7 +771,7 @@ of the safe provider-neutral form architecture.
 
 ## Delivery and activation record
 
-- Architecture: candidate prepared for Product Owner review on 2026-08-09.
-- Local implementation: not authorized and not started.
+- Architecture: `APPROVED` for the reviewed provider-disabled scope.
+- Local implementation: Tasks 1-7 complete at `b6c7e6f`; Product Owner acceptance remains pending.
 - External activation: deferred; see `EXTERNAL_ACTIVATION_REGISTER.md`.
-- Operational status: not eligible.
+- Operational status: not eligible; no merge, deployment, release or live provider is authorized.
