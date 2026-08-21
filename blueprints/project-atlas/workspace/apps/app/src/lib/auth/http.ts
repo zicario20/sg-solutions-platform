@@ -5,6 +5,13 @@ import { createHash } from "node:crypto";
 import postgres from "postgres";
 import { createServerAuthRuntime, type ServerAuthControlPlane } from "./server-runtime.ts";
 
+type DefaultOAuthAdapter = { start(): Promise<{ kind: "started"; state: string; nonce: string; pkceVerifier: string } | { kind: "unavailable" }>; callback(input: { state: string; nonce: string; pkceVerifier: string }): Promise<{ kind: "authenticated"; handle: string } | { kind: "denied" | "manual_review" | "unavailable" }>; issueInvitation(): Promise<{ kind: "issued"; id: string; proof: string } | { kind: "denied" | "unavailable" }> };
+export function createDefaultOAuthAdapter(env: Record<string, string | undefined>, override?: DefaultOAuthAdapter): DefaultOAuthAdapter {
+  const enabled = env.SUPABASE_OAUTH_ENABLED === "true" && Boolean(env.SUPABASE_ISSUER) && Boolean(env.SUPABASE_AUDIENCE);
+  if (enabled && override) return override;
+  return { start: async () => ({ kind: "unavailable" }), callback: async () => ({ kind: "unavailable" }), issueInvitation: async () => ({ kind: "unavailable" }) };
+}
+
 type DurableHttpAdapter = { sessions: { list(handle: string): Promise<readonly { id: string }[]>; rotate(handle: string): Promise<{ kind: "rotated"; handle: string } | { kind: "family_revoked" }>; revokeCurrent(handle: string): Promise<{ kind: "revoked" | "denied" }>; revokeOthers(handle: string): Promise<{ kind: "revoked" | "denied" }> }; invitations: { accept(input: { id: string; proof: string; contactId: string; scope: string; identityEvidenceId: string }): Promise<{ kind: "consumed" | "manual_review" }> } };
 const requestCookie = (request: Request, name: string) => request.headers.get("cookie")?.split(";").map((part) => part.trim()).find((part) => part.startsWith(`${name}=`))?.slice(name.length + 1);
 const csrf = (request: Request) => { const value = requestCookie(request, "__Host-atlas_csrf"); return Boolean(value && value === request.headers.get("x-atlas-csrf")); };
