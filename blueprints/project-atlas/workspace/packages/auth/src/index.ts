@@ -5,6 +5,7 @@ export * from "./contracts.ts";
 export * from "./control-plane.ts";
 export * from "./crypto.ts";
 export * from "./disabled-provider.ts";
+export * from "./email-auth-service.ts";
 export * from "./invitations.ts";
 export * from "./identity-linking.ts";
 export * from "./jobs.ts";

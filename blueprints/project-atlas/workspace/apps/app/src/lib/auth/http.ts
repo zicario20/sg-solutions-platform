@@ -1,8 +1,10 @@
 import {
-  createDurableOAuthTransactionService,
+  createPkceChallenge,
   createOpaqueValue,
   createPersistentOAuthAccountService,
   digestOpaqueProof,
+  openServerSecret,
+  sealServerSecret,
   type AuthCommand,
   type CrmPartyResolutionEvidence,
   type OfficialSupabaseIdentity,
@@ -19,20 +21,21 @@ import {
 import { createHmac } from "node:crypto";
 import { createServerAuthRuntime, type ServerAuthControlPlane } from "./server-runtime.ts";
 import { createConfiguredOAuthDependencies } from "./configured-oauth-dependencies.ts";
+import { createConfiguredEmailAuth } from "./configured-email-auth.ts";
 import { buildAuthRiskKeyDigests, canonicalSessionHandleDigest, createSessionCookieHeaders } from "./session-security.ts";
 import { verifySessionCsrfToken } from "@atlas/auth";
 export { createConfiguredOAuthDependencies } from "./configured-oauth-dependencies.ts";
 export { buildAuthRiskKeyDigests, canonicalSessionHandleDigest, createSessionCookieHeaders } from "./session-security.ts";
 
 export type DefaultOAuthAdapter = {
-  start(input?: { readonly browserBinding: string }): Promise<{ kind: "started"; state: string; nonce: string; pkceVerifier: string } | { kind: "unavailable" }>;
-  callback(input: { readonly state: string; readonly nonce: string; readonly pkceVerifier: string; readonly code?: string; readonly browserBinding?: string }): Promise<{ kind: "authenticated"; handle: string } | { kind: "denied" | "manual_review" | "unavailable" }>;
+  start(input?: { readonly browserBinding: string }): Promise<{ kind: "redirect"; location: string } | { kind: "unavailable" }>;
+  callback(input: { readonly state: string; readonly code: string; readonly browserBinding?: string }): Promise<{ kind: "authenticated"; handle: string } | { kind: "denied" | "manual_review" | "unavailable" }>;
   issueInvitation(): Promise<{ kind: "issued"; id: string; proof: string } | { kind: "denied" | "unavailable" }>;
 };
 
 export type DefaultOAuthDependencies = Readonly<{
   sql?: AuthSql;
-  provider?: { verifyGoogle(input: { readonly state: string; readonly nonce: string; readonly pkceVerifier: string; readonly code?: string }): Promise<OfficialSupabaseIdentity | undefined> };
+  provider?: { authorizationUrl(input: { state: string; nonce: string; codeChallenge: string; redirectUri: string }): string; exchangeAndVerify(input: { code: string; pkceVerifier: string; expectedNonce: string; redirectUri: string }): Promise<OfficialSupabaseIdentity | undefined> };
   crm?: { resolve(input: { readonly subject: string; readonly supabaseEvidenceId: string }): Promise<CrmPartyResolutionEvidence> };
 }>;
 
@@ -52,27 +55,33 @@ export function createDefaultOAuthAdapter(
   const issuer = env.SUPABASE_ISSUER?.trim();
   const audience = env.SUPABASE_AUDIENCE?.trim();
   const canonicalOrigin = env.AUTH_CANONICAL_ORIGIN?.trim();
+  const oauthSecret = env.AUTH_OAUTH_SECRET_KEY?.trim();
+  const supabaseUrl = env.SUPABASE_URL?.trim();
   const providerEnabled = env.SUPABASE_OAUTH_ENABLED === "true" && Boolean(issuer) && Boolean(audience);
   if (providerEnabled && isOAuthOverride(dependenciesOrOverride)) return dependenciesOrOverride;
-  const enabled = providerEnabled && Boolean(env.DATABASE_URL) && Boolean(canonicalOrigin && /^https:\/\/[^/?#]+$/u.test(canonicalOrigin));
+  const enabled = providerEnabled && Boolean(env.DATABASE_URL) && Boolean(oauthSecret && oauthSecret.length >= 32) && Boolean(canonicalOrigin && /^https:\/\/[^/?#]+$/u.test(canonicalOrigin)) && Boolean(supabaseUrl && /^https:\/\/[^/?#]+$/u.test(supabaseUrl));
   if (!enabled || isOAuthOverride(dependenciesOrOverride)) return unavailableOAuthAdapter();
   const { sql, provider, crm } = dependenciesOrOverride;
-  if (!sql || !provider || !crm || !issuer || !audience || !canonicalOrigin) return unavailableOAuthAdapter();
+  if (!sql || !provider || !crm || !issuer || !audience || !canonicalOrigin || !oauthSecret) return unavailableOAuthAdapter();
 
-  const transactions = createDurableOAuthTransactionService(new PostgresOAuthTransactionRepository(sql));
+  const transactions = new PostgresOAuthTransactionRepository(sql);
   const accounts = createPersistentOAuthAccountService({ repository: new PostgresAuthIdentityRepository(sql), issuer, audience, resolveCrm: crm.resolve.bind(crm) });
   const callbackUrl = `${canonicalOrigin}/api/auth/oauth/google/callback`;
   return {
     async start(input) {
       if (!input?.browserBinding) return { kind: "unavailable" };
-      const transaction = await transactions.begin({ provider: "google", purpose: "sign_in", callbackUrl, returnIntent: "/client", browserBinding: input.browserBinding });
-      return { kind: "started", state: transaction.state, nonce: transaction.nonce, pkceVerifier: transaction.pkceVerifier };
+      const state = createOpaqueValue(); const nonce = createOpaqueValue(); const pkceVerifier = createOpaqueValue(); const issued = new Date(); const location = provider.authorizationUrl({ state, nonce, codeChallenge: createPkceChallenge(pkceVerifier), redirectUri: callbackUrl });
+      try { const authorize = new URL(location); const configured = new URL(supabaseUrl!); if (authorize.origin !== configured.origin || authorize.pathname !== "/auth/v1/authorize") return { kind: "unavailable" }; } catch { return { kind: "unavailable" }; }
+      await transactions.issue({ id: createOpaqueValue(), purpose: "sign_in", provider: "google", stateDigest: digestOpaqueProof(state), nonceDigest: digestOpaqueProof(nonce), pkceVerifierDigest: digestOpaqueProof(pkceVerifier), browserBindingDigest: digestOpaqueProof(input.browserBinding), redirectHash: digestOpaqueProof(callbackUrl), nonceCiphertext: sealServerSecret(oauthSecret, nonce), pkceVerifierCiphertext: sealServerSecret(oauthSecret, pkceVerifier), returnIntent: "/client", callbackUrl, expiresAt: new Date(issued.getTime() + 10 * 60_000), now: issued });
+      return { kind: "redirect", location };
     },
     async callback(input) {
-      if (!input.browserBinding) return { kind: "denied" };
-      const identity = await provider.verifyGoogle(input);
+      if (!input.browserBinding || !input.state || !input.code) return { kind: "denied" };
+      const stored = await transactions.load({ stateDigest: digestOpaqueProof(input.state), browserBindingDigest: digestOpaqueProof(input.browserBinding), now: new Date() }); if (!stored) return { kind: "denied" };
+      let nonce: string; let pkceVerifier: string; try { nonce = openServerSecret(oauthSecret, stored.nonceCiphertext); pkceVerifier = openServerSecret(oauthSecret, stored.pkceVerifierCiphertext); } catch { return { kind: "denied" }; }
+      const identity = await provider.exchangeAndVerify({ code: input.code, pkceVerifier, expectedNonce: nonce, redirectUri: callbackUrl });
       if (!identity) return { kind: "denied" };
-      const consumed = await transactions.consume({ state: input.state, nonce: input.nonce, pkceVerifier: input.pkceVerifier, browserBinding: input.browserBinding, callbackUrl });
+      const consumed = await transactions.consume({ stateDigest: digestOpaqueProof(input.state), nonceDigest: digestOpaqueProof(nonce), pkceVerifierDigest: digestOpaqueProof(pkceVerifier), browserBindingDigest: digestOpaqueProof(input.browserBinding), redirectHash: digestOpaqueProof(callbackUrl), now: new Date() });
       if (consumed.kind !== "consumed") return { kind: "denied" };
       const result = await accounts.authenticate(identity);
       return result.kind === "authenticated" ? { kind: "authenticated", handle: result.handle } : result;
@@ -94,18 +103,22 @@ export function createDurableAuthHttpFactory(adapter: DurableHttpAdapter, csrfSe
   };
 }
 type OAuthInvitationAdapter = DefaultOAuthAdapter;
-export function createOAuthInvitationEntryPoints(adapter: OAuthInvitationAdapter, csrfSecret = process.env.AUTH_SESSION_CSRF_SECRET ?? "") {
+type OAuthSecurity = { admit(command: "oauth_start" | "oauth_callback", request: Request): Promise<"accepted" | "rate_limited" | "unavailable">; auditOutcome(command: "oauth_start" | "oauth_callback", outcome: "redirected" | "authenticated" | "denied" | "manual_review" | "unavailable" | "rate_limited", request: Request): Promise<void> };
+export function createOAuthInvitationEntryPoints(adapter: OAuthInvitationAdapter, input: string | { csrfSecret?: string; security?: OAuthSecurity } = process.env.AUTH_SESSION_CSRF_SECRET ?? "") {
+  const csrfSecret = typeof input === "string" ? input : input.csrfSecret ?? ""; const security = typeof input === "string" ? undefined : input.security;
   return {
     start: async (request: Request) => {
+      if (security) { const admitted = await security.admit("oauth_start", request); if (admitted !== "accepted") { await security.auditOutcome("oauth_start", admitted, request); return Response.json({ kind: "accepted" }, { status: admitted === "rate_limited" ? 202 : 503 }); } }
       const browserBinding = requestCookie(request, "__Host-atlas_oauth") ?? createOpaqueValue();
       const result = await adapter.start({ browserBinding });
-      return result.kind === "started"
-        ? Response.json({ state: result.state, nonce: result.nonce, pkceVerifier: result.pkceVerifier }, { status: 202, headers: { "cache-control": "no-store", "set-cookie": `__Host-atlas_oauth=${encodeURIComponent(browserBinding)}; Path=/; HttpOnly; Secure; SameSite=Lax` } })
-        : Response.json({ kind: "unavailable" }, { status: 503 });
+      await security?.auditOutcome("oauth_start", result.kind === "redirect" ? "redirected" : "unavailable", request);
+      return result.kind === "redirect" ? new Response(null, { status: 303, headers: { location: result.location, "cache-control": "no-store", "set-cookie": `__Host-atlas_oauth=${encodeURIComponent(browserBinding)}; Path=/; HttpOnly; Secure; SameSite=Lax` } }) : Response.json({ kind: "unavailable" }, { status: 503 });
     },
     callback: async (request: Request) => {
+      if (security) { const admitted = await security.admit("oauth_callback", request); if (admitted !== "accepted") { await security.auditOutcome("oauth_callback", admitted, request); return Response.json({ kind: admitted === "rate_limited" ? "accepted" : "unavailable" }, { status: admitted === "rate_limited" ? 202 : 503 }); } }
       const url = new URL(request.url);
-      const result = await adapter.callback({ state: url.searchParams.get("state") ?? "", nonce: url.searchParams.get("nonce") ?? "", pkceVerifier: url.searchParams.get("code_verifier") ?? "", code: url.searchParams.get("code") ?? undefined, browserBinding: requestCookie(request, "__Host-atlas_oauth") });
+      const result = await adapter.callback({ state: url.searchParams.get("state") ?? "", code: url.searchParams.get("code") ?? "", browserBinding: requestCookie(request, "__Host-atlas_oauth") });
+      await security?.auditOutcome("oauth_callback", result.kind, request);
       if (result.kind === "authenticated") {
         const headers = new Headers({ "cache-control": "no-store" });
         if (!csrfSecret) return Response.json({ kind: "unavailable" }, { status: 503 });
@@ -165,6 +178,7 @@ export function createConfiguredAuthControlPlane(environment: Record<string, str
       const result = await controls.admitAndEnqueue({ action: input.purpose, riskKeyDigests, ...profiles[input.purpose], eventKey, correlationId: input.requestId, metadata: { riskClass: "multi_key" }, outbox: notification(input.purpose, providerEnabled, eventKey, riskKeyDigests[2] ?? riskKeyDigests[0]!), now: input.now });
       return result;
     },
+    auditOutcome: async (input) => { await controls.appendAudit({ eventKey: digest("audit_event", `${input.purpose}:outcome:${input.requestId}`), eventName: `${input.purpose}_outcome`, outcome: input.outcome, correlationId: input.requestId, metadata: { outcome: input.outcome }, now: input.now }); },
     revokeCurrent: async (input) => ({ kind: await sessions.revokeByHandleDigest(canonicalSessionHandleDigest(input.sessionHandle), input.now) ? "revoked" : "denied" }),
     revokeOthers: async (input) => ({ kind: await sessions.revokeOthersByHandleDigest(canonicalSessionHandleDigest(input.sessionHandle), input.now) ? "revoked" : "denied" }),
   };
@@ -172,7 +186,9 @@ export function createConfiguredAuthControlPlane(environment: Record<string, str
 
 function configuredControlPlane(): ServerAuthControlPlane | undefined { return createConfiguredAuthControlPlane(process.env); }
 
-function configuredRuntime() { return createServerAuthRuntime({ canonicalOrigin: process.env.AUTH_CANONICAL_ORIGIN ?? "https://invalid.local", csrfSecret: process.env.AUTH_SESSION_CSRF_SECRET, controlPlane: configuredControlPlane() }); }
+function configuredRuntime() { return createServerAuthRuntime({ canonicalOrigin: process.env.AUTH_CANONICAL_ORIGIN ?? "https://invalid.local", csrfSecret: process.env.AUTH_SESSION_CSRF_SECRET, trustProxyHeaders: process.env.AUTH_TRUST_PROXY_HEADERS === "true", controlPlane: configuredControlPlane(), emailAuth: createConfiguredEmailAuth(process.env) }); }
+
+function configuredOAuthEntryPoints() { const runtime = configuredRuntime(); return createOAuthInvitationEntryPoints(configuredOAuthAdapter(), { csrfSecret: process.env.AUTH_SESSION_CSRF_SECRET, security: { admit: async (command, request) => (await runtime.admit(command, request)).kind, auditOutcome: runtime.auditOutcome } }); }
 
 export function createAuthRouteHandler(runtime: ReturnType<typeof createServerAuthRuntime>, command: AuthCommand) {
   return async (request: Request): Promise<Response> => {
@@ -183,7 +199,7 @@ export function createAuthRouteHandler(runtime: ReturnType<typeof createServerAu
 export function isPublicAuthPath(pathname: string): boolean { return ["/client/sign-in", "/client/register", "/client/verify-email", "/client/recovery", "/client/reset-password"].includes(pathname); }
 
 export async function authPost(request: Request): Promise<Response> {
-  if (new URL(request.url).pathname.endsWith("/oauth/google/start")) return createOAuthInvitationEntryPoints(configuredOAuthAdapter()).start(request);
+  if (new URL(request.url).pathname.endsWith("/oauth/google/start")) return configuredOAuthEntryPoints().start(request);
   if (new URL(request.url).pathname.endsWith("/sessions") && request.headers.get("x-atlas-session-action") === "rotate") return createAuthEntryPoints(configuredDurableAdapter).post(request);
   if (new URL(request.url).pathname.includes("/invitations/accept")) return createAuthEntryPoints(configuredDurableAdapter).post(request);
   return createAuthRouteHandler(configuredRuntime(), routeCommand(new URL(request.url).pathname))(request);
@@ -191,7 +207,7 @@ export async function authPost(request: Request): Promise<Response> {
 
 export async function authGet(request?: Request): Promise<Response> {
   if (request && new URL(request.url).pathname.endsWith("/sessions")) return createAuthEntryPoints(configuredDurableAdapter).get(request);
-  if (request && new URL(request.url).pathname.endsWith("/oauth/google/callback")) return createOAuthInvitationEntryPoints(configuredOAuthAdapter()).callback(request);
+  if (request && new URL(request.url).pathname.endsWith("/oauth/google/callback")) return configuredOAuthEntryPoints().callback(request);
   if (request) return createAuthRouteHandler(configuredRuntime(), routeCommand(new URL(request.url).pathname))(request);
   const result = { status: 503, body: { kind: "unavailable" as const } };
   return Response.json(result.body, { status: result.status, headers: { "cache-control": "private, no-store", "referrer-policy": "no-referrer" } });

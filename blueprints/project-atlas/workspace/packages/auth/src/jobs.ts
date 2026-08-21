@@ -17,6 +17,8 @@ export type DurableAuthOutboxCommand = Readonly<{
   payload: Readonly<Record<string, unknown>>;
   attemptCount: number;
   leaseVersion: number;
+  leaseOwner: string;
+  leasePurpose: "dispatch" | "reconcile";
 }>;
 export type DurableAuthOutboxRepository = Readonly<{
   recoverExpiredLeases(now: Date): Promise<{ readonly dispatchToReconcile: number; readonly reconcileToManualReview: number }>;
@@ -62,6 +64,7 @@ export function createDurableAuthOutboxWorker(options: {
       const commands = await options.repository.lease({ owner: options.owner, leasePurpose: options.leasePurpose, limit: options.maxJobs, now: startedAt, leaseExpiresAt: new Date(startedAt.getTime() + options.timeoutMs + 5_000) });
       let processed = 0;
       for (const command of commands.slice(0, options.maxJobs)) {
+        if (command.leaseOwner !== options.owner || command.leasePurpose !== options.leasePurpose || !Number.isSafeInteger(command.leaseVersion) || command.leaseVersion < 1) continue;
         let result: AuthProviderOutcome;
         try {
           result = await withWorkerTimeout(options.timeoutMs, (signal) => options.leasePurpose === "dispatch" ? options.provider!.send(command, signal) : options.provider!.queryByOwner(command, signal));

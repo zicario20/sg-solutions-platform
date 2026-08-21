@@ -12,6 +12,7 @@ export * from "./postgres-auth-identity-repository.ts";
 export * from "./postgres-auth-oauth-repository.ts";
 export * from "./postgres-auth-session-invitation-repository.ts";
 export * from "./postgres-auth-sql.ts";
+export * from "./postgres-email-auth-repository.ts";
 export * from "./public-forms-repository.ts";
 export * from "./public-forms-outbox-store.ts";
 export * from "./public-chat-repository.ts";

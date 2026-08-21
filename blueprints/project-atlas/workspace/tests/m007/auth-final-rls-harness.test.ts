@@ -22,7 +22,7 @@ describe("AR-009 restricted-role harness contract", () => {
 
     await runM007RlsHarness({ executor, migrationSources: M007_MIGRATION_FILES.map((file) => ({ file, sql: "select 1" })) });
 
-    expect(M007_MIGRATION_FILES.at(-1)).toBe("0032_m007_final_auth_trust_boundaries.sql");
+    expect(M007_MIGRATION_FILES.at(-1)).toBe("0033_m007_auth_provider_protocols.sql");
     expect(operations).toEqual(expect.arrayContaining([
       "repository_oauth_as_preauth",
       "repository_identity_as_preauth",
