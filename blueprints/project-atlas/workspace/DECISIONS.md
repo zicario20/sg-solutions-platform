@@ -465,3 +465,18 @@ only. Verified payments are the only revenue authority, RBAC applies in UI and b
 data is excluded, Power BI remains optional and deferred, and unavailable instrumentation produces
 honest empty states rather than invented metrics. This decision does not authorize early CRM code or
 allow M016/M017/M020/M092 to begin before their sequential module gates.
+
+## 2026-08-20 — Decision 032
+
+Decision: the Product Owner accepts M004 WhatsApp Business in its completed provider-disabled scope
+and explicitly prohibits opening or starting module 39.
+
+Reason: M004's isolated implementation and scoped evidence may close its provider-disabled module
+scope without treating deferred external, business or release prerequisites as completed. The Product
+Owner has not authorized the next module.
+
+Impact: M004 remains provider-disabled and is not authorized for merge, deployment, Meta/provider
+activation, credentials, live traffic, phone/number or template setup, or `Operational` status.
+Disposable PostgreSQL validation, migration-ledger attestation, pinned Node `24.18.1` validation and
+business/legal/provider prerequisites remain deferred release/activation blockers. No module 39
+worktree, implementation, planning execution or successor gate may open from this decision.

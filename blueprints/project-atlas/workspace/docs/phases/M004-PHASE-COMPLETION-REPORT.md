@@ -42,6 +42,12 @@ Drizzle migration authority and fail-closed external activation posture.
 No clean full-suite, full build, live database, deployment or operational-acceptance result is
 claimed by this report.
 
+## Product Owner acceptance
+
+On 2026-08-20, Decision 032 accepted M004's provider-disabled scope. This acceptance does not
+authorize merge, deployment, Meta/provider activation, credentials, live traffic, number/template
+setup or `Operational` status. It explicitly prohibits opening or starting module 39.
+
 ## Database and provider limits
 
 Drizzle remains the schema authority. Live disposable PostgreSQL fresh/upgrade/RLS validation and
@@ -66,6 +72,7 @@ and receive explicit Product Owner acceptance and release approval.
 - [x] Focused final regression and domain typecheck evidence recorded.
 - [x] Independent architecture and final Cyber Neo evidence referenced.
 - [x] Provider-disabled posture, Release 1A/1B compatibility and CRM reference decisions preserved.
+- [x] Product Owner accepted the provider-disabled M004 scope; module 39 remains closed.
 - [ ] Live disposable PostgreSQL and migration-ledger attestation.
 - [ ] Pinned Node `24.18.1` validation.
 - [ ] Provider/business/legal readiness and external activation approval.

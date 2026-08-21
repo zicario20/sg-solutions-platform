@@ -596,3 +596,12 @@
   and DPA, approved number/templates, LLC/business readiness, activation runbooks, Product Owner
   acceptance, merge and production release. M004 is not deploy-ready or Operational. Release 1A/1B
   compatibility and the CRM reference decisions under Decision 031 remain unchanged.
+
+## 2026-08-20 — M004 provider-disabled scope acceptance
+
+- The Product Owner accepted M004 WhatsApp Business in its provider-disabled scope through Decision
+  032. This does not authorize merge, deployment, Meta/provider activation, credentials, live
+  traffic, number/template setup or `Operational` status.
+- Decision 032 explicitly prohibits opening or starting module 39. No successor worktree, module
+  implementation or planning execution is authorized by the M004 acceptance. All live PostgreSQL,
+  migration-ledger, pinned-Node and business/provider prerequisites remain deferred.

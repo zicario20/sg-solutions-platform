@@ -7,11 +7,11 @@
 
 Version: `0.1.0-alpha.23`
 
-Current phase: **M004 WhatsApp Business provider-disabled implementation closure candidate**
+Current phase: **M004 WhatsApp Business provider-disabled scope accepted; successor gate closed**
 
-Module status: **M004 implementation complete in isolated worktree; Product Owner acceptance,
-merge and release gates pending.** M001-M003 remain at Product Owner Acceptance. M005 and later
-modules remain blocked until the Product Owner accepts M004 and approves advancement.
+Module status: **M004 provider-disabled scope accepted by the Product Owner; merge and release gates
+remain pending.** M001-M003 remain at Product Owner Acceptance. Decision 032 explicitly prohibits
+opening or starting module 39; no successor module/worktree is authorized by this acceptance.
 
 Implementation boundary: M004 was completed in `codex/m004-whatsapp-recovery` without merge, push,
 deployment, credentials, external Meta traffic, live provider account, number, template submission
