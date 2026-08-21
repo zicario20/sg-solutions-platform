@@ -605,3 +605,16 @@
 - Decision 032 explicitly prohibits opening or starting module 39. No successor worktree, module
   implementation or planning execution is authorized by the M004 acceptance. All live PostgreSQL,
   migration-ledger, pinned-Node and business/provider prerequisites remain deferred.
+
+## 2026-08-20 — M005 Voice Agent provider-disabled Build gate and plan
+
+- The Product Owner supplied M005 and reaffirmed Project Atlas as SG Solutions' internal operating
+  platform. M005 is normalized to the TypeScript modular monolith: business state and authorization
+  remain in the platform; Python/FastAPI is only an ephemeral voice gateway.
+- Decision 033 opens a provider-disabled Build gate. It permits contracts, persistence, scoped
+  facade, mock adapters, synthetic proof, bilingual receptionist policy, fallbacks, redacted
+  telemetry and focused evidence. It excludes accounts, credentials, numbers, live calls/media,
+  recording, transcription, real data, deployment, merge and Operational status.
+- The plan has eight sequential reviewable tasks. Activation facts remain deferred: number/routing,
+  provider contract, recording consent/retention, scripts/knowledge, verification policy,
+  roster/hours, credential rotation, runbooks, staging proof and Product Owner approval.

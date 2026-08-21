@@ -480,3 +480,22 @@ activation, credentials, live traffic, phone/number or template setup, or `Opera
 Disposable PostgreSQL validation, migration-ledger attestation, pinned Node `24.18.1` validation and
 business/legal/provider prerequisites remain deferred release/activation blockers. No module 39
 worktree, implementation, planning execution or successor gate may open from this decision.
+
+## 2026-08-20 — Decision 033
+
+Decision: authorize a bounded `GENERATE` Build gate for M005 Voice Agent in its isolated worktree.
+The scope is provider-disabled only: TypeScript domain/persistence and scoped Voice Operations Facade;
+Python/FastAPI Voice Gateway scaffold; provider ports and mock adapters; synthetic proof/media-ticket
+handling; allowlisted bilingual Reception Agent policy; transfer/voicemail/callback recovery;
+metadata-only observability; focused tests; independent architecture/security review and closure docs.
+
+Reason: the Product Owner instructed Codex to restart at Module 5 and continue to completion while
+preserving architecture-first external activation. M004 provider-disabled scope is accepted. The
+Decision 032 prohibition on Module 39 remains absolute and unrelated.
+
+Impact: M005 may create code, migrations, local mock fixtures and provider-neutral configuration in
+`codex/m005-voice-agent`, but no live telephony/speech/model connection is permitted. The gateway
+has no direct database/cache access; durable work passes through a scoped platform facade. Accounts,
+number routing, credentials, webhooks, media streams, real calls, cloud STT/model/TTS, recording,
+transcription, real caller data, activation, deployment, default-branch merge and Operational status
+remain prohibited pending Product Owner activation approval and EXTERNAL_ACTIVATION_REGISTER evidence.

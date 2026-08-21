@@ -7,16 +7,19 @@
 
 Version: `0.1.0-alpha.23`
 
-Current phase: **M004 WhatsApp Business provider-disabled scope accepted; successor gate closed**
+Current phase: **M005 Voice Agent provider-disabled Build gate open; implementation not started**
 
-Module status: **M004 provider-disabled scope accepted by the Product Owner; merge and release gates
-remain pending.** M001-M003 remain at Product Owner Acceptance. Decision 032 explicitly prohibits
-opening or starting module 39; no successor module/worktree is authorized by this acceptance.
+Module status: **M004 provider-disabled scope remains accepted and M005 Voice Agent is authorized
+for a bounded provider-disabled foundation under Decision 033.** M001-M003 remain at Product Owner
+Acceptance. The Decision 032 prohibition on module 39 remains in force; no module 39 worktree is
+authorized.
 
-Implementation boundary: M004 was completed in `codex/m004-whatsapp-recovery` without merge, push,
-deployment, credentials, external Meta traffic, live provider account, number, template submission
-or production activation. The adapter and ingress remain provider-disabled; public WhatsApp entry
-remains hidden. This is not an `Operational`, deploy-ready or operational-acceptance claim.
+Implementation boundary: M005 may implement only the provider-disabled design in
+`docs/superpowers/specs/2026-08-20-m005-voice-agent-design.md`: authoritative TypeScript domain
+and persistence, scoped internal facade, Python/FastAPI gateway scaffold, mock ports, synthetic
+proof/flow tests, fallbacks, redacted observability and audits. It may not activate a number,
+provider, media stream, recording/transcription, credential, real caller data, deployment,
+default-branch merge or Operational status.
 
 Evidence: focused M004 repository/conformance regression passed `21/21` and `@atlas/domain`
 typecheck passed after the final connection-binding remediation. Earlier Task 11 integration evidence
