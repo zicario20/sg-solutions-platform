@@ -1,4 +1,4 @@
-import type { AuthCommand } from "@atlas/auth";
+import { verifySessionCsrfToken, type AuthCommand } from "@atlas/auth";
 
 type Admission = { readonly kind: "accepted" | "rate_limited" };
 export type ServerAuthControlPlane = Readonly<{
@@ -11,7 +11,7 @@ export type ServerOAuthProvider = Readonly<{
   completeGoogle(input: { readonly state?: string; readonly nonce?: string; readonly pkceVerifier?: string }): Promise<{ readonly kind: "unavailable"; readonly reason: "provider_disabled" } | { readonly kind: "denied" } | { readonly kind: "verified"; readonly subject: string }>;
 }>;
 
-type RuntimeOptions = Readonly<{ canonicalOrigin: string; controlPlane?: ServerAuthControlPlane; oauthProvider?: ServerOAuthProvider }>;
+type RuntimeOptions = Readonly<{ canonicalOrigin: string; csrfSecret?: string; controlPlane?: ServerAuthControlPlane; oauthProvider?: ServerOAuthProvider }>;
 
 const response = (status: number, body: Record<string, string>) => status === 204 ? new Response(null, { status, headers: { "cache-control": "private, no-store", "referrer-policy": "no-referrer" } }) : Response.json(body, { status, headers: { "cache-control": "private, no-store", "referrer-policy": "no-referrer" } });
 const unavailable = () => response(503, { kind: "unavailable" });
@@ -52,9 +52,14 @@ export function createServerAuthRuntime(options: RuntimeOptions) {
         const handle = cookie(request, "__Host-atlas_auth");
         const csrfCookie = cookie(request, "__Host-atlas_csrf");
         const csrfRequest = request.headers.get("x-atlas-csrf") ?? await formValue(request, "csrf");
-        if (!handle || !csrfCookie || !csrfRequest || csrfCookie !== csrfRequest) return response(403, { kind: "denied" });
+        if (!handle || !csrfCookie || !csrfRequest || csrfCookie !== csrfRequest || !verifySessionCsrfToken(options.csrfSecret ?? "", handle, csrfRequest)) return response(403, { kind: "denied" });
         const result = command === "logout" ? await options.controlPlane.revokeCurrent({ sessionHandle: handle, now: new Date() }) : await options.controlPlane.revokeOthers({ sessionHandle: handle, now: new Date() });
-        return result.kind === "revoked" ? response(204, {}) : response(403, { kind: "denied" });
+        if (result.kind !== "revoked") return response(403, { kind: "denied" });
+        if (command === "sessions") return response(204, {});
+        const loggedOut = response(204, {});
+        loggedOut.headers.append("set-cookie", "__Host-atlas_auth=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0");
+        loggedOut.headers.append("set-cookie", "__Host-atlas_csrf=; Path=/; Secure; SameSite=Strict; Max-Age=0");
+        return loggedOut;
       }
       if (command === "oauth_callback") {
         if (!options.oauthProvider) return unavailable();

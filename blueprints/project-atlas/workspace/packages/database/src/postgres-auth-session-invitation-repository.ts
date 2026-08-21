@@ -1,11 +1,24 @@
 import type { AuthSql, AuthTransactionSql } from "./auth-repository.ts";
-const q = <T>(tx: AuthTransactionSql, sql: string, params: readonly unknown[] = []) => tx.unsafe<T>(sql, params);
+
+const query = <T>(transaction: AuthTransactionSql, statement: string, parameters: readonly unknown[]) => transaction.unsafe<T>(statement, parameters);
+type InvitationIssue = { id: string; proofDigest: string; contactId: string; scope: string; inviterAccountId: string; expectedProviderSubject: string; expiresAt: Date; now: Date };
+type InvitationConsume = { id: string; proofDigest: string; sessionHandleDigest: string; now: Date };
+
 export class PostgresAuthSessionInvitationRepository {
   constructor(private readonly sql: AuthSql) {}
-  async revokeCurrent(handleDigest: string, now: Date) { const rows = await this.sql.begin((tx) => q<readonly { id: string }[]>(tx, `update auth_sessions set state='revoked', revoked_at=$2, updated_at=$2 where handle_digest=$1 and state='active' returning id`, [handleDigest, now])); return Boolean(rows[0]); }
-  async revokeOthers(handleDigest: string, now: Date) { const rows = await this.sql.begin((tx) => q<readonly { id: string }[]>(tx, `with current_session as (select id, account_id from auth_sessions where handle_digest=$1 and state='active' for update) update auth_sessions set state='revoked', revoked_at=$2, updated_at=$2 where account_id=(select account_id from current_session) and id<>(select id from current_session) and state='active' returning id`, [handleDigest, now])); return rows.length >= 0; }
-  async consumeInvitation(input: { id: string; proofDigest: string; identityEvidenceId: string; contactId: string; scope: string; now: Date }) { const rows = await this.sql.begin((tx) => q<readonly { id: string }[]>(tx, `update auth_invitations set state='accepted', accepted_at=$6, updated_at=$6 where id=$1 and proof_digest=$2 and contact_id=$3 and scope=$4 and identity_evidence_id=$5 and state='issued' and expires_at>$6 returning id`, [input.id,input.proofDigest,input.contactId,input.scope,input.identityEvidenceId,input.now])); return rows[0] ? { kind: "consumed" as const } : { kind: "manual_review" as const }; }
-  async issueInvitation(input: { id: string; proofDigest: string; contactId: string; scope: string; inviterAccountId: string; expiresAt: Date; now: Date }) { await this.sql.begin((tx) => q(tx, `insert into auth_durable_invitations (id, proof_digest, contact_id, scope, inviter_account_id, state, expires_at, created_at, updated_at) values ($1,$2,$3,$4,$5,'issued',$6,$7,$7)`, [input.id,input.proofDigest,input.contactId,input.scope,input.inviterAccountId,input.expiresAt,input.now])); }
-  async acceptDurableInvitation(input: { id: string; proofDigest: string; identityEvidenceId: string; contactId: string; scope: string; now: Date }) { const rows = await this.sql.begin((tx) => q<readonly { id: string }[]>(tx, `update auth_durable_invitations invitation set state='accepted', identity_evidence_id=evidence.id, accepted_at=$6, updated_at=$6 from auth_supabase_identity_evidence evidence where invitation.id=$1 and invitation.proof_digest=$2 and evidence.id=$3 and evidence.email_verified=true and evidence.verified_at<=$6 and evidence.expires_at>$6 and invitation.contact_id=$4 and invitation.scope=$5 and invitation.state='issued' and invitation.expires_at>$6 returning invitation.id`, [input.id,input.proofDigest,input.identityEvidenceId,input.contactId,input.scope,input.now])); return rows[0] ? { kind: "consumed" as const } : { kind: "manual_review" as const }; }
-  async listAndTouchSessions(handleDigest: string, now: Date) { return this.sql.begin(async (tx) => { const current = await q<readonly { account_id: string }[]>(tx, `update auth_sessions set idle_expires_at = least(absolute_expires_at, $2 + interval '30 minutes'), updated_at=$2 where handle_digest=$1 and state='active' and idle_expires_at>$2 and absolute_expires_at>$2 returning account_id`, [handleDigest, now]); if (!current[0]) return []; return q<readonly { id: string; created_at: Date; idle_expires_at: Date; assurance: "aal1" | "aal2"; is_current: boolean }[]>(tx, `select id, created_at, idle_expires_at, assurance, handle_digest=$3 as is_current from auth_sessions where account_id=$1 and state='active' and idle_expires_at>$2 and absolute_expires_at>$2 order by updated_at desc`, [current[0].account_id, now, handleDigest]); }); }
+  async issue(input: InvitationIssue): Promise<void> {
+    await this.sql.begin((transaction) => query(transaction, "select atlas_auth_issue_invitation($1,$2,$3,$4,$5,$6,$7,$8)", [input.id, input.proofDigest, input.contactId, input.scope, input.inviterAccountId, input.expectedProviderSubject, input.expiresAt, input.now]));
+  }
+  async createInvitation(input: InvitationIssue): Promise<void> { return this.issue(input); }
+  async consume(input: InvitationConsume): Promise<{ kind: "consumed" | "manual_review" }> {
+    const rows = await this.sql.begin((transaction) => query<readonly { outcome: "consumed" | "manual_review" }[]>(transaction, "select atlas_auth_consume_invitation($1,$2,$3,$4) as outcome", [input.id, input.proofDigest, input.sessionHandleDigest, input.now]));
+    return { kind: rows[0]?.outcome === "consumed" ? "consumed" : "manual_review" };
+  }
+  async acceptInvitation(input: InvitationConsume): Promise<{ kind: "consumed" | "manual_review" }> { return this.consume(input); }
+  async createSession(input: { id: string; accountId: string; handleDigest: string; familyId: string; assurance: "aal1" | "aal2"; idleExpiresAt: Date; absoluteExpiresAt: Date; now: Date }): Promise<void> {
+    await this.sql.begin((transaction) => query(transaction, "select atlas_auth_create_session($1,$2,$3,$4,$5,$6,$7,$8)", [input.id, input.accountId, input.handleDigest, input.familyId, input.assurance, input.idleExpiresAt, input.absoluteExpiresAt, input.now]));
+  }
+  async listAndTouchSessions(handleDigest: string, now: Date): Promise<readonly { id: string; created_at: Date; is_current: boolean }[]> {
+    return this.sql.begin((transaction) => query(transaction, "select * from atlas_auth_list_sessions($1,$2)", [handleDigest, now]));
+  }
 }
