@@ -1,3 +1,5 @@
+import { createCipheriv, createHash, randomBytes } from "node:crypto";
+
 export const M007_MIGRATION_FILES = [
   "0023_m007_auth_account.sql",
   "0024_m007_auth_rls_hardening.sql",
@@ -11,6 +13,14 @@ export const M007_MIGRATION_FILES = [
   "0032_m007_final_auth_trust_boundaries.sql",
   "0033_m007_auth_provider_protocols.sql",
 ];
+
+const sealHarnessOAuthSecret = (value) => {
+  const key = createHash("sha256").update("m007-rls-harness-oauth-secret", "utf8").digest();
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const ciphertext = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]);
+  return `v1.${iv.toString("base64url")}.${cipher.getAuthTag().toString("base64url")}.${ciphertext.toString("base64url")}`;
+};
 
 export const isM007HarnessAuthorized = (env) => Boolean(env.DATABASE_URL && env.M007_RLS_HARNESS === "authorized");
 
@@ -66,7 +76,12 @@ export function createPostgresM007Executor(sql) {
       if (operation === "audit_policy") { const rows = await sql.unsafe("select has_function_privilege('atlas_auth_preauth','atlas_auth_append_audit(text,text,text,text,text,jsonb,timestamptz)','EXECUTE') and not has_table_privilege('atlas_auth_preauth','auth_security_events','INSERT') allowed"); return rows[0]?.allowed === true; }
       if (operation === "outbox_policy") { const rows = await sql.unsafe("select has_function_privilege('atlas_auth_worker','atlas_auth_lease_outbox(text,text,integer,timestamptz,timestamptz)','EXECUTE') and not has_table_privilege('atlas_auth_worker','auth_outbox','UPDATE') allowed"); return rows[0]?.allowed === true; }
       if (operation === "legacy_oauth_function_denied") { const rows = await sql.unsafe("select to_regprocedure('atlas_auth_issue_oauth_transaction(text,text,text,text,text,text,text,text,text,text,timestamptz,timestamptz)') is null denied"); return rows[0]?.denied === true; }
-      if (operation === "repository_oauth_as_preauth") return asRole("atlas_auth_preauth", async (tx) => { await call(tx, "select atlas_auth_issue_oauth_transaction($1,'sign_in','google',repeat('s',32),repeat('n',32),repeat('p',32),repeat('b',32),repeat('r',32),'/client','https://app.example/api/auth/oauth/google/callback',$2,$3)", ["oauth-transaction-0001", new Date(now.getTime()+60000), now]); return true; });
+        if (operation === "repository_oauth_as_preauth") return asRole("atlas_auth_preauth", async (tx) => {
+          const nonceCiphertext = sealHarnessOAuthSecret("m007-harness-oauth-nonce");
+          const pkceCiphertext = sealHarnessOAuthSecret("m007-harness-oauth-pkce-verifier");
+          await call(tx, "select atlas_auth_issue_oauth_transaction($1,'sign_in','google',repeat('s',32),repeat('n',32),repeat('p',32),repeat('b',32),repeat('r',32),$2,$3,'/client','https://app.example/api/auth/oauth/google/callback',$4,$5)", ["oauth-transaction-0001", nonceCiphertext, pkceCiphertext, new Date(now.getTime()+60000), now]);
+          return true;
+        });
       if (operation === "repository_identity_as_preauth") return asRole("atlas_auth_preauth", async (tx) => { await call(tx, "select atlas_auth_store_supabase_evidence($1,'google','subject-repository','https://issuer.example','atlas',true,$2,$3,$4)", ["evidence-repository-01","provider-transaction-01",now,new Date(now.getTime()+60000)]); await call(tx, "select atlas_auth_store_crm_evidence($1,$2,'party-1','linked',$3,$4,$5)", ["crm-repository-00001","evidence-repository-01","relationship-receipt-01",now,new Date(now.getTime()+60000)]); return true; });
       if (operation === "repository_invitation_as_gateway") return asRole("atlas_auth_gateway", async (tx) => { await call(tx, "select atlas_auth_issue_invitation($1,repeat('i',32),'contact-a','client','account-a','subject-a',$2,$3)", ["invitation-repository-1",new Date(now.getTime()+60000),now]); return true; });
       if (operation === "repository_controls_as_preauth") return asRole("atlas_auth_preauth", async (tx) => { const rows = await call(tx, "select atlas_auth_admit_and_enqueue('recovery',array[repeat('r',32)],5,60,'event-repository-0001','correlation-repository',null,'{}'::jsonb,'command-repository-01','recovery_email','email','idempotency-repository','{}'::jsonb,$1) allowed", [now]); return rows[0].allowed; });
