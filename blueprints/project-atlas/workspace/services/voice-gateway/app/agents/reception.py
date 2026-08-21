@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Literal
 
 from app.policies.reception_policy import ReceptionPolicy, VoiceLocale
+from app.policies.sensitive_input import SensitiveInputGuard
 from app.tools.facade_client import (
     FacadeClient,
     FacadeCommand,
@@ -45,6 +46,7 @@ class ReceptionSession:
         ticket_for: Callable[[FacadeCommand], str],
         clock: Callable[[], datetime],
         policy: ReceptionPolicy | None = None,
+        sensitive_input: SensitiveInputGuard | None = None,
     ) -> None:
         self._call_id = call_id
         self._correlation_id = correlation_id
@@ -52,6 +54,7 @@ class ReceptionSession:
         self._ticket_for = ticket_for
         self._clock = clock
         self._policy = policy or ReceptionPolicy()
+        self._sensitive_input = sensitive_input or SensitiveInputGuard()
         self._locale: VoiceLocale | None = None
         self._pending_operation: FacadeOperation | None = None
         self._command_sequence = 0
@@ -70,6 +73,16 @@ class ReceptionSession:
         )
 
     def handle(self, turn: str) -> ReceptionResponse:
+        inspected = self._sensitive_input.inspect(turn)
+        if not inspected.allowed or inspected.text is None:
+            self._pending_operation = None
+            self._unrecognized_turns = 0
+            return self._response(
+                "portal_or_handoff",
+                "sensitive_input_blocked",
+                question=True,
+            )
+        turn = inspected.text
         if self._locale is None:
             selected = self._policy.select_language(turn)
             if selected is None:
