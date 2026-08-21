@@ -3,7 +3,7 @@
 - Owner: Product Owner
 - Architect: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Approved for isolated provider-disabled Build under Decision 036
+- Status: Provider-disabled implementation complete; ready for Product Owner acceptance
 - Base: accepted M006 commit `3bbf8ef`
 - Branch: `codex/m007-auth-account-rebuild`
 - Surface: Next.js authenticated application at `/client` and `/admin`
@@ -343,3 +343,34 @@ The following are activation blockers, not architecture gaps:
 - staging/production deployment, runbooks, independent runtime review and release approval.
 
 No unresolved item is assigned a permissive default. Affected behavior remains disabled or denied.
+
+## 22. Provider-disabled implementation closure
+
+Tasks T1-T9 of the authorized implementation plan are complete in the isolated
+`codex/m007-auth-account-rebuild` worktree. The resulting provider-disabled scope includes the
+application IAM model, PostgreSQL repositories and forward migrations `0023`-`0035`; external
+identity and CRM evidence; account, invitation and session lifecycles; OAuth and email-auth server
+protocols; durable rate, audit and outbox controls; authorization, MFA and service-identity
+boundaries; real Next.js route wiring; and accessible Spanish/English auth and account-security UI.
+
+Provider-disabled means that missing database, KMS, provider, credential or activation
+configuration remains unavailable or fails closed. It does not mean that Supabase, Google OAuth,
+JWKS, email, OTP, CRM, KMS or any notification provider was contacted or validated.
+
+Final independent review state for the prepared provider-disabled code scope:
+
+- architecture review: `APPROVED`, AR-001 through AR-009 closed (`9/9`), with `0` open Critical and
+  `0` open Important findings;
+- Cyber Neo final re-audit through `f8a4806`: `APPROVED`, with `0` open Critical, `0` open High and
+  `0` open Medium findings; and
+- latest focused regression: `16/16` passed, with affected `@atlas/auth`, `@atlas/database`,
+  `@atlas/app` and `@atlas/observability` typechecks passed.
+
+Evidence remains checkpoint-scoped and is not added into a duplicate aggregate. Earlier pertinent
+checkpoints include the AR-009 harness regression (`3/3`) and the five-file Cyber remediation
+checkpoint (`26/26`), plus the focused account, session, invitation, OAuth, outbox, authorization,
+RLS-contract and bilingual UI suites retained in implementation history. No full repository suite,
+full build, live PostgreSQL/RLS run, live provider call, deployment or release result is claimed.
+
+M007 is ready for Product Owner acceptance of the provider-disabled scope. Acceptance, merge,
+deployment, external activation and production release have not occurred.

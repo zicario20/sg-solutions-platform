@@ -52,12 +52,14 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   claimed. PostgreSQL migrations/RLS/grants/roles, pinned Node/WAC-esbuild validation, distributed
   rate/network identity, KMS rotation, providers/legal/retention, deployment and sensitive-upload
   gates remain blocked.
-- **M007 Client Authentication and Account:** Decision 036 approves architecture and an isolated
-  provider-disabled Build from `3bbf8ef`. M007 expands `@atlas/auth` as the sole IAM boundary and
-  covers email/password, Google OAuth, verification/recovery, opaque sessions/cookies/CSRF, CRM
-  linking conflicts, RBAC/resource/organization checks, service identities, internal MFA policy,
-  audit/RLS and accessible ES/EN UI. Implementation has not started. Providers, credentials,
-  external traffic, KMS, production configuration, merge, deployment and release remain blocked.
+- **M007 Client Authentication and Account:** provider-disabled implementation T1-T9 is complete in
+  the isolated Decision 036 worktree through `f8a4806`. Final architecture review is `APPROVED`
+  with AR-001-AR-009 closed (`9/9`) and no Critical/Important findings; Cyber Neo is `APPROVED` with
+  `0/0/0` Critical/High/Medium. Latest focused regression is `16/16`, with passing
+  auth/database/app/observability typechecks; no full suite/build/live DB/provider result is claimed.
+  Migrations `0023`-`0035`, disposable-PostgreSQL RLS proof, providers/credentials/KMS/config,
+  legal/retention policy, pinned Node, merge/deploy/release and Product Owner acceptance remain
+  pending. The module is ready for provider-disabled Product Owner acceptance, not Operational.
 - **M008 Client Dashboard:** Product/Architecture documentation is active under Decision 021. The
   candidate defines `/client` Home as one request-scoped, client-safe read model over typed owning-
   domain projections. One complete M007 authorization snapshot and a consistent read cut govern the

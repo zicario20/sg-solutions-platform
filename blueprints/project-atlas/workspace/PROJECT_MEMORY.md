@@ -704,3 +704,27 @@ before implementation.
 - No application code, test, migration, provider configuration, network traffic, merge, deployment
   or release was produced by this architecture commit. Provider, legal, retention, risk, recovery,
   infrastructure and production decisions remain blocked.
+
+## 2026-08-21 - M007 provider-disabled implementation closure candidate
+
+- Tasks T1-T9 are complete in `codex/m007-auth-account-rebuild` through implementation head
+  `f8a4806`. The provider-disabled slice implements the application IAM/account boundary, durable
+  PostgreSQL repositories and migrations `0023`-`0035`, identity and CRM evidence, invitation and
+  session lifecycles, server-side email/OAuth protocols, durable rate/audit/outbox controls,
+  authorization/MFA/service boundaries, real route wiring and accessible ES/EN auth/security UI.
+- The final independent architecture review is `APPROVED`: AR-001 through AR-009 are closed (`9/9`)
+  with `0` open Critical and `0` open Important findings. Cyber Neo's final exact re-audit through
+  `f8a4806` is `APPROVED` with `0` Critical, `0` High and `0` Medium findings. These are static,
+  provider-disabled review verdicts, not live-environment or release approval.
+- Executed evidence remains checkpoint-scoped and is not summed across overlapping suites. The
+  AR-009 harness checkpoint passed `3/3` plus database typecheck; the five-file Cyber remediation
+  checkpoint passed `26/26` plus auth/database/app/observability typechecks; the final CN-003/CN-007
+  checkpoint passed `16/16` plus the same four typechecks. Earlier focused account, session,
+  invitation, OAuth, outbox, authorization, RLS-contract and bilingual UI suites remain recorded in
+  implementation history. No full suite, full build, live DB, provider or network result is claimed.
+- External blockers are authorized disposable-PostgreSQL application/verification of migrations
+  `0023`-`0035` and the final restricted-role RLS harness; Supabase/Google OAuth/JWKS/email/OTP/CRM,
+  credentials, KMS and production configuration; legal text and retention policy; pinned Node
+  `24.18.1` revalidation versus local `24.19.0`; and merge, deploy and release gates.
+- M007 is ready for Product Owner acceptance in provider-disabled scope. No Product Owner
+  acceptance, merge, deployment, activation, release or `Operational` status is recorded.
