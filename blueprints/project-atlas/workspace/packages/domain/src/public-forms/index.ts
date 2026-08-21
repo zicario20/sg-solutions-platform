@@ -1,2 +1,5 @@
 export * from "./contracts.ts";
 export * from "./definition.ts";
+export * from "./ports.ts";
+export * from "./repository.ts";
+export * from "./service.ts";

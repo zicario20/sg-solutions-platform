@@ -48,6 +48,13 @@ export type FormFieldDefinition = Readonly<{
   visibleWhen?: ConditionNode;
 }>;
 
+export type FormConsentRequirement = Readonly<{
+  consentType: string;
+  version: string;
+  disclosureReference: string;
+  required: boolean;
+}>;
+
 export type FormDefinitionVersion = Readonly<{
   formCode: string;
   version: string;
@@ -60,6 +67,7 @@ export type FormDefinitionVersion = Readonly<{
   schemaHash: string;
   uiHash: string;
   disclosureReferences: readonly string[];
+  consentRequirements: readonly FormConsentRequirement[];
   approvedActions: readonly (
     | "lead_candidate"
     | "appointment_intent"

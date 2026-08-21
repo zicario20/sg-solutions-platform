@@ -47,6 +47,7 @@ function version(locale: "es" | "en", overrides: Partial<FormDefinitionVersion> 
     schemaHash: "a".repeat(64),
     uiHash: "b".repeat(64),
     disclosureReferences: ["privacy_policy_v1"],
+    consentRequirements: [],
     approvedActions: ["lead_candidate"],
     fields,
     ...overrides,

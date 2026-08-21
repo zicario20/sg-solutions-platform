@@ -105,10 +105,27 @@ function validateVersion(definition: FormDefinitionVersion, expectedLocale: "es"
     !Array.isArray(definition.disclosureReferences) ||
     definition.disclosureReferences.length < 1 ||
     definition.disclosureReferences.some((reference) => !CONTENT_ID.test(reference)) ||
+    !Array.isArray(definition.consentRequirements) ||
+    definition.consentRequirements.length > 16 ||
     !Array.isArray(definition.approvedActions) ||
     definition.approvedActions.some((action) => !ACTIONS.has(action))
   ) {
     fail("PUBLIC_FORM_DEFINITION_INVALID");
+  }
+
+  const consentTypes = new Set<string>();
+  for (const consent of definition.consentRequirements) {
+    if (
+      !isPlainRecord(consent as unknown) ||
+      !IDENTIFIER.test(consent.consentType) ||
+      consentTypes.has(consent.consentType) ||
+      !SEMVER.test(consent.version) ||
+      !CONTENT_ID.test(consent.disclosureReference) ||
+      typeof consent.required !== "boolean"
+    ) {
+      fail("PUBLIC_FORM_CONSENT_INVALID");
+    }
+    consentTypes.add(consent.consentType);
   }
 
   const fieldCodes = new Set<string>();
@@ -176,6 +193,12 @@ function paritySignature(definition: FormDefinitionVersion): string {
     serviceCode: definition.serviceCode ?? null,
     retentionClass: definition.retentionClass,
     disclosureReferences: definition.disclosureReferences,
+    consentRequirements: definition.consentRequirements.map((consent) => ({
+      consentType: consent.consentType,
+      version: consent.version,
+      disclosureReference: consent.disclosureReference,
+      required: consent.required,
+    })),
     approvedActions: definition.approvedActions,
     fields: definition.fields.map((field) => ({
       fieldCode: field.fieldCode,
