@@ -1,9 +1,14 @@
-from fastapi import FastAPI
+from collections.abc import Sequence
+
+from fastapi import APIRouter, FastAPI
 
 from app.config import VoiceGatewaySettings
 
 
-def create_app(settings: VoiceGatewaySettings | None = None) -> FastAPI:
+def create_app(
+    settings: VoiceGatewaySettings | None = None,
+    routers: Sequence[APIRouter] = (),
+) -> FastAPI:
     active_settings = settings or VoiceGatewaySettings()
     app = FastAPI(
         title="Atlas Voice Gateway",
@@ -13,6 +18,8 @@ def create_app(settings: VoiceGatewaySettings | None = None) -> FastAPI:
         openapi_url=None,
     )
     app.state.settings = active_settings
+    for router in routers:
+        app.include_router(router)
 
     @app.get("/health")
     async def health() -> dict[str, str]:
