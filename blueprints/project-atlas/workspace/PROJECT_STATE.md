@@ -5,15 +5,15 @@
 - Status: Current state only
 - Last updated: 2026-08-20
 
-Version: `0.1.0-alpha.24`
+Version: `0.1.0-alpha.25`
 
-Current phase: **M006 Public Forms provider-disabled Build design approved in its isolated branch;
-implementation has not started**
+Current phase: **M006 Public Forms provider-disabled implementation complete; ready for Product
+Owner acceptance in its isolated branch**
 
-Module status: **M005 remains formally accepted provider-disabled at `b8db282`; M006 is authorized
-under Decision 034 only for a real but provider-disabled public-form engine in
-`codex/m006-public-forms-rebuild`.** M006 code, tests, external activation, merge and release have
-not started. The Decision 032 prohibition on module 39 remains in force.
+Module status: **M005 remains formally accepted provider-disabled at `b8db282`; M006 Tasks 1-7 are
+complete at `b6c7e6f` in `codex/m006-public-forms-rebuild` under Decision 034.** M006 is ready for
+Product Owner acceptance only; external activation, merge, deployment and release remain pending.
+The Decision 032 prohibition on module 39 remains in force.
 
 Implemented boundary: authoritative TypeScript voice domain/persistence and scoped facade;
 Python/FastAPI gateway scaffold behind platform ports; provider-disabled mocks and authenticated
@@ -21,6 +21,14 @@ synthetic composition; bilingual reception, verification gates and safe transfer
 fallbacks; leased command reconciliation; metadata-only observability; and Drizzle migrations
 `0016`–`0018` with static forced-RLS contracts. The gateway has no direct database access and no
 professional, payment-mutation, alternate-CRM or arbitrary-tool capability.
+
+M006 implemented boundary: reusable ES/EN public definitions and server-authoritative validation;
+same-origin guarded admission and accessible rendering; durable submission, consent, receipt and
+outbox records; encrypted ephemeral drafts and consent revocation; minimized attribution and
+purpose-scoped matching; PostgreSQL/Drizzle schema/RLS contracts through migration `0022`; bounded
+provider-disabled synthetic owner ports, query-only unknown reconciliation and metadata-only
+observability. The boundary creates no live CRM, calendar, Stripe, channel, upload, analytics or
+provider effect and does not start a service.
 
 Review and focused evidence: the external architecture re-review is `APPROVED` for its
 provider-disabled scope. Cyber Neo's re-audit at implementation baseline `a2c1dee` is `APPROVED` with
@@ -30,6 +38,13 @@ gateway, receptionist/fallback, observability and synthetic checks passed. The s
 passed `4/4` and database package typecheck passed. No clean full suite, full build, live PostgreSQL,
 provider, SCA, deployment or Operational result is claimed.
 
+M006 review and focused evidence: architecture re-review is `APPROVED` for its reviewed
+provider-disabled scope. Cyber Neo's final focused re-audit at `b6c7e6f` is `APPROVED` with `0`
+Critical, `0` High and `0` Medium findings. Accumulated task-focused evidence is recorded in the
+M006 PCR; its latest outbox durable regression passed `4/4`, and `@atlas/domain` plus
+`@atlas/database` typechecks passed. No full suite, full build, live PostgreSQL, live provider,
+deployment or Operational result is claimed.
+
 Activation blockers: a shared durable TTL/capacity nonce and credential backend; disposable
 PostgreSQL fresh/upgrade/RLS and migration-ledger proof for `0016`–`0018`; a complete
 FastAPI/pytest/mypy environment; validation under pinned Node `24.18.1` instead of observed
@@ -37,6 +52,13 @@ FastAPI/pytest/mypy environment; validation under pinned Node `24.18.1` instead 
 recording, retention and bilingual consent policy; business/contracts/LLC readiness; runbooks,
 deployment and explicit Product Owner activation approval. External composition fails closed while
 the durable backend is absent.
+
+M006 activation blockers: apply and verify migrations `0019`-`0022` plus RLS, grants, roles and
+concurrency behavior in real PostgreSQL; validate with pinned Node `24.18.1` rather than local
+`24.19.0`, with the Windows Application Control/esbuild limitation resolved or reverified; provide
+the trusted distributed rate store and trusted network-identity topology; attest KMS/key custody and
+rotation; obtain provider APIs, contracts, legal disclosures, consent and retention decisions;
+complete deployment readiness; and keep sensitive uploads disabled pending their separate gate.
 
 Data and release posture: no real calls, media, audio, recordings, transcripts, voicemails, caller
 PII or provider traffic were used. Product Owner final acceptance, default-branch merge, deployment
@@ -48,12 +70,12 @@ consent, identity and audit ownership remain unchanged.
 Role model: Product Owner decides; Codex Architecture Agent architects; separately scoped Codex
 Implementation Agents implement approved work; ChatGPT/independent reviewers audit and do not
 architect or self-approve implementation.
-## Current gate — M006 Build authorized; activation remains blocked
+## Current gate — M006 ready for Product Owner acceptance; activation remains blocked
 
-M005 Voice Agent is formally accepted provider-disabled. Decision 034 authorizes M006 architecture
-and future isolated implementation only: immutable bilingual public definitions, same-origin
-admission, server-authoritative validation/persistence, consent/receipt/audit/outbox evidence,
+M005 Voice Agent is formally accepted provider-disabled. Decision 034 authorized the completed M006
+provider-disabled slice: immutable bilingual public definitions, same-origin admission,
+server-authoritative validation/persistence, consent/receipt/audit/outbox evidence,
 privacy-preserving anti-abuse, accessible rendering, encrypted ephemeral drafts and synthetic owner
-ports. Live Postgres evidence, CRM/M020, consent/M078, calendar/M013, Stripe/M042-M045,
-notifications/channels, uploads, retention policy, external providers, merge, deploy and release
-remain blocked or pending.
+ports. Product Owner acceptance is now pending. Live PostgreSQL evidence, CRM/M020, consent/M078,
+calendar/M013, Stripe/M042-M045, notifications/channels, uploads, retention policy, external
+providers, merge, deploy and release remain blocked or pending.

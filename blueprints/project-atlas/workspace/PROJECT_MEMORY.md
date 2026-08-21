@@ -657,3 +657,23 @@ facade, atomic submission/consent/idempotency/outbox persistence and mock owner 
 provider, Stripe/calendar/CRM/channel traffic, upload, sensitive intake, service start, merge,
 deployment or release was authorized. The M006 design and eight-task focused-TDD plan were added
 before implementation.
+
+## 2026-08-20 - M006 provider-disabled implementation closure candidate
+
+- Tasks 1-7 are complete in the isolated `codex/m006-public-forms-rebuild` worktree at `b6c7e6f`
+  under Decision 034. The implemented scope is provider-disabled: reusable bilingual public forms,
+  guarded admission, durable submission/consent/receipt/outbox state, ephemeral encrypted drafts,
+  minimized attribution, role-scoped persistence/RLS contracts, synthetic owners and query-only
+  reconciliation. No live provider, service start, sensitive upload, deployment or release exists.
+- The architecture re-review is `APPROVED` for the reviewed provider-disabled scope. Cyber Neo's
+  final focused re-audit at `b6c7e6f` closes the residual reconciliation finding and reports `0`
+  Critical, `0` High and `0` Medium findings; that approval is not provider activation or release
+  approval.
+- Accumulated evidence is task-focused. The final durable outbox regression passed `4/4`; the
+  affected `@atlas/domain` and `@atlas/database` typechecks passed. No full suite, full build, live
+  PostgreSQL, provider, deployment or Operational result is claimed.
+- Pending gates include real PostgreSQL migration `0019`-`0022` application and RLS/grant/role
+  evidence; pinned Node `24.18.1` and WAC/esbuild revalidation; trusted distributed rate storage and
+  network identity; KMS/key rotation; providers/APIs, contracts, legal consent/retention text;
+  deployment; and the separately gated sensitive-upload path. Product Owner acceptance, merge and
+  release remain pending.

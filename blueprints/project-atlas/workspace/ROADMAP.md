@@ -40,15 +40,18 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   PostgreSQL/RLS/ledger proof, complete Python tooling, pinned Node, Twilio/number/credentials,
   legal/business approvals and deployment remain external blockers; no real calls, audio,
   transcripts or PII exist and the entry point stays hidden.
-- **M006 Public Forms:** Product/Architecture documentation is active under Decision 019. The target
-  is a bilingual, versioned, accessible public capture capability using a narrow same-origin Astro
-  gateway and durable domain acceptance before generic success. It delegates leads/deduplication to
-  M020 and consent to M078, keeps detailed intake in the portal, and rejects public uploads/
-  persistent Confidential drafts in Release 1A. No Build, fields/copy approval, route, provider,
-  cookie, real submission or deployment is authorized. Independent architecture review closed with
-  zero open findings and Cyber Neo closed at documentary risk 0/100 after origin/proxy, parser,
-  prohibited-data, digest, nonce, risk-review and cross-channel authority remediation. The candidate
-  now awaits Product Owner approval or revision of the PRD/design and proposed ADR 010.
+- **M006 Public Forms:** provider-disabled implementation is complete in
+  `codex/m006-public-forms-rebuild` under Decision 034 and is ready for Product Owner acceptance.
+  Tasks 1-7 deliver the reusable bilingual public-form engine, guarded same-origin admission,
+  server-authoritative validation/persistence, consent/receipt/audit/outbox evidence, accessible
+  rendering, encrypted ephemeral drafts, minimized attribution, provider-disabled synthetic owners
+  and query-only unknown reconciliation. Architecture re-review is `APPROVED`; Cyber Neo's final
+  focused re-audit at `b6c7e6f` is `APPROVED` with `0/0/0` Critical/High/Medium findings. Latest
+  outbox durable evidence is `4/4`, with passing `@atlas/domain` and `@atlas/database` typechecks.
+  No full suite, full build, live PostgreSQL, provider, activation, merge, deployment or release is
+  claimed. PostgreSQL migrations/RLS/grants/roles, pinned Node/WAC-esbuild validation, distributed
+  rate/network identity, KMS rotation, providers/legal/retention, deployment and sensitive-upload
+  gates remain blocked.
 - **M007 Client Authentication and Account:** Product/Architecture documentation is active under
   Decision 020. The candidate is invitation-first and separates Supabase identity, SG Solutions
   account status, membership, role/permission, entitlement and case/resource grants. Email/password

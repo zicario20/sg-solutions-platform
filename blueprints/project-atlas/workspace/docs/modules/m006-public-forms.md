@@ -2,18 +2,33 @@
 
 - Owner: Product Owner
 - Architect: Codex Architecture Agent
-- Status: Draft for Product Owner review; `Registered`, not approved for Build
-- Date: 2026-08-09
+- Status: Provider-disabled implementation complete; Product Owner acceptance pending
+- Date: 2026-08-20
 - Catalog module: `M006`
 - Surface: Public Website with Backend/domain handoff
 - Release horizon: R1.2 Public Sales Engine; compatible Release 1A/1B slices
 - Risk: Moderate by catalog; Confidential-data and consent boundary
-- Gate: Product/Architecture documentation only under Decision 019
+- Gate: Decision 034 provider-disabled isolated Build; activation, merge, deployment and release remain blocked
 
 This PRD normalizes the complete Product Owner-supplied M006 source into Project Atlas. It replaces
 obsolete `.NET`/FluentValidation assumptions with the approved Astro, Next.js, TypeScript, Zod,
-Postgres and Drizzle architecture. No route, form, database table, provider, email, CRM behavior,
-cookie, tracking script, upload, live submission or external connection is authorized here.
+Postgres and Drizzle architecture. Decision 034 subsequently authorized and Tasks 1-7 completed a
+provider-disabled implementation in its isolated worktree. Earlier documentary-only wording in this
+PRD is superseded only to that limited implementation extent; no live provider, public activation,
+deployment, merge, release, upload, sensitive intake or external connection is authorized.
+
+## Provider-disabled implementation closure - 2026-08-20
+
+- Tasks 1-7 of the approved M006 implementation plan are complete: reusable definitions and
+  validation; durable submission, consent and receipt lifecycle; guarded public admission and
+  rendering; encrypted ephemeral drafts and revocation; PostgreSQL/Drizzle persistence with
+  role-scoped RLS; synthetic owner handoffs and observability; and durable outbox/recovery.
+- The external architecture re-review is `APPROVED` for its reviewed provider-disabled scope.
+- Cyber Neo's final focused re-audit at `b6c7e6f` reports `0` Critical, `0` High and `0` Medium
+  findings and approves only the provider-disabled security scope.
+- The authoritative closure record is
+  `docs/phases/M006-PHASE-COMPLETION-REPORT.md`. It records focused evidence and explicit limits;
+  it does not claim a full suite, full build, live PostgreSQL, live provider, deployment or release.
 
 ## 1. Purpose
 
