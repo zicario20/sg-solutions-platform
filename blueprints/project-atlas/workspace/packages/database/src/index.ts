@@ -8,6 +8,7 @@ export * from "./communications-repository.ts";
 export * from "./postgres-public-chat-store.ts";
 export * from "./postgres-auth-control-plane.ts";
 export * from "./postgres-auth-oauth-repository.ts";
+export * from "./postgres-auth-session-invitation-repository.ts";
 export * from "./public-forms-repository.ts";
 export * from "./public-forms-outbox-store.ts";
 export * from "./public-chat-repository.ts";

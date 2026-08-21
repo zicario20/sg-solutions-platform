@@ -1,0 +1,8 @@
+import type { AuthSql, AuthTransactionSql } from "./auth-repository.ts";
+const q = <T>(tx: AuthTransactionSql, sql: string, params: readonly unknown[] = []) => tx.unsafe<T>(sql, params);
+export class PostgresAuthSessionInvitationRepository {
+  constructor(private readonly sql: AuthSql) {}
+  async revokeCurrent(handleDigest: string, now: Date) { const rows = await this.sql.begin((tx) => q<readonly { id: string }[]>(tx, `update auth_sessions set state='revoked', revoked_at=$2, updated_at=$2 where handle_digest=$1 and state='active' returning id`, [handleDigest, now])); return Boolean(rows[0]); }
+  async revokeOthers(handleDigest: string, now: Date) { const rows = await this.sql.begin((tx) => q<readonly { id: string }[]>(tx, `with current_session as (select id, account_id from auth_sessions where handle_digest=$1 and state='active' for update) update auth_sessions set state='revoked', revoked_at=$2, updated_at=$2 where account_id=(select account_id from current_session) and id<>(select id from current_session) and state='active' returning id`, [handleDigest, now])); return rows.length >= 0; }
+  async consumeInvitation(input: { id: string; proofDigest: string; identityEvidenceId: string; contactId: string; scope: string; now: Date }) { const rows = await this.sql.begin((tx) => q<readonly { id: string }[]>(tx, `update auth_invitations set state='accepted', accepted_at=$6, updated_at=$6 where id=$1 and proof_digest=$2 and contact_id=$3 and scope=$4 and identity_evidence_id=$5 and state='issued' and expires_at>$6 returning id`, [input.id,input.proofDigest,input.contactId,input.scope,input.identityEvidenceId,input.now])); return rows[0] ? { kind: "consumed" as const } : { kind: "manual_review" as const }; }
+}

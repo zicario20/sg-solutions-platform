@@ -1,6 +1,11 @@
 import type { MemoryAuthAccountRepository } from "./memory-repository.ts";
 import { createOpaqueValue, digestOpaqueProof } from "./crypto.ts";
 
+export type DurableInvitationRepository = Readonly<{ issue(input: { id: string; proofDigest: string; contactId: string; scope: string; inviterAccountId: string; expiresAt: Date; now: Date }): Promise<void>; consume(input: { id: string; proofDigest: string; identityEvidenceId: string; contactId: string; scope: string; now: Date }): Promise<{ kind: "consumed" | "manual_review" }> }>;
+export function createDurableInvitationService(repository: DurableInvitationRepository, now = () => new Date()) {
+  return { async issue(input: { contactId: string; scope: string; inviterAccountId: string }) { const id = createOpaqueValue(); const proof = createOpaqueValue(); const issued = now(); await repository.issue({ id, proofDigest: digestOpaqueProof(proof), ...input, expiresAt: new Date(issued.getTime() + 15 * 60_000), now: issued }); return { id, proof }; }, async consume(input: { id: string; proof: string; identityEvidenceId: string; contactId: string; scope: string }) { return repository.consume({ ...input, proofDigest: digestOpaqueProof(input.proof), now: now() }); } };
+}
+
 export class InvitationService {
   private sequence = 0;
 
