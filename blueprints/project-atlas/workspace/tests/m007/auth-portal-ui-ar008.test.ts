@@ -33,9 +33,9 @@ describe("AR-008 bilingual auth portal UI", () => {
       [SignInView(props), "/api/auth/login", ["csrf", "email", "password"]],
       [RegisterView(props), "/api/auth/register", ["csrf", "email", "password", "password_confirmation"]],
       [RecoveryView(props), "/api/auth/recovery", ["csrf", "email"]],
-      [ResetPasswordView({ ...props, proof: "reset-proof" }), "/api/auth/reset", ["csrf", "proof", "new_password", "password_confirmation"]],
-      [VerifyEmailView({ ...props, proof: "verify-proof" }), "/api/auth/verify", ["csrf", "proof"]],
-      [InvitationAcceptView({ ...props, invitation: { id: "invite-1", proof: "invite-proof", contactId: "contact-1", scope: "org:read", identityEvidenceId: "evidence-1" } }), "/api/auth/invitations/accept", ["csrf", "id", "proof", "contact_id", "scope", "identity_evidence_id"]],
+      [ResetPasswordView(props), "/api/auth/reset", ["csrf", "code", "new_password", "password_confirmation"]],
+      [VerifyEmailView(props), "/api/auth/verify", ["csrf", "code"]],
+      [InvitationAcceptView(props), "/api/auth/invitations/accept", ["csrf", "id", "code"]],
     ] as const;
 
     for (const [view, action, expectedNames] of cases) {

@@ -11,7 +11,7 @@ describe("AR-001 route-specific Supabase email authority", () => {
     const established: string[] = [];
     const service = createServerEmailAuthService({
       provider: { signUp: async () => ({ kind: "denied" }), sendVerification: async () => ({ kind: "denied" }), requestRecovery: async () => ({ kind: "denied" }), signIn: async () => ({ kind: "denied" }), consumeVerification: async () => ({ kind: "denied" }), consumeRecovery: async () => ({ kind: "denied" }), updatePassword: async () => ({ kind: "denied" }), logout: async () => undefined },
-      repository: { consumeProviderToken: async () => false, establishSession: async (input) => { established.push(input.subject); return { accountId: "account-1" }; }, loadProviderToken: async () => undefined, clearProviderToken: async () => undefined },
+      repository: { consumeProviderToken: async () => false, establishSession: async (input) => { established.push(input.subject); return { kind: "established" as const, accountId: "account-1" }; }, loadProviderToken: async () => undefined, clearProviderToken: async () => undefined },
       sealProviderToken: (value) => `sealed:${value}`,
     }, () => now);
     await expect(service.signUp({ email: "unknown@example.com", password: "long-enough-password" })).resolves.toEqual({ kind: "accepted" });
@@ -24,7 +24,7 @@ describe("AR-001 route-specific Supabase email authority", () => {
     const authority = { kind: "verified" as const, subject: "subject-1", emailVerified: true as const, accessToken: "provider-access-token" };
     const service = createServerEmailAuthService({
       provider: { signUp: async () => ({ kind: "accepted" }), sendVerification: async () => ({ kind: "accepted" }), requestRecovery: async () => ({ kind: "accepted" }), signIn: async () => authority, consumeVerification: async () => authority, consumeRecovery: async () => authority, updatePassword: async () => ({ kind: "accepted" }), logout: async () => undefined },
-      repository: { consumeProviderToken: async (input) => { consumedDigest = input.tokenDigest; return true; }, establishSession: async (input) => { establishedSubject = input.subject; return { accountId: "account-1" }; }, loadProviderToken: async () => undefined, clearProviderToken: async () => undefined },
+      repository: { consumeProviderToken: async (input) => { consumedDigest = input.tokenDigest; return true; }, establishSession: async (input) => { establishedSubject = input.subject; return { kind: "established" as const, accountId: "account-1" }; }, loadProviderToken: async () => undefined, clearProviderToken: async () => undefined },
       sealProviderToken: (value) => `sealed:${value}`,
     }, () => now);
     const result = await service.consumeVerification({ token: "raw-verification-token" });
@@ -41,9 +41,9 @@ describe("AR-001 route-specific Supabase email authority", () => {
     const request = (path: string, body: string) => new Request(`https://portal.example/api/auth/${path}`, { method: "POST", headers: { origin: "https://portal.example", "content-type": "application/x-www-form-urlencoded" }, body });
     await runtime.handle("register", request("register", "email=a%40example.com&password=long-enough-password"));
     await runtime.handle("login", request("login", "email=a%40example.com&password=long-enough-password"));
-    await runtime.handle("verify", request("verify", "proof=verification-proof&email=a%40example.com"));
+    await runtime.handle("verify", request("verify", "code=verification-proof&email=a%40example.com"));
     await runtime.handle("recovery", request("recovery", "email=a%40example.com"));
-    await runtime.handle("reset", request("reset", "proof=recovery-proof&password=new-long-password"));
+    await runtime.handle("reset", request("reset", "code=recovery-proof&password=new-long-password"));
     expect(calls).toEqual(["admit:register", "signup", "admit:login", "signin", "admit:verify", "consume-verification:verification-proof", "admit:recovery", "recovery", "admit:reset", "reset:recovery-proof"]);
   });
 });

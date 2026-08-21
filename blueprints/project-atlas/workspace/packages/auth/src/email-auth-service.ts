@@ -14,7 +14,7 @@ export type ServerEmailAuthProvider = Readonly<{
 }>;
 export type EmailAuthRepository = Readonly<{
   consumeProviderToken(input: { tokenDigest: string; purpose: "verification" | "recovery"; now: Date }): Promise<boolean>;
-  establishSession(input: { accountId: string; externalIdentityId: string; sessionId: string; familyId: string; subject: string; handleDigest: string; providerTokenCiphertext: string; idleExpiresAt: Date; absoluteExpiresAt: Date; now: Date }): Promise<{ accountId: string }>;
+  establishSession(input: { accountId: string; externalIdentityId: string; sessionId: string; familyId: string; subject: string; handleDigest: string; providerTokenCiphertext: string; idleExpiresAt: Date; absoluteExpiresAt: Date; now: Date }): Promise<{ kind: "established"; accountId: string } | { kind: "denied" }>;
   loadProviderToken(input: { handleDigest: string; now: Date }): Promise<string | undefined>;
   clearProviderToken(input: { handleDigest: string; now: Date }): Promise<void>;
 }>;
@@ -25,7 +25,8 @@ const authority = (value: VerifiedEmailAuthority | NeutralProviderResult): value
 export function createServerEmailAuthService(options: { provider: ServerEmailAuthProvider; repository: EmailAuthRepository; sealProviderToken(value: string): string; openProviderToken?(value: string): string }, now = () => new Date()) {
   const establish = async (verified: VerifiedEmailAuthority) => {
     const issued = now(); const handle = createOpaqueValue();
-    await options.repository.establishSession({ accountId: createOpaqueValue(), externalIdentityId: createOpaqueValue(), sessionId: createOpaqueValue(), familyId: createOpaqueValue(), subject: verified.subject, handleDigest: digestOpaqueProof(handle), providerTokenCiphertext: options.sealProviderToken(verified.accessToken), idleExpiresAt: new Date(issued.getTime() + 30 * 60_000), absoluteExpiresAt: new Date(issued.getTime() + 8 * 60 * 60_000), now: issued });
+    const established = await options.repository.establishSession({ accountId: createOpaqueValue(), externalIdentityId: createOpaqueValue(), sessionId: createOpaqueValue(), familyId: createOpaqueValue(), subject: verified.subject, handleDigest: digestOpaqueProof(handle), providerTokenCiphertext: options.sealProviderToken(verified.accessToken), idleExpiresAt: new Date(issued.getTime() + 30 * 60_000), absoluteExpiresAt: new Date(issued.getTime() + 8 * 60 * 60_000), now: issued });
+    if (established.kind !== "established") return neutral;
     return { kind: "authenticated" as const, handle };
   };
   return {

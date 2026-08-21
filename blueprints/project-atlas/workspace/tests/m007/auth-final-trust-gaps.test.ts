@@ -189,7 +189,7 @@ describe("AR-006 invitation subject binding", () => {
 
 describe("AR-007 nonshared risk dimensions", () => {
   it("omits absent dimensions while preserving all present risk keys", () => {
-    const keys = buildAuthRiskKeyDigests("risk-secret-at-least-32-bytes-long", {
+    const keys = buildAuthRiskKeyDigests("risk-secret-at-least-32-bytes-long", "login", {
       ip: "203.0.113.10",
       account: undefined,
       email: "person@example.com",

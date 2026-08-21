@@ -155,7 +155,7 @@ export const authSessions = pgTable(
     index("auth_sessions_account_state_idx").on(table.accountId, table.state, table.updatedAt),
     check("auth_sessions_generation_positive", sql`${table.generation} > 0`),
     check("auth_sessions_assurance_valid", sql`${table.assurance} in ('aal1', 'aal2')`),
-    check("auth_sessions_state_valid", sql`${table.state} in ('active', 'rotating', 'revoked', 'expired', 'risk_blocked')`),
+    check("auth_sessions_state_valid", sql`${table.state} in ('active', 'rotating', 'rotated', 'revoked', 'expired', 'risk_blocked')`),
     check("auth_sessions_expiry_valid", sql`${table.absoluteExpiresAt} > ${table.idleExpiresAt}`),
     authGatewayOnly("auth_sessions"),
   ],
