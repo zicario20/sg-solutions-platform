@@ -6,3 +6,4 @@ export * from "./communications-repository.ts";
 export * from "./postgres-public-chat-store.ts";
 export * from "./public-chat-repository.ts";
 export * from "./schema.ts";
+export * from "./voice-command-repository.ts";
