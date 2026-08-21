@@ -1558,3 +1558,5 @@ export const communicationAuditEvents = pgTable(
 ).enableRLS();
 
 export const getPublicChatTableConfig = getTableConfig;
+
+export * from "./schema/index.ts";
