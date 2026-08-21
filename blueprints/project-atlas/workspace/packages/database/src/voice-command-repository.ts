@@ -6,8 +6,8 @@ import type {
 } from "@atlas/domain";
 import postgres from "postgres";
 
-type SqlValue = string | Date | null;
-type TransactionSql = postgres.TransactionSql<Record<string, never>>;
+type SqlValue = string | number | boolean | Date | null;
+export type VoiceTransactionSql = postgres.TransactionSql<Record<string, never>>;
 export type VoiceSql = postgres.Sql<Record<string, never>>;
 
 type VoiceReceiptRow = {
@@ -22,8 +22,14 @@ type VoiceReceiptRow = {
   result_code: string | null;
   owner_receipt_id: string | null;
   issued_at: Date;
+  lease_expires_at: Date;
+  reservation_version: number;
   completed_at: Date | null;
 };
+
+const DEFAULT_LEASE_MILLISECONDS = 30_000;
+const MAX_LEASE_MILLISECONDS = 5 * 60_000;
+const canonicalCallId = /^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$/u;
 
 const completionOutcomes = new Set([
   "language_selected",
@@ -88,6 +94,8 @@ function rowRecord(row: VoiceReceiptRow): StoredVoiceCommandReceipt {
     commandDigest: row.command_digest,
     operation: row.operation,
     state: row.state,
+    reservationVersion: row.reservation_version,
+    leaseExpiresAt: row.lease_expires_at,
     ...(result ? { result } : {}),
     issuedAt: row.issued_at,
     ...(row.completed_at ? { completedAt: row.completed_at } : {}),
@@ -99,10 +107,24 @@ export class MemoryVoiceCommandReceiptRepository
 {
   private readonly byKey = new Map<string, StoredVoiceCommandReceipt>();
   private readonly keyByReceiptId = new Map<string, string>();
+  private readonly leaseMilliseconds: number;
+
+  constructor(options: { leaseMilliseconds?: number } = {}) {
+    const leaseMilliseconds = options.leaseMilliseconds ?? DEFAULT_LEASE_MILLISECONDS;
+    if (
+      !Number.isSafeInteger(leaseMilliseconds) ||
+      leaseMilliseconds <= 0 ||
+      leaseMilliseconds > MAX_LEASE_MILLISECONDS
+    ) {
+      throw new Error("VOICE_RECEIPT_LEASE_INVALID");
+    }
+    this.leaseMilliseconds = leaseMilliseconds;
+  }
 
   async reserve(input: {
     receipt: Parameters<VoiceCommandReceiptRepository["reserve"]>[0]["receipt"];
     commandDigest: string;
+    now: Date;
   }): Promise<VoiceReceiptReservation> {
     const key = `${input.receipt.callId}\u0000${input.receipt.idempotencyKey}`;
     const existing = this.byKey.get(key);
@@ -114,8 +136,24 @@ export class MemoryVoiceCommandReceiptRepository
       ) {
         return { status: "conflict" };
       }
-      if (existing.state === "completed" && existing.result) {
+      if (
+        (existing.state === "completed" || existing.state === "failed") &&
+        existing.result
+      ) {
         return { status: "replay", receipt: existing, result: cloneResult(existing.result) };
+      }
+      if (existing.state === "reconciliation_required") {
+        return { status: "reconciliation_required", receipt: existing };
+      }
+      if (existing.leaseExpiresAt.getTime() <= input.now.getTime()) {
+        const reconciliation = Object.freeze({
+          ...existing,
+          state: "reconciliation_required" as const,
+          reservationVersion: existing.reservationVersion + 1,
+          leaseExpiresAt: new Date(input.now.getTime() + this.leaseMilliseconds),
+        });
+        this.byKey.set(key, reconciliation);
+        return { status: "reconciliation_required", receipt: reconciliation };
       }
       return { status: "in_progress", receipt: existing };
     }
@@ -125,6 +163,8 @@ export class MemoryVoiceCommandReceiptRepository
     const record: StoredVoiceCommandReceipt = Object.freeze({
       ...input.receipt,
       commandDigest: input.commandDigest,
+      reservationVersion: 1,
+      leaseExpiresAt: new Date(input.now.getTime() + this.leaseMilliseconds),
     });
     this.byKey.set(key, record);
     this.keyByReceiptId.set(record.receiptId, key);
@@ -132,13 +172,21 @@ export class MemoryVoiceCommandReceiptRepository
   }
 
   async complete(
+    callId: string,
     receiptId: string,
+    reservationVersion: number,
     result: VoiceOperationResult,
     completedAt: Date,
   ): Promise<StoredVoiceCommandReceipt> {
     const key = this.keyByReceiptId.get(receiptId);
     const current = key ? this.byKey.get(key) : undefined;
-    if (!key || !current || current.state !== "reserved") {
+    if (
+      !key ||
+      !current ||
+      current.callId !== callId ||
+      current.state !== "reserved" ||
+      current.reservationVersion !== reservationVersion
+    ) {
       throw new Error("VOICE_RECEIPT_NOT_RESERVED");
     }
     const completed: StoredVoiceCommandReceipt = Object.freeze({
@@ -146,6 +194,42 @@ export class MemoryVoiceCommandReceiptRepository
       state: "completed",
       result: cloneResult(result),
       completedAt: new Date(completedAt),
+    });
+    this.byKey.set(key, completed);
+    return completed;
+  }
+
+  async reconcile(
+    callId: string,
+    receiptId: string,
+    reservationVersion: number,
+    result: VoiceOperationResult,
+    reconciledAt: Date,
+  ): Promise<StoredVoiceCommandReceipt> {
+    const key = this.keyByReceiptId.get(receiptId);
+    const current = key ? this.byKey.get(key) : undefined;
+    if (
+      !key ||
+      !current ||
+      current.callId !== callId ||
+      current.reservationVersion !== reservationVersion
+    ) {
+      throw new Error("VOICE_RECEIPT_RECONCILIATION_CONFLICT");
+    }
+    if (current.state === "completed" && current.result) {
+      if (JSON.stringify(current.result) !== JSON.stringify(result)) {
+        throw new Error("VOICE_RECEIPT_RECONCILIATION_CONFLICT");
+      }
+      return current;
+    }
+    if (current.state !== "reconciliation_required") {
+      throw new Error("VOICE_RECEIPT_RECONCILIATION_CONFLICT");
+    }
+    const completed: StoredVoiceCommandReceipt = Object.freeze({
+      ...current,
+      state: "completed",
+      result: cloneResult(result),
+      completedAt: new Date(reconciledAt),
     });
     this.byKey.set(key, completed);
     return completed;
@@ -160,17 +244,21 @@ export class MemoryVoiceCommandReceiptRepository
 }
 
 async function query<Row>(
-  tx: TransactionSql,
+  tx: VoiceTransactionSql,
   statement: string,
   parameters: readonly SqlValue[] = [],
 ): Promise<Row[]> {
   return tx.unsafe<Row[]>(statement, [...parameters]);
 }
 
-async function withVoiceTransaction<T>(
+export async function withVoiceTransaction<T>(
   sql: VoiceSql,
-  work: (tx: TransactionSql) => Promise<T>,
+  callId: string,
+  work: (tx: VoiceTransactionSql) => Promise<T>,
 ): Promise<T> {
+  if (!canonicalCallId.test(callId)) {
+    throw new Error("VOICE_CALL_SCOPE_INVALID");
+  }
   return sql.begin(async (tx) => {
     const principal = (
       await query<{
@@ -195,6 +283,7 @@ async function withVoiceTransaction<T>(
       throw new Error("VOICE_DATABASE_PRINCIPAL_UNSAFE");
     }
     await query(tx, "set local role atlas_voice_operations");
+    await query(tx, "select set_config('atlas.voice_call_id', $1, true)", [callId]);
     return work(tx);
   }) as Promise<T>;
 }
@@ -211,20 +300,41 @@ export function createVoiceSql(databaseUrl: string): VoiceSql {
 export class PostgresVoiceCommandReceiptRepository
   implements VoiceCommandReceiptRepository
 {
-  constructor(private readonly sql: VoiceSql) {}
+  private readonly leaseMilliseconds: number;
+
+  constructor(
+    private readonly sql: VoiceSql,
+    options: { leaseMilliseconds?: number } = {},
+  ) {
+    const leaseMilliseconds = options.leaseMilliseconds ?? DEFAULT_LEASE_MILLISECONDS;
+    if (
+      !Number.isSafeInteger(leaseMilliseconds) ||
+      leaseMilliseconds <= 0 ||
+      leaseMilliseconds > MAX_LEASE_MILLISECONDS
+    ) {
+      throw new Error("VOICE_RECEIPT_LEASE_INVALID");
+    }
+    this.leaseMilliseconds = leaseMilliseconds;
+  }
 
   async reserve(input: {
     receipt: Parameters<VoiceCommandReceiptRepository["reserve"]>[0]["receipt"];
     commandDigest: string;
+    now: Date;
   }): Promise<VoiceReceiptReservation> {
-    return withVoiceTransaction(this.sql, async (tx) => {
+    return withVoiceTransaction(this.sql, input.receipt.callId, async (tx) => {
+      const leaseExpiresAt = new Date(
+        input.now.getTime() + this.leaseMilliseconds,
+      );
       const inserted = await query<{ receipt_id: string }>(
         tx,
         `insert into voice_command_receipts (
           receipt_id, call_id, command_id, idempotency_key, command_digest, operation,
-          state, result_kind, result_code, owner_receipt_id, issued_at, completed_at,
+          state, result_kind, result_code, owner_receipt_id, issued_at,
+          lease_expires_at, reservation_version, completed_at,
           created_at, updated_at
-        ) values ($1, $2, $3, $4, $5, $6, 'reserved', null, null, null, $7, null, $7, $7)
+        ) values ($1, $2, $3, $4, $5, $6, 'reserved', null, null, null,
+          $7, $8, 1, null, $9, $9)
         on conflict (call_id, idempotency_key) do nothing returning receipt_id`,
         [
           input.receipt.receiptId,
@@ -234,12 +344,19 @@ export class PostgresVoiceCommandReceiptRepository
           input.commandDigest,
           input.receipt.operation,
           input.receipt.issuedAt,
+          leaseExpiresAt,
+          input.now,
         ],
       );
       if (inserted[0]) {
         return {
           status: "reserved",
-          receipt: Object.freeze({ ...input.receipt, commandDigest: input.commandDigest }),
+          receipt: Object.freeze({
+            ...input.receipt,
+            commandDigest: input.commandDigest,
+            reservationVersion: 1,
+            leaseExpiresAt,
+          }),
         };
       }
       const row = (
@@ -259,30 +376,71 @@ export class PostgresVoiceCommandReceiptRepository
         return { status: "conflict" };
       }
       const receipt = rowRecord(row);
-      if (receipt.state === "completed" && receipt.result) {
+      if (
+        (receipt.state === "completed" || receipt.state === "failed") &&
+        receipt.result
+      ) {
         return { status: "replay", receipt, result: receipt.result };
+      }
+      if (receipt.state === "reconciliation_required") {
+        return { status: "reconciliation_required", receipt };
+      }
+      if (receipt.leaseExpiresAt.getTime() <= input.now.getTime()) {
+        const reconciledRow = (
+          await query<VoiceReceiptRow>(
+            tx,
+            `update voice_command_receipts
+             set state = 'reconciliation_required',
+               reservation_version = reservation_version + 1,
+               lease_expires_at = $3, updated_at = $4
+             where receipt_id = $1 and call_id = $2 and state = 'reserved'
+             returning *`,
+            [
+              receipt.receiptId,
+              input.receipt.callId,
+              leaseExpiresAt,
+              input.now,
+            ],
+          )
+        )[0];
+        if (!reconciledRow) return { status: "conflict" };
+        return {
+          status: "reconciliation_required",
+          receipt: rowRecord(reconciledRow),
+        };
       }
       return { status: "in_progress", receipt };
     });
   }
 
   async complete(
+    callId: string,
     receiptId: string,
+    reservationVersion: number,
     result: VoiceOperationResult,
     completedAt: Date,
   ): Promise<StoredVoiceCommandReceipt> {
-    return withVoiceTransaction(this.sql, async (tx) => {
+    return withVoiceTransaction(this.sql, callId, async (tx) => {
       const outcome = result.kind === "completed" ? result.outcome : null;
       const ownerReceiptId = result.kind === "completed" ? result.receiptId : null;
       const row = (
         await query<VoiceReceiptRow>(
           tx,
           `update voice_command_receipts
-           set state = 'completed', result_kind = $2, result_code = $3,
-             owner_receipt_id = $4, completed_at = $5, updated_at = $5
-           where receipt_id = $1 and state = 'reserved'
+           set state = 'completed', result_kind = $4, result_code = $5,
+             owner_receipt_id = $6, completed_at = $7, updated_at = $7
+           where receipt_id = $1 and call_id = $2 and state = 'reserved'
+             and reservation_version = $3
            returning *`,
-          [receiptId, result.kind, outcome, ownerReceiptId, completedAt],
+          [
+            receiptId,
+            callId,
+            reservationVersion,
+            result.kind,
+            outcome,
+            ownerReceiptId,
+            completedAt,
+          ],
         )
       )[0];
       if (!row) throw new Error("VOICE_RECEIPT_NOT_RESERVED");
@@ -290,11 +448,63 @@ export class PostgresVoiceCommandReceiptRepository
     });
   }
 
+  async reconcile(
+    callId: string,
+    receiptId: string,
+    reservationVersion: number,
+    result: VoiceOperationResult,
+    reconciledAt: Date,
+  ): Promise<StoredVoiceCommandReceipt> {
+    return withVoiceTransaction(this.sql, callId, async (tx) => {
+      const outcome = result.kind === "completed" ? result.outcome : null;
+      const ownerReceiptId = result.kind === "completed" ? result.receiptId : null;
+      const row = (
+        await query<VoiceReceiptRow>(
+          tx,
+          `update voice_command_receipts
+           set state = 'completed', result_kind = $4, result_code = $5,
+             owner_receipt_id = $6, completed_at = $7, updated_at = $7
+           where receipt_id = $1 and call_id = $2
+             and reservation_version = $3
+             and state = 'reconciliation_required'
+           returning *`,
+          [
+            receiptId,
+            callId,
+            reservationVersion,
+            result.kind,
+            outcome,
+            ownerReceiptId,
+            reconciledAt,
+          ],
+        )
+      )[0];
+      if (row) return rowRecord(row);
+      const current = (
+        await query<VoiceReceiptRow>(
+          tx,
+          `select * from voice_command_receipts
+           where receipt_id = $1 and call_id = $2 limit 1`,
+          [receiptId, callId],
+        )
+      )[0];
+      const stored = current ? rowRecord(current) : undefined;
+      if (
+        stored?.state === "completed" &&
+        stored.result &&
+        JSON.stringify(stored.result) === JSON.stringify(result)
+      ) {
+        return stored;
+      }
+      throw new Error("VOICE_RECEIPT_RECONCILIATION_CONFLICT");
+    });
+  }
+
   async find(
     callId: string,
     idempotencyKey: string,
   ): Promise<StoredVoiceCommandReceipt | undefined> {
-    return withVoiceTransaction(this.sql, async (tx) => {
+    return withVoiceTransaction(this.sql, callId, async (tx) => {
       const row = (
         await query<VoiceReceiptRow>(
           tx,

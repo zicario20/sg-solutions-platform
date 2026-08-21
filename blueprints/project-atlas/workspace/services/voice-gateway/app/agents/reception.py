@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
 
+from app.pipelines.fallback import FallbackPolicy
 from app.policies.reception_policy import ReceptionPolicy, VoiceLocale
 from app.policies.sensitive_input import SensitiveInputGuard
 from app.tools.facade_client import (
@@ -34,6 +35,7 @@ class ReceptionResponse:
     locale: VoiceLocale | None
     question_count: Literal[0, 1]
     outcome: FacadeOutcome | None = None
+    receipt_id: str | None = None
 
 
 class ReceptionSession:
@@ -46,6 +48,7 @@ class ReceptionSession:
         ticket_for: Callable[[FacadeCommand], str],
         clock: Callable[[], datetime],
         policy: ReceptionPolicy | None = None,
+        fallback: FallbackPolicy | None = None,
         sensitive_input: SensitiveInputGuard | None = None,
     ) -> None:
         self._call_id = call_id
@@ -54,6 +57,7 @@ class ReceptionSession:
         self._ticket_for = ticket_for
         self._clock = clock
         self._policy = policy or ReceptionPolicy()
+        self._fallback = fallback or FallbackPolicy()
         self._sensitive_input = sensitive_input or SensitiveInputGuard()
         self._locale: VoiceLocale | None = None
         self._pending_operation: FacadeOperation | None = None
@@ -133,7 +137,14 @@ class ReceptionSession:
             return self._execute("provide_public_information", confirmed=False)
 
         self._unrecognized_turns += 1
-        return self._response("misunderstood", "request_not_understood", question=True)
+        fallback = self._fallback.next(self._unrecognized_turns, failure=None)
+        if fallback.action == "transfer" and fallback.requires_facade_receipt:
+            return self._execute("request_transfer", confirmed=False)
+        return self._response(
+            "misunderstood",
+            fallback.prompt_key,
+            question=True,
+        )
 
     def _request_confirmation(self, operation: FacadeOperation) -> ReceptionResponse:
         self._pending_operation = operation
@@ -165,6 +176,7 @@ class ReceptionSession:
                 f"{result.outcome}_confirmed",
                 question=False,
                 outcome=result.outcome,
+                receipt_id=result.receipt_id,
             )
         if result.kind == "verification_required":
             return self._response(
@@ -197,6 +209,7 @@ class ReceptionSession:
         *,
         question: bool,
         outcome: FacadeOutcome | None = None,
+        receipt_id: str | None = None,
     ) -> ReceptionResponse:
         locale = self._locale
         prompt_key = f"{prompt}_{locale}" if locale is not None else prompt
@@ -206,4 +219,5 @@ class ReceptionSession:
             locale=locale,
             question_count=1 if question else 0,
             outcome=outcome,
+            receipt_id=receipt_id,
         )

@@ -36,13 +36,13 @@ describe("M005 metadata-only voice schema", () => {
     }
   });
 
-  it("generates the voice tables through the Drizzle journal", () => {
+  it("generates a forward lease and scoped forced-RLS migration through Drizzle", () => {
     const workspace = fileURLToPath(new URL("../../", import.meta.url));
     const journal = JSON.parse(
       readFileSync(`${workspace}drizzle/meta/_journal.json`, "utf8"),
     ) as { entries: Array<{ idx: number; tag: string }> };
     const latest = journal.entries.at(-1);
-    expect(latest?.idx).toBeGreaterThanOrEqual(16);
+    expect(latest?.idx).toBeGreaterThanOrEqual(18);
     const sql = readFileSync(`${workspace}drizzle/${latest?.tag}.sql`, "utf8");
     for (const table of [
       "voice_calls",
@@ -53,7 +53,22 @@ describe("M005 metadata-only voice schema", () => {
       "voice_artifacts",
       "voice_command_receipts",
     ]) {
-      expect(sql).toContain(`CREATE TABLE "${table}"`);
+      expect(sql).toContain(`ALTER TABLE "${table}" FORCE ROW LEVEL SECURITY`);
+      expect(sql).toContain(`ON "${table}"`);
     }
+    expect(sql).toContain('ADD COLUMN "lease_expires_at"');
+    expect(sql).toContain('ADD COLUMN "reservation_version"');
+    expect(sql).toContain("current_setting('atlas.voice_call_id', true)");
+    expect(sql).toContain("GRANT SELECT");
+    expect(sql).not.toMatch(/voice_[^;]+USING \(true\)/u);
+  });
+
+  it("models finite receipt leases and optimistic reconciliation metadata", () => {
+    const columns = tableConfig("voiceCommandReceipts").columns.map(
+      (column) => column.name,
+    );
+    expect(columns).toEqual(
+      expect.arrayContaining(["lease_expires_at", "reservation_version"]),
+    );
   });
 });

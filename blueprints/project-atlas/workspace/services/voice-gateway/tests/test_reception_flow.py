@@ -95,3 +95,21 @@ def test_mismatched_facade_outcome_fails_closed() -> None:
     active = make_session(ScenarioTransport(invalid_result=True))
     active.handle("English")
     assert active.handle("What services do you offer?").action == "unavailable"
+
+
+def test_third_unrecognized_turn_routes_once_through_scoped_transfer() -> None:
+    transport = ScenarioTransport()
+    active = make_session(transport)
+    active.handle("English")
+
+    first = active.handle("synthetic-unknown-one")
+    second = active.handle("synthetic-unknown-two")
+    third = active.handle("synthetic-unknown-three")
+
+    assert first.prompt_key == "repeat_one_short_question_en"
+    assert second.prompt_key == "constrained_transfer_message_callback_en"
+    assert third.action == "completed"
+    assert third.outcome == "transfer_requested"
+    assert [(command.operation, command.confirmed) for command in transport.commands] == [
+        ("request_transfer", False)
+    ]

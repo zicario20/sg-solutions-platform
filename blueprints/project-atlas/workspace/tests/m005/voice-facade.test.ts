@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { MemoryVoiceCommandReceiptRepository } from "../../packages/database/src/voice-command-repository.ts";
-import type { VoiceCommand } from "../../packages/domain/src/voice/index.ts";
+import type {
+  StoredVoiceCommandReceipt,
+  VoiceCommand,
+  VoiceOperationResult,
+} from "../../packages/domain/src/voice/index.ts";
 import {
   VoiceOperationsFacade,
   type VoiceServiceContext,
@@ -33,8 +37,16 @@ function command(overrides: Partial<VoiceCommand> = {}): VoiceCommand {
 }
 
 function contextFor(input: VoiceCommand, nonce: string): VoiceServiceContext {
+  return contextForAt(input, nonce, now);
+}
+
+function contextForAt(
+  input: VoiceCommand,
+  nonce: string,
+  activeNow: Date,
+): VoiceServiceContext {
   return {
-    now,
+    now: activeNow,
     credential: issueVoiceServiceCredential(
       {
         callId: input.callId,
@@ -42,12 +54,70 @@ function contextFor(input: VoiceCommand, nonce: string): VoiceServiceContext {
         idempotencyKey: input.idempotencyKey,
         operation: input.operation,
         nonce,
-        issuedAt: new Date(now.getTime() - 1_000),
-        expiresAt: new Date(now.getTime() + 60_000),
+        issuedAt: new Date(activeNow.getTime() - 1_000),
+        expiresAt: new Date(activeNow.getTime() + 60_000),
       },
       secret,
     ),
   };
+}
+
+class CrashBeforeReceiptCompletionRepository extends MemoryVoiceCommandReceiptRepository {
+  private shouldCrash = true;
+
+  override async complete(
+    callId: string,
+    receiptId: string,
+    reservationVersion: number,
+    result: VoiceOperationResult,
+    completedAt: Date,
+  ): Promise<StoredVoiceCommandReceipt> {
+    if (this.shouldCrash) {
+      this.shouldCrash = false;
+      throw new Error("SYNTHETIC_RECEIPT_COMPLETION_CRASH");
+    }
+    return super.complete(
+      callId,
+      receiptId,
+      reservationVersion,
+      result,
+      completedAt,
+    );
+  }
+}
+
+function setupCompletionCrash() {
+  let ownerCalls = 0;
+  let authoritativeReceipt:
+    | { receiptId: string; outcome: "appointment_requested" }
+    | undefined;
+  const receipts = new CrashBeforeReceiptCompletionRepository({
+    leaseMilliseconds: 30_000,
+  });
+  const owners = {
+    ...createFailClosedOwnerPorts(),
+    requestAppointment: async () => {
+      ownerCalls += 1;
+      authoritativeReceipt = {
+        receiptId: "appointment_receipt_reconciled_001",
+        outcome: "appointment_requested",
+      };
+      return authoritativeReceipt;
+    },
+    reconcileCommand: async () =>
+      authoritativeReceipt
+        ? { status: "completed" as const, receipt: authoritativeReceipt }
+        : { status: "unknown" as const },
+  };
+  const facade = new VoiceOperationsFacade({
+    authenticator: new VoiceServiceAuthenticator(
+      secret,
+      new MemoryVoiceServiceNonceStore(),
+    ),
+    receipts,
+    owners,
+  });
+  return { facade, receipts, ownerCalls: () => ownerCalls };
 }
 
 function setup(overrides: Partial<OwnerPorts> = {}) {
@@ -201,5 +271,65 @@ describe("M005 scoped voice operations facade", () => {
     await expect(
       facade.execute(input, contextFor(input, "nonce_portal_first_00000001")),
     ).resolves.toMatchObject({ kind: "completed", outcome: "portal_required" });
+  });
+
+  it("reconciles owner success after receipt completion crashes without repeating the owner", async () => {
+    const input = command();
+    const { facade, receipts, ownerCalls } = setupCompletionCrash();
+    await expect(
+      facade.execute(input, contextForAt(input, "nonce_completion_crash_000001", now)),
+    ).resolves.toEqual({ kind: "unavailable" });
+
+    const afterLease = new Date(now.getTime() + 30_001);
+    await expect(
+      facade.execute(
+        input,
+        contextForAt(input, "nonce_completion_reconcile_001", afterLease),
+      ),
+    ).resolves.toEqual({
+      kind: "completed",
+      outcome: "appointment_requested",
+      receiptId: "appointment_receipt_reconciled_001",
+    });
+    expect(ownerCalls()).toBe(1);
+    expect(await receipts.find(input.callId, input.idempotencyKey)).toMatchObject({
+      state: "completed",
+      reservationVersion: 2,
+      result: { receiptId: "appointment_receipt_reconciled_001" },
+    });
+  });
+
+  it("optimistically reconciles concurrent expired retries without repeating ambiguous work", async () => {
+    const input = command({ commandId: "voice_command_concurrent_001" });
+    const { facade, ownerCalls } = setupCompletionCrash();
+    await facade.execute(
+      input,
+      contextForAt(input, "nonce_concurrent_crash_000001", now),
+    );
+    const afterLease = new Date(now.getTime() + 30_001);
+    const results = await Promise.all([
+      facade.execute(
+        input,
+        contextForAt(input, "nonce_concurrent_retry_000001", afterLease),
+      ),
+      facade.execute(
+        input,
+        contextForAt(input, "nonce_concurrent_retry_000002", afterLease),
+      ),
+    ]);
+
+    expect(results).toEqual([
+      {
+        kind: "completed",
+        outcome: "appointment_requested",
+        receiptId: "appointment_receipt_reconciled_001",
+      },
+      {
+        kind: "completed",
+        outcome: "appointment_requested",
+        receiptId: "appointment_receipt_reconciled_001",
+      },
+    ]);
+    expect(ownerCalls()).toBe(1);
   });
 });

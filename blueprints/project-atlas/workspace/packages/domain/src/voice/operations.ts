@@ -36,7 +36,9 @@ export type StoredVoiceCommandReceipt = Readonly<{
   idempotencyKey: string;
   commandDigest: string;
   operation: VoiceCommand["operation"];
-  state: "reserved" | "completed" | "failed";
+  state: "reserved" | "reconciliation_required" | "completed" | "failed";
+  reservationVersion: number;
+  leaseExpiresAt: Date;
   result?: VoiceOperationResult;
   issuedAt: Date;
   completedAt?: Date;
@@ -46,17 +48,28 @@ export type VoiceReceiptReservation =
   | { status: "reserved"; receipt: StoredVoiceCommandReceipt }
   | { status: "replay"; receipt: StoredVoiceCommandReceipt; result: VoiceOperationResult }
   | { status: "in_progress"; receipt: StoredVoiceCommandReceipt }
+  | { status: "reconciliation_required"; receipt: StoredVoiceCommandReceipt }
   | { status: "conflict" };
 
 export interface VoiceCommandReceiptRepository {
   reserve(input: {
     receipt: VoiceCommandReceipt;
     commandDigest: string;
+    now: Date;
   }): Promise<VoiceReceiptReservation>;
   complete(
+    callId: string,
     receiptId: string,
+    reservationVersion: number,
     result: VoiceOperationResult,
     completedAt: Date,
+  ): Promise<StoredVoiceCommandReceipt>;
+  reconcile(
+    callId: string,
+    receiptId: string,
+    reservationVersion: number,
+    result: VoiceOperationResult,
+    reconciledAt: Date,
   ): Promise<StoredVoiceCommandReceipt>;
   find(callId: string, idempotencyKey: string): Promise<StoredVoiceCommandReceipt | undefined>;
 }

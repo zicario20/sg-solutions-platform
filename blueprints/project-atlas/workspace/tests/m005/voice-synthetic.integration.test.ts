@@ -148,6 +148,24 @@ describe("M005 provider-disabled synthetic journeys", () => {
     expect(output).toBe("provider_disabled");
   });
 
+  it("composes authenticated Python admission through the TypeScript durable owner", () => {
+    const gateway = fileURLToPath(
+      new URL("../../services/voice-gateway/", import.meta.url),
+    );
+    const script = [
+      "from tests.test_synthetic_composition import test_default_synthetic_admission_is_disabled as disabled",
+      "from tests.test_synthetic_composition import test_authenticated_composition_persists_handoff_in_typescript as composed",
+      "disabled()",
+      "composed()",
+      "print('2 composed synthetic tests passed')",
+    ].join("; ");
+    const output = execFileSync("python", ["-c", script], {
+      cwd: gateway,
+      encoding: "utf8",
+    }).trim();
+    expect(output).toBe("2 composed synthetic tests passed");
+  });
+
   it("replays a confirmed callback without duplicating owner work", async () => {
     const runtime = setup();
     const recovery = {

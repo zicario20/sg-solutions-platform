@@ -17,6 +17,10 @@ export type OwnerReceipt = Readonly<{
   outcome: VoiceCompletionOutcome;
 }>;
 
+export type OwnerReconciliation =
+  | Readonly<{ status: "completed"; receipt: OwnerReceipt }>
+  | Readonly<{ status: "not_found" | "unknown" }>;
+
 export type OwnerVerificationRecord = Readonly<{
   callId: string;
   status: VoiceVerificationStatus;
@@ -45,6 +49,9 @@ export interface OwnerPorts {
   getMissingDocuments: OwnerOperation;
   getNextAppointment: OwnerOperation;
   sendSecureMessage: OwnerOperation;
+  reconcileCommand(
+    input: OwnerCommandInput & { operation: VoiceCommand["operation"] },
+  ): Promise<OwnerReconciliation>;
 }
 
 export function createFailClosedOwnerPorts(): OwnerPorts {
@@ -72,5 +79,6 @@ export function createFailClosedOwnerPorts(): OwnerPorts {
     getMissingDocuments: unavailable,
     getNextAppointment: unavailable,
     sendSecureMessage: unavailable,
+    reconcileCommand: async () => ({ status: "unknown" }),
   };
 }

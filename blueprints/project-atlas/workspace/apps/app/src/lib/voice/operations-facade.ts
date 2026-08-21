@@ -3,6 +3,7 @@ import {
   evaluateReceptionCommand,
   makeVoiceCallReceipt,
   type ReceptionContext,
+  type StoredVoiceCommandReceipt,
   type VoiceCompletionOutcome,
   type VoiceCommand,
   type VoiceCommandReceiptRepository,
@@ -120,9 +121,13 @@ export class VoiceOperationsFacade {
     const reservation = await this.dependencies.receipts.reserve({
       receipt,
       commandDigest: commandDigest(command),
+      now: serviceContext.now,
     });
     if (reservation.status === "replay") return reservation.result;
     if (reservation.status === "in_progress") return { kind: "unavailable" };
+    if (reservation.status === "reconciliation_required") {
+      return this.reconcile(command, reservation.receipt, serviceContext.now);
+    }
     if (reservation.status === "conflict") return { kind: "denied" };
 
     let context: ReceptionContext = {
@@ -161,8 +166,52 @@ export class VoiceOperationsFacade {
     }
 
     try {
-      await this.dependencies.receipts.complete(receipt.receiptId, result, serviceContext.now);
+      await this.dependencies.receipts.complete(
+        command.callId,
+        receipt.receiptId,
+        reservation.receipt.reservationVersion,
+        result,
+        serviceContext.now,
+      );
       return result;
+    } catch {
+      return { kind: "unavailable" };
+    }
+  }
+
+  private async reconcile(
+    command: VoiceCommand,
+    receipt: StoredVoiceCommandReceipt,
+    now: Date,
+  ): Promise<VoiceOperationResult> {
+    const expectedOutcome = ownerOutcomeByOperation[command.operation];
+    if (!expectedOutcome) return { kind: "unavailable" };
+
+    try {
+      const authority = await this.dependencies.owners.reconcileCommand({
+        ...ownerInput(command),
+        operation: command.operation,
+      });
+      if (
+        authority.status !== "completed" ||
+        !validOwnerReceipt(authority.receipt) ||
+        authority.receipt.outcome !== expectedOutcome
+      ) {
+        return { kind: "unavailable" };
+      }
+      const result: VoiceOperationResult = {
+        kind: "completed",
+        outcome: authority.receipt.outcome,
+        receiptId: authority.receipt.receiptId,
+      };
+      const reconciled = await this.dependencies.receipts.reconcile(
+        command.callId,
+        receipt.receiptId,
+        receipt.reservationVersion,
+        result,
+        now,
+      );
+      return reconciled.result ?? { kind: "unavailable" };
     } catch {
       return { kind: "unavailable" };
     }
