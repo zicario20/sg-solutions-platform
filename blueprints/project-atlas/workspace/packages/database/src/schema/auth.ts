@@ -72,6 +72,68 @@ export const authExternalIdentities = pgTable(
   ],
 ).enableRLS();
 
+export const authSupabaseIdentityEvidence = pgTable(
+  "auth_supabase_identity_evidence",
+  {
+    id: text("id").primaryKey(),
+    provider: varchar("provider", { length: 32 }).notNull(),
+    providerSubject: text("provider_subject").notNull(),
+    issuer: text("issuer").notNull(),
+    audience: text("audience").notNull(),
+    emailVerified: boolean("email_verified").notNull(),
+    providerTransactionId: text("provider_transaction_id").notNull().unique(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true, mode: "date" }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (table) => [
+    index("auth_supabase_identity_evidence_subject_idx").on(table.provider, table.providerSubject),
+    check("auth_supabase_identity_evidence_provider_valid", sql`${table.provider} = 'google'`),
+    check("auth_supabase_identity_evidence_expiry_valid", sql`${table.expiresAt} > ${table.verifiedAt}`),
+    authGatewayOnly("auth_supabase_identity_evidence"),
+  ],
+).enableRLS();
+
+export const authCrmPartyEvidence = pgTable(
+  "auth_crm_party_evidence",
+  {
+    id: text("id").primaryKey(),
+    supabaseEvidenceId: text("supabase_evidence_id").notNull().references(() => authSupabaseIdentityEvidence.id, { onDelete: "restrict" }),
+    partyId: text("party_id"),
+    resolution: varchar("resolution", { length: 24 }).notNull(),
+    relationshipReceipt: text("relationship_receipt"),
+    verifiedAt: timestamp("verified_at", { withTimezone: true, mode: "date" }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (table) => [
+    index("auth_crm_party_evidence_identity_idx").on(table.supabaseEvidenceId, table.verifiedAt),
+    check("auth_crm_party_evidence_resolution_valid", sql`${table.resolution} in ('linked', 'possible_match', 'conflict', 'unavailable')`),
+    check("auth_crm_party_evidence_link_receipt", sql`${table.resolution} <> 'linked' or ${table.relationshipReceipt} is not null`),
+    check("auth_crm_party_evidence_expiry_valid", sql`${table.expiresAt} > ${table.verifiedAt}`),
+    authGatewayOnly("auth_crm_party_evidence"),
+  ],
+).enableRLS();
+
+export const authIdentityConflicts = pgTable(
+  "auth_identity_conflicts",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id").notNull().references(() => authAccounts.id, { onDelete: "cascade" }),
+    externalIdentityId: text("external_identity_id").notNull().references(() => authExternalIdentities.id, { onDelete: "cascade" }),
+    supabaseEvidenceId: text("supabase_evidence_id").notNull().references(() => authSupabaseIdentityEvidence.id, { onDelete: "restrict" }),
+    crmEvidenceId: text("crm_evidence_id").notNull().references(() => authCrmPartyEvidence.id, { onDelete: "restrict" }),
+    reason: varchar("reason", { length: 32 }).notNull(),
+    state: varchar("state", { length: 24 }).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    index("auth_identity_conflicts_account_state_idx").on(table.accountId, table.state),
+    check("auth_identity_conflicts_state_valid", sql`${table.state} in ('manual_review', 'resolved')`),
+    authGatewayOnly("auth_identity_conflicts"),
+  ],
+).enableRLS();
+
 export const authSessions = pgTable(
   "auth_sessions",
   {
@@ -341,7 +403,7 @@ export const authOutbox = pgTable(
 ).enableRLS();
 
 export const authTables = [
-  "auth_accounts", "auth_external_identities", "auth_sessions", "auth_provider_vault",
+  "auth_accounts", "auth_external_identities", "auth_supabase_identity_evidence", "auth_crm_party_evidence", "auth_identity_conflicts", "auth_sessions", "auth_provider_vault",
   "auth_transactions", "auth_proofs", "auth_invitations", "auth_party_links", "auth_organizations",
   "auth_roles", "auth_role_permissions", "auth_role_assignments", "auth_mfa_factors",
   "auth_service_accounts", "auth_rate_buckets", "auth_security_events", "auth_outbox",

@@ -12,6 +12,7 @@ export * from "./memory-repository.ts";
 export * from "./mfa.ts";
 export * from "./one-time-proofs.ts";
 export * from "./oauth-transactions.ts";
+export * from "./oauth-account-service.ts";
 export * from "./party-linking.ts";
 export * from "./password-flows.ts";
 export * from "./providers.ts";
