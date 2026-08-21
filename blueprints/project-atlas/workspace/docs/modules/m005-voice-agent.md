@@ -5,16 +5,17 @@
 - Surface: Public communications channel with future Client/Admin projections
 - Domain: Communications / Voice / Public Acquisition
 - Release: R7 target capability; architecture prepared during Phase 0
-- Status: Build authorized by Decision 028 — queued after clean M004 closure
-- Last updated: 2026-08-12
+- Status: Provider-disabled implementation complete in isolated branch under Decision 033; Product
+  Owner acceptance, merge and external activation pending
+- Last updated: 2026-08-20
 - External readiness: `External activation deferred` in `EXTERNAL_ACTIVATION_REGISTER.md`
 
 This PRD normalizes the complete Product Owner-supplied M005 source into the approved Project Atlas
 architecture. It preserves M005 as a professional bilingual virtual receptionist and separates it
 from M096 Voice Gateway infrastructure. It replaces the source document's obsolete `.NET/Redis`
 assumption with the approved TypeScript modular monolith plus a narrowly justified specialized voice
-runtime. Decision 028 authorizes bounded local/staging construction after M004; it does not
-authorize a phone number, provider credentials, recording, live calls, deployment or release.
+runtime. Decision 033 authorizes the completed bounded provider-disabled Build; it does not
+authorize a phone number, provider credentials, recording, live calls, deployment, merge or release.
 
 ## 1. Purpose
 
@@ -75,9 +76,15 @@ media gateway/runtime. M003, M004 and M025 own shared conversation and inbox con
 
 ### Current authorized slice
 
-- Product/Architecture PRD, UX/conversation design, proposed ADR, provider and domain contracts,
-  threat controls, test obligations, decision markers and external-activation checklist.
-- No M005 or M096 executable behavior or provider activation is authorized.
+- Provider-disabled TypeScript voice domain, persistence, scoped Voice Operations Facade, durable
+  command receipts and owner-routed reconciliation.
+- Python/FastAPI Voice Gateway scaffold behind platform ports, with mock/synthetic adapters,
+  authenticated admission, bounded execution, bilingual reception policy and deterministic safe
+  fallbacks.
+- Metadata-only observability, focused synthetic/security regressions and Drizzle migrations
+  `0016`–`0018`, including forced call-scoped RLS hardening.
+- No live telephony, speech/model provider, number, credential, audio, recording, transcript, real
+  caller data, deployment, merge or external activation is authorized.
 
 ## 4. Explicit out of scope
 
@@ -637,7 +644,7 @@ manual action. Operators cannot edit provider facts without an audited correctio
 
 ## 17. Acceptance criteria
 
-Architecture acceptance now requires:
+The original documentary architecture package required:
 
 1. M005 is documented as a voice channel/reception capability, not an independent CRM or specialist.
 2. M005 and M096 responsibilities are separated with typed least-privilege contracts.
@@ -661,14 +668,15 @@ Architecture acceptance now requires:
 15. No product code, account, number, credentials, live call, merge, deployment or Operational claim
     is created by the documentary package.
 
-Future Build acceptance additionally requires executed contract, concurrency, security,
-conversation, provider-sandbox, accessibility, resilience and recovery evidence under an explicit
-Build gate. External activation additionally requires the evidence in the activation register.
+Provider-disabled Build evidence and its limitations are recorded below and in the M005 Phase
+Completion Report. External activation additionally requires every deferred control and approval in
+the activation register; provider-disabled completion does not satisfy that gate.
 
 ## 18. Negative acceptance criteria
 
-- No `.NET`, Redis, Twilio/Pipecat SDK or Python runtime is added to the current product scaffold by
-  this documentary phase.
+- No `.NET`, Redis, Twilio/Pipecat SDK or live provider runtime is introduced. Python remains a
+  narrowly scoped provider-disabled Voice Gateway behind the TypeScript platform facade and has no
+  direct database access.
 - No personal number, Northwest number, Twilio trial number or shared WhatsApp number is assumed or
   published.
 - No provider account, secret, API key, auth token, webhook URL or private endpoint is committed.
@@ -705,18 +713,21 @@ M060 compliance review; M075 human-in-the-loop; M077 audit; M078 consent; M080/M
 PII; M084 integration security; M085 retention; M092 analytics; M096 Voice Gateway; M097
 observability; M098 backup/recovery; M099 deployment.
 
-### Required before future local Build
+### Satisfied for the current provider-disabled local Build
 
-Approved M005 PRD/design and ADR 009, explicit `GENERATE`/Build gate, approved M005/M096 split,
-recording-disabled development mode, synthetic call corpus, provider contracts, service identity/
-tool policy, threat model, test strategy and executable implementation plan.
+Approved M005 PRD/design and ADR 009, Decision 033 `GENERATE`/Build gate, approved M005/M096 split,
+recording-disabled development mode, synthetic fixtures, provider-neutral contracts, service
+identity/tool policy, threat controls, focused test strategy and executable implementation plan.
 
 ### Required only for external activation
 
 Institutional number/ownership/portability plan; official telephony account; approved provider,
 STT/model/TTS choices; verified business identity/caller ID; credentials/secret store; public voice
 gateway deployment; approved greetings/disclosures/recording/legal policy; human destinations and
-hours; budget/SLO; sandbox and controlled real-call tests; incident/runbooks; Product Owner approval.
+hours; budget/SLO; shared durable TTL/capacity nonce and credential backend; disposable PostgreSQL
+fresh/upgrade/RLS and migration-ledger proof; complete FastAPI/pytest/mypy environment; validation
+under pinned Node `24.18.1`; controlled SCA; sandbox and controlled real-call tests; incident/runbooks;
+business/provider/legal approvals; Product Owner activation approval.
 
 These prerequisites are tracked in `EXTERNAL_ACTIVATION_REGISTER.md`. Their absence does not block
 provider-neutral architecture approval.
@@ -784,7 +795,25 @@ invented answers to approve the provider-neutral architecture.
 
 ## Delivery and activation record
 
-- Architecture: independently reviewed candidate completed on 2026-08-09.
-- Local implementation: authorized by Decision 028 only after clean, audited M004 closure.
-- External activation: deferred; see `EXTERNAL_ACTIVATION_REGISTER.md`.
-- Operational status: not eligible.
+- Architecture: the external M005 architecture re-review is `APPROVED` for the provider-disabled
+  architecture scope with no Critical or Important findings remaining.
+- Local implementation: all seven implementation tasks are complete in the isolated
+  `codex/m005-voice-agent-rebuild` branch, followed by the four architecture remediations and Cyber
+  Neo remediations `CN-M005-001`–`CN-M005-003` through implementation baseline `a2c1dee`.
+- Security review: Cyber Neo's external remediation re-audit is `APPROVED` for provider-disabled
+  scope with `0` Critical, `0` High and `0` Medium findings remaining.
+- Latest focused evidence: four TypeScript test files passed `21/21`; Python replay, admission,
+  media-ticket and provider-proof regressions passed `13/13`; affected Python `compileall` and the
+  `@atlas/app` typecheck passed. Earlier focused gateway, reception/fallback, observability and
+  synthetic-composition checks passed during implementation.
+- Database evidence: the static forced-RLS migration contract passed `4/4` and the database package
+  typecheck passed. Migrations `0016`–`0018` have not been applied to disposable or live PostgreSQL,
+  and no migration-ledger attestation is claimed.
+- Evidence limits: no clean full suite, full build, live PostgreSQL, provider, real-call, SCA,
+  deployment or Operational evidence is claimed. No real calls, audio, recordings, transcripts or
+  caller PII were used.
+- External activation: prohibited pending the shared durable nonce/credential backend, controlled
+  database/environment evidence, pinned runtime, Twilio/number/credentials, legal recording/
+  consent/retention policy, business approvals and deployment approval; see
+  `EXTERNAL_ACTIVATION_REGISTER.md`.
+- Product Owner acceptance, merge, deployment and Operational status: pending.

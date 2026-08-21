@@ -618,3 +618,28 @@
 - The plan has eight sequential reviewable tasks. Activation facts remain deferred: number/routing,
   provider contract, recording consent/retention, scripts/knowledge, verification policy,
   roster/hours, credential rotation, runbooks, staging proof and Product Owner approval.
+
+## 2026-08-20 — M005 Voice Agent provider-disabled implementation closure candidate
+
+- All seven M005 implementation tasks are complete in the isolated
+  `codex/m005-voice-agent-rebuild` branch under Decision 033. The provider-disabled slice includes
+  the TypeScript voice domain, persistence and scoped facade; Python/FastAPI gateway scaffold;
+  authenticated synthetic flow; bilingual receptionist and safe fallbacks; leased reconciliation;
+  metadata-only observability; and Drizzle migrations `0016`–`0018`.
+- Four Important architecture findings were remediated before the external architecture re-review
+  returned `APPROVED` for provider-disabled M005 with no Critical or Important findings remaining.
+  Cyber Neo findings `CN-M005-001`–`CN-M005-003` were then remediated at implementation baseline
+  `a2c1dee`; its external re-audit returned `APPROVED` with `0` Critical, `0` High and `0` Medium.
+- Latest focused evidence passed four TypeScript files with `21/21`, Python replay/admission/
+  ticket/proof regressions with `13/13`, affected Python `compileall` and `@atlas/app` typecheck.
+  Earlier focused gateway, receptionist/fallback, observability and synthetic checks passed. The
+  RLS static contract passed `4/4` and database package typecheck passed. No clean full suite, full
+  build, live PostgreSQL, provider, SCA, deployment or Operational pass is claimed.
+- External activation remains fail-closed and prohibited pending a shared durable TTL/capacity
+  nonce/credential backend, disposable PostgreSQL fresh/upgrade/RLS and migration-ledger evidence,
+  complete FastAPI/pytest/mypy tooling, pinned Node `24.18.1`, controlled SCA, Twilio/account/number/
+  credentials, approved recording/retention/consent policy, business/contracts/LLC readiness,
+  runbooks, deployment and explicit Product Owner activation approval.
+- No real call, provider traffic, media, audio, recording, transcript, voicemail or caller PII was
+  used. Product Owner final acceptance, merge, deployment and release remain pending; documentation
+  closure records implementation evidence but does not grant any of those approvals.

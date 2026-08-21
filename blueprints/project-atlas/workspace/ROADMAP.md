@@ -30,11 +30,16 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   number, credentials, template submission, live messages, disposable-PostgreSQL proof,
   migration-ledger attestation and pinned-Node validation remain deferred; its public entry point
   stays hidden and M004 is not Operational.
-- **M005 Voice Agent:** Build queued only after Product Owner acceptance of M004 and explicit
-  advancement approval. Implement the bounded Twilio adapter,
-  bilingual receptionist state machine, replaceable STT/model/TTS ports, transfer/callback/handoff
-  boundaries, deterministic simulator and tests. Number, credentials, recording/transcription,
-  real calls and deployment remain deferred; its public entry point stays hidden.
+- **M005 Voice Agent:** provider-disabled implementation is complete in its isolated branch under
+  Decision 033. Seven implementation tasks plus architecture and Cyber Neo remediations deliver the
+  TypeScript voice domain/facade, Python gateway scaffold, replaceable provider ports, authenticated
+  synthetic composition, bilingual receptionist policy, transfer/callback/message recovery,
+  metadata-only observability and focused evidence. External architecture review is `APPROVED` and
+  Cyber Neo's remediation re-audit is `APPROVED` with `0/0/0` Critical/High/Medium findings. Product
+  Owner acceptance, merge and release remain pending. Shared durable replay storage, disposable
+  PostgreSQL/RLS/ledger proof, complete Python tooling, pinned Node, Twilio/number/credentials,
+  legal/business approvals and deployment remain external blockers; no real calls, audio,
+  transcripts or PII exist and the entry point stays hidden.
 - **M006 Public Forms:** Product/Architecture documentation is active under Decision 019. The target
   is a bilingual, versioned, accessible public capture capability using a narrow same-origin Astro
   gateway and durable domain acceptance before generic success. It delegates leads/deduplication to
