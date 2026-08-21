@@ -3,17 +3,17 @@
 - Owner: Product Owner
 - Maintainer: Codex Architecture Agent
 - Status: Current state only
-- Last updated: 2026-08-20
+- Last updated: 2026-08-21
 
 Version: `0.1.0-alpha.25`
 
-Current phase: **M006 Public Forms provider-disabled implementation complete; ready for Product
-Owner acceptance in its isolated branch**
+Current phase: **M006 Public Forms formally accepted by the Product Owner in provider-disabled
+scope; branch integration and all external activation remain pending**
 
 Module status: **M005 remains formally accepted provider-disabled at `b8db282`; M006 Tasks 1-7 are
-complete at `b6c7e6f` in `codex/m006-public-forms-rebuild` under Decision 034.** M006 is ready for
-Product Owner acceptance only; external activation, merge, deployment and release remain pending.
-The Decision 032 prohibition on module 39 remains in force.
+complete and formally accepted at `6b3518a` in `codex/m006-public-forms-rebuild` under Decisions 034
+and 035.** External activation, merge, deployment and release remain pending. The Decision 032
+prohibition on module 39 remains in force.
 
 Implemented boundary: authoritative TypeScript voice domain/persistence and scoped facade;
 Python/FastAPI gateway scaffold behind platform ports; provider-disabled mocks and authenticated
@@ -61,8 +61,8 @@ rotation; obtain provider APIs, contracts, legal disclosures, consent and retent
 complete deployment readiness; and keep sensitive uploads disabled pending their separate gate.
 
 Data and release posture: no real calls, media, audio, recordings, transcripts, voicemails, caller
-PII or provider traffic were used. Product Owner final acceptance, default-branch merge, deployment
-and production release remain pending.
+PII or provider traffic were used. M006 Product Owner acceptance is recorded by Decision 035;
+default-branch merge, deployment, external activation and production release remain pending.
 
 Compatibility and scope: Release 1A/1B compatibility and existing CRM, calendar, inbox, payment,
 consent, identity and audit ownership remain unchanged.
@@ -70,12 +70,12 @@ consent, identity and audit ownership remain unchanged.
 Role model: Product Owner decides; Codex Architecture Agent architects; separately scoped Codex
 Implementation Agents implement approved work; ChatGPT/independent reviewers audit and do not
 architect or self-approve implementation.
-## Current gate — M006 ready for Product Owner acceptance; activation remains blocked
+## Current gate — M006 Product Owner accepted; activation remains blocked
 
 M005 Voice Agent is formally accepted provider-disabled. Decision 034 authorized the completed M006
 provider-disabled slice: immutable bilingual public definitions, same-origin admission,
 server-authoritative validation/persistence, consent/receipt/audit/outbox evidence,
 privacy-preserving anti-abuse, accessible rendering, encrypted ephemeral drafts and synthetic owner
-ports. Product Owner acceptance is now pending. Live PostgreSQL evidence, CRM/M020, consent/M078,
-calendar/M013, Stripe/M042-M045, notifications/channels, uploads, retention policy, external
-providers, merge, deploy and release remain blocked or pending.
+ports. Decision 035 records Product Owner acceptance at `6b3518a`. Live PostgreSQL evidence,
+CRM/M020, consent/M078, calendar/M013, Stripe/M042-M045, notifications/channels, uploads, retention
+policy, external providers, merge, deploy and release remain blocked or pending.

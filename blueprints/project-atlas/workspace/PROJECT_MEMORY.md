@@ -677,3 +677,16 @@ before implementation.
   network identity; KMS/key rotation; providers/APIs, contracts, legal consent/retention text;
   deployment; and the separately gated sensitive-upload path. Product Owner acceptance, merge and
   release remain pending.
+
+## 2026-08-21 — M006 provider-disabled Product Owner acceptance
+
+- Decision 035 records formal Product Owner acceptance of M006 Public Forms at `6b3518a`. The
+  acceptance signal is the Product Owner's immediate delivery of M007 after M006 requested
+  acceptance, together with the prior instruction to continue sequentially without stopping and the
+  present direction to record that progression formally.
+- Acceptance is limited to the completed provider-disabled scope. It does not authorize merge,
+  deployment, release, live PostgreSQL, provider/API activation, credentials, external owner
+  traffic, sensitive uploads, service start or `Operational` status.
+- Migrations `0019`-`0022`, PostgreSQL RLS/grants/roles, trusted distributed admission, pinned Node
+  and WAC/esbuild validation, KMS/key rotation, legal/consent/retention, providers/contracts and
+  deployment remain blocked or pending.

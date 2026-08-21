@@ -2,13 +2,13 @@
 
 ## Status
 
-- State: `Provider-disabled implementation complete; Product Owner acceptance pending`
+- State: `Provider-disabled implementation complete; Product Owner accepted`
 - Build maturity: isolated provider-disabled implementation
-- Date: 2026-08-20
+- Date: 2026-08-21
 - Version: `0.1.0-alpha.25`
 - Branch: `codex/m006-public-forms-rebuild`
-- Implementation baseline: `b6c7e6f`
-- Authority: Decision 034
+- Implementation baseline: `b6c7e6f`; accepted documentary head: `6b3518a`
+- Authority: Decisions 034 and 035
 - Explicit exclusion: no merge, deployment, release, live PostgreSQL, provider account, API,
   credential, CRM, calendar, Stripe, channel, notification, analytics, upload, sensitive intake,
   real submission, service start or `Operational` claim
@@ -35,7 +35,8 @@ calendar, payment, channel, upload or analytics authority, and it does not begin
 
 - External architecture re-review: `APPROVED for the reviewed provider-disabled code scope`.
   The re-review closed its five scoped findings with `0` Critical and `0` Important findings. It does
-  not authorize merge, deployment, provider activation or Product Owner acceptance.
+  not itself authorize merge, deployment, provider activation or Product Owner acceptance;
+  Decision 035 separately records the Product Owner's acceptance.
 - Cyber Neo final focused re-audit at `b6c7e6f`: `APPROVED for the M006 provider-disabled security
   scope`, with `0` Critical, `0` High and `0` Medium findings. It closes CN-M006-003 and the residual
   reconciliation finding by persisting `dispatch|reconcile` lease purpose and reserving expired
@@ -84,9 +85,11 @@ restore/ledger-reconciliation process; no destructive rollback or down-migration
 
 ## Product Owner acceptance and next gate
 
-M006 is ready for Product Owner acceptance in its provider-disabled scope. Acceptance is required
-before merge and does not authorize deployment, release or any external activation. No decision was
-added to `DECISIONS.md` because Product Owner acceptance has not yet been recorded.
+Decision 035 records formal Product Owner acceptance of M006 at `6b3518a`, inferred and confirmed
+for the repository record from the immediate delivery of M007 after acceptance was requested and
+the prior authorization to continue sequentially without stopping. Acceptance is limited to the
+provider-disabled scope and does not authorize merge, deployment, release, live PostgreSQL or any
+external activation.
 
 ## Final checklist
 
@@ -98,4 +101,5 @@ added to `DECISIONS.md` because Product Owner acceptance has not yet been record
 - [ ] Apply and attest migrations `0019`-`0022` with PostgreSQL roles, grants and RLS.
 - [ ] Validate pinned Node/WAC-esbuild environment and distributed trusted admission controls.
 - [ ] Complete KMS, providers, APIs, contracts, legal/consent/retention and deployment gates.
-- [ ] Product Owner acceptance, merge, deployment, activation and production release.
+- [x] Product Owner acceptance recorded by Decision 035.
+- [ ] Merge, deployment, activation and production release.

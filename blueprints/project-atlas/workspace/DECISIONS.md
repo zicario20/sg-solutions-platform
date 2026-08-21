@@ -522,3 +522,18 @@ No live provider, deployment, activation, real notification, appointment/slot, S
 payment state, upload, sensitive intake, external CAPTCHA, persistent marketing recovery, service
 start, merge or release is authorized. Product/legal disclosure text, service policy, retention
 durations, provider accounts and external endpoints remain governed by their owner decisions.
+
+## 2026-08-21 — Decision 035 — M006 provider-disabled Product Owner acceptance
+
+Decision: the Product Owner formally accepts M006 Public Forms in its completed provider-disabled
+scope at head `6b3518a`.
+
+Reason: after M006 reached its documented acceptance gate, the Product Owner immediately supplied
+M007 and had previously authorized sequential continuation without stopping. The Product Owner now
+directs that this progression be recorded as the formal M006 acceptance signal.
+
+Impact: M006 is accepted only as a provider-disabled implementation. This acceptance does not
+authorize default-branch merge, deployment, release, live PostgreSQL, provider/API activation,
+credentials, CRM/calendar/Stripe/channel traffic, sensitive uploads, service start or an
+`Operational` claim. All migration/RLS/grant/role, trusted distributed admission, pinned-runtime,
+KMS, legal/consent/retention, provider, contract and deployment gates remain blocked or pending.
