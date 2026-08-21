@@ -1,0 +1,1 @@
+export function AuthField({ label, type = "text", autoComplete }: { label: string; type?: string; autoComplete?: string }) { const id = label.toLowerCase().replace(/\s+/gu, "-"); return <p className="auth-field"><label htmlFor={id}>{label}</label><input id={id} type={type} autoComplete={autoComplete} /></p>; }

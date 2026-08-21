@@ -1,0 +1,1 @@
+export function SecurityPanel() { return <section aria-labelledby="security-title"><h2 id="security-title">Security</h2><p aria-live="polite">Provider-disabled security methods are unavailable.</p></section>; }

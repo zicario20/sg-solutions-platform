@@ -1,0 +1,2 @@
+import { AuthField, AuthShell } from "@atlas/ui";
+export default function Page() { return <AuthShell title="Acceso seguro"><form><AuthField label="Correo electrónico" type="email" autoComplete="email" /><AuthField label="Contraseña" type="password" autoComplete="current-password" /><button type="submit">Continuar</button><p aria-live="polite">El proveedor está desactivado.</p></form></AuthShell>; }
