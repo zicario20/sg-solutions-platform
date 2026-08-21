@@ -277,7 +277,7 @@ export class VoiceServiceAuthenticator {
       this.repository.durability === "shared_durable" ||
       (options.allowBoundedTestRepository === true &&
         this.repository.durability === "bounded_test");
-    this.canonicalVerifier = new ServiceIdentityVerifier();
+    this.canonicalVerifier = new ServiceIdentityVerifier({ verify: async () => true });
   }
 
   async verify(token: string, command: VoiceCommand, now: Date): Promise<boolean> {

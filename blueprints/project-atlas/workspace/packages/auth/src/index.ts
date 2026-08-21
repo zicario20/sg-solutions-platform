@@ -2,6 +2,7 @@ export const AUTH_PACKAGE_ID = "@atlas/auth";
 export * from "./account-service.ts";
 export * from "./authorization.ts";
 export * from "./contracts.ts";
+export * from "./control-plane.ts";
 export * from "./crypto.ts";
 export * from "./disabled-provider.ts";
 export * from "./invitations.ts";

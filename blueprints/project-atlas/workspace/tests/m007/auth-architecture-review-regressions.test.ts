@@ -36,7 +36,7 @@ describe("M007 architecture-review security regressions", () => {
   });
 
   it("authorizes only a current server-derived grant and rejects supplied claims", async () => {
-    const authorization = new AuthoritativeAuthorizationService({ load: async () => ({ activeSession: true, accountId: "a", accessEpoch: 2, permissions: ["client.case.read"], resource: { accountId: "a", organizationId: "o", accessEpoch: 2 } }) });
+    const authorization = new AuthoritativeAuthorizationService({ load: async () => ({ activeSession: true, accountId: "a", accessEpoch: 2, policyEpoch: 2, assurance: "aal1", organizationMembership: "active", entitlement: "active", roleAssignment: "active", permissions: ["client.case.read"], resource: { accountId: "a", organizationId: "o", accessEpoch: 2, policyEpoch: 2 } }) });
     await expect(authorization.authorize({ sessionId: "server-session", resourceId: "case-1", permission: "client.case.read" })).resolves.toEqual({ kind: "allowed" });
   });
 
