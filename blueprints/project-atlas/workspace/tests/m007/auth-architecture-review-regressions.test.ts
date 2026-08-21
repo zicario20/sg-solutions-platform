@@ -2,26 +2,26 @@ import {
   AuthoritativeAuthorizationService,
   AccountService,
   AuthorizationService,
-  createAuthRuntime,
+  createDurableOAuthTransactionService,
   createOpaqueValue,
   createSecureInvitationService,
-  createSecureOAuthTransactionService,
   createSupabaseIdentityProvider,
   createTransactionalAuthControls,
   PartyLinkingService,
   ServiceIdentityVerifier,
 } from "@atlas/auth";
 import { createAuthRouteHandler, isPublicAuthPath } from "../../apps/app/src/lib/auth/http.ts";
+import { createServerAuthRuntime } from "../../apps/app/src/lib/auth/server-runtime.ts";
 import { authFormAttributes } from "@atlas/ui";
 import { describe, expect, it } from "vitest";
 
 describe("M007 architecture-review security regressions", () => {
   it("dispatches a route-specific backend facade with the configured canonical origin", async () => {
-    const runtime = createAuthRuntime({ canonicalOrigin: "https://portal.example", sessionStore: {}, controls: { consumeRate: async () => true, appendAudit: async () => undefined, enqueue: async () => undefined } });
+    const runtime = createServerAuthRuntime({ canonicalOrigin: "https://portal.example", controlPlane: { admit: async () => ({ kind: "accepted" }), revoke: async () => ({ kind: "denied" }) } });
     const response = await createAuthRouteHandler(runtime, "register")(new Request("https://portal.example/api/auth/register", { method: "POST", headers: { origin: "https://portal.example" } }));
     expect(response.status).toBe(202);
-    const unavailable = createAuthRuntime({ canonicalOrigin: "https://portal.example", sessionStore: {} });
-    await expect(unavailable.execute("register", { origin: "https://portal.example" })).resolves.toEqual({ status: 503, body: { kind: "unavailable" } });
+    const unavailable = createServerAuthRuntime({ canonicalOrigin: "https://portal.example" });
+    await expect(unavailable.handle("register", new Request("https://portal.example/api/auth/register", { method: "POST", headers: { origin: "https://portal.example" } }))).resolves.toMatchObject({ status: 503 });
   });
 
   it("generates high-entropy opaque values rather than counters", () => {
@@ -30,7 +30,7 @@ describe("M007 architecture-review security regressions", () => {
   });
 
   it("rejects unsafe OAuth returns and provider results without verified claims", async () => {
-    const oauth = createSecureOAuthTransactionService();
+    const oauth = createDurableOAuthTransactionService({ issue: async () => undefined, consume: async () => ({ kind: "denied" }) });
     await expect(oauth.begin({ provider: "google", purpose: "sign_in", callbackUrl: "https://portal.example/api/auth/oauth/google/callback", returnIntent: "//attacker.example", browserBinding: "browser" })).rejects.toThrow("OAUTH_RETURN_INTENT_DENIED");
     await expect(createSupabaseIdentityProvider({ runtimeState: "disabled" }).completeGoogle({})).resolves.toEqual({ kind: "unavailable", reason: "provider_disabled" });
   });
@@ -55,8 +55,8 @@ describe("M007 architecture-review security regressions", () => {
   });
 
   it("uses owner evidence for CRM links and retains conflicts for manual review", async () => {
-    const linking = new PartyLinkingService({ resolve: async () => ({ kind: "conflict" }) });
-    await expect(linking.link({ accountId: "account-1", evidence: { receipt: "owner" } })).resolves.toEqual({ kind: "manual_review" });
+    const linking = new PartyLinkingService({ resolve: async () => ({ kind: "conflict" }) }, { loadCrmReceipt: async () => undefined });
+    await expect(linking.link({ accountId: "account-1", evidenceId: "unknown" })).resolves.toEqual({ kind: "manual_review" });
   });
 
   it("fails closed when durable rate, audit, or outbox ports are unavailable", async () => {

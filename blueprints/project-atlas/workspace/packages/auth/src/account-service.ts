@@ -1,11 +1,14 @@
 import type { AuthAccountRecord, MemoryAuthAccountRepository } from "./memory-repository.ts";
 
-export class AccountService {
-  constructor(private readonly repository: MemoryAuthAccountRepository) {}
+export type SupabaseEvidenceStore = Readonly<{ loadSupabaseReceipt(evidenceId: string): Promise<{ readonly subject: string; readonly verifiedAt: number; readonly issuer: "supabase" } | undefined> }>;
 
-  async registerProspect(command: { readonly subject: string; readonly verifiedSubjectReceipt?: { readonly subject: string; readonly verifiedAt: number } }): Promise<(AuthAccountRecord & { readonly resourceGrants: readonly string[] }) | { readonly kind: "denied" }> {
-    if (!command.verifiedSubjectReceipt || command.verifiedSubjectReceipt.subject !== command.subject || !Number.isFinite(command.verifiedSubjectReceipt.verifiedAt)) return { kind: "denied" };
-    const account = await this.repository.createProspect(command.verifiedSubjectReceipt.subject);
+export class AccountService {
+  constructor(private readonly repository: MemoryAuthAccountRepository, private readonly evidence?: SupabaseEvidenceStore) {}
+
+  async registerProspect(command: { readonly subject: string; readonly evidenceId: string }): Promise<(AuthAccountRecord & { readonly resourceGrants: readonly string[] }) | { readonly kind: "denied" }> {
+    const receipt = this.evidence && command.evidenceId ? await this.evidence.loadSupabaseReceipt(command.evidenceId) : undefined;
+    if (!receipt || receipt.subject !== command.subject || !Number.isFinite(receipt.verifiedAt)) return { kind: "denied" };
+    const account = await this.repository.createProspect(receipt.subject);
     return { ...account, resourceGrants: [] };
   }
 }

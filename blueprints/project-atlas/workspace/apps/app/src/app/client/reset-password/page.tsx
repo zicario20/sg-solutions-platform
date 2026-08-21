@@ -1,2 +1,3 @@
 import { AuthField, authFormAttributes, AuthShell } from "@atlas/ui";
-export default function Page() { return <AuthShell title="Restablecer contraseña"><form {...authFormAttributes("recovery")}><AuthField label="Nueva contraseña" name="new_password" type="password" autoComplete="new-password" /><button type="submit">Continuar</button><p aria-live="polite">Si el enlace es válido, el cambio se procesará de forma segura.</p></form></AuthShell>; }
+import { currentAuthCopy } from "../../../lib/auth/locale.ts";
+export default function Page({ searchParams }: { searchParams: { locale?: string } }) { const copy = currentAuthCopy(searchParams.locale); return <AuthShell title={copy.reset}><form {...authFormAttributes("recovery")}><AuthField label={copy.password} name="new_password" type="password" autoComplete="new-password" /><button type="submit">{copy.continue}</button><p aria-live="polite">{copy.neutralReset}</p></form></AuthShell>; }

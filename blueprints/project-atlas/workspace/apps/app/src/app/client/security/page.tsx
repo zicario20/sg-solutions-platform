@@ -1,2 +1,3 @@
 import { AuthShell, SecurityPanel, SessionList } from "@atlas/ui";
-export default function Page() { return <AuthShell title="Seguridad"><SecurityPanel /><SessionList /><form action="/api/auth/sessions" method="post"><button type="submit">Cerrar otras sesiones</button></form></AuthShell>; }
+import { currentAuthCopy } from "../../../lib/auth/locale.ts";
+export default function Page({ searchParams }: { searchParams: { locale?: string } }) { const copy = currentAuthCopy(searchParams.locale); return <AuthShell title={copy.security}><SecurityPanel /><SessionList /><form action="/api/auth/sessions" method="post"><button type="submit">{copy.closeOtherSessions}</button></form></AuthShell>; }
