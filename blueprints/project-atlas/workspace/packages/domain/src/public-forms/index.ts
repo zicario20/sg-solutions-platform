@@ -4,3 +4,5 @@ export * from "./ports.ts";
 export * from "./registry.ts";
 export * from "./repository.ts";
 export * from "./service.ts";
+export * from "./jobs.ts";
+export * from "./synthetic-ports.ts";
