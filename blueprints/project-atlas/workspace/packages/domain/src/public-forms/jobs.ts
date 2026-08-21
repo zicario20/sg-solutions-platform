@@ -137,7 +137,7 @@ type ResolvedDependencies = Readonly<{
   maxAttempts: number;
   ownerTimeoutMs: number;
   ownerConcurrency: number;
-}>; 
+}>;
 
 export type PersistedFormOutboxContext = Readonly<{
   submissionRef: string;

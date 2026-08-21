@@ -144,4 +144,3 @@ drain/reconcile outbox entries, and leave CRM/calendar/payment/channel owners un
   expiry/deletion behavior and no direct anonymous policy.
 - Synthetic integration proves contact-to-receipt-to-port flow plus CRM/calendar/payment/channel
   unavailable paths without HTTP provider traffic or a service start.
-

@@ -194,4 +194,3 @@ expect(await syntheticFormFlow()).toMatchObject({ payment: "unavailable", appoin
 ## Self-review coverage
 
 All approved M006 requirements map to Tasks 1-8: reusable forms/versioning and conditional logic (1,6), backend validation/normalization/dedupe (1-4), consent/attribution/privacy/retention (2-3,6,8), anti-abuse/CSRF/XSS/mass assignment (4,8), bilingual accessible UI/drafts (5), CRM/calendar/payment/chat/WhatsApp/voice ports (2,7), administration preview (6), analytics and recovery (7), and focused provider-disabled evidence (8). There are no full-suite requirements, provider calls, sensitive uploads, autonomous service starts or unapproved legal/business copy.
-
