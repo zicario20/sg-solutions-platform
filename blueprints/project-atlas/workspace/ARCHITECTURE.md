@@ -103,18 +103,15 @@ idempotency and outbox before a generic receipt. M020 owns leads/deduplication, 
 M077 owns audit. Detailed private intake, public uploads, persistent drafts and every external
 handoff stay gated. ADR 010 records the proposed boundary.
 
-M007 proposes invitation-first client activation through the Next.js authenticated application.
-Supabase Auth remains identity/credential authority; Postgres owns SG Solutions account,
-membership, application-session revocation and audit state. Email/password and future-activated
-Google are methods of one identity, and no email, phone, payment or CRM match grants access. A
-same-origin server-mediated PKCE/session boundary puts only an opaque application handle in the
-HttpOnly browser cookie and keeps provider credentials in a server-only envelope-encrypted vault,
-prohibits shared caching and requires a pinned-version compatibility proof before Build. Provider
-automatic linkage grants nothing until the explicit local link/invitation transaction commits.
-User routes run through session-derived restricted RLS context and never `service_role`/owner/
-`BYPASSRLS`; private Storage uses server-derived keys and scoped signed capabilities. ADR 011 records
-the proposed linking/session boundary; ADR 004 still controls case/resource inheritance and
-M080/M081 own RBAC.
+Decision 036 authorizes M007's provider-disabled identity/account foundation in the existing Next.js
+application. Supabase Auth remains credential authority; Postgres owns account state, opaque
+application sessions, explicit relationship links, RBAC, organization access and audit evidence.
+Email/password and Google are methods of one identity; no email, phone, payment or CRM match grants
+access. The browser holds only an opaque HttpOnly application handle; provider material remains in
+an encrypted server vault. User routes derive restricted RLS context server-side and never use
+`service_role`, owner or `BYPASSRLS`. ADR 011 records the accepted provider-disabled boundary; ADR
+004 controls resources, M045 entitlements and M080/M081 extend the same RBAC foundation. Live
+Supabase, Google, email, OTP, MFA, KMS, deployment and release remain blocked.
 
 M008 proposes one request-scoped Client Dashboard aggregation service inside the modular monolith.
 It reads typed, minimized projections from the domains that own security, services, cases, tasks,

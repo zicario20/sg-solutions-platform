@@ -40,8 +40,8 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   PostgreSQL/RLS/ledger proof, complete Python tooling, pinned Node, Twilio/number/credentials,
   legal/business approvals and deployment remain external blockers; no real calls, audio,
   transcripts or PII exist and the entry point stays hidden.
-- **M006 Public Forms:** provider-disabled implementation is complete in
-  `codex/m006-public-forms-rebuild` under Decision 034 and is ready for Product Owner acceptance.
+- **M006 Public Forms:** provider-disabled implementation is complete and formally accepted by the
+  Product Owner under Decisions 034-035 at documentary head `3bbf8ef`.
   Tasks 1-7 deliver the reusable bilingual public-form engine, guarded same-origin admission,
   server-authoritative validation/persistence, consent/receipt/audit/outbox evidence, accessible
   rendering, encrypted ephemeral drafts, minimized attribution, provider-disabled synthetic owners
@@ -52,15 +52,12 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   claimed. PostgreSQL migrations/RLS/grants/roles, pinned Node/WAC-esbuild validation, distributed
   rate/network identity, KMS rotation, providers/legal/retention, deployment and sensitive-upload
   gates remain blocked.
-- **M007 Client Authentication and Account:** Product/Architecture documentation is active under
-  Decision 020. The candidate is invitation-first and separates Supabase identity, SG Solutions
-  account status, membership, role/permission, entitlement and case/resource grants. Email/password
-  and future-activated Google are methods of one identity; matching email/phone/payment/CRM state
-  grants nothing. Proposed ADR 011 uses a server-mediated PKCE/session boundary with a mandatory
-  pinned-version compatibility proof before Build. The independent review closed all 14
-  architecture/consistency findings and Cyber Neo closed CN-001–CN-010 at documentary risk 0/100.
-  The candidate awaits Product Owner approval or revision. No `GENERATE`, route, schema/RLS policy,
-  Supabase/Google/email/MFA configuration, real account/session, merge or deployment is authorized.
+- **M007 Client Authentication and Account:** Decision 036 approves architecture and an isolated
+  provider-disabled Build from `3bbf8ef`. M007 expands `@atlas/auth` as the sole IAM boundary and
+  covers email/password, Google OAuth, verification/recovery, opaque sessions/cookies/CSRF, CRM
+  linking conflicts, RBAC/resource/organization checks, service identities, internal MFA policy,
+  audit/RLS and accessible ES/EN UI. Implementation has not started. Providers, credentials,
+  external traffic, KMS, production configuration, merge, deployment and release remain blocked.
 - **M008 Client Dashboard:** Product/Architecture documentation is active under Decision 021. The
   candidate defines `/client` Home as one request-scoped, client-safe read model over typed owning-
   domain projections. One complete M007 authorization snapshot and a consistent read cut govern the

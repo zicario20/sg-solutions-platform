@@ -690,3 +690,17 @@ before implementation.
 - Migrations `0019`-`0022`, PostgreSQL RLS/grants/roles, trusted distributed admission, pinned Node
   and WAC/esbuild validation, KMS/key rotation, legal/consent/retention, providers/contracts and
   deployment remain blocked or pending.
+
+## 2026-08-21 - M007 provider-disabled architecture and Build plan
+
+- The Product Owner supplied the complete M007 specification and authorized its isolated
+  provider-disabled design/Build plan from accepted M006 base `3bbf8ef`.
+- Brownfield review found the reserved `@atlas/auth` package and Supabase Auth authority but no
+  implemented login, account, OAuth callback, recovery, RBAC or portal shell. Decision 036 expands
+  that boundary instead of creating a second user or password system.
+- ADR 011 is accepted for provider-disabled Build. The ten-task sequential TDD plan covers contracts,
+  schema/RLS, accounts/linking, sessions/recovery, OAuth, authorization/MFA/service identities,
+  Next.js facade, ES/EN UI, recovery/observability and independent closure audits.
+- No application code, test, migration, provider configuration, network traffic, merge, deployment
+  or release was produced by this architecture commit. Provider, legal, retention, risk, recovery,
+  infrastructure and production decisions remain blocked.

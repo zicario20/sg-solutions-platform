@@ -537,3 +537,23 @@ authorize default-branch merge, deployment, release, live PostgreSQL, provider/A
 credentials, CRM/calendar/Stripe/channel traffic, sensitive uploads, service start or an
 `Operational` claim. All migration/RLS/grant/role, trusted distributed admission, pinned-runtime,
 KMS, legal/consent/retention, provider, contract and deployment gates remain blocked or pending.
+
+## 2026-08-21 - Decision 036 - M007 provider-disabled Build gate
+
+Decision: approve ADR 011 and authorize an isolated provider-disabled Build for M007 Authentication
+and Client Account in `codex/m007-auth-account-rebuild` from accepted M006 base `3bbf8ef`.
+
+Reason: the Product Owner supplied and approved the complete M007 specification and directed the
+Architecture Agent to design this Build. Brownfield audit confirms `packages/auth` and Supabase Auth
+are the existing identity foundation; a second user or password system is prohibited.
+
+Impact: M007 may add local code, focused tests, Drizzle migrations, forced-RLS contracts, official
+provider adapters in disabled composition, synthetic fixtures and accessible ES/EN client/admin UI.
+Supabase Auth remains credential authority; no local password hash table is authorized. All access
+decisions remain backend-authoritative.
+
+This gate does not authorize real Supabase/Google/email/OTP/MFA accounts, credentials, network
+traffic, production KMS/PostgreSQL evidence, automatic grants from contact matches, merge,
+deployment, release or `Operational` status. Missing provider, legal, retention, risk, recovery and
+infrastructure decisions remain disabled or fail closed. Sequential TDD, independent architecture
+review, read-only Cyber Neo review and Product Owner acceptance are required before M008.

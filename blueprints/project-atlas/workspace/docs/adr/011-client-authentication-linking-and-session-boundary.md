@@ -2,8 +2,8 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Proposed; no Build or activation authority
-- Date: 2026-08-09
+- Status: Accepted architecture for Decision 036 provider-disabled Build; external activation blocked
+- Date: 2026-08-09; accepted for provider-disabled Build 2026-08-21
 - Extends: ADR 001 and ADR 004; does not supersede either
 - Update rule: accept or supersede only after independent security review and Product Owner approval
 
@@ -20,7 +20,7 @@ and recommends a per-request client, but some helper patterns permit browser Jav
 session material. The architecture therefore must define the intended security outcome rather than
 silently inherit a helper default.
 
-## Decision proposed
+## Decision
 
 ### 1. Invitation-first account activation
 
@@ -256,7 +256,8 @@ require separate evidence in `EXTERNAL_ACTIVATION_REGISTER.md` and Product Owner
 
 ## Approval and supersession
 
-This ADR is a candidate only. Product Owner approval would accept the architecture; it would not
-authorize `GENERATE`, schema changes, routes, provider accounts, credentials, migration, merge,
-deployment or production traffic. A future contradictory decision must supersede this ADR
-explicitly and preserve its rationale.
+Decision 036 accepts this architecture for M007's isolated provider-disabled Build on base
+`3bbf8ef`. It authorizes local code, focused tests, Drizzle migrations, RLS contracts, accessible
+ES/EN UI and synthetic adapters. It does not authorize provider accounts, credentials, external
+traffic, production configuration, merge, deployment, release or `Operational` status. A future
+contradictory decision must supersede this ADR explicitly and preserve its rationale.
