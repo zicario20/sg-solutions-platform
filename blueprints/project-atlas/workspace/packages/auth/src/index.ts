@@ -5,5 +5,8 @@ export * from "./crypto.ts";
 export * from "./disabled-provider.ts";
 export * from "./invitations.ts";
 export * from "./memory-repository.ts";
+export * from "./one-time-proofs.ts";
 export * from "./party-linking.ts";
+export * from "./password-flows.ts";
 export * from "./providers.ts";
+export * from "./session-service.ts";
