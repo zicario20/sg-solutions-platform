@@ -2,14 +2,15 @@
 
 ## Status
 
-- State: `Provider-disabled implementation complete; ready for Product Owner acceptance`
+- State: `Provider-disabled implementation complete; Product Owner accepted`
 - Build maturity: isolated provider-disabled implementation
 - Date: 2026-08-21
 - Version: `0.1.0-alpha.25`
 - Branch: `codex/m007-auth-account-rebuild`
 - Implementation head: `f8a4806`
-- Authority: Decision 036 and accepted ADR 011
-- Product Owner acceptance: pending; not recorded
+- Accepted documentary head: `e66bd6f`
+- Authority: Decisions 036-037 and accepted ADR 011
+- Product Owner acceptance: recorded by Decision 037
 - Explicit exclusion: no merge, deployment, release, live PostgreSQL, RLS execution, Supabase,
   Google OAuth/JWKS, email, OTP, CRM, KMS, credential, external network or `Operational` claim
 
@@ -93,12 +94,13 @@ controlled restore/ledger-reconciliation procedure. No destructive down-migratio
 
 ## Product Owner acceptance and next gate
 
-M007 is ready for Product Owner acceptance of the completed provider-disabled scope. Neither this
-PCR nor the independent review verdicts grant acceptance. No acceptance decision, merge,
-deployment, provider activation or production release is recorded.
+Decision 037 records the Product Owner's formal acceptance of the completed provider-disabled M007
+scope at documentary head `e66bd6f`, based on the response "Excelente haz el push" after delivery of
+the completion evidence and acceptance-ready closure.
 
-The next documentary gate is an explicit Product Owner accept/revise decision. External activation
-requires the database, provider, policy, infrastructure and release evidence listed above.
+Acceptance does not authorize or claim push completion, default-branch merge, deployment, provider
+activation, live PostgreSQL/RLS validation, release or production operation. External activation
+still requires the database, provider, policy, infrastructure and release evidence listed above.
 
 ## Final checklist
 
@@ -111,5 +113,5 @@ requires the database, provider, policy, infrastructure and release evidence lis
 - [ ] Apply and attest migrations `0023`-`0035` and the RLS harness on disposable PostgreSQL.
 - [ ] Provision and validate providers, credentials, KMS, configuration and legal/retention policy.
 - [ ] Revalidate pinned Node `24.18.1` and deployment/release environment.
-- [ ] Product Owner acceptance.
+- [x] Product Owner acceptance recorded by Decision 037.
 - [ ] Merge, deployment, activation and production release.

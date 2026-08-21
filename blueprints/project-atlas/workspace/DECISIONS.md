@@ -557,3 +557,20 @@ traffic, production KMS/PostgreSQL evidence, automatic grants from contact match
 deployment, release or `Operational` status. Missing provider, legal, retention, risk, recovery and
 infrastructure decisions remain disabled or fail closed. Sequential TDD, independent architecture
 review, read-only Cyber Neo review and Product Owner acceptance are required before M008.
+
+## 2026-08-21 - Decision 037 - M007 provider-disabled Product Owner acceptance
+
+Decision: the Product Owner formally accepts M007 Authentication and Client Account in its
+completed provider-disabled scope at documentary head `e66bd6f` on
+`codex/m007-auth-account-rebuild`.
+
+Reason: after receiving the M007 completion evidence and acceptance-ready closure, the Product
+Owner responded, "Excelente haz el push". The Product Owner now directs that message to be recorded
+as the formal acceptance signal for the prepared provider-disabled module scope.
+
+Impact: M007 is accepted only as a provider-disabled implementation. This acceptance does not
+authorize or claim default-branch merge, push completion, deployment, release, live PostgreSQL or
+RLS validation, provider/API activation, credentials, KMS, external traffic or `Operational`
+status. Migrations `0023`-`0035`, the authorized disposable-PostgreSQL RLS harness, Supabase/Google
+OAuth/JWKS/email/OTP/CRM integrations, legal/retention policy, pinned Node validation and all
+deployment/release gates remain blocked or pending.

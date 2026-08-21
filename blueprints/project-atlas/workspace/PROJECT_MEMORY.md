@@ -728,3 +728,17 @@ before implementation.
   `24.18.1` revalidation versus local `24.19.0`; and merge, deploy and release gates.
 - M007 is ready for Product Owner acceptance in provider-disabled scope. No Product Owner
   acceptance, merge, deployment, activation, release or `Operational` status is recorded.
+
+## 2026-08-21 - M007 provider-disabled Product Owner acceptance
+
+- Decision 037 records the Product Owner's formal acceptance of M007 Authentication and Client
+  Account in completed provider-disabled scope at documentary head `e66bd6f`. The acceptance signal
+  is the Product Owner's response, "Excelente haz el push", after receiving the completion evidence
+  and acceptance-ready closure.
+- Acceptance does not claim that a push, merge, deployment, provider activation, live PostgreSQL/RLS
+  run, release or `Operational` transition occurred. This documentation task performs none of those
+  actions.
+- Migrations `0023`-`0035` and the authorized disposable-PostgreSQL RLS harness; Supabase/Google
+  OAuth/JWKS/email/OTP/CRM providers; credentials, KMS and production configuration; legal and
+  retention policy; pinned Node `24.18.1` revalidation; and merge/deploy/release gates remain
+  blocked or pending.

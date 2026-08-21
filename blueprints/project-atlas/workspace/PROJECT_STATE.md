@@ -8,7 +8,7 @@
 Version: `0.1.0-alpha.25`
 
 Current phase: **M007 Authentication and Client Account provider-disabled implementation complete,
-independently approved and ready for Product Owner acceptance. Acceptance has not occurred.**
+independently approved and formally accepted by the Product Owner under Decision 037.**
 
 ## Accepted predecessor
 
@@ -41,8 +41,9 @@ authorized disposable PostgreSQL instance. Supabase/Google OAuth/JWKS/email/OTP/
 credentials, KMS and production configuration remain disabled. Legal texts, retention/deletion/
 export/legal-hold policy, exact operational policy values, deploy, merge and release remain pending.
 The local Node runtime evidence used `24.19.0` while the repository pin remains `24.18.1`, so the
-pinned environment still requires revalidation. Product Owner acceptance is the next documentary
-gate; it has not been granted.
+pinned environment still requires revalidation. Decision 037 records Product Owner acceptance at
+documentary head `e66bd6f`; merge, push completion, deployment, activation and release remain
+separate pending gates.
 
 ## Role model
 
