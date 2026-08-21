@@ -274,13 +274,15 @@ export class PublicFormsService {
     const idempotencyDigest = await this.dependencies.digest.digest(
       `public-forms:idempotency:v1\u0000${command.idempotencyKey}`,
     );
-    const scope = stable({
-      formCode: definition.formCode,
-      version: definition.version,
-      locale: definition.locale,
-      sessionBindingDigest,
-      idempotencyDigest,
-    });
+    const scope = await this.dependencies.digest.digest(
+      `public-forms:scope:v1\u0000${stable({
+        formCode: definition.formCode,
+        version: definition.version,
+        locale: definition.locale,
+        sessionBindingDigest,
+        idempotencyDigest,
+      })}`,
+    );
     const reservationId = this.dependencies.ids.next("form_reservation");
     const proposedReceipt: FormReceipt = Object.freeze({
       status: "accepted",
