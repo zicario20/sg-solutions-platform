@@ -575,3 +575,24 @@
 - A fresh pnpm audit again reported zero vulnerabilities across 943 dependencies; the frozen
   lockfile SHA-256 remained
   `EC8CF9C5D8E6078B32445819DBBD84FC34E06FCAF30F103F154732C39DD97FC1`.
+
+## 2026-08-20 — M004 provider-disabled implementation closure candidate
+
+- M004 WhatsApp Business implementation was completed in the isolated
+  `codex/m004-whatsapp-recovery` worktree under Decision 028. The work remains provider-disabled:
+  no merge, push, deployment, credentials, external Meta account/API, phone number, template
+  submission or live provider traffic was created or authorized.
+- Final focused memory repository/conformance evidence passed `21/21`, including canonical
+  provider connection binding and cross-connection replay denial; `@atlas/domain` typecheck passed.
+  Earlier Task 11 integration evidence is `3/3`. No clean full-suite, full build or operational
+  acceptance is claimed.
+- Independent architecture review evidence remains at
+  `docs/reviews/M004-ARCHITECTURE-REVIEW.md`. Cyber Neo's final scoped static approval is recorded
+  externally at `D:\SG Solutions\security-reports\M004_CYBER_NEO_2026-08-20.md`; it retains
+  provider-disabled, disposable-PostgreSQL, migration-ledger and Node-version limitations as
+  separate blockers.
+- Pending gates are live disposable PostgreSQL validation, migration-ledger attestation, validation
+  with pinned Node `24.18.1`, provider/business account and credential readiness, contracts/terms
+  and DPA, approved number/templates, LLC/business readiness, activation runbooks, Product Owner
+  acceptance, merge and production release. M004 is not deploy-ready or Operational. Release 1A/1B
+  compatibility and the CRM reference decisions under Decision 031 remain unchanged.

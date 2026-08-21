@@ -5,8 +5,8 @@
 - Surface: External messaging channel; Public acquisition with future Client/Admin projections
 - Domain: Communications / Public Acquisition
 - Release: R7 target capability; architecture prepared during Phase 0
-- Status: Build ready under Decision 028 after clean audited M003 closure; not started
-- Last updated: 2026-08-12
+- Status: Provider-disabled implementation complete in isolated worktree; Product Owner acceptance and release gates pending
+- Last updated: 2026-08-20
 - External readiness: `External activation deferred` in `EXTERNAL_ACTIVATION_REGISTER.md`
 
 This PRD normalizes the complete Product Owner-supplied M004 source into the approved Project Atlas
@@ -796,6 +796,22 @@ honest automation/handoff states.
   failure and manual recovery behavior without real client sensitive data.
 - The Product Owner approves activation; only then may the connection advance toward Operational.
 
+### Implementation closure evidence (2026-08-20)
+
+- The approved provider-disabled local/staging slice is implemented in the isolated
+  `codex/m004-whatsapp-recovery` worktree. It is not merged, deployed, provider-connected or
+  operationally accepted.
+- Final focused memory repository/conformance regression evidence is `21/21`, with an
+  `@atlas/domain` typecheck pass. Earlier Task 11 integration evidence is `3/3`.
+- Independent architecture review evidence remains in `docs/reviews/M004-ARCHITECTURE-REVIEW.md`.
+  The final scoped Cyber Neo approval is external evidence at
+  `D:\SG Solutions\security-reports\M004_CYBER_NEO_2026-08-20.md`.
+- No clean full-suite, full build, live disposable PostgreSQL, migration-ledger attestation or
+  pinned Node `24.18.1` validation is claimed. Those items remain release/activation blockers.
+- Provider account/API, credentials, contracts/terms/DPA, institutional number, approved templates,
+  LLC/business readiness, external Meta traffic, merge, deployment and Product Owner activation
+  approval remain deferred. Provider-disabled behavior and honest manual fallback remain required.
+
 ## 18. Negative acceptance criteria
 
 - No WhatsApp Web, QR session, unofficial library, personal account or browser automation.
@@ -899,6 +915,8 @@ answers to approve the provider-neutral architecture.
 ## Delivery and activation record
 
 - Architecture: independently reviewed candidate completed on 2026-08-09.
-- Local implementation: authorized by Decision 028 only after clean, audited M003 closure.
-- External activation: deferred; see `EXTERNAL_ACTIVATION_REGISTER.md`.
-- Operational status: not eligible.
+- Local implementation: completed provider-disabled in an isolated worktree under Decision 028;
+  Product Owner acceptance, merge and release remain separate gates.
+- External activation: deferred; see `EXTERNAL_ACTIVATION_REGISTER.md`. No account, credential,
+  number, template, provider traffic or deployment evidence is implied by local implementation.
+- Operational status: not eligible until all external, validation and Product Owner gates close.

@@ -7,45 +7,32 @@
 
 Version: `0.1.0-alpha.23`
 
-Current phase: **M004 WhatsApp Business recovery design — Product Owner written-spec review**
+Current phase: **M004 WhatsApp Business provider-disabled implementation closure candidate**
 
-Module status: **M004 In Progress**. M001–M003 have implementation evidence and remain at Product
-Owner Acceptance. M004 has an independently reviewed documentary architecture and a substantial
-partial Build candidate, but its transferred branch is not complete or accepted.
+Module status: **M004 implementation complete in isolated worktree; Product Owner acceptance,
+merge and release gates pending.** M001-M003 remain at Product Owner Acceptance. M005 and later
+modules remain blocked until the Product Owner accepts M004 and approves advancement.
 
-Authorized sequence: Decisions 028 and 030 authorize recovery of M004 from clean M003 commit
-`1187f6ac4859679216290048df9964f269ac765d`, followed strictly by one module per worktree. M005 and
-all later modules remain blocked until M004 closes and the Product Owner approves advancement.
+Implementation boundary: M004 was completed in `codex/m004-whatsapp-recovery` without merge, push,
+deployment, credentials, external Meta traffic, live provider account, number, template submission
+or production activation. The adapter and ingress remain provider-disabled; public WhatsApp entry
+remains hidden. This is not an `Operational`, deploy-ready or operational-acceptance claim.
 
-M004 recovery direction: selectively port the communications kernel, fail-closed channel policy,
-inactive Meta Cloud adapter, bounded webhook ingress, canonical persistence, Drizzle migrations and
-candidate tests. Re-review every imported change against current architecture; do not inherit later
-prototypes or unverified completion claims.
+Evidence: focused M004 repository/conformance regression passed `21/21` and `@atlas/domain`
+typecheck passed after the final connection-binding remediation. Earlier Task 11 integration evidence
+is `3/3`. Independent architecture review evidence remains in
+`docs/reviews/M004-ARCHITECTURE-REVIEW.md`; final Cyber Neo scoped approval is recorded externally at
+`D:\SG Solutions\security-reports\M004_CYBER_NEO_2026-08-20.md`. No clean full-suite, full build,
+live database, deployment or operational acceptance is claimed.
 
-External/live state: no Meta account, credentials, number, templates, public endpoint, provider
-traffic, production database, deployment, merge or release is authorized. M004 remains local/staging
-and provider-disabled. External activation is a separate future gate.
+Deferred blockers: live disposable PostgreSQL validation, migration-ledger attestation, validation
+under pinned Node `24.18.1`, provider/API account and credential setup, contracts/terms and DPA,
+approved phone number/templates, LLC/business readiness, activation runbooks, Product Owner
+activation approval, merge and production release. These remain separate future gates.
 
-Other modules: M005–M018 are documentary candidates only. M019–M037 transferred prototypes do not
-count as canonical implementations. The future CRM/analytics brief is assigned to M016, M017, M020
-and M092 under Decision 031. None of the 110 modules is `Operational`.
-
-Current priority: Product Owner review of the written M004 recovery specification, followed by its
-TDD implementation plan and selective recovery in the isolated
-`codex/m004-whatsapp-recovery` worktree.
-
-Open external decisions: M003 `CHAT-001`–`CHAT-007` and M004 activation decisions remain in
-`EXTERNAL_ACTIVATION_REGISTER.md`. They block only affected production/legal/provider behavior and
-do not justify simulated success.
-
-Quality evidence: the clean base is documented by
-`docs/phases/M003-PHASE-COMPLETION-REPORT.md`, `docs/reviews/M003-CODE-REVIEW.md` and
-`docs/reviews/M003-SECURITY-BUILD-REVIEW.md`. M004 requires fresh evidence; inherited test names and
-historical outputs are not current passes.
-
-Known recovery limitation: seven required M004 PostgreSQL fresh/upgrade/RLS/conformance validations
-were previously deferred. They must be executed with disposable local databases or remain explicit
-blockers to M004 closure; they cannot be converted into passes by documentation.
+Compatibility and scope: Release 1A/1B compatibility is preserved. M004 remains a provider-neutral
+communications boundary and does not alter CRM ownership/reference decisions, including the deferred
+M016/M017/M020/M092 CRM/analytics work under Decision 031.
 
 Role model: Product Owner decides; Codex Architecture Agent architects; separately scoped Codex
 Implementation Agents implement approved work; ChatGPT/independent reviewers audit and do not

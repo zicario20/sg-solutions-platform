@@ -23,11 +23,15 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   Decision 028; Product Owner acceptance is pending. Bilingual UI, secure conversation kernel, M002
   grounding, sensitive-input rejection, handoff boundaries, deterministic mode, Drizzle/RLS and
   automated/browser evidence exist. Live model traffic, deployment and public activation remain deferred.
-- **M004 WhatsApp Business:** Build ready after the clean audited M003 closure commit. Implement the direct Meta Cloud
-  API adapter, verified durable webhook inbox/outbox, consent/opt-out, bilingual templates,
-  idempotency, reconciliation, handoff and tests. Meta account, number, credentials, template
-  submission and live messages remain deferred; its public entry point stays hidden.
-- **M005 Voice Agent:** Build queued after clean M004 closure. Implement the bounded Twilio adapter,
+- **M004 WhatsApp Business:** provider-disabled implementation is complete in its isolated worktree
+  under Decision 028. The direct Meta Cloud adapter boundary, verified durable webhook inbox/outbox,
+  consent/opt-out, bilingual templates, idempotency, reconciliation, handoff and focused evidence
+  are present. Product Owner acceptance, merge and release gates remain pending. Meta account,
+  number, credentials, template submission, live messages, disposable-PostgreSQL proof,
+  migration-ledger attestation and pinned-Node validation remain deferred; its public entry point
+  stays hidden and M004 is not Operational.
+- **M005 Voice Agent:** Build queued only after Product Owner acceptance of M004 and explicit
+  advancement approval. Implement the bounded Twilio adapter,
   bilingual receptionist state machine, replaceable STT/model/TTS ports, transfer/callback/handoff
   boundaries, deterministic simulator and tests. Number, credentials, recording/transcription,
   real calls and deployment remain deferred; its public entry point stays hidden.
