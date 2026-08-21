@@ -9,12 +9,13 @@ import {
 } from "@atlas/auth";
 import {
   PostgresAuthControlPlaneRepository,
+  PostgresDurableAuthControlsRepository,
   PostgresAuthIdentityRepository,
   PostgresAuthSessionInvitationRepository,
   PostgresOAuthTransactionRepository,
   type AuthSql,
 } from "@atlas/database";
-import { createHash } from "node:crypto";
+import { createHmac } from "node:crypto";
 import postgres from "postgres";
 import { createServerAuthRuntime, type ServerAuthControlPlane } from "./server-runtime.ts";
 
@@ -129,19 +130,37 @@ export function createAuthEntryPoints(loadAdapter: () => Promise<DurableHttpAdap
 
 const routeCommand = (pathname: string): AuthCommand => pathname.includes("register") ? "register" : pathname.includes("logout") ? "logout" : pathname.includes("verify") ? "verify" : pathname.includes("reset") ? "reset" : pathname.includes("recovery") ? "recovery" : pathname.includes("sessions") ? "sessions" : pathname.includes("step-up") ? "step_up" : pathname.includes("oauth/google/start") ? "oauth_start" : pathname.includes("oauth/google/callback") ? "oauth_callback" : "login";
 
-function configuredControlPlane(): ServerAuthControlPlane | undefined {
-  const databaseUrl = process.env.DATABASE_URL; const hmacKey = process.env.AUTH_CONTROL_HMAC_KEY;
-  if (!databaseUrl || !hmacKey || !process.env.AUTH_CANONICAL_ORIGIN) return undefined;
-  const sql = postgres(databaseUrl, { max: 1, idle_timeout: 1 });
-  // The postgres driver has a richer generic result type; this port exposes only transactional unsafe queries.
-  const repository = new PostgresAuthControlPlaneRepository(sql as unknown as AuthSql);
-  const digest = (value: string) => createHash("sha256").update(`${hmacKey}\u0000${value}`, "utf8").digest("base64url");
+export function createConfiguredAuthControlPlane(environment: Record<string, string | undefined>, dependencies: { readonly sql?: AuthSql } = {}): ServerAuthControlPlane | undefined {
+  const databaseUrl = environment.DATABASE_URL; const hmacKey = environment.AUTH_CONTROL_HMAC_KEY;
+  if (!databaseUrl || !hmacKey || !environment.AUTH_CANONICAL_ORIGIN) return undefined;
+  const sql = dependencies.sql ?? postgres(databaseUrl, { max: 1, idle_timeout: 1 }) as unknown as AuthSql;
+  const sessions = new PostgresAuthControlPlaneRepository(sql);
+  const controls = new PostgresDurableAuthControlsRepository(sql);
+  const digest = (purpose: string, value: string) => createHmac("sha256", hmacKey).update(`${purpose}\u0000${value}`, "utf8").digest("base64url");
+  const profiles: Record<AuthCommand, { readonly threshold: number; readonly windowSeconds: number }> = {
+    register: { threshold: 5, windowSeconds: 900 }, login: { threshold: 10, windowSeconds: 60 }, logout: { threshold: 20, windowSeconds: 60 }, verify: { threshold: 8, windowSeconds: 600 }, recovery: { threshold: 5, windowSeconds: 900 }, reset: { threshold: 5, windowSeconds: 900 }, sessions: { threshold: 20, windowSeconds: 60 }, step_up: { threshold: 5, windowSeconds: 300 }, oauth_start: { threshold: 20, windowSeconds: 60 }, oauth_callback: { threshold: 20, windowSeconds: 60 },
+  };
+  const notification = (purpose: AuthCommand, enabled: boolean, eventKey: string, ownerKeyDigest: string) => {
+    if (!enabled) return undefined;
+    const channel = purpose === "verify" || purpose === "step_up" ? "otp" as const : purpose === "login" ? "security_alert" as const : "email" as const;
+    return { commandId: digest("outbox_command", eventKey), purpose: purpose === "recovery" ? "recovery_email" : purpose === "register" ? "verification_email" : purpose === "login" ? "login_security_alert" : "auth_otp", channel, idempotencyKey: digest("outbox_idempotency", eventKey), payload: { ownerKeyDigest, action: purpose } };
+  };
   return {
-    admit: async (input) => ({ kind: await repository.admit({ bucketDigest: digest(`${input.purpose}:${input.identifier}`), purpose: input.purpose, commandId: input.requestId, accountId: null, now: input.now }) }),
-    revokeCurrent: async (input) => ({ kind: await repository.revokeByHandleDigest(digest(input.sessionHandle), input.now) ? "revoked" : "denied" }),
-    revokeOthers: async (input) => ({ kind: await repository.revokeOthersByHandleDigest(digest(input.sessionHandle), input.now) ? "revoked" : "denied" }),
+    admit: async (input) => {
+      const values = [input.risk.ip, input.risk.account, input.risk.email, input.risk.phone, input.risk.device];
+      const kinds = ["ip", "account", "email", "phone", "device"];
+      const riskKeyDigests = values.map((value, index) => digest(`${input.purpose}:${kinds[index]}`, value || "missing"));
+      const eventKey = digest("audit_event", `${input.purpose}:${input.requestId}`);
+      const providerEnabled = input.purpose === "verify" || input.purpose === "step_up" ? environment.AUTH_OTP_PROVIDER_ENABLED === "true" : input.purpose === "login" ? environment.AUTH_SECURITY_ALERT_PROVIDER_ENABLED === "true" : environment.AUTH_EMAIL_PROVIDER_ENABLED === "true";
+      const result = await controls.admitAndEnqueue({ action: input.purpose, riskKeyDigests, ...profiles[input.purpose], eventKey, correlationId: input.requestId, metadata: { riskClass: "multi_key" }, outbox: notification(input.purpose, providerEnabled, eventKey, riskKeyDigests[2] ?? riskKeyDigests[0]!), now: input.now });
+      return result;
+    },
+    revokeCurrent: async (input) => ({ kind: await sessions.revokeByHandleDigest(digest("session_handle", input.sessionHandle), input.now) ? "revoked" : "denied" }),
+    revokeOthers: async (input) => ({ kind: await sessions.revokeOthersByHandleDigest(digest("session_handle", input.sessionHandle), input.now) ? "revoked" : "denied" }),
   };
 }
+
+function configuredControlPlane(): ServerAuthControlPlane | undefined { return createConfiguredAuthControlPlane(process.env); }
 
 function configuredRuntime() { return createServerAuthRuntime({ canonicalOrigin: process.env.AUTH_CANONICAL_ORIGIN ?? "https://invalid.local", controlPlane: configuredControlPlane() }); }
 

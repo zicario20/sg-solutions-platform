@@ -7,6 +7,7 @@ export * from "./communication-event-envelope.ts";
 export * from "./communications-repository.ts";
 export * from "./postgres-public-chat-store.ts";
 export * from "./postgres-auth-control-plane.ts";
+export * from "./postgres-auth-durable-controls.ts";
 export * from "./postgres-auth-identity-repository.ts";
 export * from "./postgres-auth-oauth-repository.ts";
 export * from "./postgres-auth-session-invitation-repository.ts";

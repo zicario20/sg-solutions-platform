@@ -2,7 +2,7 @@ import type { AuthCommand } from "@atlas/auth";
 
 type Admission = { readonly kind: "accepted" | "rate_limited" };
 export type ServerAuthControlPlane = Readonly<{
-  admit(input: { readonly purpose: AuthCommand; readonly identifier: string; readonly requestId: string; readonly now: Date }): Promise<Admission>;
+  admit(input: { readonly purpose: AuthCommand; readonly risk: { readonly ip: string; readonly account: string; readonly email: string; readonly phone: string; readonly device: string }; readonly requestId: string; readonly now: Date }): Promise<Admission>;
   revokeCurrent(input: { readonly sessionHandle: string; readonly now: Date }): Promise<{ readonly kind: "revoked" | "denied" }>;
   revokeOthers(input: { readonly sessionHandle: string; readonly now: Date }): Promise<{ readonly kind: "revoked" | "denied" }>;
 }>;
@@ -21,11 +21,21 @@ function cookie(request: Request, name: string): string | undefined {
   return request.headers.get("cookie")?.split(";").map((value) => value.trim()).find((value) => value.startsWith(`${name}=`))?.slice(name.length + 1);
 }
 
-async function identifier(request: Request): Promise<string> {
+async function riskIdentifiers(request: Request): Promise<{ readonly ip: string; readonly account: string; readonly email: string; readonly phone: string; readonly device: string }> {
+  let email = "";
+  let phone = "";
   try {
     const form = await request.clone().formData();
-    return String(form.get("email") ?? "").trim().toLowerCase();
-  } catch { return ""; }
+    email = String(form.get("email") ?? "").trim().toLowerCase();
+    phone = String(form.get("phone") ?? "").trim();
+  } catch { /* A body-less command still receives missing-value risk buckets. */ }
+  return {
+    ip: (request.headers.get("x-forwarded-for")?.split(",")[0] ?? request.headers.get("x-real-ip") ?? "").trim(),
+    account: cookie(request, "__Host-atlas_auth") ?? "",
+    email,
+    phone,
+    device: cookie(request, "__Host-atlas_device") ?? "",
+  };
 }
 
 /** Server-only request facade. It deliberately has no in-memory implementation path. */
@@ -49,7 +59,12 @@ export function createServerAuthRuntime(options: RuntimeOptions) {
         return result.kind === "unavailable" ? unavailable() : result.kind === "verified" ? neutralAccepted() : response(403, { kind: "denied" });
       }
       if (!options.controlPlane) return unavailable();
-      const result = await options.controlPlane.admit({ purpose: command, identifier: await identifier(request), requestId: request.headers.get("x-request-id") ?? crypto.randomUUID(), now: new Date() });
+      let result: Admission;
+      try {
+        result = await options.controlPlane.admit({ purpose: command, risk: await riskIdentifiers(request), requestId: request.headers.get("x-request-id") ?? crypto.randomUUID(), now: new Date() });
+      } catch {
+        return unavailable();
+      }
       return result.kind === "accepted" ? neutralAccepted() : neutralAccepted();
     },
   };
