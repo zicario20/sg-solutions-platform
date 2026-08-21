@@ -3,6 +3,7 @@ import PublicFormExperience from "../../../components/forms/PublicFormExperience
 import type { PublicFormRenderProjection } from "../../../components/forms/types";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import type { PublicPage } from "../../../domain/public-site";
+import { getPublicFormStaticPaths } from "../../../content/public-forms";
 
 interface Props {
   page: PublicPage;
@@ -11,7 +12,7 @@ interface Props {
 }
 
 export function getStaticPaths() {
-  return [];
+  return getPublicFormStaticPaths("en");
 }
 
 const { page, projection, alternatePath } = Astro.props as Props;
