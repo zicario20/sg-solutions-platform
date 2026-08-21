@@ -112,7 +112,8 @@ migrations and optional fields. There is no disposable form endpoint or temporar
 - Persistent anonymous drafts, abandonment emails/SMS, AI summaries and CAPTCHA vendor activation
   until their named Product Owner gates close.
 - A general no-code survey builder or arbitrary executable condition language.
-- Any M006 implementation, provider activation, deployment or Operational claim in this phase.
+- Historical implementation prohibition superseded by Decision 034 for the completed
+  provider-disabled scope only; provider activation, deployment and Operational claims remain prohibited.
 
 ## 5. Actors
 
