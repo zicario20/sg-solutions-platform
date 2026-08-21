@@ -95,8 +95,18 @@ function normalizeAnswer(field: FormFieldDefinition, value: PublicAnswerValue): 
     if (!/^[A-Z]{2}$/u.test(normalized)) throw new Error("invalid");
     return normalized;
   }
-  if (field.fieldType === "date" && !/^\d{4}-\d{2}-\d{2}$/u.test(text)) {
-    throw new Error("invalid");
+  if (field.fieldType === "date") {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(text);
+    if (!match) throw new Error("invalid");
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    if (month < 1 || month > 12 || day < 1 || day > (days[month - 1] ?? 0)) {
+      throw new Error("invalid");
+    }
+    return text;
   }
   if ((field.fieldType === "select" || field.fieldType === "radio") && !field.optionCodes?.includes(text)) {
     throw new Error("invalid");
@@ -111,6 +121,7 @@ function present(value: PublicAnswerValue | undefined): boolean {
 function validateAndNormalizeAnswers(
   definition: FormDefinitionVersion,
   input: Readonly<Record<string, PublicAnswerValue>>,
+  requireComplete = true,
 ): Readonly<Record<string, PublicAnswerValue>> {
   if (!isPlainRecord(input) || Object.keys(input).some((key) => !SAFE_RECORD_KEYS.test(key))) {
     throw new Error("invalid");
@@ -127,7 +138,7 @@ function validateAndNormalizeAnswers(
     if (!field) throw new Error("invalid");
     const raw = input[fieldCode];
     if (!present(raw)) {
-      if (field.required) throw new Error("invalid");
+      if (requireComplete && field.required) throw new Error("invalid");
       continue;
     }
     normalized[fieldCode] = normalizeAnswer(field, raw as PublicAnswerValue);
@@ -135,9 +146,16 @@ function validateAndNormalizeAnswers(
   const finalVisibility = evaluateVisibility(definition, normalized);
   for (const fieldCode of finalVisibility.visible) {
     const field = fields.get(fieldCode);
-    if (field?.required && !present(normalized[fieldCode])) throw new Error("invalid");
+    if (requireComplete && field?.required && !present(normalized[fieldCode])) throw new Error("invalid");
   }
   return Object.freeze(normalized);
+}
+
+export function normalizePublicFormDraftAnswers(
+  definition: FormDefinitionVersion,
+  input: Readonly<Record<string, PublicAnswerValue>>,
+): Readonly<Record<string, PublicAnswerValue>> {
+  return validateAndNormalizeAnswers(definition, input, false);
 }
 
 function validateConsents(

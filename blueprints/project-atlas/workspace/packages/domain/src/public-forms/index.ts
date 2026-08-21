@@ -6,3 +6,4 @@ export * from "./repository.ts";
 export * from "./service.ts";
 export * from "./jobs.ts";
 export * from "./synthetic-ports.ts";
+export * from "./workflows.ts";

@@ -1,5 +1,13 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import type { AcceptPublicFormCommand, AcceptPublicFormResult } from "@atlas/domain";
+import type {
+  AcceptPublicFormCommand,
+  AcceptPublicFormResult,
+  ResumePublicFormDraftResult,
+  RevokePublicFormConsentCommand,
+  RevokePublicFormConsentResult,
+  SavePublicFormDraftCommand,
+  SavePublicFormDraftResult,
+} from "@atlas/domain";
 import { parsePublicSubmissionEnvelope } from "@atlas/validation";
 
 const COOKIE_NAME = "__Host-atlas-public-forms";
@@ -13,8 +21,16 @@ const PURPOSES = new Set([
   "service_interest",
 ]);
 
+type ResumePublicFormDraftCommand = Readonly<{
+  draftReference: string;
+  sessionBinding: string;
+}>;
+
 export interface PublicFormsFacadePort {
   acceptPublicSubmission(command: AcceptPublicFormCommand): Promise<AcceptPublicFormResult>;
+  saveDraft(command: SavePublicFormDraftCommand): Promise<SavePublicFormDraftResult>;
+  resumeDraft(command: ResumePublicFormDraftCommand): Promise<ResumePublicFormDraftResult>;
+  revokeConsent(command: RevokePublicFormConsentCommand): Promise<RevokePublicFormConsentResult>;
 }
 
 export interface FormAdmissionTokens {
@@ -23,6 +39,7 @@ export interface FormAdmissionTokens {
     formVersion: string;
     locale: "es" | "en";
     purpose: string;
+    sessionToken?: string;
   }): { nonce: string; csrfToken: string; sessionToken: string; expiresInSeconds: number };
   verify(input: {
     nonce: string;
@@ -81,12 +98,19 @@ export function createSignedFormAdmissionTokens(input: {
   return {
     issue(binding) {
       const now = Math.floor(input.clock.now().getTime() / 1_000);
-      const sessionToken = randomToken();
+      const { sessionToken: existingSessionToken, ...grantBinding } = binding;
+      const sessionToken =
+        existingSessionToken &&
+        existingSessionToken.length >= 20 &&
+        existingSessionToken.length <= 180 &&
+        /^[A-Za-z0-9_-]+$/u.test(existingSessionToken)
+          ? existingSessionToken
+          : randomToken();
       const csrfToken = randomToken();
       const nonce = randomToken();
       const payload: SignedPayload = {
         v: 1,
-        ...binding,
+        ...grantBinding,
         sessionDigest: digest(input.secret, "session", sessionToken),
         csrfDigest: digest(input.secret, "csrf", csrfToken),
         issuedAt: now,
@@ -373,7 +397,11 @@ export function createFormAdmissionHandlers(dependencies: {
       if (!(await admitted(request))) return invalid();
       try {
         const binding = parseBootstrap(await readBoundedJson(request));
-        const issued = dependencies.tokens.issue(binding);
+        const existingSessionToken = cookieValue(request);
+        const issued = dependencies.tokens.issue({
+          ...binding,
+          ...(existingSessionToken ? { sessionToken: existingSessionToken } : {}),
+        });
         return json(
           200,
           {
@@ -435,7 +463,192 @@ export function createFormAdmissionHandlers(dependencies: {
         return invalid();
       }
     },
+
+    async saveDraft(request: Request): Promise<Response> {
+      if (!(await admitted(request))) return invalid();
+      try {
+        const raw = await readBoundedJson(request);
+        if (
+          Object.keys(raw).some(
+            (key) =>
+              ![
+                "formCode",
+                "formVersion",
+                "locale",
+                "nonce",
+                "answers",
+                "draftReference",
+                "honeypot",
+              ].includes(key),
+          ) ||
+          typeof raw.formCode !== "string" ||
+          !SAFE_CODE.test(raw.formCode) ||
+          typeof raw.formVersion !== "string" ||
+          !SAFE_VERSION.test(raw.formVersion) ||
+          (raw.locale !== "es" && raw.locale !== "en") ||
+          typeof raw.nonce !== "string" ||
+          raw.nonce.length > 180 ||
+          !raw.answers ||
+          typeof raw.answers !== "object" ||
+          Array.isArray(raw.answers) ||
+          (raw.draftReference !== undefined && typeof raw.draftReference !== "string")
+        ) {
+          return invalid();
+        }
+        if (typeof raw.honeypot === "string" && raw.honeypot.length > 0) return review();
+        const binding = verifyWorkflowGrant(request, raw);
+        if (!binding) return invalid();
+        const result = await dependencies.facade.saveDraft({
+          formCode: raw.formCode,
+          formVersion: raw.formVersion,
+          locale: raw.locale,
+          sessionBinding: binding,
+          answers: raw.answers as Record<string, unknown>,
+          ...(typeof raw.draftReference === "string"
+            ? { draftReference: raw.draftReference }
+            : {}),
+        });
+        if (result.status === "saved") {
+          return json(200, {
+            ok: true,
+            status: result.status,
+            draftReference: result.draftReference,
+            expiresAt: result.expiresAt.toISOString(),
+          });
+        }
+        if (result.status === "unavailable") {
+          return json(503, { ok: false, code: "temporarily_unavailable" });
+        }
+        return invalid();
+      } catch {
+        return invalid();
+      }
+    },
+
+    async resumeDraft(request: Request): Promise<Response> {
+      if (!(await admitted(request))) return invalid();
+      try {
+        const raw = await readBoundedJson(request);
+        if (
+          Object.keys(raw).some(
+            (key) => !["formCode", "formVersion", "locale", "nonce", "draftReference"].includes(key),
+          ) ||
+          typeof raw.formCode !== "string" ||
+          !SAFE_CODE.test(raw.formCode) ||
+          typeof raw.formVersion !== "string" ||
+          !SAFE_VERSION.test(raw.formVersion) ||
+          (raw.locale !== "es" && raw.locale !== "en") ||
+          typeof raw.nonce !== "string" ||
+          raw.nonce.length > 180 ||
+          typeof raw.draftReference !== "string"
+        ) {
+          return invalid();
+        }
+        const binding = verifyWorkflowGrant(request, raw);
+        if (!binding) return invalid();
+        const result = await dependencies.facade.resumeDraft({
+          sessionBinding: binding,
+          draftReference: raw.draftReference,
+        });
+        if (result.status === "resumed") {
+          return json(200, {
+            ok: true,
+            status: result.status,
+            answers: result.answers,
+            expiresAt: result.expiresAt.toISOString(),
+          });
+        }
+        if (result.status === "expired") return json(410, { ok: false, code: "draft_expired" });
+        if (result.status === "unavailable") {
+          return json(503, { ok: false, code: "temporarily_unavailable" });
+        }
+        return invalid();
+      } catch {
+        return invalid();
+      }
+    },
+
+    async revokeConsent(request: Request): Promise<Response> {
+      if (!(await admitted(request))) return invalid();
+      try {
+        const raw = await readBoundedJson(request);
+        if (
+          Object.keys(raw).some(
+            (key) =>
+              ![
+                "formCode",
+                "formVersion",
+                "locale",
+                "nonce",
+                "submissionReceiptId",
+                "consentType",
+                "consentVersion",
+                "idempotencyKey",
+              ].includes(key),
+          ) ||
+          typeof raw.formCode !== "string" ||
+          !SAFE_CODE.test(raw.formCode) ||
+          typeof raw.formVersion !== "string" ||
+          !SAFE_VERSION.test(raw.formVersion) ||
+          (raw.locale !== "es" && raw.locale !== "en") ||
+          typeof raw.nonce !== "string" ||
+          raw.nonce.length > 180 ||
+          typeof raw.submissionReceiptId !== "string" ||
+          typeof raw.consentType !== "string" ||
+          typeof raw.consentVersion !== "string" ||
+          typeof raw.idempotencyKey !== "string"
+        ) {
+          return invalid();
+        }
+        const binding = verifyWorkflowGrant(request, raw);
+        if (!binding) return invalid();
+        const result = await dependencies.facade.revokeConsent({
+          submissionReceiptId: raw.submissionReceiptId,
+          consentType: raw.consentType,
+          consentVersion: raw.consentVersion,
+          idempotencyKey: raw.idempotencyKey,
+          sessionBinding: binding,
+        });
+        if (result.status === "revoked" || result.status === "replayed") {
+          return json(202, { ok: true, status: result.status, revocationId: result.revocationId });
+        }
+        if (result.status === "unavailable") {
+          return json(503, { ok: false, code: "temporarily_unavailable" });
+        }
+        return invalid();
+      } catch {
+        return invalid();
+      }
+    },
   };
+
+  function verifyWorkflowGrant(
+    request: Request,
+    raw: Record<string, unknown>,
+  ): string | undefined {
+    const sessionToken = cookieValue(request);
+    const csrfToken = request.headers.get("x-atlas-csrf");
+    if (
+      !sessionToken ||
+      !csrfToken ||
+      csrfToken.length > 180 ||
+      typeof raw.formCode !== "string" ||
+      typeof raw.formVersion !== "string" ||
+      (raw.locale !== "es" && raw.locale !== "en") ||
+      typeof raw.nonce !== "string"
+    ) {
+      return undefined;
+    }
+    const result = dependencies.tokens.verify({
+      nonce: raw.nonce,
+      csrfToken,
+      sessionToken,
+      formCode: raw.formCode,
+      formVersion: raw.formVersion,
+      locale: raw.locale,
+    });
+    return result.valid ? result.sessionBinding : undefined;
+  }
 }
 
 export function publicFormsOptionsResponse(): Response {

@@ -1,6 +1,9 @@
 import type {
   AcceptedFormSubmission,
+  ConsentRevocationRecord,
+  ConsentRevocationRepositoryResult,
   FormDefinitionVersion,
+  FormDraftRecord,
   FormReceipt,
   PublicFormsRepository,
   ReserveFormReceiptInput,
@@ -83,11 +86,51 @@ async function withGatewayTransaction<T>(
   });
 }
 
+export type PublicFormsStaffCapability = "preview" | "review" | "export";
+
+const STAFF_ROLES: Record<PublicFormsStaffCapability, string> = Object.freeze({
+  preview: "atlas_public_forms_preview",
+  review: "atlas_public_forms_review",
+  export: "atlas_public_forms_export",
+});
+
+export async function withAttestedPublicFormsStaffRole<T>(
+  sql: PublicFormsSql,
+  capability: PublicFormsStaffCapability,
+  work: (tx: PublicFormsTransaction) => Promise<T>,
+): Promise<T> {
+  const role = STAFF_ROLES[capability];
+  if (!role) throw new Error("PUBLIC_FORMS_STAFF_ROLE_DENIED");
+  return sql.begin(async (tx) => {
+    const principal = (
+      await query<{
+        session_user_name: string;
+        is_member: boolean;
+        rolsuper: boolean;
+        rolbypassrls: boolean;
+      }>(
+        tx,
+        `select session_user as session_user_name,
+          pg_has_role(session_user, $1, 'member') as is_member,
+          rol.rolsuper, rol.rolbypassrls
+         from pg_roles rol where rol.rolname = session_user limit 1`,
+        [role],
+      )
+    )[0];
+    if (!principal?.session_user_name || !principal.is_member || principal.rolsuper || principal.rolbypassrls) {
+      throw new Error("PUBLIC_FORMS_STAFF_ROLE_DENIED");
+    }
+    await query(tx, `set local role ${role}`);
+    return work(tx);
+  });
+}
+
 function receiptFromRow(row: ReceiptRow): FormReceipt {
   return Object.freeze({
     status: "accepted",
     receiptId: row.receipt_id,
     issuedAt: new Date(row.issued_at),
+    ...(row.submission_id ? { submissionRef: row.submission_id } : {}),
   });
 }
 
@@ -442,6 +485,260 @@ export class PostgresPublicFormsRepository implements PublicFormsRepository {
         [input.scope, input.reservationId],
       );
     });
+  }
+
+  async saveDraft(input: FormDraftRecord): Promise<"saved" | "denied"> {
+    if (
+      !IDENTIFIER.test(input.draftReference) ||
+      !DIGEST.test(input.scopeDigest) ||
+      !DIGEST.test(input.sessionBindingDigest) ||
+      !input.ciphertext ||
+      !input.keyReference
+    ) {
+      throw new Error("PUBLIC_FORM_DRAFT_INVALID");
+    }
+    return withGatewayTransaction(
+      this.sql,
+      input.scopeDigest,
+      input.sessionBindingDigest,
+      async (tx) => {
+        const saved = await query<{ id: string }>(
+          tx,
+          `insert into form_drafts (
+            id, scope_digest, session_binding_digest, form_code, form_version, locale,
+            ciphertext, key_reference, state, expires_at, created_at, updated_at
+          ) values ($1, $2, $3, $4, $5, $6, $7, $8, 'active', $9, $10, $10)
+          on conflict (scope_digest) do update set
+            ciphertext = excluded.ciphertext,
+            key_reference = excluded.key_reference,
+            expires_at = excluded.expires_at,
+            updated_at = excluded.updated_at
+          where form_drafts.session_binding_digest = excluded.session_binding_digest
+            and form_drafts.form_code = excluded.form_code
+            and form_drafts.form_version = excluded.form_version
+            and form_drafts.locale = excluded.locale
+            and form_drafts.state = 'active'
+          returning id`,
+          [
+            input.draftReference,
+            input.scopeDigest,
+            input.sessionBindingDigest,
+            input.formCode,
+            input.formVersion,
+            input.locale,
+            input.ciphertext,
+            input.keyReference,
+            input.expiresAt,
+            input.createdAt,
+          ],
+        );
+        return saved[0] ? "saved" : "denied";
+      },
+    );
+  }
+
+  async loadDraft(input: {
+    scopeDigest: string;
+    sessionBindingDigest: string;
+    now: Date;
+  }): Promise<FormDraftRecord | undefined> {
+    return withGatewayTransaction(
+      this.sql,
+      input.scopeDigest,
+      input.sessionBindingDigest,
+      async (tx) => {
+        const row = (
+          await query<{
+            id: string;
+            scope_digest: string;
+            session_binding_digest: string;
+            form_code: string;
+            form_version: string;
+            locale: "es" | "en";
+            ciphertext: string;
+            key_reference: string;
+            state: "active" | "expired" | "deleted";
+            expires_at: Date;
+            created_at: Date;
+            updated_at: Date;
+          }>(
+            tx,
+            `select id, scope_digest, session_binding_digest, form_code, form_version,
+              locale, ciphertext, key_reference, state, expires_at, created_at, updated_at
+             from form_drafts where scope_digest = $1 and session_binding_digest = $2 limit 1`,
+            [input.scopeDigest, input.sessionBindingDigest],
+          )
+        )[0];
+        if (!row) return undefined;
+        let state = row.state;
+        if (state === "active" && row.expires_at.getTime() <= input.now.getTime()) {
+          await query(
+            tx,
+            `update form_drafts set state = 'expired', updated_at = $3
+             where scope_digest = $1 and session_binding_digest = $2 and state = 'active'`,
+            [input.scopeDigest, input.sessionBindingDigest, input.now],
+          );
+          state = "expired";
+        }
+        return Object.freeze({
+          draftReference: row.id,
+          scopeDigest: row.scope_digest,
+          sessionBindingDigest: row.session_binding_digest,
+          formCode: row.form_code,
+          formVersion: row.form_version,
+          locale: row.locale,
+          ciphertext: row.ciphertext,
+          keyReference: row.key_reference,
+          state,
+          expiresAt: new Date(row.expires_at),
+          createdAt: new Date(row.created_at),
+          updatedAt: new Date(row.updated_at),
+        });
+      },
+    );
+  }
+
+  async expireDraft(input: {
+    scopeDigest: string;
+    sessionBindingDigest: string;
+    now: Date;
+  }): Promise<"expired" | "denied"> {
+    return withGatewayTransaction(
+      this.sql,
+      input.scopeDigest,
+      input.sessionBindingDigest,
+      async (tx) => {
+        const expired = await query<{ id: string }>(
+          tx,
+          `update form_drafts set state = 'expired', updated_at = $3
+           where scope_digest = $1 and session_binding_digest = $2
+             and state in ('active', 'expired') returning id`,
+          [input.scopeDigest, input.sessionBindingDigest, input.now],
+        );
+        return expired[0] ? "expired" : "denied";
+      },
+    );
+  }
+
+  async revokeConsent(input: ConsentRevocationRecord): Promise<ConsentRevocationRepositoryResult> {
+    if (
+      !IDENTIFIER.test(input.revocationId) ||
+      !DIGEST.test(input.sessionBindingDigest) ||
+      !DIGEST.test(input.idempotencyDigest) ||
+      !DIGEST.test(input.commandDigest)
+    ) {
+      throw new Error("PUBLIC_FORM_CONSENT_REVOCATION_INVALID");
+    }
+    return withGatewayTransaction(
+      this.sql,
+      "0".repeat(64),
+      input.sessionBindingDigest,
+      async (tx) => {
+        const previous = (
+          await query<{ id: string; command_digest: string }>(
+            tx,
+            `select id, command_digest from form_consent_revocations
+             where idempotency_digest = $1 and session_binding_digest = $2 limit 1`,
+            [input.idempotencyDigest, input.sessionBindingDigest],
+          )
+        )[0];
+        if (previous) {
+          return previous.command_digest === input.commandDigest
+            ? { status: "replayed", revocationId: previous.id }
+            : { status: "conflict" };
+        }
+        const grant = (
+          await query<{
+            submission_id: string;
+            scope_digest: string;
+            form_code: string;
+            locale: "es" | "en";
+          }>(
+            tx,
+            `select consent.submission_id, consent.scope_digest, submission.form_code, submission.locale
+             from form_consent_evidence consent
+             join form_submissions submission on submission.id = consent.submission_id
+             join form_submission_receipts receipt on receipt.submission_id = submission.id
+             where receipt.receipt_id = $1 and consent.consent_type = $2
+               and consent.consent_version = $3 and consent.session_binding_digest = $4
+               and consent.granted = true limit 1`,
+            [
+              input.submissionReceiptId,
+              input.consentType,
+              input.consentVersion,
+              input.sessionBindingDigest,
+            ],
+          )
+        )[0];
+        if (!grant) return { status: "denied" };
+        await query(tx, "select set_config('atlas.public_forms_scope_digest', $1, true)", [grant.scope_digest]);
+        const inserted = await query<{ id: string }>(
+          tx,
+          `insert into form_consent_revocations (
+            id, submission_id, scope_digest, consent_type, consent_version,
+            session_binding_digest, idempotency_digest, command_digest,
+            evidence_reference, occurred_at, created_at
+          ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
+          on conflict (idempotency_digest) do nothing returning id`,
+          [
+            input.revocationId,
+            grant.submission_id,
+            grant.scope_digest,
+            input.consentType,
+            input.consentVersion,
+            input.sessionBindingDigest,
+            input.idempotencyDigest,
+            input.commandDigest,
+            input.evidenceReference,
+            input.occurredAt,
+          ],
+        );
+        if (!inserted[0]) return { status: "conflict" };
+        for (const command of input.outbox) {
+          await query(
+            tx,
+            `insert into form_outbox (
+              command_id, submission_id, scope_digest, owner, operation, form_code,
+              locale, service_code, consent_type, channel, idempotency_key, state,
+              attempt_count, lease_owner, lease_version, lease_expires_at, available_at,
+              completed_at, result_code, owner_receipt, created_at, updated_at
+            ) values ($1, $2, $3, $4, $5, $6, $7, null, $8, $9, $10, 'pending',
+              0, null, 0, null, $11, null, null, null, $11, $11)
+            on conflict (idempotency_key) do nothing`,
+            [
+              command.commandId,
+              grant.submission_id,
+              grant.scope_digest,
+              command.owner,
+              command.operation,
+              grant.form_code,
+              grant.locale,
+              command.consentType ?? null,
+              command.channel ?? null,
+              command.idempotencyKey,
+              input.occurredAt,
+            ],
+          );
+        }
+        await query(
+          tx,
+          `insert into form_audit_events (
+            id, submission_id, scope_digest, event_name, result_code,
+            form_code, locale, correlation_id, occurred_at, created_at
+          ) values ($1, $2, $3, 'consent_revoked', 'accepted', $4, $5, $6, $7, $7)`,
+          [
+            `${input.revocationId}:audit`,
+            grant.submission_id,
+            grant.scope_digest,
+            grant.form_code,
+            grant.locale,
+            `form_${input.commandDigest.slice(0, 32)}`,
+            input.occurredAt,
+          ],
+        );
+        return { status: "revoked", revocationId: input.revocationId };
+      },
+    );
   }
 }
 

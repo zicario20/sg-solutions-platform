@@ -10,11 +10,6 @@ import type {
   OwnerPortResult,
   PaymentHandoffPort,
 } from "./ports.ts";
-import {
-  SyntheticFormOutboxStore,
-  createProviderDisabledPublicFormPorts,
-} from "./synthetic-ports.ts";
-
 export type PublicFormOwnerPorts = Readonly<{
   lead: LeadCandidatePort;
   consent: ConsentEvidencePort;
@@ -28,7 +23,8 @@ export type PublicFormOwnerPorts = Readonly<{
 export type FormCommandDispatchStatus =
   | OwnerPortResult["status"]
   | "blocked"
-  | "retry_scheduled";
+  | "retry_scheduled"
+  | "unknown";
 
 export type FormCommandDispatchReceipt = Readonly<{
   commandId: string;
@@ -43,16 +39,20 @@ export type FormOutboxLease = Readonly<{
   leaseId: string;
   command: FormOutboxCommand;
   attempts: number;
+  leaseOwner: string;
+  leaseVersion: number;
+  grantedConsentTypes: readonly string[];
 }>;
 
 export interface FormOutboxStore {
   enqueue(input: {
     submissionRef: string;
     commands: readonly FormOutboxCommand[];
+    grantedConsentTypes: readonly string[];
     now: Date;
   }): Promise<void>;
   lease(input: {
-    submissionRef: string;
+    submissionRef?: string;
     now: Date;
     leaseMs: number;
     limit: number;
@@ -66,6 +66,11 @@ export interface FormOutboxStore {
     lease: FormOutboxLease;
     receipt: FormCommandDispatchReceipt;
     availableAt: Date;
+  }): Promise<void>;
+  markUnknown(input: {
+    lease: FormOutboxLease;
+    receipt: FormCommandDispatchReceipt;
+    now: Date;
   }): Promise<void>;
   listReceipts(submissionRef: string): Promise<readonly FormCommandDispatchReceipt[]>;
 }
@@ -87,8 +92,8 @@ export type PublicFormTelemetryInput = Readonly<{
 }>;
 
 export type FormOutboxJobDependencies = Readonly<{
-  store?: FormOutboxStore;
-  ports?: PublicFormOwnerPorts;
+  store: FormOutboxStore;
+  ports: PublicFormOwnerPorts;
   now?: () => Date;
   telemetry?: (event: PublicFormTelemetryInput) => void;
   correlationId?: string;
@@ -119,7 +124,26 @@ type ResolvedDependencies = Readonly<{
   leaseMs: number;
   retryDelayMs: number;
   maxAttempts: number;
+}>; 
+
+export type PersistedFormOutboxContext = Readonly<{
+  submissionRef: string;
+  formCode: string;
+  locale: "es" | "en";
 }>;
+
+type FormOutboxContext = PersistedFormOutboxContext | AcceptedFormSubmission;
+
+function contextSubmissionRef(context: FormOutboxContext): string {
+  return "submissionRef" in context ? context.submissionRef : context.submissionId;
+}
+
+export class KnownNoEffectFormOwnerError extends Error {
+  constructor(message = "FORM_OWNER_KNOWN_NO_EFFECT") {
+    super(message);
+    this.name = "KnownNoEffectFormOwnerError";
+  }
+}
 
 const CORRELATION_ID = /^form_correlation_[0-9a-f]{32}$/u;
 
@@ -135,11 +159,11 @@ function stableHex(value: string): string {
 }
 
 function resolveDependencies(
-  submission: AcceptedFormSubmission,
+  submission: FormOutboxContext,
   input: FormOutboxJobDependencies,
 ): ResolvedDependencies {
   const correlationId =
-    input.correlationId ?? `form_correlation_${stableHex(submission.submissionId)}`;
+    input.correlationId ?? `form_correlation_${stableHex(contextSubmissionRef(submission))}`;
   if (!CORRELATION_ID.test(correlationId)) {
     throw new Error("PUBLIC_FORM_CORRELATION_INVALID");
   }
@@ -166,8 +190,8 @@ function resolveDependencies(
   }
 
   return Object.freeze({
-    store: input.store ?? new SyntheticFormOutboxStore(),
-    ports: input.ports ?? createProviderDisabledPublicFormPorts(),
+    store: input.store,
+    ports: input.ports,
     now: input.now ?? (() => new Date()),
     ...(input.telemetry ? { telemetry: input.telemetry } : {}),
     correlationId,
@@ -193,14 +217,8 @@ function requiredConsent(command: FormOutboxCommand): string | undefined {
   return undefined;
 }
 
-function hasConsent(submission: AcceptedFormSubmission, consentType: string): boolean {
-  return submission.consents.some(
-    (evidence) =>
-      evidence.consentType === consentType &&
-      evidence.granted &&
-      evidence.version.length > 0 &&
-      evidence.disclosureReference.length > 0,
-  );
+function hasConsent(lease: FormOutboxLease, consentType: string): boolean {
+  return lease.grantedConsentTypes.includes(consentType);
 }
 
 function receiptFromResult(
@@ -219,7 +237,7 @@ function receiptFromResult(
 
 function localReceipt(
   command: FormOutboxCommand,
-  status: "blocked" | "retry_scheduled" | "queued" | "unavailable",
+  status: "blocked" | "retry_scheduled" | "queued" | "unavailable" | "unknown",
 ): FormCommandDispatchReceipt {
   return Object.freeze({
     commandId: command.commandId,
@@ -254,12 +272,11 @@ async function invokeOwner(
 }
 
 async function processLease(
-  submission: AcceptedFormSubmission,
   lease: FormOutboxLease,
   dependencies: ResolvedDependencies,
 ): Promise<void> {
   const consentType = requiredConsent(lease.command);
-  if (consentType && !hasConsent(submission, consentType)) {
+  if (consentType && !hasConsent(lease, consentType)) {
     await dependencies.store.complete({
       lease,
       receipt: localReceipt(lease.command, "blocked"),
@@ -275,8 +292,8 @@ async function processLease(
       receipt: receiptFromResult(lease.command, result),
       now: dependencies.now(),
     });
-  } catch {
-    if (lease.attempts < dependencies.maxAttempts) {
+  } catch (error) {
+    if (error instanceof KnownNoEffectFormOwnerError && lease.attempts < dependencies.maxAttempts) {
       await dependencies.store.retry({
         lease,
         receipt: localReceipt(lease.command, "retry_scheduled"),
@@ -284,9 +301,17 @@ async function processLease(
       });
       return;
     }
-    await dependencies.store.complete({
+    if (error instanceof KnownNoEffectFormOwnerError) {
+      await dependencies.store.complete({
+        lease,
+        receipt: localReceipt(lease.command, "unavailable"),
+        now: dependencies.now(),
+      });
+      return;
+    }
+    await dependencies.store.markUnknown({
       lease,
-      receipt: localReceipt(lease.command, "unavailable"),
+      receipt: localReceipt(lease.command, "unknown"),
       now: dependencies.now(),
     });
   }
@@ -305,6 +330,7 @@ function nextAction(receipts: readonly FormCommandDispatchReceipt[]): FormOutbox
     receipts.some(
       (receipt) =>
         receipt.status === "unavailable" ||
+        receipt.status === "unknown" ||
         receipt.status === "blocked" ||
         receipt.status === "pending" ||
         receipt.status === "duplicate_review",
@@ -317,19 +343,20 @@ function nextAction(receipts: readonly FormCommandDispatchReceipt[]): FormOutbox
 
 async function runOutbox(
   operation: PublicFormTelemetryInput["operation"],
-  submission: AcceptedFormSubmission,
+  submission: FormOutboxContext,
   dependencies: ResolvedDependencies,
 ): Promise<FormOutboxDispatchResult> {
   const now = dependencies.now();
+  const submissionRef = contextSubmissionRef(submission);
   const leases = await dependencies.store.lease({
-    submissionRef: submission.submissionId,
+    submissionRef,
     now,
     leaseMs: dependencies.leaseMs,
     limit: dependencies.batchSize,
   });
-  for (const lease of leases) await processLease(submission, lease, dependencies);
+  for (const lease of leases) await processLease(lease, dependencies);
 
-  const commandReceipts = await dependencies.store.listReceipts(submission.submissionId);
+  const commandReceipts = await dependencies.store.listReceipts(submissionRef);
   const action = nextAction(commandReceipts);
   const telemetryResult: PublicFormTelemetryInput["result"] =
     leases.length === 0 && commandReceipts.length > 0
@@ -352,7 +379,7 @@ async function runOutbox(
   );
 
   return Object.freeze({
-    submissionRef: submission.submissionId,
+    submissionRef,
     lead: aggregateStatus(commandReceipts, "lead"),
     calendar: aggregateStatus(commandReceipts, "appointment"),
     payment: aggregateStatus(commandReceipts, "payment"),
@@ -364,12 +391,15 @@ async function runOutbox(
 
 export async function dispatchFormOutbox(
   submission: AcceptedFormSubmission,
-  input: FormOutboxJobDependencies = {},
+  input: FormOutboxJobDependencies,
 ): Promise<FormOutboxDispatchResult> {
   const dependencies = resolveDependencies(submission, input);
   await dependencies.store.enqueue({
     submissionRef: submission.submissionId,
     commands: submission.outbox,
+    grantedConsentTypes: submission.consents
+      .filter((consent) => consent.granted)
+      .map((consent) => consent.consentType),
     now: dependencies.now(),
   });
   return runOutbox("dispatch", submission, dependencies);
@@ -381,4 +411,12 @@ export async function reconcileFormOutbox(
 ): Promise<FormOutboxDispatchResult> {
   const dependencies = resolveDependencies(submission, input);
   return runOutbox("reconciliation", submission, dependencies);
+}
+
+export async function dispatchPersistedFormOutbox(
+  context: PersistedFormOutboxContext,
+  input: FormOutboxJobDependencies,
+): Promise<FormOutboxDispatchResult> {
+  const dependencies = resolveDependencies(context, input);
+  return runOutbox("dispatch", context, dependencies);
 }

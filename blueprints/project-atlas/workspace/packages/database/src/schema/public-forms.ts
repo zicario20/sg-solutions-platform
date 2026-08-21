@@ -18,12 +18,20 @@ import {
 } from "drizzle-orm/pg-core";
 
 export const publicFormsGatewayRole = pgRole("atlas_public_forms_gateway").existing();
-export const publicFormsStaffRole = pgRole("atlas_public_forms_staff").existing();
+export const publicFormsPreviewRole = pgRole("atlas_public_forms_preview").existing();
+export const publicFormsReviewRole = pgRole("atlas_public_forms_review").existing();
+export const publicFormsExportRole = pgRole("atlas_public_forms_export").existing();
+export const publicFormsOutboxRole = pgRole("atlas_public_forms_outbox").existing();
 export const publicFormsRetentionRole = pgRole("atlas_public_forms_retention").existing();
 
 const activeScope = sql`nullif(current_setting('atlas.public_forms_scope_digest', true), '')`;
 const activeSession = sql`nullif(current_setting('atlas.public_forms_session_digest', true), '')`;
-const staffPermission = sql`current_setting('atlas.staff_permission', true) in ('forms.review', 'forms.export', 'forms.definition_preview')`;
+const exportablePrivateTables = new Set([
+  "form_submissions",
+  "form_responses",
+  "form_consent_evidence",
+  "form_attribution",
+]);
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
@@ -53,12 +61,22 @@ const scopedGatewayPolicies = (name: string, scopeDigest: unknown) => [
     using: sql`${scopeDigest} = ${activeScope}`,
     withCheck: sql`${scopeDigest} = ${activeScope}`,
   }),
-  pgPolicy(`${name}_staff_select`, {
+  pgPolicy(`${name}_review_select`, {
     as: "permissive",
     for: "select",
-    to: publicFormsStaffRole,
-    using: staffPermission,
+    to: publicFormsReviewRole,
+    using: sql`true`,
   }),
+  ...(exportablePrivateTables.has(name)
+    ? [
+        pgPolicy(`${name}_export_select`, {
+          as: "permissive",
+          for: "select",
+          to: publicFormsExportRole,
+          using: sql`true`,
+        }),
+      ]
+    : []),
 ];
 
 export const formDefinitions = pgTable(
@@ -79,11 +97,23 @@ export const formDefinitions = pgTable(
       to: publicFormsGatewayRole,
       using: sql`${table.lifecycle} = 'active'`,
     }),
-    pgPolicy("form_definitions_staff_preview_select", {
+    pgPolicy("form_definitions_preview_select", {
       as: "permissive",
       for: "select",
-      to: publicFormsStaffRole,
-      using: staffPermission,
+      to: publicFormsPreviewRole,
+      using: sql`true`,
+    }),
+    pgPolicy("form_definitions_review_select", {
+      as: "permissive",
+      for: "select",
+      to: publicFormsReviewRole,
+      using: sql`true`,
+    }),
+    pgPolicy("form_definitions_export_select", {
+      as: "permissive",
+      for: "select",
+      to: publicFormsExportRole,
+      using: sql`true`,
     }),
   ],
 ).enableRLS();
@@ -124,11 +154,23 @@ export const formDefinitionVersions = pgTable(
       to: publicFormsGatewayRole,
       using: sql`${table.status} = 'published' and ${table.audience} = 'public'`,
     }),
-    pgPolicy("form_definition_versions_staff_preview_select", {
+    pgPolicy("form_definition_versions_preview_select", {
       as: "permissive",
       for: "select",
-      to: publicFormsStaffRole,
-      using: staffPermission,
+      to: publicFormsPreviewRole,
+      using: sql`true`,
+    }),
+    pgPolicy("form_definition_versions_review_select", {
+      as: "permissive",
+      for: "select",
+      to: publicFormsReviewRole,
+      using: sql`true`,
+    }),
+    pgPolicy("form_definition_versions_export_select", {
+      as: "permissive",
+      for: "select",
+      to: publicFormsExportRole,
+      using: sql`true`,
     }),
   ],
 ).enableRLS();
@@ -164,11 +206,23 @@ export const formFieldDefinitions = pgTable(
       to: publicFormsGatewayRole,
       using: sql`exists (select 1 from form_definition_versions version where version.id = ${table.definitionVersionId} and version.status = 'published' and version.audience = 'public')`,
     }),
-    pgPolicy("form_field_definitions_staff_preview_select", {
+    pgPolicy("form_field_definitions_preview_select", {
       as: "permissive",
       for: "select",
-      to: publicFormsStaffRole,
-      using: staffPermission,
+      to: publicFormsPreviewRole,
+      using: sql`true`,
+    }),
+    pgPolicy("form_field_definitions_review_select", {
+      as: "permissive",
+      for: "select",
+      to: publicFormsReviewRole,
+      using: sql`true`,
+    }),
+    pgPolicy("form_field_definitions_export_select", {
+      as: "permissive",
+      for: "select",
+      to: publicFormsExportRole,
+      using: sql`true`,
     }),
   ],
 ).enableRLS();
@@ -204,6 +258,12 @@ export const formSubmissions = pgTable(
     check("form_submissions_deletion_valid", sql`${table.deletionState} in ('retained', 'deletion_due', 'deleted', 'legal_hold')`),
     check("form_submissions_expiry_valid", sql`${table.expiresAt} > ${table.acceptedAt}`),
     index("form_submissions_expiry_idx").on(table.deletionState, table.expiresAt),
+    pgPolicy("form_submissions_gateway_session_revoke_select", {
+      as: "permissive",
+      for: "select",
+      to: publicFormsGatewayRole,
+      using: sql`${table.sessionBindingDigest} = ${activeSession}`,
+    }),
     ...scopedGatewayPolicies("form_submissions", table.scopeDigest),
   ],
 ).enableRLS();
@@ -230,6 +290,12 @@ export const formSubmissionReceipts = pgTable(
     check("form_submission_receipts_lease_valid", sql`${table.leaseExpiresAt} > ${table.issuedAt}`),
     check("form_submission_receipts_completion_valid", sql`(${table.state} = 'accepted' and ${table.submissionId} is not null and ${table.acceptedAt} is not null) or (${table.state} <> 'accepted' and ${table.submissionId} is null and ${table.acceptedAt} is null)`),
     index("form_submission_receipts_lease_idx").on(table.state, table.leaseExpiresAt),
+    pgPolicy("form_submission_receipts_gateway_session_revoke_select", {
+      as: "permissive",
+      for: "select",
+      to: publicFormsGatewayRole,
+      using: sql`exists (select 1 from form_submissions submission where submission.id = ${table.submissionId} and submission.session_binding_digest = ${activeSession})`,
+    }),
     ...scopedGatewayPolicies("form_submission_receipts", table.scopeDigest),
   ],
 ).enableRLS();
@@ -288,7 +354,78 @@ export const formConsentEvidence = pgTable(
     check("form_consent_evidence_scope_valid", sql`${digestCheck(table.scopeDigest)} and ${digestCheck(table.sessionBindingDigest)}`),
     check("form_consent_evidence_source_valid", sql`${table.source} = 'public_form'`),
     check("form_consent_evidence_revocation_valid", sql`${table.revokedAt} is null or (${table.granted} = true and ${table.revokedAt} >= ${table.occurredAt})`),
+    pgPolicy("form_consent_evidence_gateway_session_revoke_select", {
+      as: "permissive",
+      for: "select",
+      to: publicFormsGatewayRole,
+      using: sql`${table.sessionBindingDigest} = ${activeSession}`,
+    }),
+    pgPolicy("form_consent_evidence_outbox_select", {
+      as: "permissive",
+      for: "select",
+      to: publicFormsOutboxRole,
+      using: sql`true`,
+    }),
     ...scopedGatewayPolicies("form_consent_evidence", table.scopeDigest),
+  ],
+).enableRLS();
+
+export const formConsentRevocations = pgTable(
+  "form_consent_revocations",
+  {
+    id: text("id").primaryKey(),
+    submissionId: text("submission_id").notNull(),
+    scopeDigest: char("scope_digest", { length: 64 }).notNull(),
+    consentType: varchar("consent_type", { length: 64 }).notNull(),
+    consentVersion: varchar("consent_version", { length: 32 }).notNull(),
+    sessionBindingDigest: char("session_binding_digest", { length: 64 }).notNull(),
+    idempotencyDigest: char("idempotency_digest", { length: 64 }).notNull().unique(),
+    commandDigest: char("command_digest", { length: 64 }).notNull(),
+    evidenceReference: text("evidence_reference").notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true, mode: "date" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "form_consent_revocations_grant_fk",
+      columns: [table.submissionId, table.consentType, table.consentVersion],
+      foreignColumns: [
+        formConsentEvidence.submissionId,
+        formConsentEvidence.consentType,
+        formConsentEvidence.consentVersion,
+      ],
+    }).onDelete("restrict"),
+    check("form_consent_revocations_digests_valid", sql`${digestCheck(table.scopeDigest)} and ${digestCheck(table.sessionBindingDigest)} and ${digestCheck(table.idempotencyDigest)} and ${digestCheck(table.commandDigest)}`),
+    pgPolicy("form_consent_revocations_gateway_session_select", {
+      as: "permissive",
+      for: "select",
+      to: publicFormsGatewayRole,
+      using: sql`${table.sessionBindingDigest} = ${activeSession}`,
+    }),
+    pgPolicy("form_consent_revocations_gateway_session_insert", {
+      as: "permissive",
+      for: "insert",
+      to: publicFormsGatewayRole,
+      withCheck: sql`${table.sessionBindingDigest} = ${activeSession}`,
+    }),
+    pgPolicy("form_consent_revocations_review_select", {
+      as: "permissive",
+      for: "select",
+      to: publicFormsReviewRole,
+      using: sql`true`,
+    }),
+    pgPolicy("form_consent_revocations_export_select", {
+      as: "permissive",
+      for: "select",
+      to: publicFormsExportRole,
+      using: sql`true`,
+    }),
+    pgPolicy("form_consent_revocations_outbox_select", {
+      as: "permissive",
+      for: "select",
+      to: publicFormsOutboxRole,
+      using: sql`true`,
+    }),
   ],
 ).enableRLS();
 
@@ -383,12 +520,14 @@ export const formOutbox = pgTable(
     idempotencyKey: text("idempotency_key").notNull().unique(),
     state: varchar("state", { length: 24 }).notNull(),
     attemptCount: integer("attempt_count").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(3),
     leaseOwner: text("lease_owner"),
     leaseVersion: integer("lease_version").notNull().default(0),
     leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true, mode: "date" }),
     availableAt: timestamp("available_at", { withTimezone: true, mode: "date" }).notNull(),
     completedAt: timestamp("completed_at", { withTimezone: true, mode: "date" }),
     resultCode: varchar("result_code", { length: 32 }),
+    ownerReceipt: jsonb("owner_receipt"),
     ...timestamps,
   },
   (table) => [
@@ -399,10 +538,23 @@ export const formOutbox = pgTable(
     }).onDelete("restrict"),
     check("form_outbox_scope_valid", digestCheck(table.scopeDigest)),
     check("form_outbox_owner_valid", sql`${table.owner} in ('lead', 'consent', 'appointment', 'payment', 'channel', 'analytics', 'notification')`),
-    check("form_outbox_state_valid", sql`${table.state} in ('pending', 'dispatching', 'completed', 'unavailable', 'manual_review')`),
-    check("form_outbox_attempt_valid", sql`${table.attemptCount} >= 0 and ${table.attemptCount} <= 12 and ${table.leaseVersion} >= 0`),
+    check("form_outbox_state_valid", sql`${table.state} in ('pending', 'dispatching', 'completed', 'unavailable', 'unknown', 'manual_review')`),
+    check("form_outbox_attempt_valid", sql`${table.attemptCount} >= 0 and ${table.maxAttempts} between 1 and 12 and ${table.attemptCount} <= ${table.maxAttempts} and ${table.leaseVersion} >= 0`),
     check("form_outbox_lease_valid", sql`(${table.state} = 'dispatching' and ${table.leaseOwner} is not null and ${table.leaseExpiresAt} is not null) or (${table.state} <> 'dispatching' and ${table.leaseOwner} is null and ${table.leaseExpiresAt} is null)`),
     index("form_outbox_dispatch_idx").on(table.state, table.availableAt),
+    pgPolicy("form_outbox_worker_select", {
+      as: "permissive",
+      for: "select",
+      to: publicFormsOutboxRole,
+      using: sql`true`,
+    }),
+    pgPolicy("form_outbox_worker_update", {
+      as: "permissive",
+      for: "update",
+      to: publicFormsOutboxRole,
+      using: sql`true`,
+      withCheck: sql`true`,
+    }),
     ...scopedGatewayPolicies("form_outbox", table.scopeDigest),
   ],
 ).enableRLS();

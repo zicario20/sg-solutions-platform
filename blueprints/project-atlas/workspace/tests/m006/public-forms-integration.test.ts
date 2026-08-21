@@ -4,6 +4,7 @@ import type { AcceptedFormSubmission, FormConsentEvidence } from "../../packages
 import type { FormOutboxCommand } from "../../packages/domain/src/public-forms/ports.ts";
 import {
   dispatchFormOutbox,
+  KnownNoEffectFormOwnerError,
   reconcileFormOutbox,
 } from "../../packages/domain/src/public-forms/jobs.ts";
 import {
@@ -187,7 +188,7 @@ describe("M006 synthetic owner integration flow", () => {
         async accept(commandValue: FormOutboxCommand) {
           if (failFirstAttempt) {
             failFirstAttempt = false;
-            throw new Error("synthetic transient owner failure");
+            throw new KnownNoEffectFormOwnerError("synthetic transient owner failure");
           }
           return Object.freeze({
             status: "linked" as const,
@@ -233,6 +234,41 @@ describe("M006 synthetic owner integration flow", () => {
         state: "completed",
         receipt: expect.objectContaining({ status: "linked" }),
       }),
+    ]);
+  });
+
+  it("does not retry an ambiguous owner result that may already have produced an effect", async () => {
+    const store = new SyntheticFormOutboxStore();
+    const disabled = createProviderDisabledPublicFormPorts();
+    const ports = {
+      ...disabled,
+      lead: {
+        async accept() {
+          throw new Error("ambiguous synthetic timeout");
+        },
+      },
+    };
+    const submission = acceptedSubmission({
+      outbox: [command("lead", "accept_candidate", "lead")],
+    });
+
+    const first = await dispatchFormOutbox(submission, {
+      store,
+      ports,
+      now: () => NOW,
+      correlationId: CORRELATION_ID,
+    });
+    const replay = await dispatchFormOutbox(submission, {
+      store,
+      ports,
+      now: () => new Date(NOW.getTime() + 60_000),
+      correlationId: CORRELATION_ID,
+    });
+
+    expect(first).toMatchObject({ lead: "unknown", nextAction: "manual_follow_up" });
+    expect(replay.lead).toBe("unknown");
+    expect(store.snapshot("form_submission_01")).toEqual([
+      expect.objectContaining({ state: "unknown", attempts: 1 }),
     ]);
   });
 });

@@ -141,6 +141,13 @@
       "when": 1787287832031,
       "tag": "0019_m006_public_forms",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1787291920003,
+      "tag": "0020_lean_echo",
+      "breakpoints": true
     }
   ]
 }

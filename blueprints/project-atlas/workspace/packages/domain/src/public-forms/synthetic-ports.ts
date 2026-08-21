@@ -153,13 +153,22 @@ export function createProviderDisabledPublicFormPorts(): ProviderDisabledPublicF
   });
 }
 
-type SyntheticJobState = "pending" | "leased" | "waiting" | "completed";
+type SyntheticJobState =
+  | "pending"
+  | "leased"
+  | "waiting"
+  | "completed"
+  | "unknown"
+  | "manual_review";
 
 type SyntheticOutboxJob = {
   command: FormOutboxCommand;
   signature: string;
   state: SyntheticJobState;
   attempts: number;
+  maxAttempts: number;
+  leaseVersion: number;
+  grantedConsentTypes: readonly string[];
   availableAt: number;
   leaseId?: string;
   leaseExpiresAt?: number;
@@ -176,9 +185,17 @@ export type SyntheticOutboxSnapshot = Readonly<{
 export class SyntheticFormOutboxStore implements FormOutboxStore {
   private readonly jobs = new Map<string, SyntheticOutboxJob>();
 
+  constructor(private readonly options: { maxAttempts?: number; workerId?: string } = {}) {
+    const maxAttempts = options.maxAttempts ?? 3;
+    if (!Number.isSafeInteger(maxAttempts) || maxAttempts < 1 || maxAttempts > 12) {
+      throw new Error("FORM_OUTBOX_ATTEMPT_POLICY_INVALID");
+    }
+  }
+
   async enqueue(input: {
     submissionRef: string;
     commands: readonly FormOutboxCommand[];
+    grantedConsentTypes: readonly string[];
     now: Date;
   }): Promise<void> {
     for (const command of input.commands) {
@@ -196,13 +213,16 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
         signature,
         state: "pending",
         attempts: 0,
+        maxAttempts: this.options.maxAttempts ?? 3,
+        leaseVersion: 0,
+        grantedConsentTypes: Object.freeze([...new Set(input.grantedConsentTypes)]),
         availableAt: input.now.getTime(),
       });
     }
   }
 
   async lease(input: {
-    submissionRef: string;
+    submissionRef?: string;
     now: Date;
     leaseMs: number;
     limit: number;
@@ -210,7 +230,7 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
     const now = input.now.getTime();
     const leases: FormOutboxLease[] = [];
     for (const job of this.jobs.values()) {
-      if (job.command.submissionRef !== input.submissionRef) continue;
+      if (input.submissionRef && job.command.submissionRef !== input.submissionRef) continue;
       if (job.state === "leased" && (job.leaseExpiresAt ?? Number.POSITIVE_INFINITY) <= now) {
         job.state = "pending";
         delete job.leaseId;
@@ -223,7 +243,12 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
       ) {
         continue;
       }
+      if (job.attempts >= job.maxAttempts) {
+        job.state = "manual_review";
+        continue;
+      }
       job.attempts += 1;
+      job.leaseVersion += 1;
       job.state = "leased";
       job.leaseId = `form_lease_${stableToken(`${job.command.idempotencyKey}:${job.attempts}`)}`;
       job.leaseExpiresAt = now + input.leaseMs;
@@ -232,6 +257,9 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
           leaseId: job.leaseId,
           command: job.command,
           attempts: job.attempts,
+          leaseOwner: this.options.workerId ?? "synthetic_form_worker",
+          leaseVersion: job.leaseVersion,
+          grantedConsentTypes: job.grantedConsentTypes,
         }),
       );
     }
@@ -257,8 +285,28 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
     availableAt: Date;
   }): Promise<void> {
     const job = this.assertLease(input.lease, input.receipt);
+    if (job.attempts >= job.maxAttempts) {
+      job.state = "manual_review";
+      job.receipt = Object.freeze({ ...input.receipt, status: "unavailable" });
+      delete job.leaseId;
+      delete job.leaseExpiresAt;
+      return;
+    }
     job.state = "waiting";
     job.availableAt = input.availableAt.getTime();
+    job.receipt = Object.freeze({ ...input.receipt });
+    delete job.leaseId;
+    delete job.leaseExpiresAt;
+  }
+
+  async markUnknown(input: {
+    lease: FormOutboxLease;
+    receipt: FormCommandDispatchReceipt;
+    now: Date;
+  }): Promise<void> {
+    const job = this.assertLease(input.lease, input.receipt);
+    job.state = "unknown";
+    job.availableAt = input.now.getTime();
     job.receipt = Object.freeze({ ...input.receipt });
     delete job.leaseId;
     delete job.leaseExpiresAt;
