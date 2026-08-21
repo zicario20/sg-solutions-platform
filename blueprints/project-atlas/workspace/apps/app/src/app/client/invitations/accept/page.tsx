@@ -1,0 +1,3 @@
+import { InvitationAcceptView } from "@atlas/ui";
+import { readAuthPageContext } from "../../../../lib/auth/locale.ts";
+export default async function Page({ searchParams }: { searchParams: Promise<{ locale?: string; outcome?: string; id?: string; proof?: string; contact_id?: string; scope?: string; identity_evidence_id?: string }> }) { const params = await searchParams; return <InvitationAcceptView {...await readAuthPageContext(params.locale, params.outcome)} invitation={{ id: params.id ?? "", proof: params.proof ?? "", contactId: params.contact_id ?? "", scope: params.scope ?? "", identityEvidenceId: params.identity_evidence_id ?? "" }} returnTo="/client/invitations/accept" />; }

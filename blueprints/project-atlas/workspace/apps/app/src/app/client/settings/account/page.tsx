@@ -1,2 +1,3 @@
-import { AuthShell } from "@atlas/ui";
-export default function Page() { return <AuthShell title="Cuenta"><p>Los cambios de acceso requieren autorización del servidor.</p></AuthShell>; }
+import { AccountView } from "@atlas/ui";
+import { readAuthPageContext } from "../../../../lib/auth/locale.ts";
+export default async function Page({ searchParams }: { searchParams: Promise<{ locale?: string; outcome?: string }> }) { const params = await searchParams; return <AccountView {...await readAuthPageContext(params.locale, params.outcome)} returnTo="/client/settings/account" />; }

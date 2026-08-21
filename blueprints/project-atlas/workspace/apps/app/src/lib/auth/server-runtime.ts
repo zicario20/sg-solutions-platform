@@ -21,6 +21,10 @@ function cookie(request: Request, name: string): string | undefined {
   return request.headers.get("cookie")?.split(";").map((value) => value.trim()).find((value) => value.startsWith(`${name}=`))?.slice(name.length + 1);
 }
 
+async function formValue(request: Request, name: string): Promise<string | undefined> {
+  try { const value = await request.clone().formData(); return String(value.get(name) ?? "") || undefined; } catch { return undefined; }
+}
+
 async function riskIdentifiers(request: Request): Promise<{ readonly ip: string; readonly account: string; readonly email: string; readonly phone: string; readonly device: string }> {
   let email = "";
   let phone = "";
@@ -47,8 +51,8 @@ export function createServerAuthRuntime(options: RuntimeOptions) {
         if (!options.controlPlane) return unavailable();
         const handle = cookie(request, "__Host-atlas_auth");
         const csrfCookie = cookie(request, "__Host-atlas_csrf");
-        const csrfHeader = request.headers.get("x-atlas-csrf");
-        if (!handle || !csrfCookie || !csrfHeader || csrfCookie !== csrfHeader) return response(403, { kind: "denied" });
+        const csrfRequest = request.headers.get("x-atlas-csrf") ?? await formValue(request, "csrf");
+        if (!handle || !csrfCookie || !csrfRequest || csrfCookie !== csrfRequest) return response(403, { kind: "denied" });
         const result = command === "logout" ? await options.controlPlane.revokeCurrent({ sessionHandle: handle, now: new Date() }) : await options.controlPlane.revokeOthers({ sessionHandle: handle, now: new Date() });
         return result.kind === "revoked" ? response(204, {}) : response(403, { kind: "denied" });
       }

@@ -1,3 +1,4 @@
-import { AuthShell, SecurityPanel, SessionList } from "@atlas/ui";
-import { currentAuthCopy } from "../../../lib/auth/locale.ts";
-export default function Page({ searchParams }: { searchParams: { locale?: string } }) { const copy = currentAuthCopy(searchParams.locale); return <AuthShell title={copy.security}><SecurityPanel /><SessionList /><form action="/api/auth/sessions" method="post"><button type="submit">{copy.closeOtherSessions}</button></form></AuthShell>; }
+import { AccountSecurityView } from "@atlas/ui";
+import { readAuthPageContext } from "../../../lib/auth/locale.ts";
+import { loadConfiguredAuthSessions } from "../../../lib/auth/http.ts";
+export default async function Page({ searchParams }: { searchParams: Promise<{ locale?: string; outcome?: string }> }) { const params = await searchParams; const context = await readAuthPageContext(params.locale, params.outcome); const sessions = await loadConfiguredAuthSessions(context.sessionHandle); const formatter = new Intl.DateTimeFormat(context.locale, { dateStyle: "medium", timeStyle: "short" }); return <AccountSecurityView {...context} sessions={sessions.map((session) => ({ id: session.id, current: session.current === true, createdAtLabel: session.createdAt ? formatter.format(session.createdAt) : context.copy.sessions }))} returnTo="/client/security" />; }

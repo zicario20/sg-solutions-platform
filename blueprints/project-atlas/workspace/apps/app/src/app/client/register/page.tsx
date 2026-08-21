@@ -1,3 +1,3 @@
-import { AuthField, authFormAttributes, AuthShell } from "@atlas/ui";
-import { currentAuthCopy } from "../../../lib/auth/locale.ts";
-export default function Page({ searchParams }: { searchParams: { locale?: string } }) { const copy = currentAuthCopy(searchParams.locale); return <AuthShell title={copy.register}><form {...authFormAttributes("register")}><AuthField label={copy.email} type="email" autoComplete="email" /><AuthField label={copy.password} type="password" autoComplete="new-password" /><button type="submit">{copy.continue}</button></form></AuthShell>; }
+import { RegisterView } from "@atlas/ui";
+import { readAuthPageContext } from "../../../lib/auth/locale.ts";
+export default async function Page({ searchParams }: { searchParams: Promise<{ locale?: string; outcome?: string }> }) { const params = await searchParams; return <RegisterView {...await readAuthPageContext(params.locale, params.outcome)} returnTo="/client/register" />; }

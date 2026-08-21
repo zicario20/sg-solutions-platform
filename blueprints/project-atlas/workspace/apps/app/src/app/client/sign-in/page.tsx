@@ -1,3 +1,3 @@
-import { AuthField, authFormAttributes, AuthShell } from "@atlas/ui";
-import { currentAuthCopy } from "../../../lib/auth/locale.ts";
-export default function Page({ searchParams }: { searchParams: { locale?: string } }) { const copy = currentAuthCopy(searchParams.locale); return <AuthShell title={copy.title}><form {...authFormAttributes("sign-in")}><AuthField label={copy.email} type="email" autoComplete="email" /><AuthField label={copy.password} type="password" autoComplete="current-password" /><button type="submit">{copy.continue}</button><p aria-live="polite">{copy.providerDisabled}</p></form></AuthShell>; }
+import { SignInView } from "@atlas/ui";
+import { readAuthPageContext } from "../../../lib/auth/locale.ts";
+export default async function Page({ searchParams }: { searchParams: Promise<{ locale?: string; outcome?: string }> }) { const params = await searchParams; return <SignInView {...await readAuthPageContext(params.locale, params.outcome)} returnTo="/client/sign-in" />; }
