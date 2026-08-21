@@ -9,6 +9,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@atlas/auth": "workspace:*",
     "@atlas/config": "workspace:*",
     "@atlas/database": "workspace:*",
     "@atlas/domain": "workspace:*",

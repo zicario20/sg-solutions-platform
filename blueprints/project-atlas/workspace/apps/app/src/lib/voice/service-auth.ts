@@ -1,4 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { ServiceIdentityVerifier } from "@atlas/auth";
 import type { VoiceCommand, VoiceCommandOperation } from "@atlas/domain";
 
 const ISSUER = "atlas-platform";
@@ -263,6 +264,7 @@ export class VoiceServiceAuthenticator {
   private readonly secret: Buffer;
   private readonly repository: VoiceCredentialRepository;
   private readonly repositoryReady: boolean;
+  private readonly canonicalVerifier: ServiceIdentityVerifier;
 
   constructor(
     secret: string | Uint8Array,
@@ -275,6 +277,7 @@ export class VoiceServiceAuthenticator {
       this.repository.durability === "shared_durable" ||
       (options.allowBoundedTestRepository === true &&
         this.repository.durability === "bounded_test");
+    this.canonicalVerifier = new ServiceIdentityVerifier();
   }
 
   async verify(token: string, command: VoiceCommand, now: Date): Promise<boolean> {
@@ -297,6 +300,7 @@ export class VoiceServiceAuthenticator {
     ) {
       return false;
     }
+    if ((await this.canonicalVerifier.verify({ audience: AUDIENCE, scopes: ["voice.execute"] }, { audience: AUDIENCE, scopes: ["voice.execute"] })).kind !== "allowed") return false;
     try {
       return (
         (await this.repository.consumeNonce({
