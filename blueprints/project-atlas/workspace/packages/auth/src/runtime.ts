@@ -1,7 +1,7 @@
 import type { AuthRuntimeConfig } from "./contracts.ts";
 import { createTransactionalAuthControls, type DurableAuthControls } from "./jobs.ts";
 
-export type AuthCommand = "register" | "login" | "logout" | "verify" | "recovery" | "sessions" | "step_up" | "oauth_start" | "oauth_callback";
+export type AuthCommand = "register" | "login" | "logout" | "verify" | "recovery" | "reset" | "sessions" | "step_up" | "oauth_start" | "oauth_callback";
 export type AuthRuntime = { canonicalOrigin: string; execute(command: AuthCommand, input: { origin: string | null }): Promise<{ status: number; body: { kind: "accepted" | "denied" | "unavailable" } }> };
 
 export function createAuthRuntime(input: { canonicalOrigin: string; sessionStore?: unknown; config?: AuthRuntimeConfig; controls?: DurableAuthControls }): AuthRuntime {

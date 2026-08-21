@@ -21,16 +21,19 @@ export class PostgresAuthControlPlaneRepository {
       return "rotated";
     });
   }
-  async admit(input: { bucketDigest: string; purpose: string; commandId: string; accountId: string | null; now: Date }): Promise<void> {
-    await this.sql.begin(async (transaction) => {
-      await query(transaction, `insert into auth_rate_buckets (bucket_digest, purpose, count, window_started_at, expires_at, updated_at) values ($1,$2,1,$3,$4,$3) on conflict (bucket_digest) do update set count = auth_rate_buckets.count + 1, updated_at = excluded.updated_at`, [input.bucketDigest, input.purpose, input.now, new Date(input.now.getTime() + 60_000)]);
-      await query(transaction, `insert into auth_security_events (id, account_id, sequence, event_name, outcome, correlation_id, policy_version, occurred_at) values ($1,$2,1,$3,'accepted',$1,1,$4)`, [`${input.commandId}:audit`, input.accountId, input.purpose, input.now]);
-      await query(transaction, `insert into auth_outbox (command_id, account_id, purpose, idempotency_key, state, attempt_count, lease_version, available_at, payload, created_at, updated_at) values ($1,$2,$3,$1,'pending',0,0,$4,'{}'::jsonb,$4,$4) on conflict (command_id) do nothing`, [input.commandId, input.accountId, input.purpose, input.now]);
-    });
+  async admit(input: { bucketDigest: string; purpose: string; commandId: string; accountId: string | null; now: Date }): Promise<"accepted" | "rate_limited"> {
+    const rows = await this.sql.begin(async (transaction) => query<readonly { allowed: boolean }[]>(transaction, `select atlas_auth_admit_pre_auth($1,$2,$3,$4) as allowed`, [input.bucketDigest, input.purpose, input.commandId, input.now]));
+    return rows[0]?.allowed ? "accepted" : "rate_limited";
   }
   async revokeByHandleDigest(handleDigest: string, now: Date): Promise<boolean> {
     return this.sql.begin(async (transaction) => {
       const rows = await query<readonly { id: string }[]>(transaction, `update auth_sessions set state = 'revoked', revoked_at = $2, updated_at = $2, version = version + 1 where handle_digest = $1 and state in ('active','rotating') returning id`, [handleDigest, now]);
+      return Boolean(rows[0]);
+    });
+  }
+  async revokeOthersByHandleDigest(handleDigest: string, now: Date): Promise<boolean> {
+    return this.sql.begin(async (transaction) => {
+      const rows = await query<readonly { id: string }[]>(transaction, `with current_session as (select id, account_id from auth_sessions where handle_digest = $1 and state = 'active' for update), revoked as (update auth_sessions set state = 'revoked', revoked_at = $2, updated_at = $2, version = version + 1 where account_id = (select account_id from current_session) and id <> (select id from current_session) and state in ('active','rotating') returning id) select id from current_session`, [handleDigest, now]);
       return Boolean(rows[0]);
     });
   }

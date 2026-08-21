@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import postgres from "postgres";
 import { createServerAuthRuntime, type ServerAuthControlPlane } from "./server-runtime.ts";
 
-const routeCommand = (pathname: string): AuthCommand => pathname.includes("register") ? "register" : pathname.includes("logout") ? "logout" : pathname.includes("verify") ? "verify" : pathname.includes("recovery") ? "recovery" : pathname.includes("sessions") ? "sessions" : pathname.includes("step-up") ? "step_up" : pathname.includes("oauth/google/start") ? "oauth_start" : pathname.includes("oauth/google/callback") ? "oauth_callback" : "login";
+const routeCommand = (pathname: string): AuthCommand => pathname.includes("register") ? "register" : pathname.includes("logout") ? "logout" : pathname.includes("verify") ? "verify" : pathname.includes("reset") ? "reset" : pathname.includes("recovery") ? "recovery" : pathname.includes("sessions") ? "sessions" : pathname.includes("step-up") ? "step_up" : pathname.includes("oauth/google/start") ? "oauth_start" : pathname.includes("oauth/google/callback") ? "oauth_callback" : "login";
 
 function configuredControlPlane(): ServerAuthControlPlane | undefined {
   const databaseUrl = process.env.DATABASE_URL; const hmacKey = process.env.AUTH_CONTROL_HMAC_KEY;
@@ -14,8 +14,9 @@ function configuredControlPlane(): ServerAuthControlPlane | undefined {
   const repository = new PostgresAuthControlPlaneRepository(sql as unknown as AuthSql);
   const digest = (value: string) => createHash("sha256").update(`${hmacKey}\u0000${value}`, "utf8").digest("base64url");
   return {
-    admit: async (input) => { await repository.admit({ bucketDigest: digest(`${input.purpose}:${input.identifier}`), purpose: input.purpose, commandId: input.requestId, accountId: null, now: input.now }); return { kind: "accepted" }; },
-    revoke: async (input) => ({ kind: await repository.revokeByHandleDigest(digest(input.sessionHandle), input.now) ? "revoked" : "denied" }),
+    admit: async (input) => ({ kind: await repository.admit({ bucketDigest: digest(`${input.purpose}:${input.identifier}`), purpose: input.purpose, commandId: input.requestId, accountId: null, now: input.now }) }),
+    revokeCurrent: async (input) => ({ kind: await repository.revokeByHandleDigest(digest(input.sessionHandle), input.now) ? "revoked" : "denied" }),
+    revokeOthers: async (input) => ({ kind: await repository.revokeOthersByHandleDigest(digest(input.sessionHandle), input.now) ? "revoked" : "denied" }),
   };
 }
 

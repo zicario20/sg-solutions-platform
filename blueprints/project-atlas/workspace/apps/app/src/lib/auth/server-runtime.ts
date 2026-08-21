@@ -3,7 +3,8 @@ import type { AuthCommand } from "@atlas/auth";
 type Admission = { readonly kind: "accepted" | "rate_limited" };
 export type ServerAuthControlPlane = Readonly<{
   admit(input: { readonly purpose: AuthCommand; readonly identifier: string; readonly requestId: string; readonly now: Date }): Promise<Admission>;
-  revoke(input: { readonly sessionHandle: string; readonly now: Date }): Promise<{ readonly kind: "revoked" | "denied" }>;
+  revokeCurrent(input: { readonly sessionHandle: string; readonly now: Date }): Promise<{ readonly kind: "revoked" | "denied" }>;
+  revokeOthers(input: { readonly sessionHandle: string; readonly now: Date }): Promise<{ readonly kind: "revoked" | "denied" }>;
 }>;
 
 export type ServerOAuthProvider = Readonly<{
@@ -38,7 +39,7 @@ export function createServerAuthRuntime(options: RuntimeOptions) {
         const csrfCookie = cookie(request, "__Host-atlas_csrf");
         const csrfHeader = request.headers.get("x-atlas-csrf");
         if (!handle || !csrfCookie || !csrfHeader || csrfCookie !== csrfHeader) return response(403, { kind: "denied" });
-        const result = await options.controlPlane.revoke({ sessionHandle: handle, now: new Date() });
+        const result = command === "logout" ? await options.controlPlane.revokeCurrent({ sessionHandle: handle, now: new Date() }) : await options.controlPlane.revokeOthers({ sessionHandle: handle, now: new Date() });
         return result.kind === "revoked" ? response(204, {}) : response(403, { kind: "denied" });
       }
       if (command === "oauth_callback") {
