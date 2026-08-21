@@ -498,12 +498,21 @@ export function createFormAdmissionHandlers(dependencies: {
         if (typeof raw.honeypot === "string" && raw.honeypot.length > 0) return review();
         const binding = verifyWorkflowGrant(request, raw);
         if (!binding) return invalid();
+        const validatedAnswers = parsePublicSubmissionEnvelope({
+          formCode: raw.formCode,
+          formVersion: raw.formVersion,
+          locale: raw.locale,
+          nonce: raw.nonce,
+          idempotencyKey: raw.nonce.replaceAll("_", "-"),
+          answers: raw.answers,
+          consents: {},
+        }).answers;
         const result = await dependencies.facade.saveDraft({
           formCode: raw.formCode,
           formVersion: raw.formVersion,
           locale: raw.locale,
           sessionBinding: binding,
-          answers: raw.answers as Record<string, unknown>,
+          answers: validatedAnswers,
           ...(typeof raw.draftReference === "string"
             ? { draftReference: raw.draftReference }
             : {}),
