@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Proposed; no Build authority
+- Status: Accepted for the M008 provider-disabled Build under Decision 038
 - Date: 2026-08-09
 - Extends: ADR 004 and proposed ADR 011; does not supersede either
 - Update rule: accept or supersede only after independent security review and Product Owner approval
@@ -19,7 +19,7 @@ cannot be allowed to determine obligations, financial state or access. Personali
 must not enter shared caches, and normal dashboard rendering should not depend on live external
 provider calls.
 
-## Decision proposed
+## Decision
 
 ### 1. M008 is a request-scoped application read model
 
@@ -243,6 +243,8 @@ independently; a broad key creates leakage and revocation risk.
 
 ## Approval and supersession
 
-This ADR is a candidate only. Product Owner approval would accept the architecture; it would not
-authorize `GENERATE`, routes, schemas, RLS policies, caches, provider traffic, merge, deployment or
-production use. A contradictory future decision must supersede this ADR and preserve its rationale.
+Decision 038 accepts this ADR and authorizes only the isolated M008 provider-disabled Build. It
+permits local contracts, synthetic test fixtures, focused tests, fail-closed Next.js composition and
+accessible ES/EN portal UI. It does not authorize live PostgreSQL, provider calls, real client data,
+credentials, shared personalized caching, merge, deployment, release or production use. A
+contradictory future decision must supersede this ADR and preserve its rationale.

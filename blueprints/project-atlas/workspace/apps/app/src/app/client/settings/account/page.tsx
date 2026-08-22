@@ -1,3 +1,3 @@
 import { AccountView } from "@atlas/ui";
-import { readAuthPageContext } from "../../../../lib/auth/locale.ts";
-export default async function Page({ searchParams }: { searchParams: Promise<{ locale?: string; outcome?: string }> }) { const params = await searchParams; return <AccountView {...await readAuthPageContext(params.locale, params.outcome)} returnTo="/client/settings/account" />; }
+import { requirePrivateAuthPageContext } from "../../../../lib/auth/private-page-context.ts";
+export default async function Page({ searchParams }: { searchParams: Promise<{ locale?: string; outcome?: string }> }) { const params = await searchParams; const context = await requirePrivateAuthPageContext(params.locale, params.outcome); return <AccountView locale={context.locale} copy={context.copy} csrf={context.csrf} outcome={context.outcome} returnTo="/client/settings/account" />; }

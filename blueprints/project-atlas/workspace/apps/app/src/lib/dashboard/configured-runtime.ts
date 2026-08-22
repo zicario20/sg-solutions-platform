@@ -1,0 +1,22 @@
+import { verifySessionCsrfToken } from "@atlas/auth";
+import { ClientDashboardQueryService, DASHBOARD_OWNER_CODES, selectDashboardContext, type ClientDashboardQueryRequest, type ClientDashboardQueryResult } from "@atlas/dashboard";
+import { createPostgresAuthSql, type AuthSql } from "@atlas/database";
+import type { DashboardEvent } from "@atlas/observability";
+import { createUnavailableDashboardAuthPort } from "./auth-context.ts";
+import { createM007DashboardAuthPort, type M007DashboardAuthRepository } from "./m007-auth-adapter.ts";
+import { createPostgresM007DashboardAuthRepository } from "./m007-dashboard-repository.ts";
+import { createUnavailableDashboardOwnerPorts } from "./owner-ports.ts";
+import { buildDashboardTrustedRateKeys, type DashboardAdmissionResult, type DashboardRateAction } from "./dashboard-admission.ts";
+
+export type DashboardHttpDependencies = Readonly<{ canonicalOrigin: string; defaultLocale?: string; query(input: ClientDashboardQueryRequest): Promise<ClientDashboardQueryResult>; selectContext(input: Readonly<{ sessionHandle: string; requestedContext: string }>): Promise<Readonly<{ kind: "selected"; contextHandle: string }> | Readonly<{ kind: "denied" }>>; verifyCsrf(sessionHandle: string, token: string): boolean; admit?(action: DashboardRateAction, request: Request): Promise<DashboardAdmissionResult>; emitAnalytics?(event: DashboardEvent): Promise<void> | void }>;
+type ConfiguredDependencies = Readonly<{ authRepository?: M007DashboardAuthRepository; sql?: AuthSql; emitAnalytics?: (event: DashboardEvent) => Promise<void> | void }>;
+export function configuredDashboardOwnerStates(): Readonly<Record<(typeof DASHBOARD_OWNER_CODES)[number], "unavailable">> { return Object.freeze(Object.fromEntries(DASHBOARD_OWNER_CODES.map((owner) => [owner, "unavailable"])) as Record<(typeof DASHBOARD_OWNER_CODES)[number], "unavailable">); }
+export function createConfiguredDashboardRuntime(environment: Readonly<Record<string, string | undefined>> = process.env, dependencies: ConfiguredDependencies = {}): DashboardHttpDependencies {
+  const canonicalOrigin = environment.AUTH_CANONICAL_ORIGIN ?? ""; const csrfSecret = environment.AUTH_SESSION_CSRF_SECRET ?? ""; const contextSecret = environment.DASHBOARD_CONTEXT_HMAC_KEY ?? ""; const databaseUrl = environment.DATABASE_URL ?? ""; const rateSecret = environment.DASHBOARD_RATE_HMAC_KEY ?? ""; const trustProxy = environment.DASHBOARD_TRUST_PROXY_HEADERS === "true";
+  const configured = /^https:\/\/[^/?#]+$/u.test(canonicalOrigin) && csrfSecret.length >= 32 && contextSecret.length >= 32 && (!!dependencies.authRepository || /^postgres(?:ql)?:\/\//u.test(databaseUrl));
+  const repository = configured ? dependencies.authRepository ?? createPostgresM007DashboardAuthRepository(dependencies.sql ?? createPostgresAuthSql(databaseUrl)) : undefined;
+  const authPort = repository ? createM007DashboardAuthPort(repository, contextSecret) : createUnavailableDashboardAuthPort();
+  const queryService = new ClientDashboardQueryService({ authPort, ownerPorts: createUnavailableDashboardOwnerPorts(), timeoutMs: 500, maxConcurrency: 3 });
+  return Object.freeze({ canonicalOrigin, defaultLocale: environment.ATLAS_DEFAULT_LOCALE, query: queryService.query.bind(queryService), selectContext: (input) => selectDashboardContext(input, authPort), verifyCsrf: (sessionHandle, token) => configured && verifySessionCsrfToken(csrfSecret, sessionHandle, token), admit: async (action: DashboardRateAction, request: Request): Promise<DashboardAdmissionResult> => { const keyDigests = buildDashboardTrustedRateKeys(request, action, { hmacKey: rateSecret, trustProxy }); if (!configured || !repository?.admitDashboard || keyDigests.length === 0) return "rate_limited"; try { return await repository.admitDashboard({ action, keyDigests, now: new Date() }) ? "accepted" : "rate_limited"; } catch { return "rate_limited"; } }, emitAnalytics: dependencies.emitAnalytics });
+}
+export async function loadClientDashboard(input: ClientDashboardQueryRequest, runtime: DashboardHttpDependencies = createConfiguredDashboardRuntime()): Promise<ClientDashboardQueryResult> { return runtime.query(input); }

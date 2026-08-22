@@ -52,24 +52,21 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   claimed. PostgreSQL migrations/RLS/grants/roles, pinned Node/WAC-esbuild validation, distributed
   rate/network identity, KMS rotation, providers/legal/retention, deployment and sensitive-upload
   gates remain blocked.
-- **M007 Client Authentication and Account:** provider-disabled implementation T1-T9 is complete in
-  the isolated Decision 036 worktree through `f8a4806`. Final architecture review is `APPROVED`
-  with AR-001-AR-009 closed (`9/9`) and no Critical/Important findings; Cyber Neo is `APPROVED` with
-  `0/0/0` Critical/High/Medium. Latest focused regression is `16/16`, with passing
-  auth/database/app/observability typechecks; no full suite/build/live DB/provider result is claimed.
-  Migrations `0023`-`0035`, disposable-PostgreSQL RLS proof, providers/credentials/KMS/config,
-  legal/retention policy, pinned Node, merge/deploy/release and Product Owner acceptance remain
-  pending. The module is ready for provider-disabled Product Owner acceptance, not Operational.
-- **M008 Client Dashboard:** Product/Architecture documentation is active under Decision 021. The
-  candidate defines `/client` Home as one request-scoped, client-safe read model over typed owning-
-  domain projections. One complete M007 authorization snapshot and a consistent read cut govern the
-  response; proposed ADR 012 uses a closed source registry to select one deterministic priority
-  action, and any missing registered source that could tie or outrank the result yields
-  `unconfirmed`, not a false zero/no-action state. Release 1A has no monolithic dashboard snapshot,
-  live provider fan-out or personalized shared cache. No `GENERATE`, route, schema/RLS policy,
-  provider traffic, real dashboard, merge or deployment is authorized. Independent architecture
-  review has zero open findings and Cyber Neo is security-clear at documentary risk 0/100; the
-  candidate now awaits Product Owner approval or revision.
+- **M007 Client Authentication and Account:** provider-disabled implementation T1-T9 is complete
+  and formally accepted under Decisions 036-037 at `3c1bd4e`. Architecture and Cyber Neo are
+  `APPROVED` with AR-001-AR-009 closed and `0/0/0` Critical/High/Medium; latest focused regression
+  is `16/16` with auth/database/app/observability typechecks. No full suite/build/live DB/provider
+  result is claimed. Migrations `0023`-`0035`, disposable-PostgreSQL RLS proof, providers,
+  credentials/KMS/config, legal/retention, pinned Node, merge/deploy/release remain pending.
+- **M008 Client Dashboard:** provider-disabled implementation T1-T9 is complete under Decision 038
+  and ADR 012; Product Owner acceptance is pending. The existing `/client` portal now uses one
+  backend-authoritative `@atlas/dashboard` read model with M007 authorization/context fences,
+  minimal DTOs, deterministic priority, partial failure/freshness, disabled critical cache, durable
+  HTTP/SSR admission, safe analytics and accessible ES/EN UI. Architecture is `APPROVED` (`8/8`
+  closed, `0` Critical/Important); Cyber Neo is `APPROVED` (`0` Critical/High/Medium/Low). Runtime
+  owners/providers remain unavailable and synthetic adapters are test-only. Migration `0036` live
+  RLS/rate proof, integrations, HMAC/proxy topology, 320px visual review, final full verification,
+  Node/tooling, legal/config, merge, deployment and release remain blocked or pending.
 - **M009 Mis servicios:** Product/Architecture documentation is active under Decision 022. The
   candidate defines the authorized contracted-service directory and detail shell over real
   `ServiceOrder`/`CaseFile` records, explicit resource grants and accepted definition/workflow

@@ -574,3 +574,26 @@ RLS validation, provider/API activation, credentials, KMS, external traffic or `
 status. Migrations `0023`-`0035`, the authorized disposable-PostgreSQL RLS harness, Supabase/Google
 OAuth/JWKS/email/OTP/CRM integrations, legal/retention policy, pinned Node validation and all
 deployment/release gates remain blocked or pending.
+
+
+## 2026-08-21 - Decision 038 - M008 provider-disabled Build gate
+
+Decision: accept ADR 012 and authorize an isolated provider-disabled Build for M008 Client
+Dashboard in `codex/m008-client-dashboard-rebuild` from accepted M007 base `3c1bd4e`.
+
+Reason: the Product Owner supplied and approved the complete M008 specification and directed a
+brownfield architecture audit. The repository has one Next.js authenticated surface, M007 IAM and
+session controls, shared UI/i18n/design tokens and historical M008 documents, but no `/client` home
+or implemented dashboard aggregation service.
+
+Impact: M008 may add one `@atlas/dashboard` read model, typed client projections, deterministic
+priority, context/resource/entitlement fences, explicit freshness/partial failure, disabled private
+cache contracts, safe analytics, a fail-closed aggregate route and accessible responsive ES/EN UI.
+Synthetic owner ports are test-only; configured ports return `unavailable` until their owners are
+separately authorized.
+
+This gate does not authorize real client data, live PostgreSQL/RLS, providers, Stripe/calendar/
+storage/messaging/CRM traffic, fabricated business state, service execution, shared personalized
+cache, credentials/KMS, merge, deployment, release or Operational status. Sequential focused TDD,
+independent architecture review, read-only Cyber Neo, documentation closure and Product Owner
+acceptance are required before M009 implementation.

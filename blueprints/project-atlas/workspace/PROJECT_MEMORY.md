@@ -742,3 +742,47 @@ before implementation.
   OAuth/JWKS/email/OTP/CRM providers; credentials, KMS and production configuration; legal and
   retention policy; pinned Node `24.18.1` revalidation; and merge/deploy/release gates remain
   blocked or pending.
+
+
+## 2026-08-21 - M008 provider-disabled architecture and Build plan
+
+- The Product Owner supplied and approved M008 and authorized its isolated provider-disabled design
+  and Build plan from accepted M007 base `3c1bd4e`.
+- Brownfield review found the existing Next.js `/client` auth/account pages, M007 session and
+  authorization boundary, shared UI/i18n/design tokens and historical M008 candidate documents, but
+  no `/client` home or live service/case/task/document/appointment/payment/message owners.
+- Decision 038 accepts ADR 012. M008 is one backend-authoritative read model with minimized DTOs, a
+  frozen M007 authorization snapshot, final revocation fencing, deterministic priority, explicit
+  partial failure and disabled critical-cache behavior.
+- Synthetic owner ports are test-only and configured runtime ports remain unavailable. No fake
+  provider state, live traffic, real client data, application code, tests, build, merge, deployment
+  or release was produced by this architecture task.
+- The ten-task sequential TDD plan preserves live database, provider, KMS/configuration, legal/
+  privacy/retention, pinned-runtime and production activation blockers.
+
+## 2026-08-21 - M008 provider-disabled implementation closure candidate
+
+- T1-T9 are complete in the isolated M008 worktree. The provider-disabled slice extends the single
+  `/client` portal with backend-authoritative aggregation, minimized public DTOs, deterministic
+  priority, context switching, freshness and partial-failure handling, disabled cache contracts,
+  allowlisted analytics, durable HTTP/SSR admission and responsive accessible ES/EN UI.
+- Runtime owner and provider ports remain `unavailable`; synthetic adapters are tests only. No fake
+  payment, appointment, document, service, task or case state and no live provider traffic or real
+  client data were introduced.
+- Independent architecture review is `APPROVED`: all `8/8` findings are closed with `0` open
+  Critical and `0` open Important. Cyber Neo is `APPROVED` with `0` Critical, `0` High, `0` Medium
+  and `0` Low. External reports remain under `.worktrees/reports/`.
+- Executed evidence is checkpoint-scoped and is not summed across overlapping runs: initial
+  implementation `31/31`; architecture remediation `9/9`; exact AR4/AR5 remediation `4/4`; Cyber
+  remediation `5/5`; final SSR CN-002 remediation `3/3`. Focused typechecks passed during T1-T9 and
+  remediation where dependencies resolved. Final post-Cyber typecheck and build are `NO VALIDATED`
+  because worktree `node_modules`/Corepack resolution encountered `EPERM`.
+- The workspace lockfile was synchronized deterministically for the new package and its contract
+  test passed. No Git commit was possible through the sandbox, and this closure performs no Git,
+  merge, push, deployment or release operation.
+- Remaining blockers are application and live validation of migration `0036` plus RLS/rate SQL;
+  DB/provider/owner integrations; rate-HMAC and trusted-proxy topology; 320px visual verification;
+  full suite/build/final typecheck; pinned Node/tooling; legal/privacy/retention and production
+  configuration; merge, deployment and release.
+- M008 is ready for Product Owner acceptance in provider-disabled scope. No acceptance, merge,
+  deployment, activation, release or `Operational` status is recorded.

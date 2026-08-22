@@ -2,17 +2,17 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Implementation-ready architecture candidate; no Build gate
+- Status: Provider-disabled implementation T1-T9 complete; Product Owner acceptance pending
 - Surface: Client Portal Home `/client`
 - Workstream: R1.5 Client Portal & Launch
 - Release target: Release 1A minimum dashboard with compatible Release 1B extensions
 - Source: complete Product Owner-supplied M008 corpus, normalized to the approved stack
 - Related catalog modules: M008; consumes M007/M009–M014/M018/M021–M026/M042–M045/M077/M080–M081
-- Proposed ADR: ADR 012
+- Approved ADR: ADR 012 under Decision 038
 
-This PRD defines a client-safe home projection. It does not authorize product code, routes,
-database schema, RLS or Storage policies, external-provider traffic, merge, deployment or
-`GENERATE`.
+This PRD defines the implemented provider-disabled client-safe home projection. Decision 038
+authorized its isolated Build; it does not authorize live providers or client data, merge,
+deployment, release or an `Operational` claim.
 
 ## 1. Purpose
 
@@ -697,3 +697,90 @@ approved owning capability is omitted or shown as unavailable—not simulated.
 - [WCAG 2.2](https://www.w3.org/TR/WCAG22/) and its
   [Reflow guidance](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html) define the accessibility
   baseline used by the responsive design.
+
+
+---
+
+## 2026-08-21 - Contrato vigente de Build provider-disabled
+
+- Estado de producto: especificacion M008 aprobada por el Product Owner.
+- Estado de arquitectura: ADR 012 aceptada bajo Decision 038.
+- Rama autorizada: `codex/m008-client-dashboard-rebuild`.
+- Base aceptada: M007 `3c1bd4e`.
+- Superficie unica: Home existente del Client Portal en `/client`.
+- Implementacion de aplicacion: T1-T9 completadas en el worktree M008; T10 documenta el cierre.
+
+### Reconciliacion brownfield
+
+M008 ampliara la superficie autenticada Next.js existente. Reutilizara `@atlas/auth`, sesiones
+opacas, CSRF, autorizacion backend, `@atlas/ui`, `@atlas/i18n`, design tokens y observabilidad.
+No se crea un segundo portal, sistema de usuarios, tabla de verdad del dashboard ni fan-out desde el
+navegador.
+
+Los owners de ServiceOrder, CaseFile, Task, Document, Appointment, Payment, Message, Notification y
+Help Center se consumen mediante proyecciones tipadas. Mientras esos owners o proveedores no esten
+autorizados, el runtime devuelve `unavailable`; fixtures sinteticos existen solo en pruebas. M008 no
+puede fabricar pagos, citas, documentos, expedientes, servicios ni tareas.
+
+### Contrato obligatorio
+
+1. Un unico `ClientDashboardQueryService` agrega el dashboard en backend.
+2. M007 deriva la identidad, contexto, membresias, grants, entitlements y fences; el navegador solo
+   solicita un contexto opaco.
+3. Cada fragmento usa DTO allowlisted, limites, version, `asOf`, clasificacion y estado explicito.
+4. La prioridad es determinista y versionada: seguridad, pago bloqueante, documento vencido, firma,
+   tarea, cita, informacion faltante, accion general o ninguna.
+5. Una fuente ausente o stale que pueda superar la prioridad devuelve `unconfirmed`, no un falso
+   cero o “sin acciones”.
+6. Se revalidan sesion, contexto, membresia, grants, entitlements y policy antes de serializar.
+7. Respuestas personalizadas son `private, no-store`; estado critico nunca usa cache.
+8. Fallos opcionales son locales; fallos de autorizacion/final fence descartan toda la respuesta.
+9. CTAs usan route keys allowlisted y delegan comandos a sus owners, que vuelven a autorizar.
+10. Analytics/logs contienen solo metadata allowlisted, sin PII, montos, mensajes o IDs externos.
+11. UI ES/EN usa el portal existente, WCAG 2.2 AA, teclado, texto+icono, 44px, zoom/reflow y movil.
+12. No hay consola de IA, detalles internos, procesos tecnicos, notas privadas ni acciones admin.
+
+### Bloqueos preservados
+
+Live PostgreSQL/RLS; migraciones M007 `0023`-`0035`; owners M009-M014; Stripe, calendar,
+storage/documents, CRM, messaging, notifications y Help Center privado; proveedores, credenciales,
+KMS, datos reales, textos legales/privacy/retention, thresholds operativos, cache personalizado
+compartido, Node pin `24.18.1`, merge, deployment, release y estado Operational.
+
+### Criterio de cierre de M008
+
+El modulo solo sera acceptance-ready despues de TDD focalizado, pruebas IDOR/context/cache/partial
+failure, typechecks afectados, auditoria arquitectonica independiente, Cyber Neo read-only sin
+hallazgos materiales, PCR coherente y aceptacion formal del Product Owner. No se podra afirmar una
+validacion live/full que no haya sido ejecutada.
+
+### Cierre de implementación provider-disabled
+
+T1-T9 están implementadas sobre el único portal `/client`. El resultado incluye agregación
+backend-authoritative, DTOs públicos mínimos, prioridad determinista, fallos parciales, freshness,
+contrato de cache deshabilitado, contexto M007, rate admission durable para HTTP y SSR, analytics
+allowlisted y UI accesible ES/EN. Los adapters de owners/proveedores continúan deshabilitados en el
+runtime; los adapters sintéticos existen únicamente en pruebas y no se fabrican pagos, citas,
+documentos, servicios, tareas ni estados de expedientes.
+
+La revisión arquitectónica final está `APPROVED`: `8/8` hallazgos cerrados, con `0` Critical y `0`
+Important abiertos. Cyber Neo está `APPROVED` con `0` Critical, `0` High, `0` Medium y `0` Low.
+Los reportes independientes permanecen fuera del workspace activo en `.worktrees/reports/`.
+
+Evidencia focal ejecutada, registrada por checkpoint sin sumar suites superpuestas:
+
+- implementación inicial: `31/31`;
+- remediación de arquitectura: `9/9`;
+- remediación exacta AR4/AR5: `4/4`;
+- remediación Cyber Neo: `5/5`;
+- remediación SSR final CN-002: `3/3`.
+
+Los typechecks focales de T1-T9 y de las remediaciones pasaron donde las dependencias pudieron
+resolverse. Un typecheck final post-Cyber y el build completo están `NO VALIDATED`: el worktree no
+dispone de `node_modules` resoluble y Corepack/pnpm encontró `EPERM`. El lockfile fue sincronizado
+determinísticamente con el nuevo workspace package y su contract test pasó.
+
+M008 está listo para revisión y aceptación del Product Owner, pero esa aceptación todavía no está
+registrada. Migration `0036`, RLS/rate SQL live, owners/proveedores, configuración HMAC/topología de
+proxy, revisión visual a 320px, full suite/build/typecheck final, Node/tooling, legal/configuración,
+merge, deployment y release siguen bloqueados o pendientes.

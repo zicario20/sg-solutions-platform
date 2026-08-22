@@ -1,4 +1,9 @@
 export const UI_PACKAGE_ID = "@atlas/ui";
+export * from "./dashboard/ClientPortalShell.tsx";
+export * from "./dashboard/DashboardStates.tsx";
+export * from "./dashboard/DashboardView.tsx";
+export * from "./dashboard/DashboardWidgets.tsx";
+export * from "./dashboard/PriorityActionCard.tsx";
 export * from "./auth/AuthShell.tsx";
 export * from "./auth/AuthField.tsx";
 export * from "./auth/AuthErrorSummary.tsx";

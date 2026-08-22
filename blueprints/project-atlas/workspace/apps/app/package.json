@@ -11,9 +11,11 @@
   "dependencies": {
     "@atlas/auth": "workspace:*",
     "@atlas/config": "workspace:*",
+    "@atlas/dashboard": "workspace:*",
     "@atlas/database": "workspace:*",
     "@atlas/domain": "workspace:*",
     "@atlas/i18n": "workspace:*",
+    "@atlas/observability": "workspace:*",
     "@atlas/ui": "workspace:*",
     "@tailwindcss/postcss": "4.3.3",
     "next": "16.2.12",
