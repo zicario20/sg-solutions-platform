@@ -3,46 +3,47 @@
 - Owner: Product Owner
 - Maintainer: Codex Architecture Agent
 - Status: Current state only
-- Last updated: 2026-08-21
+- Last updated: 2026-08-22
 
-Version: `0.1.0-alpha.26`
+Version: `0.1.0-alpha.28`
 
-Current phase: **M008 Client Dashboard provider-disabled implementation T1-T9 complete and ready
-for Product Owner acceptance; acceptance has not been granted.**
+Current phase: **M009 Mis Servicios provider-disabled implementation complete and ready for Product
+Owner acceptance. M010 remains blocked.**
 
 ## Accepted predecessor
 
-M007 Authentication and Client Account is formally accepted at `3c1bd4e` under Decision 037. Its
-implementation remains provider-disabled. `@atlas/auth` is the sole IAM boundary; Supabase Auth is
-credential authority, while backend authorization and Postgres RLS own access decisions. Merge,
-deployment, provider activation, live PostgreSQL/RLS and `Operational` remain pending or blocked.
+M008 Client Dashboard is formally accepted at `09c9403` under Decision 039. Its implementation
+remains provider-disabled. It provides the single `/client` shell, M007-backed authorization and
+context snapshot, final revalidation, durable admission, minimized DTOs, deterministic priority,
+partial-failure semantics and private/no-store rendering. Merge, deployment, providers, live
+PostgreSQL/RLS and `Operational` remain pending or blocked.
 
-## Current M008 status
+## Current M009 status
 
-Decision 038 accepts ADR 012 and authorized M008 only in
-`D:\SG Solutions\SG Solutions\.worktrees\m008-client-dashboard` on branch
-`codex/m008-client-dashboard-rebuild` from accepted M007 base `3c1bd4e`.
+Decision 040 accepts ADR 013 and authorized M009 only in
+`D:\SG Solutions\SG Solutions\.worktrees\m009-my-services` on branch
+`codex/m009-my-services-rebuild` from accepted M008 base `09c9403`.
 
-T1-T9 implement one backend-authoritative `@atlas/dashboard` read model and the existing Next.js
-`/client` surface. M007 owns sessions, account/context authorization, CSRF and revocation fences;
-M008 adds minimized DTOs, deterministic priority, explicit freshness/partial failure, disabled
-cache contracts, safe analytics, durable HTTP/SSR admission and accessible responsive ES/EN UI.
-Runtime owner/provider ports remain `unavailable`; synthetic adapters are test-only.
+Implementation tasks T1-T9 are complete. M009 now provides one read-only
+`@atlas/client-services` projection, authorized `/client/services` list/detail API and SSR surfaces,
+unseeded migration `0037`, deterministic four-axis public status, M007/M008 authorization and final
+resource/absence fences, minimized no-store DTOs, M008 summary integration, and accessible ES/EN
+UI. Configured runtime and all child-owner ports remain unavailable; synthetic service data is
+test-only.
 
-Architecture is `APPROVED` with `8/8` findings closed and `0` Critical/Important open. Cyber Neo is
-`APPROVED` with `0` Critical/High/Medium/Low. Checkpoint evidence is recorded without summing
-overlapping runs: initial `31/31`, architecture `9/9`, AR4/AR5 `4/4`, Cyber `5/5`, SSR final `3/3`.
-The lockfile is deterministically synchronized and covered by a passing contract test.
+Independent static architecture review is `APPROVED` with `0` open Critical, Important or Minor
+findings. Cyber Neo is `APPROVED` with `0` open Critical, High, Medium or Low findings. Prior focused
+evidence passed `32/32`; the final rerun is `NO VALIDADO` because pnpm encountered `EPERM` and
+Vitest was absent. M009 is ready for Product Owner acceptance but is not accepted, merged, deployed,
+released or `Operational`.
 
 ## Blockers
 
-Product Owner acceptance is pending. Migration `0036` has not been applied to live/disposable
-PostgreSQL and live RLS/rate SQL has not been exercised. DB, provider and owner integrations;
-rate-HMAC secrets and trusted-proxy topology; visual verification at 320px; full suite, full build
-and final post-Cyber typecheck; pinned Node/tooling; and legal/privacy/retention/production config
-remain blocked or pending. Final typecheck/build are `NO VALIDATED` because worktree dependency
-resolution/Corepack encountered `EPERM`. No merge, deployment, release, real client data, provider
-traffic or `Operational` state is authorized.
+Final app, UI and database typechecks remain unvalidated. Live application and verification of
+PostgreSQL migration `0037`, RLS and restricted roles; production service definitions/public policy,
+seed data and real service/client records; providers and owning modules; rate-HMAC/proxy topology;
+credentials/KMS; legal/privacy/retention; browser/visual validation; deployment and release remain
+blocked or pending. M010 cannot open until explicit Product Owner acceptance of M009 is recorded.
 
 ## Role model
 

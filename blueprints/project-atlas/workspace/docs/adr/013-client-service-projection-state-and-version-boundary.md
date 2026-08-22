@@ -2,9 +2,9 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Proposed; no Build authority
-- Date: 2026-08-09
-- Extends: ADR 004, proposed ADR 011 and proposed ADR 012
+- Status: Accepted for the isolated provider-disabled M009 Build
+- Date: 2026-08-21
+- Extends: ADR 004, accepted ADR 011 and accepted ADR 012
 - Update rule: accept or supersede only after independent security review and Product Owner approval
 
 ## Context
@@ -19,7 +19,7 @@ deliverables. Browser fan-out or raw entity serialization would duplicate author
 internal/provider state. M009 therefore needs a precise read boundary while leaving every command
 and source of truth with its owning module.
 
-## Decision proposed
+## Decision
 
 ### 1. `ServiceOrder` is the commercial root; `CaseFile` is the operational root
 
@@ -115,7 +115,7 @@ summaries and canonical internal route keys. The owning route reauthorizes every
 an opaque reference or route key is not a capability token.
 
 If a child source is unavailable, M009 says it cannot confirm that region rather than showing zero.
-If the missing source could affect the next action, proposed ADR 012's closed source registry makes
+If the missing source could affect the next action, ADR 012's closed source registry makes
 the action `unconfirmed`. M009 never makes a critical absence look paid, complete, accepted or
 action-free.
 
@@ -231,7 +231,21 @@ Rejected because current catalog scope can differ from the accepted historical r
 
 ## Approval and supersession
 
-This ADR is a candidate only. Product Owner approval would accept the architecture; it would not
-authorize `GENERATE`, routes, schemas, RLS/Storage policies, product data, provider traffic, merge,
-deployment or production use. A contradictory future decision must supersede this ADR and preserve
-its rationale.
+Decision 040 accepts this ADR and authorizes only the isolated M009 provider-disabled Build from
+accepted M008 commit `09c9403`. It permits local contracts, unseeded schema/migration definitions,
+disabled Postgres adapters, synthetic tests, fail-closed Next.js composition and accessible ES/EN
+UI. It does not authorize real service definitions or records, live PostgreSQL/RLS, provider calls,
+credentials, business commands, merge, deployment, release or production use. A contradictory
+future decision must supersede this ADR and preserve its rationale.
+
+## Review clarification - 2026-08-21
+
+The implementation boundary is clarified without changing scope: M009 does not own a second
+aggregate. `ServiceOrder` plus its accepted definition and financial/activation/fulfillment owners
+are authoritative; the M009 table is a rebuildable lookup/version read model only. A response is
+serializable only after one final fence validates owner linkage, grant expiration and epochs,
+accepted-definition epoch and every returned child resource. Missing critical owner evidence cannot
+produce a terminal status or a confirmed next action. Public DTO v2 carries only localized labels,
+authorized context and accepted-version milestones, and opaque references are `csr1_` values backed
+by 192 bits of cryptographic randomness. These clarifications do not activate providers, live RLS,
+real data, product analytics, merge or deployment.

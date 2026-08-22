@@ -1,0 +1,1 @@
+import { ClientServicesSkeleton } from "@atlas/ui";import { cookies } from "next/headers";export default async function ClientServicesLoading(){const locale=(await cookies()).get("atlas_locale")?.value==="en"?"en":"es";return <main className="m009-services"><ClientServicesSkeleton locale={locale}/></main>}

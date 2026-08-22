@@ -4,8 +4,8 @@ import {
   type DashboardOwnerPorts,
 } from "@atlas/dashboard";
 
-export function createUnavailableDashboardOwnerPorts(): DashboardOwnerPorts {
-  return Object.fromEntries(DASHBOARD_OWNER_CODES.map((owner: DashboardOwnerCode) => [owner, Object.freeze({
+export function createUnavailableDashboardOwnerPorts(servicesOwner?: DashboardOwnerPorts["services"]): DashboardOwnerPorts {
+  return Object.fromEntries(DASHBOARD_OWNER_CODES.map((owner: DashboardOwnerCode) => [owner, owner === "services" && servicesOwner ? servicesOwner : Object.freeze({
     owner,
     query: async ({ snapshotId }: { readonly snapshotId: string }) => Object.freeze({
       owner,

@@ -597,3 +597,40 @@ storage/messaging/CRM traffic, fabricated business state, service execution, sha
 cache, credentials/KMS, merge, deployment, release or Operational status. Sequential focused TDD,
 independent architecture review, read-only Cyber Neo, documentation closure and Product Owner
 acceptance are required before M009 implementation.
+
+## 2026-08-21 - Decision 039 - M008 provider-disabled Product Owner acceptance
+
+Decision: the Product Owner formally accepts M008 Client Dashboard in its completed
+provider-disabled scope at commit `09c9403` on `codex/m008-client-dashboard-rebuild`.
+
+Reason: after M008 completion and audit evidence was presented, the Product Owner directed its push
+and subsequently identified `09c9403` explicitly as the accepted M008 base for M009.
+
+Impact: M008 is accepted only in provider-disabled scope. Migration `0036`, live PostgreSQL/RLS,
+owner/provider integrations, rate-HMAC/trusted-proxy topology, full build/typecheck, visual runtime
+review, credentials, legal/privacy/retention policy, merge, deployment, release and `Operational`
+status remain blocked or pending.
+
+## 2026-08-21 - Decision 040 - M009 provider-disabled Build gate
+
+Decision: accept ADR 013 and authorize the isolated provider-disabled M009 Mis Servicios Build in
+`codex/m009-my-services-rebuild` at
+`D:\SG Solutions\SG Solutions\.worktrees\m009-my-services`, from accepted M008 base `09c9403`.
+
+Reason: the Product Owner supplied and approved the complete M009 specification, identified the
+accepted base and instructed the Architecture Agent to audit M001-M008 and produce an executable
+provider-disabled architecture that reuses `/client/services` and M008 without inventing services
+or data.
+
+Impact: M009 may add one `@atlas/client-services` read-model package, minimized list/detail DTOs,
+deterministic status synthesis, explicit service grants, unseeded Drizzle schema/migration contracts,
+disabled Postgres and owner adapters, M007/M008 authorization/admission reuse, API/SSR route
+composition, an M008 summary adapter, accessible ES/EN UI, metadata-only observability and
+synthetic-only focused tests. Configured owners remain unavailable until separately activated.
+
+This gate does not authorize service definitions, seed data, real client/service records, live
+PostgreSQL/RLS, Stripe/Calendar/Storage/CRM/partner/AI traffic, credentials, payment or workflow
+commands, service activation, fabricated state, shared personalized cache, merge, deployment,
+release or `Operational` status. Deferred commercial, cancellation, renewal, participant, support,
+analytics and freshness policies remain disabled. Independent architecture review, read-only Cyber
+Neo review and Product Owner acceptance are required before M010 implementation.

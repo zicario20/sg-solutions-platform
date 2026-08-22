@@ -58,8 +58,8 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   is `16/16` with auth/database/app/observability typechecks. No full suite/build/live DB/provider
   result is claimed. Migrations `0023`-`0035`, disposable-PostgreSQL RLS proof, providers,
   credentials/KMS/config, legal/retention, pinned Node, merge/deploy/release remain pending.
-- **M008 Client Dashboard:** provider-disabled implementation T1-T9 is complete under Decision 038
-  and ADR 012; Product Owner acceptance is pending. The existing `/client` portal now uses one
+- **M008 Client Dashboard:** provider-disabled implementation T1-T9 is complete and accepted at
+  `09c9403` under Decisions 038-039 and ADR 012. The existing `/client` portal now uses one
   backend-authoritative `@atlas/dashboard` read model with M007 authorization/context fences,
   minimal DTOs, deterministic priority, partial failure/freshness, disabled critical cache, durable
   HTTP/SSR admission, safe analytics and accessible ES/EN UI. Architecture is `APPROVED` (`8/8`
@@ -67,15 +67,18 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   owners/providers remain unavailable and synthetic adapters are test-only. Migration `0036` live
   RLS/rate proof, integrations, HMAC/proxy topology, 320px visual review, final full verification,
   Node/tooling, legal/config, merge, deployment and release remain blocked or pending.
-- **M009 Mis servicios:** Product/Architecture documentation is active under Decision 022. The
-  candidate defines the authorized contracted-service directory and detail shell over real
-  `ServiceOrder`/`CaseFile` records, explicit resource grants and accepted definition/workflow
-  versions. It keeps canonically owned commercial, financial, human-activation and fulfillment
-  subfacts separate, uses typed bounded
-  M010–M014 projections and performs no mutation or provider fan-out. No `GENERATE`, route, schema,
-  RLS/Storage policy, real service record, merge or deployment is authorized. Independent
-  architecture review has zero open findings and Cyber Neo is security-clear at documentary risk
-  0/100; the candidate now awaits Product Owner approval or revision.
+- **M009 Mis servicios:** provider-disabled implementation T1-T9 is complete under Decision 040 and
+  ADR 013 from accepted M008 base `09c9403`. The existing `/client/services` surface now uses one
+  read-only `@atlas/client-services` projection with explicit grants, immutable accepted-definition
+  binding, deterministic four-axis public status, final root/child/absence fences, authoritative
+  pre-limit filtering, minimized no-store DTOs, M008 summary integration and accessible ES/EN UI.
+  Runtime/child-owner ports remain unavailable, migration `0037` is unseeded and synthetic state is
+  test-only. Static architecture is `APPROVED` with `0` Critical/Important/Minor; Cyber Neo is
+  `APPROVED` with `0` Critical/High/Medium/Low. Prior focused evidence is `32/32`, but the final rerun
+  is `NO VALIDADO` because of pnpm `EPERM` and absent Vitest; final app/UI/database typechecks, live
+  PostgreSQL/RLS, providers, visual behavior and deployment are unvalidated. M009 is ready for
+  Product Owner acceptance, not accepted/merged/deployed/released/`Operational`; M010 remains
+  blocked until explicit acceptance.
 - **M010 Estado de mi proceso:** Product/Architecture documentation is active under Decision 023.
   The candidate defines one read-only process projection beneath an explicitly granted service,
   preserves ServiceOrder/Billing/Case/workflow state ownership, binds milestones to the accepted

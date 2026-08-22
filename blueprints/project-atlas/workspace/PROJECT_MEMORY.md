@@ -786,3 +786,41 @@ before implementation.
   configuration; merge, deployment and release.
 - M008 is ready for Product Owner acceptance in provider-disabled scope. No acceptance, merge,
   deployment, activation, release or `Operational` status is recorded.
+
+## 2026-08-21 - M008 acceptance and M009 provider-disabled architecture
+
+- Decision 039 records the Product Owner's explicit identification of `09c9403` as the accepted M008
+  provider-disabled base. No live DB/provider, merge, deployment, release or `Operational` claim is
+  added.
+- The M009 brownfield audit found one existing `/client/services` placeholder and reusable M007/M008
+  portal authorization/admission contracts, but no implemented ServiceOrder, service catalog,
+  CaseFile, workflow, payment, document, task, appointment, message or entitlement owner for M009.
+- Decision 040 accepts ADR 013 and opens only an isolated provider-disabled Build. The design uses one
+  `@atlas/client-services` read model, strict list/detail projections, explicit service grants,
+  deterministic four-axis public-state synthesis, final resource fencing and an M008 summary
+  adapter.
+- No production service type, definition, milestone, price, client or service record is invented.
+  Configured owner ports remain unavailable and all feature-state fixtures are synthetic tests only.
+- This architecture task writes documentation and governance only. It writes no application code,
+  migration, test or provider configuration and performs no commit, push, merge, deployment or
+  release.
+
+## 2026-08-22 - M009 provider-disabled implementation closure candidate
+
+- Implementation tasks T1-T9 are complete in the isolated `codex/m009-my-services-rebuild`
+  worktree. The provider-disabled slice adds one read-only `@atlas/client-services` projection,
+  authorized list/detail API and SSR surfaces, unseeded migration `0037`, deterministic four-axis
+  public status, accepted-definition and resource/absence fencing, M008 summary integration,
+  minimized no-store DTOs and accessible bilingual UI.
+- Configured runtime and child-owner ports remain unavailable. No production service definition,
+  service/client record, provider traffic, command execution or synthetic runtime state was added;
+  synthetic service fixtures remain confined to `tests/m009`.
+- Independent static architecture review is `APPROVED` with `0` open Critical, `0` Important and
+  `0` Minor findings. Cyber Neo's targeted static re-audit is `APPROVED` with `0` open Critical,
+  `0` High, `0` Medium and `0` Low findings.
+- Prior focused evidence passed `32/32`. The final closure rerun is `NO VALIDADO` because pnpm
+  encountered `EPERM` and Vitest was absent. Final app/UI/database typechecks, live PostgreSQL/RLS,
+  provider and owner integrations, browser/visual behavior and deployment were not validated.
+- M009 is ready for explicit Product Owner acceptance in provider-disabled scope. It is not yet
+  accepted, merged, deployed, released or `Operational`; M010 remains blocked. This documentary
+  closure performs no Git, test, provider, deployment or acceptance operation.

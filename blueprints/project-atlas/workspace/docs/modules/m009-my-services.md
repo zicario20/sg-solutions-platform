@@ -2,17 +2,20 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Implementation-ready architecture candidate; no Build gate
+- Status: Provider-disabled implementation complete; ready for Product Owner acceptance
 - Surface: Client Portal `/client/services`
 - Workstream: R1.5 Client Portal & Launch
 - Release target: Release 1A minimum service workspace with compatible Release 1B extensions
 - Source: complete Product Owner-supplied M009 corpus, normalized to the approved stack
 - Related catalog modules: M009; consumes M007/M008/M010–M014/M018/M021–M026/M042–M046/M067/M077/M080–M081
-- Proposed ADR: ADR 013
+- Accepted ADR: ADR 013
+- Accepted base: M008 commit `09c9403`
 
-This PRD defines the client-facing service directory and service-detail shell. It does not authorize
-product code, routes, database schema, RLS or Storage policies, external-provider traffic, merge,
-deployment or `GENERATE`.
+This PRD defines the client-facing service directory and service-detail shell. Decision 040
+authorized the isolated provider-disabled implementation described in the 2026-08-21 design and
+plan. That implementation is complete and statically approved, but it does not authorize real
+service records, seeded service definitions, live PostgreSQL, provider traffic, credentials,
+merge, deployment, release or `Operational` status.
 
 ## 1. Purpose
 
@@ -526,13 +529,12 @@ manually recoverable; Inngest coordinates execution but Postgres remains durable
     200% zoom, keyboard and screen reader.
 15. English and Spanish semantics and key sets match.
 16. Personalized output is absent from shared/browser/offline cache and sensitive telemetry.
-17. Future Build tests include same-client allow, cross-client/context deny, revocation races,
-    source failures, four-axis state combinations/owner-substitution attempts,
-    definition-version integrity and concurrent
-    visibility, inheritance, classification, reparenting, tombstone/deletion and root-reassignment
-    changes.
-18. No product code, route, schema, provider connection or live service record exists from this
-    documentary phase.
+17. Focused implementation evidence covers same-client allow, cross-client/context deny,
+    revocation races, source failures, four-axis state combinations, definition-version integrity,
+    owner and absence fencing, and authoritative filtering. The prior focused checkpoint passed
+    `32/32`; the final rerun is `NO VALIDADO` because pnpm failed with `EPERM` and Vitest was absent.
+18. The implemented runtime remains provider-disabled: no real service definition, client/service
+    record, provider connection, command execution, merge, deployment or release is authorized.
 
 ## 18. Negative acceptance criteria
 
@@ -588,40 +590,100 @@ unimplemented owning capability.
 | Translation changes obligations | Stable codes, versioned bilingual copy and fail-closed critical parity. |
 | Cancellation/renewal promises invent policy | Deferred controls and Product Owner decision markers. |
 
-## 21. Open questions
+## 21. Deferred activation policy
 
-- [NEEDS PRODUCT OWNER DECISION: approve the client-facing M009 status vocabulary, the mapping from
-  commercial/financial/activation/fulfillment combinations—including coexistence of
-  order/payment/case cancellation, refund and dispute—and exact bilingual wording, coordinated with
-  M008 and M010.]
-- [NEEDS PRODUCT OWNER DECISION: approve which preliminary states—quote sent, payment pending or
-  paid pending review—appear in `Mis servicios` before a `CaseFile` exists.]
-- [NEEDS PRODUCT OWNER DECISION: approve the Release 1A service types that may appear and their
-  versioned public milestone sets.]
-- [NEEDS PRODUCT OWNER DECISION: approve default card ordering, filter set, search fields, page size
-  and maximum service/timeline/summary previews after UX testing.]
-- [NEEDS PRODUCT OWNER DECISION: approve which price, deposit, balance, invoice and refund details
-  are visible in M009 versus only in M014.]
-- [NEEDS PRODUCT OWNER DECISION: approve whether a responsible team or named staff member/contact is
-  client-visible and under what availability/reassignment policy.]
-- [NEEDS PRODUCT OWNER DECISION: approve cancellation/change-request eligibility, who reviews it,
-  required reasons and client-facing outcomes.]
-- [NEEDS PRODUCT OWNER DECISION: approve recurring-service, renewal, auto-renewal, reminder and
-  cancellation policy before those controls enter Release 1B.]
-- [NEEDS PRODUCT OWNER DECISION: approve deliverable/agreement visibility, revocation and retention
-  wording before M011/M067 enable access.]
-- [NEEDS PRODUCT OWNER DECISION: approve which client-safe timeline events and public reason codes
-  appear in the M009 preview versus M010.]
-- [NEEDS PRODUCT OWNER DECISION: approve spouse/household/business-member/authorized-representative
-  participation and delegation/revocation policy.]
-- [NEEDS PRODUCT OWNER DECISION: approve whether and how partner-referral status may appear, with
-  disclosure, source freshness and no-guarantee language.]
-- [NEEDS PRODUCT OWNER DECISION: approve support channels, service hours and any response-time
-  wording; no promise is assumed.]
-- [NEEDS PRODUCT OWNER DECISION: approve M009 analytics events, retention, viewers and the final
-  minimized allowlist.]
-- [NEEDS PRODUCT OWNER DECISION: approve per-section freshness/staleness budgets and bilingual
-  partial/unconfirmed recovery copy.]
+The approved provider-disabled Build has no unresolved architecture decision. The following
+business policies remain deliberately disabled rather than invented:
+
+- final public status copy and the production mapping across commercial, financial, activation and
+  fulfillment combinations;
+- production-visible preliminary states and actual Release 1A service definitions/milestones;
+- production limits, ordering, filters, search fields and freshness budgets;
+- client-visible financial detail beyond generic state, and responsible-person disclosure;
+- cancellation/change requests, recurring services, renewals and auto-renewal;
+- agreement/deliverable access, public timeline reasons and delegated participant access;
+- partner-referral presentation, support promises and product analytics.
+
+Until the Product Owner records those policies, configured owner ports return
+`provider_disabled|unavailable`, production tables remain unseeded, sensitive values are omitted,
+and only synthetic test fixtures may exercise the corresponding contracts.
+
+## 22. Historical brownfield audit at accepted M008 base
+
+### Implemented and reusable
+
+- One Next.js Client Portal exists under `/client`; `/client/services` is already a canonical route.
+- M007 owns accounts, sessions, organization context, CSRF, assurance, permissions and revocation.
+- M008 owns the request-scoped authorization snapshot, context opaque references, final revalidation,
+  durable HTTP/SSR admission, private/no-store rendering and deterministic priority.
+- `@atlas/dashboard` already defines a bounded `services` owner fragment and safe route keys.
+- Shared `@atlas/ui`, `@atlas/i18n`, `@atlas/observability`, Drizzle and Vitest conventions exist.
+
+### Missing implementation
+
+- `/client/services` is a provider-disabled placeholder.
+- No `ServiceOrder`, versioned service definition, `CaseFile`, service grant, public milestone,
+  deliverable or status-history runtime table/repository exists.
+- No client-services list/detail query service, DTO serializer, Postgres adapter, API or detail route
+  exists.
+- M008's configured `services` owner port is unavailable.
+- Payments, documents, tasks, appointments, messages, process status, entitlements and workflows are
+  documentary or unavailable owners; none may be represented as live or empty.
+
+### Audit conclusion
+
+M009 is an additive read-model slice. It must reuse the M007/M008 trust boundary and replace the
+existing placeholder, not create another portal or query providers. Because no production service
+catalog or records exist, the implementation must ship unseeded and fail closed.
+
+This section records the pre-implementation state at `09c9403`. It is retained as audit history and
+does not describe the current M009 implementation status.
+
+## 23. Authorized provider-disabled implementation boundary
+
+M009 may implement:
+
+- one `@atlas/client-services` package with strict list/detail DTOs, deterministic public-state
+  synthesis, bounded owner ports, final serialization allowlists and disabled-cache contracts;
+- empty Drizzle schema/migration contracts for versioned definitions, service orders, explicit
+  service grants, status history, milestones and deliverables, with RLS and no seed data;
+- Postgres repository code that is not enabled in configured runtime during this gate;
+- `/api/client/services`, `/api/client/services/[serviceRef]`, `/client/services` and
+  `/client/services/[serviceRef]` using M007/M008 admission and authorization;
+- one M009-to-M008 summary adapter, while every non-M009 owner remains unavailable;
+- accessible ES/EN list/detail UI, honest empty/partial/unavailable states and synthetic-only tests;
+- metadata-only operational events with no client, context, service, amount or free-text values.
+
+M009 may not create service definitions or client records, enable PostgreSQL/provider adapters,
+activate Stripe/Calendar/Storage/CRM/partner/AI traffic, execute commands, infer entitlements,
+download content, initiate payments, change state, merge, deploy or release.
+
+## 24. Verifiable implementation acceptance
+
+1. WHEN an active M007 session requests the directory through an authorized context, THE SYSTEM
+   SHALL return only explicitly granted `ServiceOrder` projections after a final M008-compatible
+   fence; verify with `corepack pnpm exec vitest run --config tests/m009/vitest.config.mjs`.
+2. WHEN a caller guesses another service/context reference, THE SYSTEM SHALL return a generic
+   resource-hiding result with no body, count, cursor or route metadata; verify with the same suite.
+3. WHEN payment is `paid` but activation is pending, THE SYSTEM SHALL NOT report started or in
+   progress; verify with the status-policy matrix suite.
+4. WHEN an accepted definition/workflow version is absent or changes concurrently, THE SYSTEM
+   SHALL fail closed rather than use the current catalog version; verify with the version-fence
+   integration suite.
+5. WHEN any child owner is stale or unavailable, THE SYSTEM SHALL preserve that state and SHALL NOT
+   convert it to zero, complete or no-action; verify with aggregation tests.
+6. WHEN configured runtime has no approved data adapter, THE SYSTEM SHALL render an honest
+   provider-disabled state and no synthetic service; verify with runtime and UI tests.
+7. WHEN list/detail output is serialized, THE SYSTEM SHALL exclude internal IDs, notes, provider
+   payloads, storage keys, signed URLs and arbitrary URLs; verify with negative contract tests.
+8. WHEN the page renders in Spanish or English at supported breakpoints, THE SYSTEM SHALL preserve
+   semantic parity, keyboard access, status text and 320px reflow; verify with focused UI and
+   accessibility tests.
+9. WHEN M009 feeds M008, THE SYSTEM SHALL emit only the existing bounded dashboard service summary
+   contract and SHALL NOT broaden M008 authorization; verify with adapter contract tests.
+10. WHEN the focused package/application typechecks run, THE SYSTEM SHALL exit zero without a new
+    production dependency; verify with `corepack pnpm --filter @atlas/client-services typecheck &&
+    corepack pnpm --filter @atlas/app typecheck && corepack pnpm --filter @atlas/ui typecheck`.
 
 ### Reference basis
 
@@ -638,3 +700,28 @@ unimplemented owning capability.
 - [Authorization inheritance ADR](../adr/004-authorization-inheritance.md) governs case/resource
   visibility and revocation.
 - [Data Classification](../../DATA_CLASSIFICATION.md) governs portal data, telemetry and retention.
+
+## 25. Provider-disabled implementation closure
+
+M009 implementation tasks T1-T9 are complete in the isolated
+`codex/m009-my-services-rebuild` worktree. The slice adds the read-only
+`@atlas/client-services` boundary, unseeded Drizzle migration `0037`, restricted Postgres adapter
+contracts, authorized list/detail API and SSR routes, deterministic four-axis status synthesis,
+M008 dashboard integration, minimized DTO serialization, final root/child/absence fencing,
+private/no-store responses, and accessible bilingual UI. Configured runtime and child-owner ports
+remain unavailable; synthetic service state remains limited to `tests/m009`.
+
+Independent static architecture review is `APPROVED` with `0` open Critical, `0` Important and `0`
+Minor findings. Cyber Neo's final targeted static review is `APPROVED` with `0` open Critical, `0`
+High, `0` Medium and `0` Low findings. These verdicts do not certify runtime behavior or production
+readiness.
+
+The previously executed focused evidence passed `32/32`. A final closure rerun is `NO VALIDADO`
+because pnpm encountered `EPERM` and Vitest was absent. Final app, UI and database typechecks were
+not validated. Live PostgreSQL migration/RLS/role behavior, real providers and owner modules,
+browser/visual behavior, deployment and production configuration were also not validated.
+
+M009 is ready for explicit Product Owner acceptance only in provider-disabled scope. It is not yet
+accepted, merged, deployed, released or `Operational`. M010 remains blocked until that acceptance
+is recorded. See `docs/phases/M009-PHASE-COMPLETION-REPORT.md` for the closure evidence and
+limitations.

@@ -55,6 +55,9 @@ importers:
       '@atlas/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@atlas/client-services':
+        specifier: workspace:*
+        version: link:../../packages/client-services
       '@atlas/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -147,6 +150,12 @@ importers:
 
   packages/dashboard: {}
 
+  packages/client-services:
+    dependencies:
+      '@atlas/dashboard':
+        specifier: workspace:*
+        version: link:../dashboard
+
   packages/database:
     dependencies:
       '@atlas/domain':
@@ -176,7 +185,11 @@ importers:
         specifier: 4.4.3
         version: 4.4.3
 
-  packages/i18n: {}
+  packages/i18n:
+    dependencies:
+      '@atlas/client-services':
+        specifier: workspace:*
+        version: link:../client-services
 
   packages/observability:
     dependencies:
@@ -207,6 +220,15 @@ importers:
 
   packages/ui:
     dependencies:
+      '@atlas/client-services':
+        specifier: workspace:*
+        version: link:../client-services
+      '@atlas/dashboard':
+        specifier: workspace:*
+        version: link:../dashboard
+      '@atlas/i18n':
+        specifier: workspace:*
+        version: link:../i18n
       radix-ui:
         specifier: 1.6.7
         version: 1.6.7(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)

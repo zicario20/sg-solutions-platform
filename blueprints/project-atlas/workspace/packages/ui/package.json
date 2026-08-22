@@ -10,6 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@atlas/client-services": "workspace:*",
     "@atlas/dashboard": "workspace:*",
     "@atlas/i18n": "workspace:*",
     "radix-ui": "1.6.7",

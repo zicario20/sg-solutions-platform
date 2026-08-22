@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { isIP } from "node:net";
 
-export const DASHBOARD_RATE_ACTIONS = ["dashboard_get", "dashboard_context", "dashboard_analytics", "dashboard_ssr"] as const;
+export const DASHBOARD_RATE_ACTIONS = ["dashboard_get", "dashboard_context", "dashboard_analytics", "dashboard_ssr", "client_services_list_get", "client_services_detail_get", "client_services_ssr"] as const;
 export type DashboardRateAction = (typeof DASHBOARD_RATE_ACTIONS)[number];
 export type DashboardAdmissionResult = "accepted" | "rate_limited";
 
