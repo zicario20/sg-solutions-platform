@@ -19,6 +19,8 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
+export * from "./schema/documents.ts";
+
 const gatewayAccess = (name: string) =>
   pgPolicy(`${name}_server_gateway_only`, {
     as: "permissive",
@@ -1045,14 +1047,26 @@ export const communicationMessageTemplates = pgTable(
     state: varchar("state", { length: 32 }).notNull(),
     internallyApproved: boolean("internally_approved").notNull().default(false),
     approvalReceiptId: text("approval_receipt_id"),
-    approvalReceiptIssuedAt: timestamp("approval_receipt_issued_at", { withTimezone: true, mode: "date" }),
-    approvalReceiptValidUntil: timestamp("approval_receipt_valid_until", { withTimezone: true, mode: "date" }),
+    approvalReceiptIssuedAt: timestamp("approval_receipt_issued_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
+    approvalReceiptValidUntil: timestamp("approval_receipt_valid_until", {
+      withTimezone: true,
+      mode: "date",
+    }),
     externalReference: text("external_reference"),
     projectionVersion: integer("projection_version"),
     providerReceiptId: text("provider_receipt_id"),
     providerCorrelationId: text("provider_correlation_id"),
-    providerReceiptIssuedAt: timestamp("provider_receipt_issued_at", { withTimezone: true, mode: "date" }),
-    providerReceiptValidUntil: timestamp("provider_receipt_valid_until", { withTimezone: true, mode: "date" }),
+    providerReceiptIssuedAt: timestamp("provider_receipt_issued_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
+    providerReceiptValidUntil: timestamp("provider_receipt_valid_until", {
+      withTimezone: true,
+      mode: "date",
+    }),
     category: varchar("category", { length: 48 }),
     observedAt: timestamp("observed_at", { withTimezone: true, mode: "date" }),
     ...timestamps,
@@ -1080,8 +1094,14 @@ export const communicationMessageTemplates = pgTable(
       "communication_message_templates_variables_valid",
       sql`jsonb_typeof(${table.variableKeys}) = 'array'`,
     ),
-    check("communication_message_templates_definition_version_positive", sql`${table.definitionVersion} > 0`),
-    check("communication_message_templates_projection_version_positive", sql`${table.projectionVersion} is null or ${table.projectionVersion} > 0`),
+    check(
+      "communication_message_templates_definition_version_positive",
+      sql`${table.definitionVersion} > 0`,
+    ),
+    check(
+      "communication_message_templates_projection_version_positive",
+      sql`${table.projectionVersion} is null or ${table.projectionVersion} > 0`,
+    ),
     check(
       "communication_message_templates_approval_valid",
       sql`(${table.internallyApproved} = false and ${table.approvalReceiptId} is null and ${table.approvalReceiptIssuedAt} is null and ${table.approvalReceiptValidUntil} is null) or (${table.internallyApproved} = true and ${table.approvalReceiptId} is not null and ${table.approvalReceiptIssuedAt} is not null and ${table.approvalReceiptValidUntil} > ${table.approvalReceiptIssuedAt})`,
@@ -1116,8 +1136,14 @@ export const communicationOutboundCommands = pgTable(
     owningReference: text("owning_reference"),
     owningBindingId: text("owning_binding_id"),
     owningDestinationKey: varchar("owning_destination_key", { length: 120 }),
-    owningReceiptIssuedAt: timestamp("owning_receipt_issued_at", { withTimezone: true, mode: "date" }),
-    owningReceiptValidUntil: timestamp("owning_receipt_valid_until", { withTimezone: true, mode: "date" }),
+    owningReceiptIssuedAt: timestamp("owning_receipt_issued_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
+    owningReceiptValidUntil: timestamp("owning_receipt_valid_until", {
+      withTimezone: true,
+      mode: "date",
+    }),
     expectedPolicyVersion: integer("expected_policy_version"),
     requiredFence: integer("required_fence"),
     endpointDigests: jsonb("endpoint_digests").notNull().default(sql`'[]'::jsonb`),
@@ -1160,7 +1186,10 @@ export const communicationOutboundCommands = pgTable(
       "communication_outbound_commands_fingerprint_valid",
       sql`${table.fingerprint} is null or ${table.fingerprint} ~ '^[0-9a-f]{64}$'`,
     ),
-    check("communication_outbound_commands_message_body_digest_valid", sql`${table.messageBodyDigest} ~ '^[0-9a-f]{64}$'`),
+    check(
+      "communication_outbound_commands_message_body_digest_valid",
+      sql`${table.messageBodyDigest} ~ '^[0-9a-f]{64}$'`,
+    ),
     check(
       "communication_outbound_commands_lease_token_hash_valid",
       sql`${table.leaseTokenHash} is null or ${table.leaseTokenHash} ~ '^[0-9a-f]{64}$'`,
@@ -1182,8 +1211,14 @@ export const communicationOutboundCommands = pgTable(
       "communication_outbound_commands_policy_version_positive",
       sql`${table.expectedPolicyVersion} is null or ${table.expectedPolicyVersion} > 0`,
     ),
-    check("communication_outbound_commands_required_fence_valid", sql`${table.requiredFence} is null or ${table.requiredFence} >= 0`),
-    check("communication_outbound_commands_endpoint_digests_valid", sql`jsonb_typeof(${table.endpointDigests}) = 'array'`),
+    check(
+      "communication_outbound_commands_required_fence_valid",
+      sql`${table.requiredFence} is null or ${table.requiredFence} >= 0`,
+    ),
+    check(
+      "communication_outbound_commands_endpoint_digests_valid",
+      sql`jsonb_typeof(${table.endpointDigests}) = 'array'`,
+    ),
     check("communication_outbound_commands_version_nonnegative", sql`${table.version} >= 0`),
     check(
       "communication_outbound_commands_owning_receipt_window_valid",
@@ -1197,8 +1232,14 @@ export const communicationOutboundCommands = pgTable(
       "communication_outbound_commands_destination_reference_opaque",
       sql`${table.destinationKey} is null or ${table.destinationKey} ~ '^endpoint_ref:[0-9a-f]{64}$'`,
     ),
-    check("communication_outbound_commands_owning_destination_valid", sql`${table.owningDestinationKey} is null or ${table.owningDestinationKey} ~ '^endpoint_ref:[0-9a-f]{64}$'`),
-    check("communication_outbound_commands_owning_reference_valid", sql`${table.owningReference} is null or ${table.owningReference} ~ '^outbound_command:[A-Za-z0-9][A-Za-z0-9._:-]{2,255}$'`),
+    check(
+      "communication_outbound_commands_owning_destination_valid",
+      sql`${table.owningDestinationKey} is null or ${table.owningDestinationKey} ~ '^endpoint_ref:[0-9a-f]{64}$'`,
+    ),
+    check(
+      "communication_outbound_commands_owning_reference_valid",
+      sql`${table.owningReference} is null or ${table.owningReference} ~ '^outbound_command:[A-Za-z0-9][A-Za-z0-9._:-]{2,255}$'`,
+    ),
     check(
       "communication_outbound_commands_lease_valid",
       sql`(${table.leaseOwnerId} is null and ${table.leaseTokenHash} is null and ${table.leaseExpiresAt} is null) or (${table.leaseOwnerId} is not null and ${table.leaseTokenHash} is not null and ${table.leaseExpiresAt} is not null)`,
@@ -1274,10 +1315,19 @@ export const communicationDispatchAttempts = pgTable(
       "communication_dispatch_attempts_request_digest_valid",
       sql`${table.requestDigest} ~ '^[0-9a-f]{64}$'`,
     ),
-    check("communication_dispatch_attempts_lease_owner_hash_valid", sql`${table.leaseOwnerHash} ~ '^[0-9a-f]{64}$'`),
+    check(
+      "communication_dispatch_attempts_lease_owner_hash_valid",
+      sql`${table.leaseOwnerHash} ~ '^[0-9a-f]{64}$'`,
+    ),
     check("communication_dispatch_attempts_lease_version_positive", sql`${table.leaseVersion} > 0`),
-    check("communication_dispatch_attempts_lease_window_valid", sql`${table.leaseExpiresAt} > ${table.startedAt}`),
-    check("communication_dispatch_attempts_provider_reference_digest_valid", sql`${table.providerReferenceDigest} is null or ${table.providerReferenceDigest} ~ '^[0-9a-f]{64}$'`),
+    check(
+      "communication_dispatch_attempts_lease_window_valid",
+      sql`${table.leaseExpiresAt} > ${table.startedAt}`,
+    ),
+    check(
+      "communication_dispatch_attempts_provider_reference_digest_valid",
+      sql`${table.providerReferenceDigest} is null or ${table.providerReferenceDigest} ~ '^[0-9a-f]{64}$'`,
+    ),
     check(
       "communication_dispatch_attempts_policy_version_positive",
       sql`${table.expectedPolicyVersion} > 0`,
@@ -1340,7 +1390,9 @@ export const communicationProviderStatusVerifications = pgTable(
     commandId: text("command_id").notNull(),
     attemptId: text("attempt_id").notNull(),
     connectionId: text("connection_id").notNull(),
-    externalMessageReferenceDigest: char("external_message_reference_digest", { length: 64 }).notNull(),
+    externalMessageReferenceDigest: char("external_message_reference_digest", {
+      length: 64,
+    }).notNull(),
     providerEventId: text("provider_event_id").notNull(),
     status: varchar("status", { length: 24 }).notNull(),
     occurredAt: timestamp("occurred_at", { withTimezone: true, mode: "date" }).notNull(),
@@ -1353,7 +1405,10 @@ export const communicationProviderStatusVerifications = pgTable(
     foreignKey({
       name: "communication_provider_status_verifications_command_connection_fk",
       columns: [table.commandId, table.connectionId],
-      foreignColumns: [communicationOutboundCommands.id, communicationOutboundCommands.connectionId],
+      foreignColumns: [
+        communicationOutboundCommands.id,
+        communicationOutboundCommands.connectionId,
+      ],
     }).onDelete("cascade"),
     foreignKey({
       name: "communication_provider_status_verifications_attempt_command_fk",

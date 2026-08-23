@@ -146,15 +146,24 @@ importers:
         specifier: 4.4.3
         version: 4.4.3
 
-  packages/config: {}
-
-  packages/dashboard: {}
+  packages/client-process-status:
+    dependencies:
+      '@atlas/client-services':
+        specifier: workspace:*
+        version: link:../client-services
+      '@atlas/dashboard':
+        specifier: workspace:*
+        version: link:../dashboard
 
   packages/client-services:
     dependencies:
       '@atlas/dashboard':
         specifier: workspace:*
         version: link:../dashboard
+
+  packages/config: {}
+
+  packages/dashboard: {}
 
   packages/database:
     dependencies:
@@ -172,6 +181,8 @@ importers:
         version: 4.4.3
 
   packages/design-tokens: {}
+
+  packages/documents: {}
 
   packages/domain:
     dependencies:

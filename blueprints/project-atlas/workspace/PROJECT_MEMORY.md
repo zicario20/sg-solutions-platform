@@ -5,6 +5,16 @@
 - Status: Active append-only record
 - Update rule: append dated events; never delete or rewrite historical entries
 
+## 2026-08-23
+
+- The Product Owner approved the M011 Build gate, initial PDF/JPEG/PNG 25 MiB content allowlist,
+  self-hosted ClamAV direction, MinIO/S3 private-storage boundary, legal hold/archive/soft-delete,
+  and explicitly deferred automatic physical purge pending legal policy.
+- M011 implementation added one typed document authority, quarantined fail-closed upload lifecycle,
+  immutable versions, audit evidence, server-only Drizzle metadata schema, provider-disabled private
+  portal/API posture and bilingual client-safe UI. No provider, migration, bucket, document, live
+  scan, upload, deployment or production activation occurred.
+
 ## 2026-08-02
 
 - Project Atlas classified as a production-ready, single-organization operational platform.

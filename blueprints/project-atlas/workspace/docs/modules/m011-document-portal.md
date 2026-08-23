@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Implementation-ready architecture candidate; no Build gate
+- Status: Provider-disabled secure-core implementation ready for Product Owner acceptance; not deployed or operational
 - Surface: Client Portal `/client/documents` and
   `/client/services/[publicServiceRef]/documents`; Admin `/admin/documents` and case-scoped views
 - Workstream: R1.5 Client Portal & Launch

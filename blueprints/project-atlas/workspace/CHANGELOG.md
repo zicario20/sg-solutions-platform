@@ -261,3 +261,8 @@
   active local links across 162 Markdown files with zero broken. Two frozen offline lockfile-only
   installs preserved the lock hash. No product source, dependency or lockfile changed, and Build
   remains unauthorized.
+# Unreleased
+
+- Added M011 secure document portal core: typed document contracts, fail-closed quarantine lifecycle,
+  immutable versions, legal-hold soft-delete protection, server-only metadata schema, bilingual
+  client document surface and provider-disabled private API posture.

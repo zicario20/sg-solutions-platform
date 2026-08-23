@@ -2,9 +2,9 @@
 
 - Version: 0.1.0-alpha.30
 - Updated: 2026-08-23
-- Phase: M010 provider-disabled implementation ready for Product Owner acceptance
+- Phase: M011 secure document portal implementation ready for Product Owner acceptance
 - Accepted base: M009 commit 6667872
-- Next: explicit M010 Product Owner acceptance; M011 blocked
+- Next: Product Owner acceptance of M011 provider-disabled secure core; provider activation remains separately gated
 - Production: no deployment/live-provider authority
 
 ## Accepted progression
@@ -19,8 +19,11 @@ M010 T1-T9 implementation evidence has reached independent static closure review
 `APPROVED` with `0` Critical, `0` Important and `0` Minor findings. Cyber Neo is `APPROVED` with
 `0` Critical, `0` High, `0` Medium and `0` Low findings.
 
-M010 is ready for explicit Product Owner acceptance in provider-disabled scope. It is not accepted,
-merged, deployed, released or `Operational`. M011 remains blocked.
+M011 secure-core implementation is ready for explicit Product Owner acceptance. It provides typed
+document authority, quarantine-first lifecycle, fail-closed scan state, immutable version metadata,
+server-only Drizzle schema, private client route/API posture and bilingual client-safe UI. It is not
+accepted, deployed, released or `Operational`; MinIO/S3, ClamAV, migrations/RLS under real roles,
+upload traffic and real client data remain inactive.
 
 ## Architecture position
 

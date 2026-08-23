@@ -663,3 +663,14 @@ Allowed: engine, existing routes, deterministic policies, source registry, truth
 ES/EN accessible UI and tests. Not allowed: parallel catalog; mutable M010 truth; M010 schema,
 writer, materializer or job; invented data; providers; payment-driven start; AI decisions; merge,
 deployment or release. Concrete mappings stay disabled. M011 remains blocked.
+# 2026-08-23 — M011 secure document core Build decisions
+
+- Product Owner approved initial content-validated PDF, JPEG and PNG uploads up to 25 MiB.
+- Self-hosted ClamAV is the initial malware-scanning direction; a timeout, failure or unavailable
+  scanner remains quarantined and never promotes.
+- MinIO/S3-compatible private storage remains behind the M011 storage boundary. Object keys are
+  opaque and no bucket, public URL or credential is committed.
+- Legal hold, archive and soft-delete state are implemented. Automatic physical purge and retention
+  windows remain `[NEEDS PRODUCT OWNER DECISION: approved legal retention schedule and purge authority]`.
+- M011 completion evidence is implementation-level only. Product Owner acceptance, real migrations,
+  RLS role verification, storage provisioning, ClamAV activation and deployment remain separate gates.
