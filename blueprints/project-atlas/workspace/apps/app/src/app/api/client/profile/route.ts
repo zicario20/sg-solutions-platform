@@ -20,6 +20,46 @@ const headers = {
   "referrer-policy": "no-referrer",
 };
 const respond = (body: unknown, status = 200) => Response.json(body, { status, headers });
+const MAX_BODY_BYTES = 2048;
+async function readBoundedJson(
+  request: Request,
+): Promise<Readonly<{ kind: "ok"; value: unknown }> | Readonly<{ kind: "invalid" | "too_large" }>> {
+  const declaredLength = request.headers.get("content-length");
+  if (declaredLength) {
+    const length = Number(declaredLength);
+    if (!Number.isSafeInteger(length) || length < 0) return { kind: "invalid" };
+    if (length > MAX_BODY_BYTES) return { kind: "too_large" };
+  }
+  if (!request.body) return { kind: "invalid" };
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    for (;;) {
+      const next = await reader.read();
+      if (next.done) break;
+      size += next.value.byteLength;
+      if (size > MAX_BODY_BYTES) {
+        await reader.cancel();
+        return { kind: "too_large" };
+      }
+      chunks.push(next.value);
+    }
+  } catch {
+    return { kind: "invalid" };
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    return { kind: "ok", value: JSON.parse(new TextDecoder().decode(bytes)) };
+  } catch {
+    return { kind: "invalid" };
+  }
+}
 async function admission(request: Request) {
   const runtime = createConfiguredProfileRuntime();
   if (runtime.kind !== "ready") return { kind: "unavailable" as const, runtime };
@@ -54,14 +94,10 @@ export async function POST(request: Request) {
     return respond({ error: "invalid_request" }, 403);
   if (request.headers.get("content-type")?.split(";", 1)[0] !== "application/json")
     return respond({ error: "invalid_request" }, 415);
-  if (Number(request.headers.get("content-length") ?? 0) > 2048)
-    return respond({ error: "invalid_request" }, 413);
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return respond({ error: "invalid_request" }, 400);
-  }
+  const parsed = await readBoundedJson(request);
+  if (parsed.kind === "too_large") return respond({ error: "invalid_request" }, 413);
+  if (parsed.kind !== "ok") return respond({ error: "invalid_request" }, 400);
+  const body = parsed.value;
   if (!body || typeof body !== "object" || Array.isArray(body))
     return respond({ error: "invalid_request" }, 400);
   const value = body as {

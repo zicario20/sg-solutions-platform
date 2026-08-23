@@ -105,6 +105,15 @@ describe("M015 purpose-bound profile foundation", () => {
     expect(submitted?.goals[0]).toMatchObject({ code: "credit_organization", state: "submitted" });
     expect(
       await service.submitSelfServiceGoal(
+        actor,
+        "es",
+        "credit_organization",
+        "m015-self-service-v1",
+      ),
+    ).toMatchObject({ goals: [expect.objectContaining({ code: "credit_organization" })] });
+    expect((await service.selfService(actor))?.goals).toHaveLength(1);
+    expect(
+      await service.submitSelfServiceGoal(
         { ...actor, contextType: "organization" },
         "es",
         "credit_organization",

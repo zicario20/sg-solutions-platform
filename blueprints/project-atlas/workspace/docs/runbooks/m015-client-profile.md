@@ -12,6 +12,9 @@ The Package B tables contain only account/context references, locale, an allowli
 review state, notice version and timestamps. They are not canonical client, organization, consent,
 audit, financial, tax, credit or document records.
 
+Each profile can submit each allowlisted goal code once. The API rejects declared or streamed bodies
+above 2 KB before parsing them; it is not a general-purpose intake endpoint.
+
 ## Activation prerequisites
 
 1. Apply the reviewed database migration using the restricted `atlas_profile_gateway` role and

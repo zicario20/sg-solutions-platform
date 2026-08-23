@@ -64,6 +64,7 @@ export const profileSelfServiceGoals = pgTable(
   },
   (table) => [
     index("profile_self_service_goals_profile_idx").on(table.profileId, table.createdAt),
+    unique("profile_self_service_goals_profile_code_unique").on(table.profileId, table.goalCode),
     check(
       "profile_self_service_goals_code",
       sql`${table.goalCode} in ('credit_organization','tax_preparation','business_planning','home_buying_preparation','general_support')`,

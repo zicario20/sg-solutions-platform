@@ -195,6 +195,8 @@ export class ProfileService {
       return undefined;
     const snapshot = await this.repository.ensureSelfServiceRoot(actor, locale);
     if (!authorized(actor, snapshot.root, "self_service")) return undefined;
+    const existing = await this.selfService(actor);
+    if (existing?.goals.some((goal) => goal.code === code)) return existing;
     const now = new Date().toISOString();
     const goal: ProfileGoal = {
       goalRef: `goal:${snapshot.root.profileRef}:${randomUUID()}`,

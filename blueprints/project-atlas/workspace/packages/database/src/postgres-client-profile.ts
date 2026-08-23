@@ -103,8 +103,8 @@ export class PostgresProfileRepository implements ProfileRepository {
     const profileId = goal.goalRef.split(":")[1];
     if (!profileId || !goal.goalCode || !goal.noticeVersion || !goal.submittedAt)
       throw new Error("PROFILE_GOAL_INVALID");
-    await this.client.unsafe(
-      "insert into profile_self_service_goals (id,profile_id,goal_code,state,notice_version,asserted_at,created_at,updated_at) values ($1,$2,$3,$4,$5,$6,now(),now())",
+    const inserted = await this.client.unsafe<Readonly<{ id: string }>[]>(
+      "insert into profile_self_service_goals (id,profile_id,goal_code,state,notice_version,asserted_at,created_at,updated_at) values ($1,$2,$3,$4,$5,$6,now(),now()) on conflict (profile_id,goal_code) do nothing returning id",
       [
         goal.goalRef,
         profileId,
@@ -114,6 +114,7 @@ export class PostgresProfileRepository implements ProfileRepository {
         goal.submittedAt,
       ],
     );
+    if (!inserted.length) return;
     await this.client.unsafe(
       "update profile_self_service_roots set revision = revision + 1, updated_at = now() where id = $1",
       [profileId],
