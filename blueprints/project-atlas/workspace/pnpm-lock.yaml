@@ -229,6 +229,8 @@ importers:
         specifier: 19.2.8
         version: 19.2.8(react@19.2.8)
 
+  packages/secure-messaging: {}
+
   packages/ui:
     dependencies:
       '@atlas/client-services':

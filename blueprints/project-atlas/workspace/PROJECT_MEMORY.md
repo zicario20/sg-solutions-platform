@@ -7,6 +7,11 @@
 
 ## 2026-08-23
 
+- M012 provider-disabled secure messaging implementation began from the completed M011 branch. It
+  adds authenticated conversation authorization, immutable client messages, structurally isolated
+  internal notes and a bilingual private portal surface; external channels, AI, attachments,
+  notifications and durable provider activation remain separately gated.
+
 - The Product Owner approved the M011 Build gate, initial PDF/JPEG/PNG 25 MiB content allowlist,
   self-hosted ClamAV direction, MinIO/S3 private-storage boundary, legal hold/archive/soft-delete,
   and explicitly deferred automatic physical purge pending legal policy.

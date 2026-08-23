@@ -18,6 +18,7 @@ export * from "./dashboard/DashboardView.tsx";
 export * from "./dashboard/DashboardWidgets.tsx";
 export * from "./dashboard/PriorityActionCard.tsx";
 export * from "./documents/DocumentPortal.tsx";
+export * from "./messaging/SecureMessagingPortal.tsx";
 export * from "./process-status/ProcessMilestones.tsx";
 export * from "./process-status/ProcessNextAction.tsx";
 export * from "./process-status/ProcessSections.tsx";

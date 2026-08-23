@@ -1,0 +1,1 @@
+export const dynamic="force-dynamic";export const revalidate=0;export async function GET(){return Response.json({error:"temporarily_unavailable"},{status:503,headers:{"cache-control":"private, no-store","x-content-type-options":"nosniff"}})}

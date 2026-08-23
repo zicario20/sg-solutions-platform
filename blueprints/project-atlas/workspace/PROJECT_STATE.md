@@ -2,7 +2,7 @@
 
 - Version: 0.1.0-alpha.30
 - Updated: 2026-08-23
-- Phase: M011 secure document portal implementation ready for Product Owner acceptance
+- Phase: M012 secure messaging implementation ready for Product Owner acceptance
 - Accepted base: M009 commit 6667872
 - Next: Product Owner acceptance of M011 provider-disabled secure core; provider activation remains separately gated
 - Production: no deployment/live-provider authority
