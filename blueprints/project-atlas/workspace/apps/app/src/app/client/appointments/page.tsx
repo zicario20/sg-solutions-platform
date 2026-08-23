@@ -1,19 +1,23 @@
 import { ClientPortalShell } from "@atlas/ui";
+import { cookies } from "next/headers";
+import { DASHBOARD_CSRF_COOKIE } from "../../../lib/dashboard/auth-context.ts";
 import { requireDashboardPageContext } from "../../../lib/dashboard/page-context.ts";
+import { AppointmentsClient } from "./appointments-client.tsx";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export default async function Page() {
   const { locale } = await requireDashboardPageContext();
+  const csrfToken = (await cookies()).get(DASHBOARD_CSRF_COOKIE)?.value;
   const copy =
     locale === "es"
       ? {
           title: "Citas",
-          body: "Tu agenda mostrará citas confirmadas, pendientes y pasadas cuando la fuente de agenda autorizada esté configurada.",
+          body: "Revisa tus citas, consulta horarios disponibles y administra cambios permitidos desde un solo lugar.",
           action: "Contactar soporte",
         }
       : {
           title: "Appointments",
-          body: "Your schedule will show confirmed, pending, and past appointments when the authorized scheduling source is configured.",
+          body: "Review your appointments, see available times, and manage permitted changes in one place.",
           action: "Contact support",
         };
   return (
@@ -22,13 +26,7 @@ export default async function Page() {
         <p>SG Solutions</p>
         <h1 id="appointments-title">{copy.title}</h1>
         <p>{copy.body}</p>
-        <div role="status">
-          <p>
-            {locale === "es"
-              ? "No hay citas confirmadas para mostrar en este momento."
-              : "There are no confirmed appointments to show right now."}
-          </p>
-        </div>
+        <AppointmentsClient locale={locale} csrfToken={csrfToken} />
         <a href="/client/messages">{copy.action}</a>
       </section>
     </ClientPortalShell>

@@ -271,5 +271,7 @@
   immutable versions, legal-hold soft-delete protection, server-only metadata schema, bilingual
   client document surface and provider-disabled private API posture.
 
-- M013 adds the internal appointment core, conflict-safe holds, resource authorization and server-only
-  schema. Calendar, notifications, payments and public booking remain unactivated.
+- M013 adds the internal appointment core, authorization-bound conflict-safe holds, capacity
+  serialization, idempotent booking, atomic rescheduling, version-fenced cancellation, client
+  scheduling APIs/UI, immutable schedule revisions and provider-neutral outbox contracts. Calendar,
+  notifications, payments and public booking remain unactivated.

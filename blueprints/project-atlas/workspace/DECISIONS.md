@@ -674,3 +674,18 @@ deployment or release. Concrete mappings stay disabled. M011 remains blocked.
   windows remain `[NEEDS PRODUCT OWNER DECISION: approved legal retention schedule and purge authority]`.
 - M011 completion evidence is implementation-level only. Product Owner acceptance, real migrations,
   RLS role verification, storage provisioning, ClamAV activation and deployment remain separate gates.
+
+## Decision 043 - M013 client appointments completion boundary
+
+- Date: 2026-08-23
+- Status: Implementation evidence; Product Owner acceptance pending
+- Owner: Product Owner
+- Scope: M013 Client Appointments
+
+The Product Owner directed completion of M013's own scheduling authority. M013 therefore owns durable
+appointment records, availability derivation, holds, conflict-safe booking, reprogramming,
+cancellation, client-safe projection, schedule audit and post-commit provider-neutral handoffs.
+M024 owns the staff calendar workspace, M026 delivery, M014 payments, M003-M006 channel entry points
+and M041 concrete provider adapters. None of those future modules may replace or bypass M013's
+capacity and authorization authority. This records no provider activation, database migration,
+deployment, acceptance or production operation.

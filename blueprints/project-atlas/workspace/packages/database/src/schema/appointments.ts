@@ -9,6 +9,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   varchar,
 } from "drizzle-orm/pg-core";
 export const appointmentGatewayRole = pgRole("atlas_appointment_gateway").existing();
@@ -30,6 +31,7 @@ export const appointmentTypes = pgTable(
     bufferAfterMinutes: integer("buffer_after_minutes").notNull(),
     minimumNoticeMinutes: integer("minimum_notice_minutes").notNull(),
     maximumAdvanceDays: integer("maximum_advance_days").notNull(),
+    modalities: text("modalities").array().notNull(),
     requiresAuthentication: boolean("requires_authentication").notNull(),
     active: boolean("active").notNull(),
     version: integer("version").notNull(),
@@ -86,6 +88,8 @@ export const appointmentHolds = pgTable(
       .references(() => appointmentTypes.id, { onDelete: "restrict" }),
     ownerAccountId: text("owner_account_id").notNull(),
     contextRef: text("context_ref").notNull(),
+    authorizationEpoch: integer("authorization_epoch").notNull(),
+    policyEpoch: integer("policy_epoch").notNull(),
     assigneeRef: text("assignee_ref").notNull(),
     startAtUtc: timestamp("start_at_utc", { withTimezone: true, mode: "date" }).notNull(),
     endAtUtc: timestamp("end_at_utc", { withTimezone: true, mode: "date" }).notNull(),
@@ -107,6 +111,27 @@ export const appointmentHolds = pgTable(
     serverOnly("appointment_holds"),
   ],
 ).enableRLS();
+
+export const appointmentAvailabilityWindows = pgTable(
+  "appointment_availability_windows",
+  {
+    id: text("id").primaryKey(),
+    typeId: text("type_id")
+      .notNull()
+      .references(() => appointmentTypes.id, { onDelete: "restrict" }),
+    assigneeRef: text("assignee_ref").notNull(),
+    startAtUtc: timestamp("start_at_utc", { withTimezone: true, mode: "date" }).notNull(),
+    endAtUtc: timestamp("end_at_utc", { withTimezone: true, mode: "date" }).notNull(),
+    timeZone: varchar("time_zone", { length: 64 }).notNull(),
+    active: boolean("active").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (t) => [
+    index("appointment_availability_type_interval_idx").on(t.typeId, t.startAtUtc),
+    check("appointment_availability_interval_valid", sql`${t.endAtUtc}>${t.startAtUtc}`),
+    serverOnly("appointment_availability_windows"),
+  ],
+).enableRLS();
 export const appointmentAuditEvents = pgTable(
   "appointment_audit_events",
   {
@@ -121,5 +146,90 @@ export const appointmentAuditEvents = pgTable(
   (t) => [
     index("appointment_audit_events_appointment_created_idx").on(t.appointmentId, t.createdAt),
     serverOnly("appointment_audit_events"),
+  ],
+).enableRLS();
+
+export const appointmentBookingReceipts = pgTable(
+  "appointment_booking_receipts",
+  {
+    id: text("id").primaryKey(),
+    ownerAccountId: text("owner_account_id").notNull(),
+    idempotencyKey: varchar("idempotency_key", { length: 128 }).notNull(),
+    inputDigest: varchar("input_digest", { length: 256 }).notNull(),
+    operation: varchar("operation", { length: 16 }).notNull(),
+    appointmentId: text("appointment_id")
+      .notNull()
+      .references(() => appointments.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (t) => [
+    unique("appointment_booking_receipts_owner_key_unique").on(
+      t.ownerAccountId,
+      t.operation,
+      t.idempotencyKey,
+    ),
+    check(
+      "appointment_booking_receipts_operation_valid",
+      sql`${t.operation} in ('book','reschedule')`,
+    ),
+    serverOnly("appointment_booking_receipts"),
+  ],
+).enableRLS();
+
+export const appointmentScheduleRevisions = pgTable(
+  "appointment_schedule_revisions",
+  {
+    id: text("id").primaryKey(),
+    appointmentId: text("appointment_id")
+      .notNull()
+      .references(() => appointments.id, { onDelete: "restrict" }),
+    previousStartAtUtc: timestamp("previous_start_at_utc", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    previousEndAtUtc: timestamp("previous_end_at_utc", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    nextStartAtUtc: timestamp("next_start_at_utc", { withTimezone: true, mode: "date" }).notNull(),
+    nextEndAtUtc: timestamp("next_end_at_utc", { withTimezone: true, mode: "date" }).notNull(),
+    previousVersion: integer("previous_version").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (t) => [
+    index("appointment_schedule_revisions_appointment_created_idx").on(
+      t.appointmentId,
+      t.createdAt,
+    ),
+    check(
+      "appointment_schedule_revisions_intervals_valid",
+      sql`${t.previousEndAtUtc}>${t.previousStartAtUtc} and ${t.nextEndAtUtc}>${t.nextStartAtUtc} and ${t.previousVersion}>0`,
+    ),
+    serverOnly("appointment_schedule_revisions"),
+  ],
+).enableRLS();
+
+export const appointmentHandoffOutbox = pgTable(
+  "appointment_handoff_outbox",
+  {
+    id: text("id").primaryKey(),
+    appointmentId: text("appointment_id")
+      .notNull()
+      .references(() => appointments.id, { onDelete: "restrict" }),
+    eventName: varchar("event_name", { length: 64 }).notNull(),
+    state: varchar("state", { length: 24 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (t) => [
+    index("appointment_handoff_outbox_state_created_idx").on(t.state, t.createdAt),
+    check(
+      "appointment_handoff_outbox_event_valid",
+      sql`${t.eventName} in ('appointment_projection_requested','appointment_notification_requested')`,
+    ),
+    check(
+      "appointment_handoff_outbox_state_valid",
+      sql`${t.state} in ('pending','delivered','failed')`,
+    ),
+    serverOnly("appointment_handoff_outbox"),
   ],
 ).enableRLS();

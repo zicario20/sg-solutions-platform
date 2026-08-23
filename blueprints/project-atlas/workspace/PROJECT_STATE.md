@@ -2,9 +2,9 @@
 
 - Version: 0.1.0-alpha.30
 - Updated: 2026-08-23
-- Phase: M012 secure messaging implementation ready for Product Owner acceptance
+- Phase: M013 client appointments core implementation ready for Product Owner acceptance
 - Accepted base: M009 commit 6667872
-- Next: Product Owner acceptance of M011 provider-disabled secure core; provider activation remains separately gated
+- Next: Product Owner review of M013 core; provider activation remains separately gated
 - Production: no deployment/live-provider authority
 
 ## Accepted progression
@@ -58,3 +58,12 @@ message bodies, M007/M008 session-and-context authorization, client inbox/detail
 internal-note isolation and M011 opaque-document references. It remains unaccepted, unmigrated,
 undeployed and provider-disabled for external delivery, notifications and AI. Product Owner review
 and independent security review remain required before any merge or activation.
+
+## M013 implementation position
+
+M013 client appointments now has a durable Postgres appointment authority, authenticated client
+projection, bounded availability, expiring authorization-bound holds, serialized capacity changes,
+idempotent booking, atomic rescheduling, version-fenced cancellation, schedule revisions, audit and
+provider-neutral handoff outbox. Google Calendar, meeting, notification, payment, public-booking and
+staff-calendar providers remain disabled. The module is unaccepted, unmigrated, undeployed and not
+operational; Product Owner acceptance and independent security review remain required.

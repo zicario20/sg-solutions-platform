@@ -877,3 +877,12 @@ M011 opaque document references, audit events, PostgreSQL/RLS schema and a provi
 fallback when the secure runtime is not configured. This records implementation evidence only; it
 does not record Product Owner acceptance, migration, deployment, external delivery or production
 activation.
+
+## 2026-08-23 - M013 client appointments corrective implementation
+
+The Product Owner directed completion of M013 rather than a portal shell. The isolated M013 worktree
+now contains the internal appointment authority, availability windows, authorization-bound holds,
+capacity serialization, idempotent booking, atomic rescheduling, cancellation, client portal APIs,
+schedule history, audit/outbox and provider-neutral disabled contracts. Focused package typechecks
+and three M013 tests pass. No appointment provider, notification channel, payment, public booking,
+real database migration, deployment or Product Owner acceptance is recorded.

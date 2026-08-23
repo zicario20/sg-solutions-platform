@@ -6,7 +6,9 @@ import type {
   AppointmentType,
   AvailabilityWindow,
   ClientAppointmentDto,
+  ClientAppointmentTypeDto,
 } from "./contracts.ts";
+
 const overlap = (a: Date, b: Date, c: Date, d: Date) => a < c && b > d;
 const validZone = (value: string) => {
   try {
@@ -23,7 +25,10 @@ export class MemoryAppointmentRepository {
   readonly windows = new Map<string, AvailabilityWindow>();
   readonly appointments = new Map<string, Appointment>();
   readonly holds = new Map<string, AppointmentHold>();
-  readonly idempotency = new Map<string, { digest: string; appointmentRef: string }>();
+  readonly idempotency = new Map<
+    string,
+    { operation: "book" | "reschedule"; digest: string; appointmentRef: string }
+  >();
   readonly audit: { appointmentRef: string; action: string; actorRef: string; at: Date }[] = [];
 }
 export class AppointmentService {
@@ -170,6 +175,8 @@ export class AppointmentService {
       typeCode: input.typeCode,
       ownerAccountId: input.actor.accountId,
       contextRef: input.actor.contextRef,
+      authorizationEpoch: input.actor.authorizationEpoch,
+      policyEpoch: input.actor.policyEpoch,
       assigneeRef: input.assigneeRef,
       startAtUtc: new Date(input.startAtUtc),
       endAtUtc: new Date(input.endAtUtc),
@@ -195,15 +202,11 @@ export class AppointmentService {
   ) {
     const hold = this.data.holds.get(input.holdRef),
       type = hold && this.data.types.get(hold.typeCode),
-      key = `${input.actor.accountId}:${input.idempotencyKey}`;
+      key = `${input.actor.accountId}:book:${input.idempotencyKey}`;
     if (
       !hold ||
       !type ||
-      !this.owns(input.actor, {
-        ...hold,
-        authorizationEpoch: input.actor.authorizationEpoch,
-        policyEpoch: input.actor.policyEpoch,
-      }) ||
+      !this.owns(input.actor, hold) ||
       !validZone(input.clientTimeZone) ||
       !type.modalities.includes(input.modality) ||
       !present(input.idempotencyKey)
@@ -248,7 +251,11 @@ export class AppointmentService {
       };
     this.data.appointments.set(appointment.opaqueRef, appointment);
     this.data.holds.set(hold.opaqueRef, { ...hold, state: "consumed" });
-    this.data.idempotency.set(key, { digest: inputDigest, appointmentRef: appointment.opaqueRef });
+    this.data.idempotency.set(key, {
+      operation: "book",
+      digest: inputDigest,
+      appointmentRef: appointment.opaqueRef,
+    });
     this.data.audit.push({
       appointmentRef: appointment.opaqueRef,
       action: "booked",
@@ -269,14 +276,23 @@ export class AppointmentService {
         timeZone: a.clientTimeZone,
         modality: a.modality,
         status: a.status,
+        version: a.version,
       }));
     return { kind: "found" as const, items };
   }
-  async cancel(input: Readonly<{ actor: AppointmentActor; appointmentRef: string }>) {
+  async listClientTypes(): Promise<readonly ClientAppointmentTypeDto[]> {
+    return [...this.data.types.values()]
+      .filter((type) => type.active && type.requiresAuthentication)
+      .map((type) => ({ code: type.code, modalities: type.modalities }));
+  }
+  async cancel(
+    input: Readonly<{ actor: AppointmentActor; appointmentRef: string; expectedVersion: number }>,
+  ) {
     const appointment = this.data.appointments.get(input.appointmentRef);
     if (
       !appointment ||
       !this.owns(input.actor, appointment) ||
+      appointment.version !== input.expectedVersion ||
       appointment.startAtUtc <= this.now() ||
       !["requested", "pending_confirmation", "confirmed"].includes(appointment.status)
     )
@@ -294,5 +310,84 @@ export class AppointmentService {
       at: this.now(),
     });
     return { kind: "cancelled" as const };
+  }
+  async reschedule(
+    input: Readonly<{
+      actor: AppointmentActor;
+      appointmentRef: string;
+      expectedVersion: number;
+      holdRef: string;
+      clientTimeZone: string;
+      modality: AppointmentModality;
+      idempotencyKey: string;
+    }>,
+  ) {
+    const appointment = this.data.appointments.get(input.appointmentRef);
+    const hold = this.data.holds.get(input.holdRef);
+    const type = hold && this.data.types.get(hold.typeCode);
+    const key = `${input.actor.accountId}:reschedule:${input.idempotencyKey}`;
+    if (
+      !appointment ||
+      !hold ||
+      !type ||
+      !this.owns(input.actor, appointment) ||
+      !this.owns(input.actor, hold) ||
+      appointment.version !== input.expectedVersion ||
+      appointment.typeCode !== hold.typeCode ||
+      appointment.startAtUtc <= this.now() ||
+      hold.state !== "active" ||
+      hold.expiresAt <= this.now() ||
+      !validZone(input.clientTimeZone) ||
+      !type.modalities.includes(input.modality) ||
+      !present(input.idempotencyKey)
+    )
+      return { kind: "not_found" as const };
+    const inputDigest = digest([
+      appointment.opaqueRef,
+      String(input.expectedVersion),
+      hold.opaqueRef,
+      input.clientTimeZone,
+      input.modality,
+    ]);
+    const prior = this.data.idempotency.get(key);
+    if (prior)
+      return prior.digest === inputDigest
+        ? { kind: "rescheduled" as const, appointmentRef: prior.appointmentRef }
+        : { kind: "conflict" as const };
+    const [occupiedStart, occupiedEnd] = this.occupy(type, hold.startAtUtc, hold.endAtUtc);
+    if (
+      [...this.data.appointments.values()].some(
+        (candidate) =>
+          candidate.opaqueRef !== appointment.opaqueRef &&
+          candidate.assigneeRef === hold.assigneeRef &&
+          !candidate.status.startsWith("cancelled") &&
+          overlap(occupiedStart, occupiedEnd, candidate.startAtUtc, candidate.endAtUtc),
+      )
+    )
+      return { kind: "unavailable" as const };
+    const at = this.now();
+    this.data.appointments.set(appointment.opaqueRef, {
+      ...appointment,
+      assigneeRef: hold.assigneeRef,
+      startAtUtc: hold.startAtUtc,
+      endAtUtc: hold.endAtUtc,
+      clientTimeZone: input.clientTimeZone,
+      modality: input.modality,
+      version: appointment.version + 1,
+      updatedAt: at,
+    });
+    this.data.holds.set(hold.opaqueRef, { ...hold, state: "consumed" });
+    this.data.idempotency.set(key, {
+      operation: "reschedule",
+      digest: inputDigest,
+      appointmentRef: appointment.opaqueRef,
+    });
+    this.data.audit.push({
+      appointmentRef: appointment.opaqueRef,
+      action: "rescheduled",
+      actorRef: input.actor.accountId,
+      at,
+    });
+    return { kind: "rescheduled" as const, appointmentRef: appointment.opaqueRef };
   }
 }

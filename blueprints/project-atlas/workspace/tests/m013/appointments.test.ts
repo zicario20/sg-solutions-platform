@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
 import { AppointmentService, MemoryAppointmentRepository } from "@atlas/appointments";
+import { describe, expect, it } from "vitest";
+
 const actor = {
   accountId: "account-a",
   contextRef: "ctx-a",
@@ -113,5 +114,71 @@ describe("M013 appointments", () => {
     expect(retried).toEqual(booked);
     const other = await service.listClient({ actor: { ...actor, contextRef: "ctx-b" } });
     expect(other.items).toHaveLength(0);
+  });
+  it("binds a hold to current authorization and atomically reschedules a future appointment", async () => {
+    const service = setup();
+    const available = await service.listSlots({
+      actor,
+      typeCode: "credit_consultation",
+      from: new Date("2026-08-24T14:00:00.000Z"),
+      to: new Date("2026-08-24T16:00:00.000Z"),
+      timeZone: "America/Chicago",
+    });
+    if (available.kind !== "available") throw new Error("slots");
+    const originalSlot = available.slots[0];
+    const laterSlot = available.slots[2];
+    if (!originalSlot || !laterSlot) throw new Error("missing_slots");
+    const originalHold = await service.createHold({
+      actor,
+      typeCode: "credit_consultation",
+      assigneeRef: originalSlot.assigneeRef,
+      startAtUtc: originalSlot.startAtUtc,
+      endAtUtc: originalSlot.endAtUtc,
+      timeZone: originalSlot.timeZone,
+    });
+    if (originalHold.kind !== "held") throw new Error("original_hold");
+    expect(
+      await service.book({
+        actor: { ...actor, policyEpoch: "2" },
+        holdRef: originalHold.holdRef,
+        clientTimeZone: "America/Chicago",
+        modality: "phone",
+        idempotencyKey: "revoked-hold",
+      }),
+    ).toEqual({ kind: "not_found" });
+    const booked = await service.book({
+      actor,
+      holdRef: originalHold.holdRef,
+      clientTimeZone: "America/Chicago",
+      modality: "phone",
+      idempotencyKey: "original-book",
+    });
+    if (booked.kind !== "booked") throw new Error("booked");
+    const replacementHold = await service.createHold({
+      actor,
+      typeCode: "credit_consultation",
+      assigneeRef: laterSlot.assigneeRef,
+      startAtUtc: laterSlot.startAtUtc,
+      endAtUtc: laterSlot.endAtUtc,
+      timeZone: laterSlot.timeZone,
+    });
+    if (replacementHold.kind !== "held") throw new Error("replacement_hold");
+    expect(
+      await service.reschedule({
+        actor,
+        appointmentRef: booked.appointmentRef,
+        expectedVersion: 1,
+        holdRef: replacementHold.holdRef,
+        clientTimeZone: "America/Chicago",
+        modality: "phone",
+        idempotencyKey: "reschedule-1",
+      }),
+    ).toEqual({ kind: "rescheduled", appointmentRef: booked.appointmentRef });
+    const clientAppointments = await service.listClient({ actor });
+    expect(clientAppointments.items[0]).toMatchObject({
+      opaqueRef: booked.appointmentRef,
+      startAtUtc: laterSlot.startAtUtc,
+      version: 2,
+    });
   });
 });

@@ -56,6 +56,8 @@ export type AppointmentHold = Readonly<{
   typeCode: string;
   ownerAccountId: string;
   contextRef: string;
+  authorizationEpoch: string;
+  policyEpoch: string;
   assigneeRef: string;
   startAtUtc: Date;
   endAtUtc: Date;
@@ -71,4 +73,13 @@ export type ClientAppointmentDto = Readonly<{
   timeZone: string;
   modality: AppointmentModality;
   status: AppointmentStatus;
+  version: number;
+}>;
+export type ClientAppointmentTypeDto = Readonly<{
+  code: string;
+  modalities: readonly AppointmentModality[];
+}>;
+export type AppointmentOutboxEvent = Readonly<{
+  appointmentRef: string;
+  eventName: "appointment_projection_requested" | "appointment_notification_requested";
 }>;

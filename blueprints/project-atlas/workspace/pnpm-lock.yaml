@@ -52,6 +52,9 @@ importers:
 
   apps/app:
     dependencies:
+      '@atlas/appointments':
+        specifier: workspace:*
+        version: link:../../packages/appointments
       '@atlas/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -172,6 +175,9 @@ importers:
 
   packages/database:
     dependencies:
+      '@atlas/appointments':
+        specifier: workspace:*
+        version: link:../appointments
       '@atlas/domain':
         specifier: workspace:*
         version: link:../domain

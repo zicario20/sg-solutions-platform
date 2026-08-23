@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Implementation-ready documentary candidate; open Product Owner decisions remain; no Build gate
+- Status: Core implementation complete; Product Owner acceptance and provider activation remain pending
 - Surface: Public Website `/book`, Client Portal `/client/appointments`, bounded contribution to M024 Admin Calendar
 - Catalog module: M013
 - Related modules: M003–M006, M007–M012, M014, M017–M018, M020–M026, M041, M043–M045,
@@ -1545,3 +1545,21 @@ resource isolation and cancellation. Drizzle defines server-only appointment, ho
 The portal route is integrated but intentionally does not invent availability when its durable runtime
 is not configured. Google Calendar, notifications, payments, CRM activity, public booking and staff
 operations remain provider- or owner-disabled pending their separate gates.
+
+### Completion update
+
+- Holds persist current account, context, authorization and policy epochs. A changed authorization
+  root cannot consume an older hold.
+- Postgres serializes each assignee's capacity changes under an advisory transaction lock, re-derives
+  the slot while locked, applies configured buffers and treats active holds as capacity.
+- Book and reschedule commands have operation-scoped idempotency receipts. Reprogramming locks the
+  old appointment and new hold in one transaction, records a schedule revision and retains the old
+  appointment if the new capacity cannot be secured.
+- The authenticated `/client/appointments` portal supports bounded availability, a hold before any
+  booking, version-fenced cancellation and reprogramming. Responses are private/no-store and
+  mutations require exact origin plus the M007 session-bound double-submit CSRF proof.
+- Calendar and notification ports are provider-neutral and disabled by default. The durable outbox
+  requests a projection or notification handoff without making a provider the appointment truth.
+- Focused M013 tests cover availability, context isolation, idempotent booking, revoked hold access
+  and atomic rescheduling. Package typechecks pass; the wider Next.js application typecheck still has
+  pre-existing errors outside M013, so this is not a full application verification claim.

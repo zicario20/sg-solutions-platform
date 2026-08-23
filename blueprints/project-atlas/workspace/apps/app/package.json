@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@atlas/auth": "workspace:*",
+    "@atlas/appointments": "workspace:*",
     "@atlas/client-services": "workspace:*",
     "@atlas/config": "workspace:*",
     "@atlas/dashboard": "workspace:*",
