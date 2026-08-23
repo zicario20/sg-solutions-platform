@@ -5,6 +5,8 @@ import type {
   BusinessFormationProfileDto,
   BusinessFundingProfileDto,
   CreditProfileDto,
+  HomeBuyingFinancialProposal,
+  HomeBuyingFinancialReceipt,
   HomeBuyingProfileDto,
   PreliminaryDti,
   ProfileActor,
@@ -216,6 +218,12 @@ export class ProfileService {
     };
     await this.repository.saveGoal(Object.freeze(goal));
     return this.selfService(actor);
+  }
+  public async submitHomeBuyingFinancialProposal(
+    _actor: ProfileActor,
+    _proposal: HomeBuyingFinancialProposal,
+  ): Promise<HomeBuyingFinancialReceipt | undefined> {
+    return undefined;
   }
 }
 export function calculatePreliminaryDti(

@@ -121,4 +121,16 @@ describe("M015 purpose-bound profile foundation", () => {
       ),
     ).toBeUndefined();
   });
+  it("fails closed when home-buying financial protection is unavailable", async () => {
+    const service = new ProfileService(seeded());
+    await expect(
+      service.submitHomeBuyingFinancialProposal(actor, {
+        monthlyGrossIncomeMinor: 500000,
+        monthlyRecurringDebtMinor: 150000,
+        currency: "USD",
+        cadence: "monthly",
+        acknowledgementVersion: "m015-home-buying-financial-v1",
+      }),
+    ).resolves.toBeUndefined();
+  });
 });

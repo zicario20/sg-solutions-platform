@@ -207,6 +207,19 @@ export type SelfServiceProfileDto = Readonly<{
     submittedAt: string;
   }>[];
 }>;
+export type HomeBuyingFinancialProposal = Readonly<{
+  monthlyGrossIncomeMinor: number;
+  monthlyRecurringDebtMinor: number;
+  currency: "USD";
+  cadence: "monthly";
+  acknowledgementVersion: "m015-home-buying-financial-v1";
+}>;
+export type HomeBuyingFinancialReceipt = Readonly<{
+  purpose: "home_buying_preparation";
+  state: "submitted";
+  preliminary: true;
+  dti: PreliminaryDti;
+}>;
 export type ProfileRepository = Readonly<{
   find(clientRef: string, contextRef: string): Promise<ProfileSnapshot | undefined>;
   ensureSelfServiceRoot(actor: ProfileActor, locale: ProfileLocale): Promise<ProfileSnapshot>;
