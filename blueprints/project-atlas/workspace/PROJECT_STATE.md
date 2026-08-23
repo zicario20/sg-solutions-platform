@@ -71,7 +71,7 @@ activation still requires real RLS/migration evidence, provider-specific review 
 
 ## M014 implementation position
 
-M014 client payments and billing has a provider-disabled foundation: typed payment-provider and
+M014 client payments and billing is ready for Product Owner review in provider-disabled scope. It has typed payment-provider and
 billing-provider boundaries, integer minor-unit USD contracts, account/context fencing, idempotency,
 raw Stripe signature verification, RLS financial schema, a private bilingual payment surface and an
 inert return page. It is not migrated, deployed, operational or accepted. Prices, payment orders,
