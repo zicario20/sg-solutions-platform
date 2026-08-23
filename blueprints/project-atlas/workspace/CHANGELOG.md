@@ -275,3 +275,4 @@
   serialization, idempotent booking, atomic rescheduling, version-fenced cancellation, client
   scheduling APIs/UI, immutable schedule revisions and provider-neutral outbox contracts. Calendar,
   notifications, payments and public booking remain unactivated.
+- Added the M015 provider-disabled financial and business profile foundation, including typed purpose-specific projections, correction proposals, deterministic preliminary calculations, protected bilingual profile guidance and focused isolation tests.

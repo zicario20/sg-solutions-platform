@@ -703,3 +703,9 @@ client-safe billing projections. Payment confirmation is a financial prerequisit
 authorize service start; human internal approval remains a distinct M021-owned fact. M042/M046 own
 catalog and pricing policy, while future provider activation, migrations, Stripe traffic, invoices,
 refunds, disputes, tax, external-payment review and production operation remain separate gates.
+## Decision 045 - M015 provider-disabled foundation
+
+- Date: 2026-08-23
+- Status: Implemented foundation; Product Owner operational activation pending
+- M015 may provide typed, purpose-bound contracts and a protected guidance surface before the canonical Client/Organization, consent, audit, encryption and RLS owners are activated.
+- The foundation stores no profile values, creates no schema with weak ownership references and fails closed unless a future approved repository supplies exact client, context, epoch, purpose and consent evidence.

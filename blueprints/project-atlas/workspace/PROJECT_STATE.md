@@ -78,3 +78,6 @@ inert return page. It is not migrated, deployed, operational or accepted. Prices
 Stripe traffic, invoices, refunds, disputes and provider credentials remain inactive pending policy,
 security review and a separate Product Owner activation gate. Payment confirmation never starts a
 service; internal human approval remains separate.
+## M015 implementation position
+
+M015 now has a provider-disabled typed profile foundation and protected bilingual client route. It implements no active field inventory, database schema, KMS encryption, provider connection, profile data collection or relationship authority. Activation remains blocked on ADR 019 and the applicable PFL Product Owner decisions, M018/M019 canonical relationships, M078 consent, M077 audit and purpose-specific RLS.

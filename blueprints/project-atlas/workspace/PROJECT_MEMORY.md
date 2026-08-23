@@ -901,3 +901,4 @@ scope. This accepts the billing contract, financial RLS schema, provider boundar
 idempotency controls, private portal posture and activation runbook only. It does not activate a
 database migration, Stripe, prices, payment orders, invoices, refunds, disputes, provider
 credentials, deployment or production financial operation.
+- 2026-08-23: Product Owner authorized M015 implementation in sequential provider-disabled scope. Added typed purpose-bound profile contracts, fail-closed authorization fences, immutable client correction proposals, deterministic preliminary DTI/ownership checks, a bilingual protected profile guidance route and focused tests. No profile data, schema, provider, KMS or consent integration was activated.
