@@ -948,3 +948,15 @@ provider. External activation follows ADR 006 and `EXTERNAL_ACTIVATION_REGISTER.
 
 Approval of this PRD, ADR 016 and MSG-001–MSG-020 still would not authorize product implementation
 or external activation. A separate Product Owner `GENERATE`/Build gate remains mandatory.
+
+## 2026-08-23 implementation evidence
+
+The Product Owner authorized the M012 build. The implementation adds a typed secure-messaging
+repository boundary, AES-256-GCM message-body sealing, client/resource authorization against the
+M007/M008 session context, opaque M011 `doc1_` references only, internal-note isolation, durable
+PostgreSQL/RLS schema, no-store authenticated APIs and a private inbox/detail surface. The client
+projection never returns internal notes, audit records, storage keys or raw document bytes.
+
+External delivery, read receipts, staff assignment, AI responses, translation, search, notifications,
+retention execution and production migration remain disabled pending the named Product Owner
+decisions above. No message may be treated as delivered to an external channel from this module.

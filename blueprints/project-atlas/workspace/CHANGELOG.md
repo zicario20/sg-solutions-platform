@@ -263,7 +263,9 @@
   remains unauthorized.
 # Unreleased
 
-- Added M012 provider-disabled secure messaging contracts, internal-note isolation and private portal surface.
+- Expanded M012 secure messaging from its initial private shell to a durable PostgreSQL/RLS adapter,
+  authenticated inbox and detail APIs, AES-256-GCM message-body sealing, M011 opaque-document
+  references, client/resource authorization and audit isolation. External delivery remains disabled.
 
 - Added M011 secure document portal core: typed document contracts, fail-closed quarantine lifecycle,
   immutable versions, legal-hold soft-delete protection, server-only metadata schema, bilingual

@@ -867,3 +867,13 @@ returns unavailable/unconfirmed rather than sample data. M011 remains blocked.
 - This closure changed documentation only. It performed no code change, test, typecheck, Git
   operation, push, provider activation or deployment, and it did not add an M010 acceptance entry to
   `DECISIONS.md`.
+
+## 2026-08-23 - M012 secure messaging corrective implementation
+
+The Product Owner rejected a thin M012 portal shell and directed that the module be completed. M012
+now has a reusable domain/repository contract, authenticated encryption of message bodies,
+conversation and resource checks, client-safe inbox/detail projections, internal-note isolation,
+M011 opaque document references, audit events, PostgreSQL/RLS schema and a provider-disabled
+fallback when the secure runtime is not configured. This records implementation evidence only; it
+does not record Product Owner acceptance, migration, deployment, external delivery or production
+activation.

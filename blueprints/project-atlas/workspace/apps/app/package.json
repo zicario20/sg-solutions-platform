@@ -17,6 +17,7 @@
     "@atlas/domain": "workspace:*",
     "@atlas/i18n": "workspace:*",
     "@atlas/observability": "workspace:*",
+    "@atlas/secure-messaging": "workspace:*",
     "@atlas/ui": "workspace:*",
     "@tailwindcss/postcss": "4.3.3",
     "next": "16.2.12",

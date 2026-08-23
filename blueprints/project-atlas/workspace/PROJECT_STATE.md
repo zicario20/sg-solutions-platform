@@ -50,3 +50,11 @@ percentages, events or provider responses are invented. Payment does not imply a
 
 The Product Owner may accept or reject M010 in provider-disabled scope. No M011 work may begin until
 explicit M010 acceptance and a separate M011 gate are recorded.
+
+## M012 implementation position
+
+M012 secure messaging is implemented on its isolated branch with a PostgreSQL/RLS schema, encrypted
+message bodies, M007/M008 session-and-context authorization, client inbox/detail projections,
+internal-note isolation and M011 opaque-document references. It remains unaccepted, unmigrated,
+undeployed and provider-disabled for external delivery, notifications and AI. Product Owner review
+and independent security review remain required before any merge or activation.
