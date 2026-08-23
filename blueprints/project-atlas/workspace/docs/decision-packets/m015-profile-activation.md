@@ -1,0 +1,62 @@
+# M015 Profile Activation Decision Packet
+
+- Status: Awaiting Product Owner decision
+- Date: 2026-08-23
+- Authority: M015 PRD, ADR 019 and the Product Owner
+
+## Why a decision is required
+
+The M015 provider-disabled foundation is safe because it stores no client profile data and exposes no
+profile mutation. Enabling any real profile field changes data-collection, authorization, retention,
+review and disclosure behavior. Those rules cannot be inferred from a UI or a technical default.
+
+## Approval packages
+
+### Package A - Keep the protected foundation
+
+Keep M015 provider-disabled. The portal only explains the protected profile workflow. No profile
+record, field, correction, staff access, import, document link, calculation or external notification
+is activated.
+
+This is the current state. It requires no PFL decision, but it does not deliver an editable profile.
+
+### Package B - First low-risk client slice
+
+Authorize only the self_service purpose for a client-owned goal and a correction proposal. The client
+may submit a general goal and request a correction; nothing becomes verified or current without the
+approved review policy. This package excludes legal name, date of birth, address, household, income,
+expense, liability, asset, credit, tax, business, identifier, document and provider data.
+
+Required decisions:
+
+- PFL-001: exact goal fields, allowed values and required/optional status.
+- PFL-002: confirm /client/profile remains under Settings for Release 1A.
+- PFL-003: confirm that every client change is a proposal until a reviewer accepts it.
+- PFL-010: use concrete missing-item language; do not show a percentage.
+- PFL-016: approve the self-service collection/purpose copy and revocation behavior.
+- PFL-019: keep notifications portal-only.
+- PFL-020: keep analytics to zero-ID aggregate operational events, with session replay off.
+
+### Package C - Financial and business profile
+
+Enable any personal, household, financial, tax, credit, housing or business profile section. This
+requires the full applicable PFL set, the canonical M018/M019 relationship owners, M078 consent, M077
+audit, approved KMS custody and purpose-specific Postgres RLS. It must be approved per service
+purpose, not as a universal client-data collection flow.
+
+## Decisions that remain mandatory before sensitive data
+
+- PFL-004 through PFL-009: staff access, relationships, verification, conflict and freshness rules.
+- PFL-011 through PFL-015: calculations, reauthentication, encryption, retention and export.
+- PFL-017 through PFL-020: imports, AI, notifications and analytics.
+
+## Recommended Product Owner response
+
+Record one of the following exactly, then the next M015 implementation step can proceed:
+
+- Approve Package A for M015.
+- Approve Package B for M015 with the stated constraints.
+- Approve Package C for M015 and provide the required PFL decisions.
+
+No package activates a provider, payment, filing, credit decision, tax determination, financing
+approval, document upload or external notification.
