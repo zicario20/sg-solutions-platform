@@ -2,9 +2,10 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Proposed; no Build authority
-- Date: 2026-08-09
-- Extends: ADR 004 and proposed ADRs 011–013; does not supersede them
+- Status: Accepted for provider-disabled M010 Build under Decision 042; not Operational
+- Date proposed: 2026-08-09
+- Date accepted: 2026-08-23
+- Extends: accepted ADRs 004 and 011–013; does not supersede them
 - Update rule: accept or supersede only after independent security review and Product Owner approval
 
 ## Context
@@ -74,6 +75,10 @@ discards the complete response before body, counts, cursors, timing distinctions
 No user-facing query uses `service_role`, owner or `BYPASSRLS`.
 
 ### 3. Public status mapping is deterministic, closed and version-bound
+
+The Release 1A contract names the status policy `m010.status.v2`. Registry configuration cannot
+downgrade required `workflow`, `tasks`, `documents` or `payments` sources from critical. Timeline
+cursors use authenticated source-version/high-watermark keysets, never numeric offsets.
 
 A pure `ClientProcessStatusPolicy` maps the four canonical input axes plus accepted workflow version
 to a Product Owner-approved public code/copy key. It is versioned, testable and cannot mutate state.
@@ -312,3 +317,12 @@ This ADR is a candidate only. Product Owner approval would accept the architectu
 approve any open business policy or authorize `GENERATE`, routes, schemas/RLS policies, public event
 materialization, provider traffic, real client data, merge, deployment or production use. A
 contradictory future decision must supersede this ADR and preserve its rationale.
+
+## Product Owner acceptance and Build boundary - 2026-08-23
+
+Decision 042 accepts this ADR for provider-disabled M010 implementation from M009 commit 6667872.
+It permits the read-only engine, deterministic policies, existing routes, source registry,
+truthful failures, ES/EN UI and tests.
+
+It does not authorize providers, invented data, M010 schema/writer/materialization/job, AI decision
+authority, merge, deployment or release. Concrete mappings remain disabled. M011 is blocked.

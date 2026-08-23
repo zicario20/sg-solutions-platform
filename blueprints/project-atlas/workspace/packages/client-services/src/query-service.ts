@@ -3,6 +3,8 @@ import { CLIENT_SERVICE_LIST_LIMIT, CLIENT_SERVICE_SECTION_NAMES, parseClientSer
 import { isClientServiceAuthorized } from "./authorization.ts";
 import type { ClientServiceFinalFence, ClientServiceRootProjection, ClientServiceSectionLoadResult, ClientServiceSectionPort, ClientServiceSectionPorts, ClientServicesAuthPort, ClientServicesSourcePort } from "./ports.ts";
 import { resolveClientServicePublicState } from "./status-policy.ts";
+import { CLIENT_SERVICE_REF_PATTERN, type ClientServicePublicContextDto } from "./contracts.ts";
+import type { AuthorizedServiceChoice, AuthorizedServiceChoiceCandidate } from "./ports.ts";
 
 export type ClientServicesQueryResult<T> = { kind: "ok"; dto: T } | { kind: "denied" } | { kind: "not_found" } | { kind: "retry_required" } | { kind: "unavailable" };
 export interface ClientServicesQueryDependencies { auth: ClientServicesAuthPort; source: ClientServicesSourcePort; sections: ClientServiceSectionPorts; now?: () => Date; ownerTimeoutMs?: number }
@@ -66,3 +68,5 @@ export class ClientServicesQueryService {
     return { kind: "ok", dto: parseClientServiceDetailDto({ schemaVersion: "m009.detail.v2", context: service.context, service, scopeLabel: copy.scopeLabel, milestones: copy.milestones, sections: Object.fromEntries(CLIENT_SERVICE_SECTION_NAMES.map((name, index) => [name, children[index]!.section])) }) };
   }
 }
+
+export function selectAuthorizedServiceChoices(input:{candidates:readonly AuthorizedServiceChoiceCandidate[];limit:number;offset:number}):{state:"fresh"|"empty"|"unavailable";choices:readonly AuthorizedServiceChoice[];hasMore:boolean;nextOffset?:number}{const limit=Math.min(Math.max(input.limit,1),CLIENT_SERVICE_LIST_LIMIT);if(!Number.isSafeInteger(input.offset)||input.offset<0)return{state:"unavailable",choices:[],hasMore:false};const eligible=input.candidates.filter(item=>item.authorized&&item.eligible&&!item.tombstoned&&CLIENT_SERVICE_REF_PATTERN.test(item.choice.serviceRef));const groups=new Map<string,AuthorizedServiceChoice[]>();for(const item of eligible){const key=`${item.choice.context.type}\0${item.choice.context.label}\0${item.choice.serviceLabel}`;groups.set(key,[...(groups.get(key)??[]),item.choice])}for(const values of groups.values())if(values.length>1){const labels=values.map(value=>value.instanceLabel?.trim()).filter(Boolean)as string[];if(labels.length!==values.length||new Set(labels).size!==labels.length)return{state:"unavailable",choices:[],hasMore:false}}const ordered=eligible.map(item=>item.choice).sort((a,b)=>a.serviceLabel.localeCompare(b.serviceLabel,"en")||(a.instanceLabel??"").localeCompare(b.instanceLabel??"","en")||a.serviceRef.localeCompare(b.serviceRef,"en"));const page=ordered.slice(input.offset,input.offset+limit),hasMore=input.offset+limit<ordered.length;return{state:page.length?"fresh":"empty",choices:Object.freeze(page),hasMore,...(hasMore?{nextOffset:input.offset+limit}:{})}}

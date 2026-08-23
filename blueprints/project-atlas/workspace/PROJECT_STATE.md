@@ -1,51 +1,49 @@
-# Project State
+# Project Atlas - Current State
 
-- Owner: Product Owner
-- Maintainer: Codex Architecture Agent
-- Status: Current state only
-- Last updated: 2026-08-22
+- Version: 0.1.0-alpha.30
+- Updated: 2026-08-23
+- Phase: M010 provider-disabled implementation ready for Product Owner acceptance
+- Accepted base: M009 commit 6667872
+- Next: explicit M010 Product Owner acceptance; M011 blocked
+- Production: no deployment/live-provider authority
 
-Version: `0.1.0-alpha.28`
+## Accepted progression
 
-Current phase: **M009 Mis Servicios provider-disabled implementation complete and ready for Product
-Owner acceptance. M010 remains blocked.**
+M008 was accepted at `09c9403`. Decision 041 records Product Owner acceptance of provider-disabled
+M009 at `6667872`. Decision 042 accepts ADR 014 and authorizes only the isolated provider-disabled
+M010 Build.
 
-## Accepted predecessor
+## Current gate
 
-M008 Client Dashboard is formally accepted at `09c9403` under Decision 039. Its implementation
-remains provider-disabled. It provides the single `/client` shell, M007-backed authorization and
-context snapshot, final revalidation, durable admission, minimized DTOs, deterministic priority,
-partial-failure semantics and private/no-store rendering. Merge, deployment, providers, live
-PostgreSQL/RLS and `Operational` remain pending or blocked.
+M010 T1-T9 implementation evidence has reached independent static closure review. Architecture is
+`APPROVED` with `0` Critical, `0` Important and `0` Minor findings. Cyber Neo is `APPROVED` with
+`0` Critical, `0` High, `0` Medium and `0` Low findings.
 
-## Current M009 status
+M010 is ready for explicit Product Owner acceptance in provider-disabled scope. It is not accepted,
+merged, deployed, released or `Operational`. M011 remains blocked.
 
-Decision 040 accepts ADR 013 and authorized M009 only in
-`D:\SG Solutions\SG Solutions\.worktrees\m009-my-services` on branch
-`codex/m009-my-services-rebuild` from accepted M008 base `09c9403`.
+## Architecture position
 
-Implementation tasks T1-T9 are complete. M009 now provides one read-only
-`@atlas/client-services` projection, authorized `/client/services` list/detail API and SSR surfaces,
-unseeded migration `0037`, deterministic four-axis public status, M007/M008 authorization and final
-resource/absence fences, minimized no-store DTOs, M008 summary integration, and accessible ES/EN
-UI. Configured runtime and all child-owner ports remain unavailable; synthetic service data is
-test-only.
+M010 is one request-scoped read-only public projection per authorized M009 `ServiceOrder`. M009
+remains service directory/root owner and M008 remains dashboard/global-priority owner. M010 owns no
+command, process truth, timeline table, writer, materializer or provider integration.
 
-Independent static architecture review is `APPROVED` with `0` open Critical, Important or Minor
-findings. Cyber Neo is `APPROVED` with `0` open Critical, High, Medium or Low findings. Prior focused
-evidence passed `32/32`; the final rerun is `NO VALIDADO` because pnpm encountered `EPERM` and
-Vitest was absent. M009 is ready for Product Owner acceptance but is not accepted, merged, deployed,
-released or `Operational`.
+Configured sources remain unavailable unless an approved owner is injected. Missing or uncertain
+critical evidence returns `unconfirmed` or `unavailable`; no process facts, milestones, dates,
+percentages, events or provider responses are invented. Payment does not imply approval or start.
 
-## Blockers
+## Evidence limitations and blockers
 
-Final app, UI and database typechecks remain unvalidated. Live application and verification of
-PostgreSQL migration `0037`, RLS and restricted roles; production service definitions/public policy,
-seed data and real service/client records; providers and owning modules; rate-HMAC/proxy topology;
-credentials/KMS; legal/privacy/retention; browser/visual validation; deployment and release remain
-blocked or pending. M010 cannot open until explicit Product Owner acceptance of M009 is recorded.
+- Tests and typechecks were `NOT EXECUTED`: pnpm failed with `EPERM`, and the repository requires
+  Node `24.18.1` while Node `24.19.0` is available.
+- Providers, configured owners, live PostgreSQL, migrations/RLS under real roles, live integrations,
+  browser/visual behavior, full build and deployment are not validated.
+- Credentials, real client data, provider activation, merge, deployment, release and production
+  authority remain outside Decision 042.
+- Concrete mappings, event allowlists, copy, estimates, freshness thresholds and later owner-module
+  activation retain their Product Owner and module-specific gates.
 
-## Role model
+## Next action
 
-The Product Owner decides. Codex Architecture directs. A separate implementation agent writes code.
-Independent reviewers and Cyber Neo audit work they did not implement.
+The Product Owner may accept or reject M010 in provider-disabled scope. No M011 work may begin until
+explicit M010 acceptance and a separate M011 gate are recorded.

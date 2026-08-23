@@ -76,20 +76,22 @@ independiente y ningún elemento del roadmap autoriza implementación por sí mi
   test-only. Static architecture is `APPROVED` with `0` Critical/Important/Minor; Cyber Neo is
   `APPROVED` with `0` Critical/High/Medium/Low. Prior focused evidence is `32/32`, but the final rerun
   is `NO VALIDADO` because of pnpm `EPERM` and absent Vitest; final app/UI/database typechecks, live
-  PostgreSQL/RLS, providers, visual behavior and deployment are unvalidated. M009 is ready for
-  Product Owner acceptance, not accepted/merged/deployed/released/`Operational`; M010 remains
-  blocked until explicit acceptance.
-- **M010 Estado de mi proceso:** Product/Architecture documentation is active under Decision 023.
-  The candidate defines one read-only process projection beneath an explicitly granted service,
-  preserves ServiceOrder/Billing/Case/workflow state ownership, binds milestones to the accepted
-  workflow version and derives its client timeline only from allowlisted real source events. A
-  closed source registry and M008-compatible priority policy fail incomplete critical facts to
-  `unconfirmed`; a complete M007–M009 snapshot plus per-resource final fence prevents revoked or
-  mixed state from reaching body, counts, cursors or routes. No `GENERATE`, route, schema/RLS
-  policy, public-event materialization, provider traffic, real process view, merge or deployment is
-  authorized. Independent architecture review has zero open findings and Cyber Neo is
-  security-clear at documentary risk 0/100; the candidate now awaits Product Owner approval or
-  revision. M011 may open only from the clean committed M010 worktree.
+  PostgreSQL/RLS, providers, visual behavior and deployment are unvalidated. Decision 041 records
+  Product Owner acceptance at `6667872`; merge, deployment, release and `Operational` status remain
+  unclaimed.
+- **M010 Estado de mi proceso:** provider-disabled implementation T1-T9 has reached independent T10
+  documentary closure under Decision 042 and ADR 014. The existing `/client/status` surface uses
+  one request-scoped read-only process projection beneath an authorized M009 `ServiceOrder`, with a
+  closed critical-source registry, deterministic status/action policy, request-scoped allowlisted
+  owner-event timeline, M007-M009 authorization/final fences, bounded no-store DTOs and truthful
+  unavailable/unconfirmed states. M010 owns no command, mutable process truth, timeline table,
+  writer, materializer or provider integration, and it does not invent progress. Architecture is
+  `APPROVED` with `0` Critical/Important/Minor; Cyber Neo is `APPROVED` with `0`
+  Critical/High/Medium/Low. Tests and typechecks were `NOT EXECUTED` because of pnpm `EPERM` and the
+  Node requirement mismatch (`24.18.1` required, `24.19.0` available). Providers/owners, live
+  PostgreSQL/RLS, live integrations, visual behavior, full build and deployment are not validated.
+  M010 is ready for Product Owner acceptance only in provider-disabled scope; it is not accepted,
+  merged, deployed, released or `Operational`. M011 remains blocked.
 - **M011 Portal de documentos:** Product/Architecture documentation is active under Decision 024.
   The candidate defines one document authority over Postgres metadata/state and approved Supabase
   private Storage bytes, with bounded upload intents, quarantine, content/parser validation,
@@ -275,3 +277,18 @@ Esta interpretación preserva el catálogo y evita convertir sus etiquetas en ar
 - Marketplace, partners y provider abstractions reservan límites desde foundation; no adelantan el comportamiento completo de R5.
 - Cada módulo sigue `docs/roadmap/STATUS_MODEL.md` y requiere PRD/gates/decisión del Product Owner.
 - Cada módulo Operational produce PCR y sincroniza estado, memoria, decisiones y changelog.
+
+## Authoritative checkpoint - 2026-08-23 (Decisions 041-042)
+
+This checkpoint supersedes earlier M009 acceptance-pending and M010 documentary-only wording.
+
+| Module | Current state | Next condition |
+|---|---|---|
+| M009 | Accepted at 6667872 | Provider-disabled limits and pnpm EPERM gap retained |
+| M010 | Provider-disabled implementation closure; architecture and Cyber approved; not PO accepted | Explicit PO acceptance; rerun validation when tooling is available |
+| M011 | Blocked | Explicit PO gate required |
+
+M010 reuses M007-M009 and /client/status. Timeline is request-scoped from real owner events; no
+M010 schema/writer/materializer/fictitious data. Providers, merge, deployment and release remain
+outside the gate. Tests/typechecks were not executed because of pnpm EPERM and the Node version
+mismatch. M011 remains blocked.

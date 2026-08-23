@@ -634,3 +634,32 @@ commands, service activation, fabricated state, shared personalized cache, merge
 release or `Operational` status. Deferred commercial, cancellation, renewal, participant, support,
 analytics and freshness policies remain disabled. Independent architecture review, read-only Cyber
 Neo review and Product Owner acceptance are required before M010 implementation.
+
+## Decision 041 - Product Owner acceptance of M009 at commit 6667872
+
+- Date: 2026-08-23
+- Status: Accepted
+- Owner: Product Owner
+- Scope: M009 Mis Servicios
+
+The Product Owner accepts provider-disabled M009 at commit 6667872 as M010 base. This does not
+authorize providers, production data, merge, deployment or release. Static architecture/security
+reviews had zero open Critical/Important findings. Final automated rerun remains NO VALIDADO
+because pnpm failed EPERM; this decision does not turn it into passing evidence.
+
+## Decision 042 - Accept ADR 014 and open provider-disabled M010 Build
+
+- Date: 2026-08-23
+- Status: Accepted
+- Owner: Product Owner
+- Base/worktree: M009 6667872 / .worktrees/m010-process-status
+
+The Product Owner accepts ADR 014 and authorizes M010 under the approved specification, PRD,
+2026-08-23 design and plan. M010 is a request-scoped read-only projection for one authorized M009
+ServiceOrder and must reuse M007 context/authorization, M008 priority and M009 refs/eligibility/
+fences.
+
+Allowed: engine, existing routes, deterministic policies, source registry, truthful failures,
+ES/EN accessible UI and tests. Not allowed: parallel catalog; mutable M010 truth; M010 schema,
+writer, materializer or job; invented data; providers; payment-driven start; AI decisions; merge,
+deployment or release. Concrete mappings stay disabled. M011 remains blocked.

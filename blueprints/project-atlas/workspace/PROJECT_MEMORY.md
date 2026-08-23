@@ -824,3 +824,31 @@ before implementation.
 - M009 is ready for explicit Product Owner acceptance in provider-disabled scope. It is not yet
   accepted, merged, deployed, released or `Operational`; M010 remains blocked. This documentary
   closure performs no Git, test, provider, deployment or acceptance operation.
+
+## 2026-08-23 - M009 accepted and M010 gate opened
+
+PO accepted provider-disabled M009 commit 6667872 (Decision 041), retaining the pnpm EPERM final
+rerun limitation. Architect then reconciled M010 with real M007-M009 boundaries. ADR 014 and
+provider-disabled M010 Build were accepted under Decision 042.
+
+M010 reuses /client/status and M009 ServiceOrder/opaque refs. It adds no process/timeline schema,
+writer, materializer or provider call. With no approved workflow/event owner mappings, runtime
+returns unavailable/unconfirmed rather than sample data. M011 remains blocked.
+
+## 2026-08-23 - M010 provider-disabled independent documentary closure
+
+- T10 reconciled the M010 module PRD, current state, roadmap and Phase Completion Report against the
+  approved design, implementation plan, ADR 014 and the two external read-only review reports.
+- The final static architecture verdict is `APPROVED` with `0` open Critical, `0` Important and `0`
+  Minor findings. Cyber Neo's final read-only verdict is `APPROVED` with `0` open Critical, `0` High,
+  `0` Medium and `0` Low findings.
+- Tests and typechecks were `NOT EXECUTED`. The final rerun remained blocked by `pnpm EPERM`; the
+  repository requires Node `24.18.1` while the available runtime is Node `24.19.0`.
+- Providers and configured owners, live PostgreSQL, migrations/RLS under real roles, live
+  integrations, browser/visual behavior, full build and deployment were not validated.
+- M010 is ready for explicit Product Owner acceptance only in provider-disabled scope. No Product
+  Owner acceptance, merge, deployment, activation, release or `Operational` transition is recorded.
+  M011 remains blocked.
+- This closure changed documentation only. It performed no code change, test, typecheck, Git
+  operation, push, provider activation or deployment, and it did not add an M010 acceptance entry to
+  `DECISIONS.md`.

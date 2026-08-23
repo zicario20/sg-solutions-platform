@@ -2,18 +2,19 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Implementation-ready architecture candidate; no Build gate
-- Surface: Client Portal `/client/processes` landing and
-  `/client/services/[publicServiceRef]/process` detail
+- Status: Provider-disabled implementation closure candidate; ready for Product Owner acceptance
+- Surface: existing Client Portal `/client/status` landing and `/client/status/[serviceRef]` detail
 - Workstream: R1.5 Client Portal & Launch
 - Release target: Release 1A minimum real-client process visibility with compatible Release 1B extensions
-- Source: complete Product Owner-supplied M010 corpus, normalized to the approved stack
+- Source: Product Owner-approved M010 specification supplied on 2026-08-23, reconciled with the
+  accepted M009 base at commit `6667872`
 - Related catalog modules: M010; consumes M007–M009/M011–M014/M018/M021–M026/M043–M045/M067/M077–M081
-- Proposed ADR: ADR 014
+- Accepted ADR: ADR 014
 
-This PRD defines a read-only, client-safe projection of one authorized service process. It does not
-authorize product code, routes, database schema, RLS or Storage policies, external-provider
-traffic, merge, deployment or `GENERATE`.
+This PRD defines a read-only, client-safe projection of one authorized service process. Decision
+042 authorizes a provider-disabled implementation in the isolated M010 worktree. It does not
+authorize live providers, invented process data, a mutable process/timeline store, production
+credentials, merge, deployment or release. M011 remains blocked.
 
 ## 1. Purpose
 
@@ -833,8 +834,8 @@ unpublished in Release 1A. Motion is subtle and functional.
 ## 19. Dependencies
 
 - M007 Identity and Account plus ADR 004/011 authorization/session model.
-- M008 dashboard aggregation/priority/freshness and proposed ADR 012.
-- M009 ServiceOrder/CaseFile/version boundary and proposed ADR 013.
+- M008 dashboard aggregation/priority/freshness and accepted ADR 012.
+- M009 ServiceOrder/CaseFile/version boundary and accepted ADR 013.
 - M011 Documents/deliverables, M012 Secure Messaging, M013 Scheduling, M014 Billing, M067 Signatures
   and their typed client projections.
 - The M011 document projection supplies only authorized semantic request/review/deliverable state,
@@ -866,7 +867,29 @@ mappings, copy and providers remain separately gated.
 | Translation semantic drift | Different obligations by language | Stable codes, parity and semantic review |
 | Overloaded mobile experience | Client cannot find next step | Progressive disclosure and next-action-first linear mobile layout |
 
-## 21. Open questions
+## 21. Executable boundary and audit findings
+
+- `/client/status` already exists as a provider-disabled portal placeholder. M010 replaces it; no
+  second process-status root is allowed.
+- M009 owns `/client/services`, canonical `ServiceOrder`, opaque `csr1_` references, accepted
+  definition binding, eligibility-before-pagination and final response fences. M010 consumes a
+  narrow nonrecursive choice/root port, not the complete M009 list/detail graph.
+- M008 owns dashboard/global priority; M010 adapts the same ordering semantics for one process.
+- M007 owns session, account, active context, grants, assurance and fail-closed admission.
+- No approved `CaseFile`/workflow milestone or durable public-event owner is wired today. The
+  configured registry starts empty and returns `unconfirmed` or `unavailable`, never sample data.
+- M009 child sections are provider-disabled unless an approved owner is injected. Empty requires a
+  revalidated absence fence; unavailable is never converted to empty.
+- Release 1A adds no M010 table, migration, writer, materializer, reconciliation/rebuild job or
+  Inngest function. Timeline entries are request-scoped projections of immutable owner events.
+- Payment, approval and fulfillment remain independent. Payment cannot activate/start a service.
+- M009 final verification remains unexecuted because local `pnpm` reported `EPERM`; PO acceptance
+  retains that limitation rather than treating it as passing evidence.
+- Business statuses are separate from `unconfirmed`, `unavailable`, `stale`, `partial` and `empty`
+  presentation envelopes. Milestones are named and version-bound; no percentage is emitted.
+- AI remains outside state, action, date, blocker, milestone and timeline selection.
+
+## 22. Gated product-policy decisions
 
 - [NEEDS PRODUCT OWNER DECISION: approve the public M010 status vocabulary, four-dimension mapping
   matrix and semantically equivalent English/Spanish copy.]
@@ -901,3 +924,27 @@ mappings, copy and providers remain separately gated.
   freshness/staleness thresholds.]
 - [NEEDS PRODUCT OWNER DECISION: approve the bilingual safe service-instance disambiguator fields/
   copy used when two authorized process choices share the same service and context label.]
+
+These decisions gate concrete mappings, copy, estimates and owner adapters. They do not block the
+provider-disabled engine, contracts, deterministic policies, fail-closed routes, truthful UI states
+or tests authorized by Decision 042.
+
+## 23. T10 independent documentary closure
+
+- Closure date: 2026-08-23.
+- Scope: provider-disabled only under Decision 042 and ADR 014.
+- Architecture review: `APPROVED`, with `0` open Critical, `0` Important and `0` Minor findings.
+- Cyber Neo review: `APPROVED`, with `0` open Critical, `0` High, `0` Medium and `0` Low findings.
+- Tests and typechecks: `NOT EXECUTED`. The final rerun was blocked by `pnpm EPERM`; the repository
+  requires Node `24.18.1` while the available runtime is Node `24.19.0`.
+- Not validated: configured providers and owners, live PostgreSQL, migrations/RLS under real roles,
+  live integrations, browser/visual behavior, full build and deployment.
+- Runtime posture: configured external sources remain unavailable and fail closed. No fictitious
+  process facts, milestones, dates, percentages, events or provider responses are treated as real.
+- Release posture: M010 is ready for explicit Product Owner acceptance in provider-disabled scope.
+  It is not accepted, merged, deployed, released or `Operational`.
+- Sequencing: M011 remains blocked until explicit Product Owner acceptance and its own gate.
+
+This T10 closure reconciles documentation only. It does not execute tests, validate runtime
+behavior, modify `DECISIONS.md`, operate Git, push a branch, activate providers or authorize
+deployment.
