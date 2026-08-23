@@ -10,6 +10,7 @@ interface Props {
 const { page } = Astro.props;
 const copy = SITE_CHROME[page.locale];
 const servicesHref = page.locale === "es" ? "/servicios/" : "/en/services/";
+const serviceContent = page.serviceContent;
 ---
 
 <section class:list={["hero", { "hero--home": page.kind === "home" }] }>
@@ -19,10 +20,14 @@ const servicesHref = page.locale === "es" ? "/servicios/" : "/en/services/";
       <h1>{page.hero.heading}</h1>
       <p class="hero__summary">{page.hero.summary}</p>
       <div class="hero__actions">
-        <ActionLink action="evaluation" locale={page.locale} />
-        <a class="action-link action-link--secondary" href={servicesHref}>
-          <span>{copy.heroExploreServices}</span><span aria-hidden="true">→</span>
-        </a>
+        <ActionLink action="evaluation" locale={page.locale} label={serviceContent?.hero.primaryCta} />
+        {serviceContent ? (
+          <ActionLink action="quote" locale={page.locale} variant="secondary" label={serviceContent.hero.secondaryCta} />
+        ) : (
+          <a class="action-link action-link--secondary" href={servicesHref}>
+            <span>{copy.heroExploreServices}</span><span aria-hidden="true">→</span>
+          </a>
+        )}
       </div>
       <p class="hero__note">
         <span aria-hidden="true">✓</span>

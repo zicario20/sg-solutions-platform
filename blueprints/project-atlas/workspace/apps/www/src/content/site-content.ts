@@ -1,5 +1,13 @@
 import type { PublicPage, PublicService } from "../domain/public-site";
 import { createPageExperience } from "./page-experience";
+import {
+  createServiceContentRepository,
+  isServiceContentRoute,
+  materializeServiceContentSnapshot,
+  type ServiceContentProvider,
+  type ServiceContentRepository,
+  serviceContentRepository,
+} from "./service-content-repository";
 
 interface PageDefinition {
   routeKey: PublicPage["routeKey"];
@@ -58,6 +66,7 @@ const ensureSearchIndex = (
 const buildLocalePage = (
   definition: PageDefinition,
   locale: PublicPage["locale"],
+  contentRepository: ServiceContentRepository,
 ) => {
   const surface = resolveSurface(definition.routeKey);
   const copy = locale === "es" ? definition.es : definition.en;
@@ -67,14 +76,22 @@ const buildLocalePage = (
     locale,
     title: copy.title,
     description: copy.description,
+    serviceContentRepository: contentRepository,
   });
+  const serviceContent = isServiceContentRoute(definition.routeKey)
+    ? contentRepository.get(definition.routeKey, locale)
+    : undefined;
   return {
     routeKey: definition.routeKey,
     surface,
     kind: definition.kind,
     locale,
     ...copy,
+    ...(serviceContent
+      ? { title: serviceContent.seo.title, description: serviceContent.seo.description }
+      : {}),
     ...experience,
+    serviceContent,
     publicationState: ensureSearchIndex(surface, experience.publicationState),
   } satisfies PublicPage;
 };
@@ -225,6 +242,38 @@ const pageDefinitions: PageDefinition[] = [
     },
   },
   {
+    routeKey: "service-business-credit",
+    kind: "service",
+    es: {
+      path: "/servicios/credito-empresarial/",
+      title: "Preparación de business credit | SG Solutions",
+      description:
+        "Organiza identidad, banca, records y pagos del negocio antes de buscar productos de crédito empresarial.",
+    },
+    en: {
+      path: "/en/services/business-credit/",
+      title: "Business credit preparation | SG Solutions",
+      description:
+        "Organize business identity, banking, records and payments before seeking business credit products.",
+    },
+  },
+  {
+    routeKey: "service-loan-preparation",
+    kind: "service",
+    es: {
+      path: "/servicios/preparacion-para-financiamiento/",
+      title: "Preparación para préstamos y financiamiento | SG Solutions",
+      description:
+        "Organiza capacidad de pago, ingresos, obligaciones, crédito y documentos antes de solicitar financiamiento.",
+    },
+    en: {
+      path: "/en/services/financing-preparation/",
+      title: "Loan and financing preparation | SG Solutions",
+      description:
+        "Organize repayment capacity, income, obligations, credit and documents before seeking financing.",
+    },
+  },
+  {
     routeKey: "service-home-buying",
     kind: "service",
     es: {
@@ -358,14 +407,12 @@ const pageDefinitions: PageDefinition[] = [
     es: {
       path: "/admin/contactos/",
       title: "Contactos | SG Solutions",
-      description:
-        "Panel de contacto para operaciones con Chat, WhatsApp y agente telefónico.",
+      description: "Panel de contacto para operaciones con Chat, WhatsApp y agente telefónico.",
     },
     en: {
       path: "/en/admin/contacts/",
       title: "Contacts | SG Solutions",
-      description:
-        "Administrative contacts panel with chat, WhatsApp and phone agent tools.",
+      description: "Administrative contacts panel with chat, WhatsApp and phone agent tools.",
     },
   },
   {
@@ -396,8 +443,7 @@ const pageDefinitions: PageDefinition[] = [
     en: {
       path: "/en/client/access/",
       title: "Client access | SG Solutions",
-      description:
-        "Client portal entry with account, sessions and preference options.",
+      description: "Client portal entry with account, sessions and preference options.",
     },
   },
   {
@@ -412,8 +458,7 @@ const pageDefinitions: PageDefinition[] = [
     en: {
       path: "/en/client/dashboard/",
       title: "Client dashboard | SG Solutions",
-      description:
-        "Client hub for service status, payments, documents and upcoming actions.",
+      description: "Client hub for service status, payments, documents and upcoming actions.",
     },
   },
   {
@@ -428,8 +473,7 @@ const pageDefinitions: PageDefinition[] = [
     en: {
       path: "/en/client/my-services/",
       title: "My services | SG Solutions",
-      description:
-        "Summary of contracted services, owner, status and key milestones per service.",
+      description: "Summary of contracted services, owner, status and key milestones per service.",
     },
   },
   {
@@ -476,8 +520,7 @@ const pageDefinitions: PageDefinition[] = [
     en: {
       path: "/en/client/secure-messaging/",
       title: "Secure messaging | SG Solutions",
-      description:
-        "Private case messaging with timeline, attachments and handoff tracking.",
+      description: "Private case messaging with timeline, attachments and handoff tracking.",
     },
   },
   {
@@ -486,8 +529,7 @@ const pageDefinitions: PageDefinition[] = [
     es: {
       path: "/client/citas/",
       title: "Citas del cliente | SG Solutions",
-      description:
-        "Agenda, reprograma y da seguimiento a citas con tipo, canal y recordatorios.",
+      description: "Agenda, reprograma y da seguimiento a citas con tipo, canal y recordatorios.",
     },
     en: {
       path: "/en/client/appointments/",
@@ -508,8 +550,7 @@ const pageDefinitions: PageDefinition[] = [
     en: {
       path: "/en/client/billing/",
       title: "Client billing | SG Solutions",
-      description:
-        "View invoices, payment state and finance preparation flow for active services.",
+      description: "View invoices, payment state and finance preparation flow for active services.",
     },
   },
   {
@@ -534,14 +575,12 @@ const pageDefinitions: PageDefinition[] = [
     es: {
       path: "/admin/dashboard/",
       title: "Dashboard administrativo | SG Solutions",
-      description:
-        "Panel de operación con métricas de leads, citas, pagos y actividad reciente.",
+      description: "Panel de operación con métricas de leads, citas, pagos y actividad reciente.",
     },
     en: {
       path: "/en/admin/dashboard/",
       title: "Admin dashboard | SG Solutions",
-      description:
-        "Operations panel with lead, appointment, payment and recent activity metrics.",
+      description: "Operations panel with lead, appointment, payment and recent activity metrics.",
     },
   },
   {
@@ -550,8 +589,7 @@ const pageDefinitions: PageDefinition[] = [
     es: {
       path: "/admin/crm/",
       title: "CRM | SG Solutions",
-      description:
-        "Seguimiento comercial de oportunidades, notas, responsable y acción siguiente.",
+      description: "Seguimiento comercial de oportunidades, notas, responsable y acción siguiente.",
     },
     en: {
       path: "/en/admin/crm/",
@@ -566,14 +604,12 @@ const pageDefinitions: PageDefinition[] = [
     es: {
       path: "/admin/clientes/",
       title: "Gestión de clientes | SG Solutions",
-      description:
-        "Administración de clientes activos, servicios asociados y notas operativas.",
+      description: "Administración de clientes activos, servicios asociados y notas operativas.",
     },
     en: {
       path: "/en/admin/client-management/",
       title: "Client management | SG Solutions",
-      description:
-        "Manage active clients, associated services and operational notes.",
+      description: "Manage active clients, associated services and operational notes.",
     },
   },
   {
@@ -582,14 +618,12 @@ const pageDefinitions: PageDefinition[] = [
     es: {
       path: "/admin/empresas/",
       title: "Gestión de empresas | SG Solutions",
-      description:
-        "Control de datos empresariales, estado legal y reportes asociados.",
+      description: "Control de datos empresariales, estado legal y reportes asociados.",
     },
     en: {
       path: "/en/admin/companies/",
       title: "Company management | SG Solutions",
-      description:
-        "Track company records, legal status and linked reports.",
+      description: "Track company records, legal status and linked reports.",
     },
   },
   {
@@ -604,8 +638,7 @@ const pageDefinitions: PageDefinition[] = [
     en: {
       path: "/en/admin/leads/",
       title: "Lead management | SG Solutions",
-      description:
-        "Lead scoring, classification and conversion workflow to prioritize follow-up.",
+      description: "Lead scoring, classification and conversion workflow to prioritize follow-up.",
     },
   },
   {
@@ -636,8 +669,7 @@ const pageDefinitions: PageDefinition[] = [
     en: {
       path: "/en/admin/forms/",
       title: "Forms center (demo) | SG Solutions",
-      description:
-        "Design, version and manage intake and questionnaire forms by service.",
+      description: "Design, version and manage intake and questionnaire forms by service.",
     },
   },
   {
@@ -652,8 +684,7 @@ const pageDefinitions: PageDefinition[] = [
     en: {
       path: "/en/admin/work-queues/",
       title: "Work queues and tasks (demo) | SG Solutions",
-      description:
-        "Prioritization hub for tasks, queue tracking and internal work states.",
+      description: "Prioritization hub for tasks, queue tracking and internal work states.",
     },
   },
   {
@@ -662,14 +693,12 @@ const pageDefinitions: PageDefinition[] = [
     es: {
       path: "/admin/aprobaciones/",
       title: "Aprobaciones humanas (demo) | SG Solutions",
-      description:
-        "Controles de aprobación humana para acciones sensibles y propuestas de cambio.",
+      description: "Controles de aprobación humana para acciones sensibles y propuestas de cambio.",
     },
     en: {
       path: "/en/admin/approvals/",
       title: "Human approvals (demo) | SG Solutions",
-      description:
-        "Human approval controls for sensitive actions and change proposals.",
+      description: "Human approval controls for sensitive actions and change proposals.",
     },
   },
   {
@@ -678,14 +707,12 @@ const pageDefinitions: PageDefinition[] = [
     es: {
       path: "/admin/ai-hub/",
       title: "AI Hub (demo) | SG Solutions",
-      description:
-        "Centro de habilidades especializadas, prompts y trazabilidad de asistencia IA.",
+      description: "Centro de habilidades especializadas, prompts y trazabilidad de asistencia IA.",
     },
     en: {
       path: "/en/admin/ai-hub/",
       title: "AI Hub (demo) | SG Solutions",
-      description:
-        "Specialized skill center, prompts and AI assistant traceability.",
+      description: "Specialized skill center, prompts and AI assistant traceability.",
     },
   },
   {
@@ -694,14 +721,12 @@ const pageDefinitions: PageDefinition[] = [
     es: {
       path: "/admin/operaciones/",
       title: "Operaciones y despliegue (demo) | SG Solutions",
-      description:
-        "Control de estado operativo, readiness y checklist de despliegue local.",
+      description: "Control de estado operativo, readiness y checklist de despliegue local.",
     },
     en: {
       path: "/en/admin/operations/",
       title: "Operations and deployment (demo) | SG Solutions",
-      description:
-        "Operational status control, readiness and local deployment checklist.",
+      description: "Operational status control, readiness and local deployment checklist.",
     },
   },
   {
@@ -726,14 +751,12 @@ const pageDefinitions: PageDefinition[] = [
     es: {
       path: "/admin/analitica/",
       title: "Analítica operativa y KPIs (admin) | SG Solutions",
-      description:
-        "Panel local de métricas, alertas y rendimiento para seguimiento operativo.",
+      description: "Panel local de métricas, alertas y rendimiento para seguimiento operativo.",
     },
     en: {
       path: "/en/admin/analytics/",
       title: "Operational analytics and KPIs (admin) | SG Solutions",
-      description:
-        "Local KPIs, alerts, and performance signal tracking for internal operations.",
+      description: "Local KPIs, alerts, and performance signal tracking for internal operations.",
     },
   },
   {
@@ -758,8 +781,7 @@ const pageDefinitions: PageDefinition[] = [
     es: {
       path: "/admin/servicios-tributarios/",
       title: "Servicios tributarios (admin) | SG Solutions",
-      description:
-        "Administración demo de casos de impuestos, integraciones y control pre-filing.",
+      description: "Administración demo de casos de impuestos, integraciones y control pre-filing.",
     },
     en: {
       path: "/en/admin/tax-services/",
@@ -827,7 +849,8 @@ const pageDefinitions: PageDefinition[] = [
     en: {
       path: "/en/admin/partner-management/",
       title: "Partner management (admin) | SG Solutions",
-      description: "Internal workspace for onboarding, health and operational access of external partners.",
+      description:
+        "Internal workspace for onboarding, health and operational access of external partners.",
     },
   },
   {
@@ -906,10 +929,20 @@ const pageDefinitions: PageDefinition[] = [
   },
 ];
 
-export const PUBLIC_PAGES: PublicPage[] = pageDefinitions.flatMap((definition) => [
-  buildLocalePage(definition, "es"),
-  buildLocalePage(definition, "en"),
-]);
+export const createPublicPages = (
+  contentRepository: ServiceContentRepository = serviceContentRepository,
+): PublicPage[] =>
+  pageDefinitions.flatMap((definition) => [
+    buildLocalePage(definition, "es", contentRepository),
+    buildLocalePage(definition, "en", contentRepository),
+  ]);
+
+export const loadPublicPages = async (provider: ServiceContentProvider): Promise<PublicPage[]> => {
+  const snapshot = await materializeServiceContentSnapshot(provider);
+  return createPublicPages(createServiceContentRepository(snapshot));
+};
+
+export const PUBLIC_PAGES: PublicPage[] = createPublicPages();
 
 const serviceDefinitions: Array<{
   id: PublicService["id"];
@@ -1002,6 +1035,20 @@ const serviceDefinitions: Array<{
     },
   },
   {
+    id: "service-business-credit",
+    priceMode: "consultation",
+    es: {
+      title: "Crédito empresarial",
+      summary:
+        "Organiza identidad, banca, documentación y hábitos responsables antes de buscar productos de crédito para tu negocio.",
+    },
+    en: {
+      title: "Business credit",
+      summary:
+        "Organize identity, banking, documentation, and responsible habits before seeking business credit products.",
+    },
+  },
+  {
     id: "service-business-funding",
     priceMode: "consultation",
     es: {
@@ -1013,6 +1060,20 @@ const serviceDefinitions: Array<{
       title: "Business funding",
       summary:
         "Review readiness, cash flow and documents before exploring options with outside providers.",
+    },
+  },
+  {
+    id: "service-loan-preparation",
+    priceMode: "consultation",
+    es: {
+      title: "Preparación para financiamiento",
+      summary:
+        "Organiza capacidad de pago, ingresos, obligaciones, crédito y preguntas antes de comparar opciones de financiamiento.",
+    },
+    en: {
+      title: "Financing preparation",
+      summary:
+        "Organize repayment capacity, income, obligations, credit, and questions before comparing financing options.",
     },
   },
   {

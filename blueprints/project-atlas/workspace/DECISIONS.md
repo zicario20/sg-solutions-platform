@@ -138,3 +138,18 @@ Impact: M001 may create the Astro public routes, presentation components, biling
 SEO/accessibility behavior, tests and deployment-facing public configuration. It may not implement
 M002/M003/M006/M007/M013/M017/M043 behavior or invent contact facts, legal approval, testimonials,
 prices or provider integrations. Every other module remains gated.
+
+## 2026-08-23 — Decision 014
+
+Decision: authorize M001 content-depth and conversion remediation after technical and visual review
+passed but Product Owner content acceptance failed. Credit repair assistance is the primary
+acquisition service; Business Credit and Loan/Financing Preparation are added as explanatory M001
+routes without operational behavior.
+
+Reason: the original service pages were professional shells that did not provide enough fit,
+process, preparation, expectation, limitation or FAQ detail for a qualified prospect.
+
+Impact: M001 gains a typed bilingual `ServicePageContent` source, deep service and general-page
+content, official source records, internal linking and completeness contracts. No M002-M110
+behavior, persistence, form, booking, payment, portal, partner or provider integration is
+authorized. Product Owner acceptance and production activation remain pending.

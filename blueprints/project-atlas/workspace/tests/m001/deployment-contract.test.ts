@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
@@ -36,10 +37,15 @@ describe("M001 public deployment contract", () => {
     const csp = config.headers[0]?.headers.find(
       (header) => header.key === "Content-Security-Policy",
     )?.value;
+    const workbench = readFileSync("apps/www/src/components/ModuleWorkbench.astro", "utf8");
+    const inlineScript = workbench.match(/<script is:inline>([\s\S]*?)<\/script>/)?.[1];
+    if (inlineScript === undefined) throw new Error("ModuleWorkbench inline script is missing");
+    const expectedHash = `'sha256-${createHash("sha256").update(inlineScript).digest("base64")}'`;
     expect(csp).toContain("script-src 'self'");
     expect(csp).toContain("connect-src 'self'");
     expect(csp).toContain("frame-src 'none'");
     expect(csp).toContain("form-action 'self'");
+    expect(csp).toContain(expectedHash);
     expect(csp).not.toMatch(/unsafe-inline|https:\/\/|\*/);
   });
 

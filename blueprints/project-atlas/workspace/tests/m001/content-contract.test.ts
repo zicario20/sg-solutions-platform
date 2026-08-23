@@ -20,8 +20,8 @@ describe("M001 bilingual content contract", () => {
   });
 
   it("describes every service in both languages without numeric prices", () => {
-    expect(PUBLIC_SERVICES.filter((service) => service.locale === "es")).toHaveLength(9);
-    expect(PUBLIC_SERVICES.filter((service) => service.locale === "en")).toHaveLength(9);
+    expect(PUBLIC_SERVICES.filter((service) => service.locale === "es")).toHaveLength(11);
+    expect(PUBLIC_SERVICES.filter((service) => service.locale === "en")).toHaveLength(11);
 
     for (const service of PUBLIC_SERVICES) {
       expect(service.title.trim().length).toBeGreaterThan(2);

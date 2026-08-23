@@ -88,3 +88,16 @@ Before production publication:
 M001 is static and has no database state. Roll back by redeploying the previous verified commit or
 Vercel deployment. No schema, data, payment or workflow rollback is required. After rollback, verify
 Home ES/EN, one service route, sitemap, robots, health, policy indexing state and CTA fallbacks.
+
+## Content depth remediation verification (2026-08-23)
+
+- Scope: M001 public content only; no operational module, persistence, provider, payment, booking, or portal activation was added.
+- The typed bilingual service catalog now covers 11 approved services per locale, including Business Credit and Loan / Financing Preparation.
+- `corepack pnpm install --frozen-lockfile`: passed; the lockfile remained unchanged.
+- `corepack pnpm lint`: passed with seven existing warnings.
+- Changed M001 code and tests pass Biome formatting; the repository-wide `format:check` remains blocked by the Windows checkout converting tracked LF files to CRLF.
+- M001 content, route, SEO, deployment, action-resolution, and import contracts pass.
+- `corepack pnpm test:e2e:www`: 62/62 passed across desktop and mobile, including accessibility, reduced motion, reflow, safe fallbacks, and representative visual captures.
+- `git diff --check`: passed. Added-line scans found no secret assignments, SSN values, absolute local paths, lockfile changes, or unauthorized module paths.
+- Repository-wide `typecheck`, `test`, and `build` remain blocked by pre-existing database/admin scaffold defects: NodeNext import extensions, the Drizzle adapter type, missing `pg`, and the intentionally absent Astro deployment adapter.
+- M001 content remediation is complete. Product Owner acceptance and production activation remain pending.

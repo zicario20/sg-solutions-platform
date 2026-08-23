@@ -6,6 +6,12 @@
 
 ## Unreleased
 
+- Remediated M001 content depth with eleven bilingual service contracts, service-specific processes,
+  FAQs, limitations, related content, in-page navigation and intent-specific evaluation/quote CTAs.
+- Added Business Credit and Loan/Financing Preparation public routes without operational behavior.
+- Added an approved Business Knowledge boundary and official-source review register for credit,
+  tax, EIN, formation, funding and home-buying claims.
+
 - Documentary architecture baseline prepared.
 - Added canonical product definition, release horizons, dependency map, module status model and the complete conceptual module catalog.
 - Aligned the roadmap around Release 1 — Production Foundation and Business Formation as the first complete vertical.

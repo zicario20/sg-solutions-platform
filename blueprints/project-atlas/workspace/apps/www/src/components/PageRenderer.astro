@@ -1,12 +1,14 @@
+---
 import { getChromeBySurface } from "../content/site-chrome";
+import { ADMIN_ROUTE_KEYS, CLIENT_ROUTE_KEYS } from "../content/site-content";
 import type { PublicPage } from "../domain/public-site";
 import ActionLink from "./ActionLink.astro";
 import Breadcrumbs from "./Breadcrumbs.astro";
 import ContentSection from "./ContentSection.astro";
 import Hero from "./Hero.astro";
-import TrustRail from "./TrustRail.astro";
 import ModuleWorkbench from "./ModuleWorkbench.astro";
-import { CLIENT_ROUTE_KEYS, ADMIN_ROUTE_KEYS } from "../content/site-content";
+import ServiceInPageNav from "./ServiceInPageNav.astro";
+import TrustRail from "./TrustRail.astro";
 
 interface Props {
   page: PublicPage;
@@ -16,7 +18,7 @@ const copy = getChromeBySurface(page.locale, page.surface);
 const showUnavailable = page.routeKey === "contact";
 const isInteractiveDemo = (() => {
   if (page.surface === "public") {
-    return page.routeKey === "help-center" || page.routeKey === "public-forms";
+    return page.routeKey === "public-forms";
   }
   if (page.surface === "client") {
     return Array.from(CLIENT_ROUTE_KEYS).includes(page.routeKey);
@@ -28,6 +30,7 @@ const isInteractiveDemo = (() => {
 <Breadcrumbs page={page} />
 <Hero page={page} />
 {page.routeKey === "home" && <TrustRail locale={page.locale} />}
+{page.serviceContent && <ServiceInPageNav locale={page.locale} sections={page.sections} />}
 
 {page.publicationState === "review-required" && (
   <div class="review-banner" role="status">
@@ -60,6 +63,9 @@ const isInteractiveDemo = (() => {
       <h2>{copy.finalHeading}</h2>
       <p>{copy.finalBody}</p>
     </div>
-    <ActionLink action="evaluation" locale={page.locale} />
+    <div class="final-cta__actions">
+      <ActionLink action="evaluation" locale={page.locale} label={page.serviceContent?.hero.primaryCta} />
+      {page.serviceContent && <ActionLink action="quote" locale={page.locale} variant="secondary" label={page.serviceContent.hero.secondaryCta} />}
+    </div>
   </div>
 </section>

@@ -11,26 +11,21 @@ interface Props {
 
 const { page } = Astro.props;
 const copy = getChromeBySurface(page.locale, page.surface);
-const homeHref = page.surface === "client"
-  ? page.locale === "es" ? "/client/dashboard/" : "/en/client/dashboard/"
-  : page.surface === "admin"
-    ? page.locale === "es" ? "/admin/dashboard/" : "/en/admin/dashboard/"
-    : page.locale === "es" ? "/" : "/en/";
+const homeHref =
+  page.surface === "client"
+    ? page.locale === "es"
+      ? "/client/dashboard/"
+      : "/en/client/dashboard/"
+    : page.surface === "admin"
+      ? page.locale === "es"
+        ? "/admin/dashboard/"
+        : "/en/admin/dashboard/"
+      : page.locale === "es"
+        ? "/"
+        : "/en/";
 
 const isActive = (href: string) =>
   href === (page.locale === "es" ? "/" : "/en/") ? page.path === href : page.path.startsWith(href);
-
-const renderMobilePrimaryAction = () => {
-  if (page.surface === "admin") {
-    return (
-      <a class="action-link action-link--primary" href={homeHref}>
-        {page.locale === "es" ? "Panel interno" : "Admin dashboard"}
-      </a>
-    );
-  }
-
-  return <ActionLink action="clientPortal" locale={page.locale} variant="secondary" />;
-};
 ---
 
 <header class="site-header">
@@ -94,7 +89,13 @@ const renderMobilePrimaryAction = () => {
           </ul>
         </nav>
         <LanguageSwitcher locale={page.locale} routeKey={page.routeKey} />
-        {renderMobilePrimaryAction()}
+        {page.surface === "admin" ? (
+          <a class="action-link action-link--primary" href={homeHref}>
+            {page.locale === "es" ? "Panel interno" : "Admin dashboard"}
+          </a>
+        ) : (
+          <ActionLink action="clientPortal" locale={page.locale} variant="secondary" />
+        )}
         {page.surface === "admin" ? null : <ActionLink action="evaluation" locale={page.locale} />}
       </div>
     </details>

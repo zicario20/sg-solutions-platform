@@ -32,13 +32,48 @@ export function createStructuredData(page: PublicPage, origin: string): object {
   };
 
   if (page.kind === "service") {
+    const breadcrumbItems = [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: page.locale === "es" ? "Inicio" : "Home",
+        item: new URL(page.locale === "es" ? "/" : "/en/", seo.canonical).toString(),
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: page.locale === "es" ? "Servicios" : "Services",
+        item: new URL(
+          page.locale === "es" ? "/servicios/" : "/en/services/",
+          seo.canonical,
+        ).toString(),
+      },
+      { "@type": "ListItem", position: 3, name: page.hero.heading, item: seo.canonical },
+    ];
     return {
       "@context": "https://schema.org",
-      "@type": "Service",
-      name: page.title.replace(/ \| SG Solutions$/, ""),
-      description: page.description,
-      url: seo.canonical,
-      provider: organization,
+      "@graph": [
+        {
+          "@type": "Service",
+          name: page.title.replace(/ \| SG Solutions$/, ""),
+          description: page.description,
+          url: seo.canonical,
+          provider: organization,
+        },
+        { "@type": "BreadcrumbList", itemListElement: breadcrumbItems },
+        ...(page.serviceContent?.faq.length
+          ? [
+              {
+                "@type": "FAQPage",
+                mainEntity: page.serviceContent.faq.map((faq) => ({
+                  "@type": "Question",
+                  name: faq.question,
+                  acceptedAnswer: { "@type": "Answer", text: faq.answer },
+                })),
+              },
+            ]
+          : []),
+      ],
     };
   }
 
@@ -54,6 +89,26 @@ export function createStructuredData(page: PublicPage, origin: string): object {
           inLanguage: ["es", "en"],
         },
       ],
+    };
+  }
+
+  if (page.routeKey === "faq") {
+    const questions = page.sections.flatMap((section) =>
+      section.variant === "faq"
+        ? section.items.map((item) => ({
+            "@type": "Question",
+            name: item.title,
+            acceptedAnswer: { "@type": "Answer", text: item.body },
+          }))
+        : [],
+    );
+    return {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      name: page.title,
+      url: seo.canonical,
+      inLanguage: page.locale,
+      mainEntity: questions,
     };
   }
 

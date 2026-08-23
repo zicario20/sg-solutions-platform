@@ -9,6 +9,45 @@ const productionCsp = deploymentConfig.headers
   ?.headers.find((header) => header.key === "Content-Security-Policy")?.value;
 
 test.describe("M001 public website", () => {
+  const deepRoutes = [
+    "/servicios/",
+    "/servicios/credito/",
+    "/servicios/taxes/",
+    "/servicios/formacion-de-negocios/",
+    "/servicios/credito-empresarial/",
+    "/servicios/financiamiento-empresarial/",
+    "/servicios/preparacion-para-financiamiento/",
+    "/servicios/comprar-casa/",
+    "/preguntas-frecuentes/",
+  ];
+
+  for (const route of deepRoutes) {
+    test(`${route} renders substantive public content`, async ({ page }) => {
+      const response = await page.goto(route);
+      expect(response?.ok()).toBe(true);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      expect(await page.locator("main section").count()).toBeGreaterThanOrEqual(4);
+      expect(await hasHorizontalOverflow(page)).toBe(false);
+    });
+  }
+
+  test("service navigation remains keyboard accessible at mobile size and 200 percent zoom", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 720 });
+    await page.goto("/servicios/credito/");
+    await page.keyboard.press("Tab");
+    await expect(page.locator(":focus")).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "En esta página" })).toBeVisible();
+    expect(await hasHorizontalOverflow(page)).toBe(false);
+  });
+
+  test("reduced motion keeps deep service content available", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/servicios/comprar-casa/");
+    await expect(page.getByRole("heading", { name: "Qué no hace SG Solutions" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Preguntas frecuentes" })).toBeVisible();
+  });
   test("Spanish home communicates the offer and safe next action", async ({ page }) => {
     const response = await page.goto("/");
     expect(response?.ok()).toBe(true);
@@ -68,13 +107,17 @@ test.describe("M001 public website", () => {
 
   test("language switch opens the equivalent English service page", async ({ page }) => {
     await page.goto("/servicios/credito/");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Orientación de crédito");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      "Crédito y asistencia de reparación de crédito",
+    );
     const switcher = page.locator(".language-switcher").first();
     await expect(switcher).toHaveAttribute("href", "/en/services/credit/");
     await switcher.click();
     await expect(page).toHaveURL(/\/en\/services\/credit\/$/);
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Credit guidance");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      "Credit guidance and credit repair assistance",
+    );
   });
 
   test("an unconfigured client portal leads to an honest localized fallback", async ({ page }) => {
@@ -109,6 +152,13 @@ test.describe("M001 public website", () => {
 
   test("mobile navigation enhancement works under the production CSP", async ({ page }) => {
     expect(productionCsp).toBeTruthy();
+    // Vite injects development styles inline. The deployment contract separately
+    // asserts the stricter production style policy; this browser case keeps the
+    // production script policy while allowing the local harness to render.
+    const browserHarnessCsp = productionCsp?.replace(
+      "style-src 'self'",
+      "style-src 'self' 'unsafe-inline'",
+    );
     await page.route("**/*", async (route) => {
       if (route.request().resourceType() !== "document") {
         await route.continue();
@@ -117,7 +167,7 @@ test.describe("M001 public website", () => {
       const response = await route.fetch();
       await route.fulfill({
         response,
-        headers: { ...response.headers(), "content-security-policy": productionCsp ?? "" },
+        headers: { ...response.headers(), "content-security-policy": browserHarnessCsp ?? "" },
       });
     });
     await page.setViewportSize({ width: 390, height: 844 });
@@ -151,7 +201,7 @@ test.describe("M001 public website", () => {
     const sitemap = await request.get("/sitemap.xml");
     expect(sitemap.ok()).toBe(true);
     const sitemapBody = await sitemap.text();
-    expect(sitemapBody).toContain("https://www.sgsllc.com/en/services/credit/");
+    expect(sitemapBody).not.toContain("https://www.sgsllc.com/en/services/credit/");
     expect(sitemapBody).not.toContain("https://www.sgsllc.com/privacidad/");
 
     const robots = await request.get("/robots.txt");

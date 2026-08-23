@@ -5,8 +5,8 @@
 - Surface: Public
 - Domain: Growth
 - Release: R1.2 / Release 1A
-- Status: PO Acceptance — implementation and local quality gate complete; not deployed
-- Last updated: 2026-08-08
+- Status: Content remediation implemented; verification and Product Owner acceptance pending
+- Last updated: 2026-08-23
 
 ## 1. Purpose
 
@@ -33,7 +33,8 @@ M001 includes:
 - the Astro public application shell, global header, footer, language switcher and mobile navigation;
 - Spanish-primary and English-equivalent route families;
 - Home, Services, Credit, Credit Monitoring, Taxes, Business Formation, EIN, Business Compliance,
-  Business Funding, Home Buying Assistance, Marketplace, About, Pricing, Contact, general FAQ and
+  Business Credit, Business Funding, Loan/Financing Preparation, Home Buying Assistance,
+  Marketplace, About, Pricing, Contact, general FAQ and
   required policy/disclosure entry pages;
 - reusable public components, layout primitives and M001 design tokens;
 - typed bilingual content records with a boundary that can later be backed by Sanity;
@@ -241,6 +242,9 @@ static artifact.
 - Home explains SG Solutions and displays the six approved service groups, including the nested
   Credit Monitoring, EIN and Business Compliance offerings, without fabricated claims.
 - Each service page describes fit, process, preparation, limitations and next action.
+- Each service page contains a typed, bilingual depth contract with audience, common situations,
+  overview, SG Solutions actions, service-specific process, preparation rationale, expectations,
+  limits, FAQ, related services, related resources, disclosures and research references.
 - Header, footer, mobile menu, language switcher, breadcrumbs and CTAs are consistent.
 - The exact supplied logo is displayed without distortion on a calm light surface.
 - Unconfigured integrations never claim a submission, appointment, payment or account event.

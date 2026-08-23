@@ -61,3 +61,20 @@
   desktop/mobile browser tests pass, Astro emits 40 static outputs, and independent review findings
   covering CSP navigation, portal fallback, localization, touch targets, structured data and Vercel
   routing were corrected. Cyber Neo follow-up found no exploitable vulnerability or exposed secret.
+
+## 2026-08-23
+
+- The Product Owner withheld M001 content acceptance because service pages remained shallow shells.
+- Decision 014 authorized a bounded M001 content-depth and conversion remediation, prioritizing
+  credit repair assistance and adding public Business Credit and Loan/Financing Preparation pages.
+- The remediation introduced a typed bilingual service knowledge contract, deeper general pages,
+  official-source tracking and a cross-channel Business Knowledge boundary. Product Owner
+  acceptance, merge and production activation remain pending.
+
+## 2026-08-23 — M001 content depth verification
+
+- Completed the bilingual typed content remediation for the public website without implementing future operational modules.
+- Added the missing approved Business Credit and Loan / Financing Preparation public routes.
+- Verified content, route, SEO, CSP, CTA fallback, accessibility, responsive, reduced-motion, and visual contracts.
+- Playwright WWW completed 62/62 tests. Repository-wide gates still expose pre-existing database/admin and deployment-adapter blockers.
+- M001 remains pending Product Owner acceptance and production activation.

@@ -1,11 +1,11 @@
 import { SUPPORTED_LOCALES } from "@atlas/i18n";
 import { describe, expect, it } from "vitest";
+import { PUBLIC_PAGES } from "../../apps/www/src/content/site-content";
 import {
   getAlternatePath,
   getPageByPath,
   getStaticPageEntries,
 } from "../../apps/www/src/lib/routes";
-import { PUBLIC_PAGES } from "../../apps/www/src/content/site-content";
 
 describe("M001 route contract", () => {
   it("supports Spanish and English in the approved order", () => {
@@ -17,6 +17,12 @@ describe("M001 route contract", () => {
     expect(getAlternatePath("service-credit", "es")).toBe("/servicios/credito/");
     expect(getAlternatePath("service-business-compliance", "en")).toBe(
       "/en/services/business-compliance/",
+    );
+    expect(getAlternatePath("service-business-credit", "es")).toBe(
+      "/servicios/credito-empresarial/",
+    );
+    expect(getAlternatePath("service-loan-preparation", "en")).toBe(
+      "/en/services/financing-preparation/",
     );
   });
 

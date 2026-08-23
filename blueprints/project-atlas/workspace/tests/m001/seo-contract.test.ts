@@ -42,6 +42,22 @@ describe("M001 SEO projection", () => {
     expect(json).not.toMatch(/areaServed|serviceArea|availableAtOrFrom/);
   });
 
+  it("emits service breadcrumbs and only visible FAQ structured data", () => {
+    const page = requirePage("service-credit", "es");
+    const json = JSON.stringify(createStructuredData(page, origin));
+    expect(json).toContain('"@type":"BreadcrumbList"');
+    expect(json).toContain('"@type":"FAQPage"');
+    for (const faq of page.serviceContent?.faq ?? []) {
+      expect(json).toContain(JSON.stringify(faq.question).slice(1, -1));
+    }
+  });
+
+  it("emits FAQPage only from visible categorized FAQ content", () => {
+    const page = requirePage("faq", "en");
+    const data = createStructuredData(page, origin) as { mainEntity?: unknown[] };
+    expect(data.mainEntity).toHaveLength(29);
+  });
+
   it("escapes script-breaking characters in structured data", () => {
     const serialized = serializeStructuredData({
       value: "</script><script>alert('unsafe')</script>\u2028\u2029",

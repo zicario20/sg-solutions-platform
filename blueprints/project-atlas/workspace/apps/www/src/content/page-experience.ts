@@ -1,4 +1,11 @@
 import type { Locale, PageHero, PublicPage, PublicSection, RouteKey } from "../domain/public-site";
+import { getGeneralPageSections } from "./general-content";
+import type { ServiceRoute } from "./service-content";
+import {
+  isServiceContentRoute,
+  type ServiceContentRepository,
+  serviceContentRepository,
+} from "./service-content-repository";
 
 interface ExperienceInput {
   routeKey: RouteKey;
@@ -6,6 +13,7 @@ interface ExperienceInput {
   locale: Locale;
   title: string;
   description: string;
+  serviceContentRepository?: ServiceContentRepository;
 }
 
 const localized = {
@@ -48,181 +56,16 @@ const localized = {
   },
 } as const;
 
-const serviceDetails: Record<
-  Extract<RouteKey, `service-${string}`> | "marketplace",
-  Record<Locale, { helps: string[]; prepare: string[] }>
-> = {
-  "service-credit": {
-    es: {
-      helps: [
-        "Reunir información de tus reportes y objetivos.",
-        "Identificar factores que merecen una revisión más cuidadosa.",
-        "Convertir observaciones en próximos pasos educativos y verificables.",
-      ],
-      prepare: ["Reportes disponibles", "Objetivos y fechas importantes", "Preguntas específicas"],
-    },
-    en: {
-      helps: [
-        "Bring your available reports and goals together.",
-        "Identify factors that deserve closer review.",
-        "Turn observations into educational, verifiable next steps.",
-      ],
-      prepare: ["Available reports", "Goals and important dates", "Specific questions"],
-    },
-  },
-  "service-credit-monitoring": {
-    es: {
-      helps: [
-        "Aclarar qué información puede observarse con autorización.",
-        "Mantener un historial comprensible de cambios relevantes.",
-        "Preparar preguntas cuando una variación requiere contexto adicional.",
-      ],
-      prepare: ["Consentimiento aplicable", "Acceso autorizado", "Objetivo del seguimiento"],
-    },
-    en: {
-      helps: [
-        "Clarify what information may be observed with authorization.",
-        "Maintain an understandable history of relevant changes.",
-        "Prepare questions when a change needs additional context.",
-      ],
-      prepare: ["Applicable consent", "Authorized access", "Monitoring objective"],
-    },
-  },
-  "service-taxes": {
-    es: {
-      helps: [
-        "Organizar documentos por año y tipo de ingreso.",
-        "Detectar información faltante antes de la revisión.",
-        "Mantener visibles preguntas, decisiones y próximos pasos.",
-      ],
-      prepare: [
-        "Documentos de ingresos",
-        "Información de dependientes",
-        "Gastos y soportes aplicables",
-      ],
-    },
-    en: {
-      helps: [
-        "Organize documents by year and income type.",
-        "Identify missing information before review.",
-        "Keep questions, decisions and next steps visible.",
-      ],
-      prepare: ["Income documents", "Dependent information", "Applicable expenses and support"],
-    },
-  },
-  "service-business-formation": {
-    es: {
-      helps: [
-        "Definir la información inicial de la empresa.",
-        "Organizar miembros, dirección y documentos requeridos.",
-        "Entender la secuencia desde la preparación hasta los comprobantes.",
-      ],
-      prepare: ["Nombre propuesto", "Información de miembros", "Dirección y actividad del negocio"],
-    },
-    en: {
-      helps: [
-        "Define the business's initial information.",
-        "Organize members, address and required documents.",
-        "Understand the sequence from preparation to final records.",
-      ],
-      prepare: ["Proposed name", "Member information", "Business address and activity"],
-    },
-  },
-  "service-ein": {
-    es: {
-      helps: [
-        "Reunir datos de la entidad y la persona responsable.",
-        "Revisar la información antes de una solicitud autorizada.",
-        "Organizar la evidencia y la carta final cuando corresponda.",
-      ],
-      prepare: ["Datos de la entidad", "Responsible party", "Autorización aplicable"],
-    },
-    en: {
-      helps: [
-        "Gather entity and responsible-party information.",
-        "Review information before an authorized application.",
-        "Organize evidence and the final letter when applicable.",
-      ],
-      prepare: ["Entity details", "Responsible party", "Applicable authorization"],
-    },
-  },
-  "service-business-compliance": {
-    es: {
-      helps: [
-        "Mantener reportes y renovaciones en una vista organizada.",
-        "Registrar fechas y requisitos que hayan sido confirmados.",
-        "Preparar cambios de información con revisión humana.",
-      ],
-      prepare: ["Documentos de formación", "Fechas conocidas", "Cambios recientes de la empresa"],
-    },
-    en: {
-      helps: [
-        "Keep reports and renewals in an organized view.",
-        "Record confirmed dates and requirements.",
-        "Prepare information changes with human review.",
-      ],
-      prepare: ["Formation documents", "Known dates", "Recent business changes"],
-    },
-  },
-  "service-business-funding": {
-    es: {
-      helps: [
-        "Revisar preparación, flujo de caja y objetivos.",
-        "Organizar documentos que un proveedor podría solicitar.",
-        "Comparar categorías sin presentar una aprobación como segura.",
-      ],
-      prepare: ["Objetivo y monto estimado", "Ingresos y flujo de caja", "Documentos del negocio"],
-    },
-    en: {
-      helps: [
-        "Review readiness, cash flow and goals.",
-        "Organize documents a provider may request.",
-        "Compare categories without presenting approval as certain.",
-      ],
-      prepare: ["Goal and estimated amount", "Revenue and cash flow", "Business documents"],
-    },
-  },
-  "service-home-buying": {
-    es: {
-      helps: [
-        "Organizar crédito, ingresos, deudas y presupuesto.",
-        "Preparar documentos y preguntas antes de hablar con un prestamista.",
-        "Entender conceptos y etapas sin prometer elegibilidad.",
-      ],
-      prepare: ["Objetivo de vivienda", "Ingresos y deudas", "Ahorros y documentos disponibles"],
-    },
-    en: {
-      helps: [
-        "Organize credit, income, debts and budget.",
-        "Prepare documents and questions before speaking with a lender.",
-        "Understand concepts and stages without promising eligibility.",
-      ],
-      prepare: ["Housing goal", "Income and debts", "Savings and available documents"],
-    },
-  },
-  marketplace: {
-    es: {
-      helps: [
-        "Explicar diferencias entre categorías de productos.",
-        "Mostrar requisitos y divulgaciones disponibles de cada proveedor.",
-        "Separar información educativa de una recomendación individual.",
-      ],
-      prepare: [
-        "Objetivo financiero",
-        "Preguntas sobre categorías",
-        "Consentimiento antes de compartir datos",
-      ],
-    },
-    en: {
-      helps: [
-        "Explain differences between product categories.",
-        "Show available provider requirements and disclosures.",
-        "Separate educational information from an individual recommendation.",
-      ],
-      prepare: ["Financial goal", "Category questions", "Consent before data sharing"],
-    },
-  },
-};
+const REMEDIATED_GENERAL_ROUTES = new Set<RouteKey>([
+  "home",
+  "services",
+  "about",
+  "pricing",
+  "faq",
+  "help-center",
+  "academy",
+  "contact",
+]);
 
 export function createPageExperience(input: ExperienceInput): {
   hero: PageHero;
@@ -230,6 +73,7 @@ export function createPageExperience(input: ExperienceInput): {
   publicationState: PublicPage["publicationState"];
 } {
   const copy = localized[input.locale];
+  const contentRepository = input.serviceContentRepository ?? serviceContentRepository;
   const heading = ensureHeadingLength(
     input.title.replace(/^SG Solutions \| /, "").replace(/ \| SG Solutions$/, ""),
     input.locale,
@@ -240,11 +84,12 @@ export function createPageExperience(input: ExperienceInput): {
     summary: ensureSummaryLength(input.description, input.locale),
   };
 
-  if (input.kind === "service") {
+  if (input.kind === "service" && isServiceContentRoute(input.routeKey)) {
+    const serviceContent = contentRepository.get(input.routeKey, input.locale);
     return {
-      hero,
-      sections: createServiceSections(input.routeKey as keyof typeof serviceDetails, input.locale),
-      publicationState: "published",
+      hero: serviceContent.hero,
+      sections: createServiceSections(input.routeKey, input.locale, contentRepository),
+      publicationState: "review-required",
     };
   }
 
@@ -259,96 +104,112 @@ export function createPageExperience(input: ExperienceInput): {
   return {
     hero,
     sections: createGeneralSections(input.routeKey, input.locale),
-    publicationState: "published",
+    publicationState: REMEDIATED_GENERAL_ROUTES.has(input.routeKey)
+      ? "review-required"
+      : "published",
   };
 }
 
 function createServiceSections(
-  routeKey: keyof typeof serviceDetails,
+  routeKey: ServiceRoute,
   locale: Locale,
+  contentRepository: ServiceContentRepository,
 ): PublicSection[] {
-  const copy = localized[locale].serviceSection;
-  const details = serviceDetails[routeKey][locale];
-  const isSpanish = locale === "es";
-  const helpTitles = isSpanish
-    ? ["Entender", "Organizar", "Avanzar"]
-    : ["Understand", "Organize", "Move forward"];
+  const content = contentRepository.get(routeKey, locale);
+  const labels =
+    locale === "es"
+      ? {
+          audience: "Este servicio puede ser para ti si...",
+          problems: "Situaciones que podemos ayudarte a organizar",
+          overview: "Qué es este servicio",
+          actions: "Qué hace SG Solutions",
+          process: "Cómo funciona el proceso",
+          preparation: "Qué conviene preparar",
+          expectations: "Qué puedes esperar",
+          limitations: "Qué no hace SG Solutions",
+          faq: "Preguntas frecuentes",
+          related: "Servicios relacionados",
+          resources: "Recursos relacionados",
+          disclosures: "Divulgaciones importantes",
+        }
+      : {
+          audience: "This service may be right for you if...",
+          problems: "Situations we can help you organize",
+          overview: "What this service is",
+          actions: "What SG Solutions does",
+          process: "How the process works",
+          preparation: "What to prepare",
+          expectations: "What you can expect",
+          limitations: "What SG Solutions does not do",
+          faq: "Frequently asked questions",
+          related: "Related services",
+          resources: "Related resources",
+          disclosures: "Important disclosures",
+        };
   return [
+    { id: "audience", title: labels.audience, variant: "cards", items: content.audience },
+    { id: "problems", title: labels.problems, variant: "cards", items: content.problems },
+    { id: "overview", title: labels.overview, variant: "prose", items: content.overview },
+    { id: "what-we-do", title: labels.actions, variant: "cards", items: content.whatWeDo },
+    { id: "process", title: labels.process, variant: "steps", items: content.process },
     {
-      id: "help",
-      title: copy.help,
-      intro: copy.helpIntro,
+      id: "preparation",
+      title: labels.preparation,
+      variant: "checklist",
+      items: content.preparation,
+    },
+    {
+      id: "expectations",
+      title: labels.expectations,
       variant: "cards",
-      items: details.helps.map((body, index) => ({
-        title: helpTitles[index] ?? helpTitles[0] ?? "Clarity",
+      items: content.expectations,
+    },
+    {
+      id: "limitations",
+      title: labels.limitations,
+      variant: "feature",
+      items: content.limitations,
+    },
+    {
+      id: "faq",
+      title: labels.faq,
+      variant: "faq",
+      items: content.faq.map(({ question, answer }) => ({ title: question, body: answer })),
+    },
+    {
+      id: "related-services",
+      title: labels.related,
+      variant: "cards",
+      items: content.relatedServices.map(({ title, description, href }) => ({
+        title,
+        body: description,
+        href,
+      })),
+    },
+    {
+      id: "related-resources",
+      title: labels.resources,
+      variant: "cards",
+      items: content.relatedResources.map(({ title, description, href }) => ({
+        title,
+        body: description,
+        href,
+      })),
+    },
+    {
+      id: "disclosures",
+      title: labels.disclosures,
+      variant: "feature",
+      items: content.disclosures.map((body, index) => ({
+        title: locale === "es" ? `Divulgación ${index + 1}` : `Disclosure ${index + 1}`,
         body,
       })),
     },
-    {
-      id: "process",
-      title: copy.process,
-      variant: "steps",
-      items: isSpanish
-        ? [
-            {
-              title: "Cuéntanos tu objetivo",
-              body: "Comenzamos con contexto general y sin pedir datos sensibles en público.",
-            },
-            {
-              title: "Revisamos el alcance",
-              body: "Aclaramos qué puede cubrir el servicio y qué requiere otro profesional.",
-            },
-            {
-              title: "Organizamos el plan",
-              body: "Definimos información, documentos y próximos pasos visibles.",
-            },
-            {
-              title: "Damos seguimiento",
-              body: "Las decisiones importantes permanecen bajo revisión humana.",
-            },
-          ]
-        : [
-            {
-              title: "Tell us your goal",
-              body: "We start with general context and do not request sensitive data in public.",
-            },
-            {
-              title: "Review the scope",
-              body: "We clarify what the service may cover and what requires another professional.",
-            },
-            {
-              title: "Organize the plan",
-              body: "We define information, documents and visible next steps.",
-            },
-            { title: "Follow through", body: "Important decisions remain under human review." },
-          ],
-    },
-    {
-      id: "prepare",
-      title: copy.prepare,
-      variant: "checklist",
-      items: details.prepare.map((title) => ({
-        title,
-        body: isSpanish
-          ? "Compártelo únicamente mediante el canal seguro indicado durante tu proceso."
-          : "Share it only through the secure channel identified during your process.",
-      })),
-    },
-    {
-      id: "limits",
-      title: copy.limits,
-      variant: "feature",
-      items: [
-        {
-          title: isSpanish ? "Decisiones informadas" : "Informed decisions",
-          body: copy.limitsBody,
-        },
-      ],
-    },
   ];
 }
-
 function createGeneralSections(routeKey: RouteKey, locale: Locale): PublicSection[] {
+  const approvedContent = getGeneralPageSections(routeKey, locale);
+  if (approvedContent) return approvedContent;
   const isSpanish = locale === "es";
   if (routeKey === "home") return createHomeSections(locale);
   if (routeKey === "services") return createServicesSections(locale);
@@ -778,12 +639,18 @@ function createChatSections(locale: Locale): PublicSection[] {
       items: isSpanish
         ? [
             { title: "Objetivo principal", body: "Qué quieres lograr en el corto plazo." },
-            { title: "Área de urgencia", body: "Por ejemplo: aprobación, orden fiscal, apertura o financiamiento." },
+            {
+              title: "Área de urgencia",
+              body: "Por ejemplo: aprobación, orden fiscal, apertura o financiamiento.",
+            },
             { title: "Disponibilidad", body: "Plazo esperado, país y contexto general." },
           ]
         : [
             { title: "Main goal", body: "What you want to achieve in the short term." },
-            { title: "Priority area", body: "Example: approval, tax organization, setup, or funding." },
+            {
+              title: "Priority area",
+              body: "Example: approval, tax organization, setup, or funding.",
+            },
             { title: "Availability", body: "Expected timeline, country, and general context." },
           ],
     },
@@ -968,13 +835,22 @@ function createWhatsAppSections(locale: Locale): PublicSection[] {
       items: isSpanish
         ? [
             { title: "Agendar", body: "Apertura de primera interacción y orientación inicial." },
-            { title: "Preguntas frecuentes", body: "Dudas iniciales sobre crédito, taxes, negocio o vivienda." },
-            { title: "Recordatorios", body: "Estado general y próximos pasos, sin tratar información sensible aquí." },
+            {
+              title: "Preguntas frecuentes",
+              body: "Dudas iniciales sobre crédito, taxes, negocio o vivienda.",
+            },
+            {
+              title: "Recordatorios",
+              body: "Estado general y próximos pasos, sin tratar información sensible aquí.",
+            },
           ]
         : [
             { title: "Schedule", body: "Opening interaction and initial orientation." },
             { title: "FAQ", body: "Basic questions on credit, taxes, business, or home buying." },
-            { title: "Reminders", body: "General status and next steps, without sensitive information handling here." },
+            {
+              title: "Reminders",
+              body: "General status and next steps, without sensitive information handling here.",
+            },
           ],
     },
     {
@@ -1092,7 +968,10 @@ function createPhoneAgentSections(locale: Locale): PublicSection[] {
       variant: "steps",
       items: isSpanish
         ? [
-            { title: "1) Identificación", body: "Se confirma el contexto y se clasifica el motivo." },
+            {
+              title: "1) Identificación",
+              body: "Se confirma el contexto y se clasifica el motivo.",
+            },
             {
               title: "2) Toma de mensajes",
               body: "Si no hay disponibilidad, se captura un mensaje y resumen para seguimiento.",
@@ -1116,7 +995,10 @@ function createPhoneAgentSections(locale: Locale): PublicSection[] {
               title: "2) Take messages",
               body: "If unavailable, a message and summary are recorded for follow-up.",
             },
-            { title: "3) Schedule", body: "Availability is checked and appointment is offered when possible." },
+            {
+              title: "3) Schedule",
+              body: "Availability is checked and appointment is offered when possible.",
+            },
             {
               title: "4) Escalate",
               body: "Cases requiring review are transferred to a human; no complex transactions are run.",
@@ -1133,16 +1015,37 @@ function createPhoneAgentSections(locale: Locale): PublicSection[] {
       variant: "checklist",
       items: isSpanish
         ? [
-            { title: "Crear leads", body: "Registra información de contacto inicial para seguimiento." },
-            { title: "Motivo de contacto", body: "Captura la necesidad principal de forma breve y útil." },
-            { title: "Consultar agenda", body: "Permite informar disponibilidad sin exponer reglas internas." },
-            { title: "Notificar estados", body: "Entrega estado general posterior a validar identidad." },
+            {
+              title: "Crear leads",
+              body: "Registra información de contacto inicial para seguimiento.",
+            },
+            {
+              title: "Motivo de contacto",
+              body: "Captura la necesidad principal de forma breve y útil.",
+            },
+            {
+              title: "Consultar agenda",
+              body: "Permite informar disponibilidad sin exponer reglas internas.",
+            },
+            {
+              title: "Notificar estados",
+              body: "Entrega estado general posterior a validar identidad.",
+            },
           ]
         : [
             { title: "Create leads", body: "Captures initial contact details for follow-up." },
-            { title: "Capture intent", body: "Records the core reason for the call in a concise format." },
-            { title: "Check schedule", body: "Can share availability without exposing internal rules." },
-            { title: "Share status", body: "Provides general status updates after identity validation." },
+            {
+              title: "Capture intent",
+              body: "Records the core reason for the call in a concise format.",
+            },
+            {
+              title: "Check schedule",
+              body: "Can share availability without exposing internal rules.",
+            },
+            {
+              title: "Share status",
+              body: "Provides general status updates after identity validation.",
+            },
           ],
     },
     {
@@ -1175,8 +1078,7 @@ function createPhoneAgentSections(locale: Locale): PublicSection[] {
             },
             {
               title: "Can I leave a message?",
-              body:
-                "Yes. The system can store a message, intent, and summary for follow-up through a secure channel.",
+              body: "Yes. The system can store a message, intent, and summary for follow-up through a secure channel.",
             },
           ],
     },
@@ -1269,7 +1171,10 @@ function createPublicFormsSections(locale: Locale): PublicSection[] {
       variant: "checklist",
       items: isSpanish
         ? [
-            { title: "Validación de formato", body: "Números y correos verificables antes de avanzar." },
+            {
+              title: "Validación de formato",
+              body: "Números y correos verificables antes de avanzar.",
+            },
             {
               title: "Spam y abusos",
               body: "Filtros y reglas para proteger el canal y evitar entradas inválidas.",
@@ -1369,7 +1274,10 @@ function createPortalAuthSections(locale: Locale): PublicSection[] {
       variant: "steps",
       items: isSpanish
         ? [
-            { title: "1) Creación o ingreso", body: "Se inicia con una identidad de cliente verificada." },
+            {
+              title: "1) Creación o ingreso",
+              body: "Se inicia con una identidad de cliente verificada.",
+            },
             {
               title: "2) Sesiones activas",
               body: "Se registra sesión y dispositivos para continuidad controlada.",
@@ -1385,8 +1293,14 @@ function createPortalAuthSections(locale: Locale): PublicSection[] {
           ]
         : [
             { title: "1) Sign in or create", body: "Starts with a verified client identity." },
-            { title: "2) Active sessions", body: "Session and devices are tracked for controlled continuity." },
-            { title: "3) Client profile", body: "Language and non-sensitive settings are available to personalize experience." },
+            {
+              title: "2) Active sessions",
+              body: "Session and devices are tracked for controlled continuity.",
+            },
+            {
+              title: "3) Client profile",
+              body: "Language and non-sensitive settings are available to personalize experience.",
+            },
             {
               title: "4) Progressive security",
               body: "MFA and extra checks are enabled only for sensitive actions.",
@@ -1564,7 +1478,10 @@ function createMyServicesSections(locale: Locale): PublicSection[] {
             },
           ]
         : [
-            { title: "No automatic filing", body: "Important decisions remain under human review." },
+            {
+              title: "No automatic filing",
+              body: "Important decisions remain under human review.",
+            },
             {
               title: "Minimum exposure",
               body: "No sensitive details are shown until the secure flow is active.",
@@ -1585,8 +1502,14 @@ function createProcessStatusSections(locale: Locale): PublicSection[] {
       items: isSpanish
         ? [
             { title: "intake iniciado", body: "La solicitud entró y fue clasificada." },
-            { title: "información incompleta", body: "Esperamos datos o documentos no sensibles para continuar." },
-            { title: "pago pendiente", body: "No avanza a autorización sin confirmar flujo financiero." },
+            {
+              title: "información incompleta",
+              body: "Esperamos datos o documentos no sensibles para continuar.",
+            },
+            {
+              title: "pago pendiente",
+              body: "No avanza a autorización sin confirmar flujo financiero.",
+            },
           ]
         : [
             { title: "intake started", body: "Request arrived and was classified." },
@@ -1594,7 +1517,10 @@ function createProcessStatusSections(locale: Locale): PublicSection[] {
               title: "information incomplete",
               body: "Awaiting non-sensitive details or follow-up to continue.",
             },
-            { title: "payment pending", body: "Does not move to authorization until flow is confirmed." },
+            {
+              title: "payment pending",
+              body: "Does not move to authorization until flow is confirmed.",
+            },
           ],
     },
     {
@@ -1605,7 +1531,10 @@ function createProcessStatusSections(locale: Locale): PublicSection[] {
         ? [
             { title: "pago confirmado", body: "Condición habilitante para continuar en el flujo." },
             { title: "pendiente de revisión", body: "Revisión humana activa antes de avanzar." },
-            { title: "autorizado para comenzar", body: "Listo para iniciar el trabajo correspondiente." },
+            {
+              title: "autorizado para comenzar",
+              body: "Listo para iniciar el trabajo correspondiente.",
+            },
             {
               title: "en progreso / esperando respuesta",
               body: "Progreso operativo con requerimientos de partes internas o externas.",
@@ -1703,156 +1632,158 @@ function createHelpCenterSections(locale: Locale): PublicSection[] {
               href: "/en/faq/",
             },
           ],
-  },
-  {
-    id: "help-search",
-    title: isSpanish ? "Buscar dentro de este centro" : "Search inside this center",
-    variant: "feature",
-    items: isSpanish
-      ? [
-          {
-            title: "Preguntas rápidas por tema",
-            body: "Por ahora usa la navegación por secciones para filtrar dudas por servicio o tipo de proceso.",
-          },
-          {
-            title: "Búsqueda IA (previa fase)",
-            body: "Está planificada para conectar después, una vez tengamos el sistema de recuperación activo.",
-          },
-        ]
-      : [
-          {
-            title: "Quick topic search",
-            body: "Use section-based navigation for now to narrow questions by service or process type.",
-          },
-          {
-            title: "AI search (upcoming)",
-            body: "Planned for the next phase, after the retrieval system is available.",
-          },
-        ],
-  },
-  {
-    id: "help-knowledge",
-    title: isSpanish ? "Artículos y guías" : "Articles and guides",
-    variant: "cards",
-    items: isSpanish
-      ? [
-          {
-            title: "Guía inicial de evaluación",
-            body: "Cómo preparar la primera conversación sin prisa y sin enviar datos sensibles.",
-            href: "/centro-de-ayuda/?recurso=guia-evaluacion",
-          },
-          {
-            title: "Checklist de crédito antes de avanzar",
-            body: "Qué revisar primero en reporte, gastos y cronogramas para ganar claridad.",
-            href: "/centro-de-ayuda/?recurso=checklist-credito",
-          },
-          {
-            title: "Checklist tributaria básica",
-            body: "Cómo organizar ingresos y documentos para una revisión inicial ordenada.",
-            href: "/centro-de-ayuda/?recurso=checklist-taxes",
-          },
-          {
-            title: "Guía para iniciar negocio",
-            body: "Conoce el orden recomendado entre formación, compliance y continuidad operativa.",
-            href: "/centro-de-ayuda/?recurso=guia-negocio",
-          },
-        ]
-      : [
-          {
-            title: "Initial evaluation guide",
-            body: "How to prepare a first conversation without sharing sensitive data.",
-            href: "/en/help-center/?resource=initial-evaluation-guide",
-          },
-          {
-            title: "Credit readiness checklist",
-            body: "What to review first in reports, spending and timeline to get clearer next steps.",
-            href: "/en/help-center/?resource=credit-checklist",
-          },
-          {
-            title: "Basic tax checklist",
-            body: "How to organize income and documents for an orderly first review.",
-            href: "/en/help-center/?resource=tax-checklist",
-          },
-          {
-            title: "Business setup guide",
-            body: "Understand the recommended sequence between formation, compliance and operations.",
-            href: "/en/help-center/?resource=business-guide",
-          },
-        ],
-  },
-  {
-    id: "help-tutorials",
-    title: isSpanish ? "Tutoriales y videos" : "Tutorials and videos",
-    variant: "cards",
-    items: isSpanish
-      ? [
-          {
-            title: "Qué esperar en una primera evaluación",
-            body: "Video corto sobre alcance, límites y próximos pasos de la conversación inicial.",
-          },
-          {
-            title: "Cómo organizar documentos en 5 pasos",
-            body: "Guía visual para evitar recolección incompleta y mantener historial ordenado.",
-          },
-          {
-            title: "Checklist de compra de vivienda",
-            body: "Introducción a presupuesto, crédito y documentación para conversaciones con prestamistas.",
-          },
-        ]
-      : [
-          {
-            title: "What to expect in the first evaluation",
-            body: "Short walkthrough on scope, limits and clear next steps for the initial consult.",
-          },
-          {
-            title: "How to organize documents in 5 steps",
-            body: "Visual guide to avoid incomplete collection and keep an orderly history.",
-          },
-          {
-            title: "Home-buying checklist",
-            body: "A quick intro to budget, credit and documentation before lender conversations.",
-          },
-        ],
-  },
-  {
-    id: "help-tools",
-    title: isSpanish ? "Herramientas de apoyo" : "Support tools",
-    variant: "checklist",
-    items: isSpanish
-      ? [
-          {
-            title: "Calculadora inicial (en desarrollo)",
-            body: "Comparará variables de situación para sugerir qué tipo de asesoría pedir en una segunda fase.",
-          },
-          {
-            title: "Asistente conversacional (en desarrollo)",
-            body: "Atiende preguntas de contexto con respuestas educativas y límites claros de alcance.",
-          },
-          {
-            title: "Búsqueda semántica (en desarrollo)",
-            body: "Se habilitará cuando el inventario de contenidos tenga metadatos y estado de publicación.",
-          },
-        ]
-      : [
-          {
-            title: "Starter calculator (in development)",
-            body: "Will compare your inputs to suggest the most relevant intake path in a future phase.",
-          },
-          {
-            title: "Conversational assistant (in development)",
-            body: "Will answer educational questions with clear scope boundaries and safe defaults.",
-          },
-          {
-            title: "Semantic search (in development)",
-            body: "Will activate once the content inventory has publishing metadata and states.",
-          },
-        ],
-  },
-  {
-    id: "help-questions",
-    title: isSpanish ? "Preguntas frecuentes de contexto" : "Contextual frequently asked questions",
-    variant: "faq",
-    items: isSpanish
+    },
+    {
+      id: "help-search",
+      title: isSpanish ? "Buscar dentro de este centro" : "Search inside this center",
+      variant: "feature",
+      items: isSpanish
+        ? [
+            {
+              title: "Preguntas rápidas por tema",
+              body: "Por ahora usa la navegación por secciones para filtrar dudas por servicio o tipo de proceso.",
+            },
+            {
+              title: "Búsqueda IA (previa fase)",
+              body: "Está planificada para conectar después, una vez tengamos el sistema de recuperación activo.",
+            },
+          ]
+        : [
+            {
+              title: "Quick topic search",
+              body: "Use section-based navigation for now to narrow questions by service or process type.",
+            },
+            {
+              title: "AI search (upcoming)",
+              body: "Planned for the next phase, after the retrieval system is available.",
+            },
+          ],
+    },
+    {
+      id: "help-knowledge",
+      title: isSpanish ? "Artículos y guías" : "Articles and guides",
+      variant: "cards",
+      items: isSpanish
+        ? [
+            {
+              title: "Guía inicial de evaluación",
+              body: "Cómo preparar la primera conversación sin prisa y sin enviar datos sensibles.",
+              href: "/centro-de-ayuda/?recurso=guia-evaluacion",
+            },
+            {
+              title: "Checklist de crédito antes de avanzar",
+              body: "Qué revisar primero en reporte, gastos y cronogramas para ganar claridad.",
+              href: "/centro-de-ayuda/?recurso=checklist-credito",
+            },
+            {
+              title: "Checklist tributaria básica",
+              body: "Cómo organizar ingresos y documentos para una revisión inicial ordenada.",
+              href: "/centro-de-ayuda/?recurso=checklist-taxes",
+            },
+            {
+              title: "Guía para iniciar negocio",
+              body: "Conoce el orden recomendado entre formación, compliance y continuidad operativa.",
+              href: "/centro-de-ayuda/?recurso=guia-negocio",
+            },
+          ]
+        : [
+            {
+              title: "Initial evaluation guide",
+              body: "How to prepare a first conversation without sharing sensitive data.",
+              href: "/en/help-center/?resource=initial-evaluation-guide",
+            },
+            {
+              title: "Credit readiness checklist",
+              body: "What to review first in reports, spending and timeline to get clearer next steps.",
+              href: "/en/help-center/?resource=credit-checklist",
+            },
+            {
+              title: "Basic tax checklist",
+              body: "How to organize income and documents for an orderly first review.",
+              href: "/en/help-center/?resource=tax-checklist",
+            },
+            {
+              title: "Business setup guide",
+              body: "Understand the recommended sequence between formation, compliance and operations.",
+              href: "/en/help-center/?resource=business-guide",
+            },
+          ],
+    },
+    {
+      id: "help-tutorials",
+      title: isSpanish ? "Tutoriales y videos" : "Tutorials and videos",
+      variant: "cards",
+      items: isSpanish
+        ? [
+            {
+              title: "Qué esperar en una primera evaluación",
+              body: "Video corto sobre alcance, límites y próximos pasos de la conversación inicial.",
+            },
+            {
+              title: "Cómo organizar documentos en 5 pasos",
+              body: "Guía visual para evitar recolección incompleta y mantener historial ordenado.",
+            },
+            {
+              title: "Checklist de compra de vivienda",
+              body: "Introducción a presupuesto, crédito y documentación para conversaciones con prestamistas.",
+            },
+          ]
+        : [
+            {
+              title: "What to expect in the first evaluation",
+              body: "Short walkthrough on scope, limits and clear next steps for the initial consult.",
+            },
+            {
+              title: "How to organize documents in 5 steps",
+              body: "Visual guide to avoid incomplete collection and keep an orderly history.",
+            },
+            {
+              title: "Home-buying checklist",
+              body: "A quick intro to budget, credit and documentation before lender conversations.",
+            },
+          ],
+    },
+    {
+      id: "help-tools",
+      title: isSpanish ? "Herramientas de apoyo" : "Support tools",
+      variant: "checklist",
+      items: isSpanish
+        ? [
+            {
+              title: "Calculadora inicial (en desarrollo)",
+              body: "Comparará variables de situación para sugerir qué tipo de asesoría pedir en una segunda fase.",
+            },
+            {
+              title: "Asistente conversacional (en desarrollo)",
+              body: "Atiende preguntas de contexto con respuestas educativas y límites claros de alcance.",
+            },
+            {
+              title: "Búsqueda semántica (en desarrollo)",
+              body: "Se habilitará cuando el inventario de contenidos tenga metadatos y estado de publicación.",
+            },
+          ]
+        : [
+            {
+              title: "Starter calculator (in development)",
+              body: "Will compare your inputs to suggest the most relevant intake path in a future phase.",
+            },
+            {
+              title: "Conversational assistant (in development)",
+              body: "Will answer educational questions with clear scope boundaries and safe defaults.",
+            },
+            {
+              title: "Semantic search (in development)",
+              body: "Will activate once the content inventory has publishing metadata and states.",
+            },
+          ],
+    },
+    {
+      id: "help-questions",
+      title: isSpanish
+        ? "Preguntas frecuentes de contexto"
+        : "Contextual frequently asked questions",
+      variant: "faq",
+      items: isSpanish
         ? [
             {
               title: "¿Qué necesito para pedir una evaluación?",
@@ -1874,13 +1805,11 @@ function createHelpCenterSections(locale: Locale): PublicSection[] {
             },
             {
               title: "How much does evaluation cost?",
-              body:
-                "Cost is scoped by service needs and always explained before sensitive documents are requested.",
+              body: "Cost is scoped by service needs and always explained before sensitive documents are requested.",
             },
             {
               title: "When should I proceed?",
-              body:
-                "When you have a clear target and a starter document list to organize the next steps.",
+              body: "When you have a clear target and a starter document list to organize the next steps.",
             },
           ],
     },
@@ -1967,9 +1896,7 @@ function createAcademySections(locale: Locale): PublicSection[] {
     },
     {
       id: "academy-updates",
-      title: isSpanish
-        ? "Actualización y revisión continua"
-        : "Continuous update and review",
+      title: isSpanish ? "Actualización y revisión continua" : "Continuous update and review",
       variant: "prose",
       items: [
         {
@@ -2005,19 +1932,19 @@ function createFaqSections(locale: Locale): PublicSection[] {
               body: "No. Los documentos sensibles deben utilizar el canal privado que se indique durante el proceso.",
             },
             {
-            title: "¿SG Solutions garantiza resultados?",
-            body: "No. Los resultados y decisiones dependen de información, terceros y condiciones aplicables.",
-          },
-          {
-            title: "¿El centro de ayuda funciona en español e inglés?",
-            body: "Sí. Cada bloque principal tiene versión bilingüe y se mantiene en paralelo.",
-          },
-          {
-            title: "¿Habrá buscador y videos aquí mismo?",
-            body: "Sí, están previstos para la siguiente fase dentro del alcance del módulo de experiencia pública.",
-          },
-        ]
-      : [
+              title: "¿SG Solutions garantiza resultados?",
+              body: "No. Los resultados y decisiones dependen de información, terceros y condiciones aplicables.",
+            },
+            {
+              title: "¿El centro de ayuda funciona en español e inglés?",
+              body: "Sí. Cada bloque principal tiene versión bilingüe y se mantiene en paralelo.",
+            },
+            {
+              title: "¿Habrá buscador y videos aquí mismo?",
+              body: "Sí, están previstos para la siguiente fase dentro del alcance del módulo de experiencia pública.",
+            },
+          ]
+        : [
             {
               title: "Do I need to create an account first?",
               body: "No. The commercial process starts with an evaluation or quote; an account follows when appropriate.",
@@ -2031,20 +1958,20 @@ function createFaqSections(locale: Locale): PublicSection[] {
               body: "No. Sensitive documents must use the private channel identified during the process.",
             },
             {
-            title: "Does SG Solutions guarantee results?",
-            body: "No. Results and decisions depend on information, third parties and applicable conditions.",
-          },
-          {
-            title: "Is the help center bilingual?",
-            body: "Yes. Every major help block is maintained in parallel in Spanish and English.",
-          },
-          {
-            title: "Will search and videos be available here?",
-            body: "Yes, they are planned for the next phase within the public experience module scope.",
-          },
-        ],
-  },
-  createNextStepSection(locale),
+              title: "Does SG Solutions guarantee results?",
+              body: "No. Results and decisions depend on information, third parties and applicable conditions.",
+            },
+            {
+              title: "Is the help center bilingual?",
+              body: "Yes. Every major help block is maintained in parallel in Spanish and English.",
+            },
+            {
+              title: "Will search and videos be available here?",
+              body: "Yes, they are planned for the next phase within the public experience module scope.",
+            },
+          ],
+    },
+    createNextStepSection(locale),
   ];
 }
 

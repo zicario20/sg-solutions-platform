@@ -81,3 +81,9 @@ the production domain and real network conditions before release acceptance.
 - Final legal/privacy/disclosure approval.
 - Any prices, testimonials, credentials or partner marks.
 - Optional vector, horizontal, reversed, monochrome and favicon brand variants.
+
+## Content remediation addendum — 2026-08-23
+
+UI/UX Pro Max was applied to the long-form service experience without changing the approved identity. The review prioritized accessible content hierarchy, no-JavaScript navigation, 44px targets, reduced motion, readable cards, responsive reflow, visible limitations, and service-specific calls to action.
+
+The first full-page capture exposed large intrinsic blank regions caused by `content-visibility: auto`. The optimization was disabled only for service pages with in-page navigation. A second desktop/mobile capture confirmed that all substantive sections render continuously without horizontal overflow. Automated browser evidence: 62/62 WWW E2E tests passed, including WCAG A/AA checks on representative routes, 320px reflow, keyboard focus, reduced motion, and touch targets.

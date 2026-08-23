@@ -1,0 +1,22 @@
+---
+import type { Locale, PublicSection } from "../domain/public-site";
+
+interface Props {
+  locale: Locale;
+  sections: PublicSection[];
+}
+
+const { locale, sections } = Astro.props;
+const label = locale === "es" ? "En esta página" : "On this page";
+---
+
+<nav class="service-jump-nav" aria-label={label}>
+  <div class="site-container service-jump-nav__inner">
+    <strong>{label}</strong>
+    <ul>
+      {sections.filter((section) => section.id !== "disclosures").map((section) => (
+        <li><a href={`#${section.id}`}>{section.title}</a></li>
+      ))}
+    </ul>
+  </div>
+</nav>

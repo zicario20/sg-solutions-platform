@@ -11,7 +11,9 @@ export type RouteKey =
   | "service-business-formation"
   | "service-ein"
   | "service-business-compliance"
+  | "service-business-credit"
   | "service-business-funding"
+  | "service-loan-preparation"
   | "service-home-buying"
   | "marketplace"
   | "pricing"
@@ -81,6 +83,53 @@ export interface PageHero {
   summary: string;
 }
 
+export interface ContentItem {
+  title: string;
+  body: string;
+}
+
+export interface ProcessStep extends ContentItem {}
+
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface RelatedLink {
+  title: string;
+  description: string;
+  href: string;
+}
+
+export interface ServiceSeoMetadata {
+  searchIntent: string;
+  title: string;
+  description: string;
+}
+
+export interface ServicePageContent {
+  serviceId: Extract<RouteKey, `service-${string}`> | "marketplace";
+  locale: Locale;
+  hero: PageHero & {
+    primaryCta: string;
+    secondaryCta: string;
+  };
+  audience: ContentItem[];
+  problems: ContentItem[];
+  overview: ContentItem[];
+  whatWeDo: ContentItem[];
+  process: ProcessStep[];
+  preparation: ContentItem[];
+  expectations: ContentItem[];
+  limitations: ContentItem[];
+  faq: FaqItem[];
+  relatedServices: RelatedLink[];
+  relatedResources: RelatedLink[];
+  disclosures: string[];
+  sourceRefs: string[];
+  seo: ServiceSeoMetadata;
+}
+
 export interface PublicService {
   id:
     | Exclude<
@@ -115,4 +164,5 @@ export interface PublicPage {
   hero: PageHero;
   sections: PublicSection[];
   publicationState: PublicationState;
+  serviceContent?: ServicePageContent;
 }
