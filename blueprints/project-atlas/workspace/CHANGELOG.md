@@ -270,3 +270,6 @@
 - Added M011 secure document portal core: typed document contracts, fail-closed quarantine lifecycle,
   immutable versions, legal-hold soft-delete protection, server-only metadata schema, bilingual
   client document surface and provider-disabled private API posture.
+
+- M013 adds the internal appointment core, conflict-safe holds, resource authorization and server-only
+  schema. Calendar, notifications, payments and public booking remain unactivated.

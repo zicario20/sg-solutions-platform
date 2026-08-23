@@ -21,6 +21,7 @@ import {
 
 export * from "./schema/documents.ts";
 export * from "./schema/secure-messaging.ts";
+export * from "./schema/appointments.ts";
 
 const gatewayAccess = (name: string) =>
   pgPolicy(`${name}_server_gateway_only`, {

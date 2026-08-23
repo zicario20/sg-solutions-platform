@@ -140,6 +140,8 @@ importers:
         specifier: 4.3.3
         version: 4.3.3
 
+  packages/appointments: {}
+
   packages/auth:
     dependencies:
       '@supabase/supabase-js':

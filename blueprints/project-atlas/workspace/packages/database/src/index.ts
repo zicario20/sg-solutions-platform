@@ -22,6 +22,7 @@ export * from "./schema/auth.ts";
 export * from "./schema/client-services.ts";
 export * from "./schema/documents.ts";
 export * from "./schema/secure-messaging.ts";
+export * from "./schema/appointments.ts";
 export * from "./schema.ts";
 export * from "./voice-command-repository.ts";
 export * from "./voice-lifecycle-repository.ts";

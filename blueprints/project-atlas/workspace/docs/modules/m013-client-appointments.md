@@ -1536,3 +1536,12 @@ counts, provider connection status, appointment types or hidden fields.
 
 Approval of this PRD, ADR 017 and any `APT-*` policy does not authorize product implementation or
 external activation. A separate Product Owner `GENERATE`/Build gate remains mandatory.
+
+## 2026-08-23 implementation evidence
+
+M013 now provides the internal appointment-type, availability-window, hold and booking core; UTC
+appointments retain named IANA client/staff zones, buffers, bounded horizons, idempotency, client
+resource isolation and cancellation. Drizzle defines server-only appointment, hold and audit tables.
+The portal route is integrated but intentionally does not invent availability when its durable runtime
+is not configured. Google Calendar, notifications, payments, CRM activity, public booking and staff
+operations remain provider- or owner-disabled pending their separate gates.
