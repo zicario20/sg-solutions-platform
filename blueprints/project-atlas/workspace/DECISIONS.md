@@ -689,3 +689,17 @@ M024 owns the staff calendar workspace, M026 delivery, M014 payments, M003-M006 
 and M041 concrete provider adapters. None of those future modules may replace or bypass M013's
 capacity and authorization authority. This records no provider activation, database migration,
 deployment or production operation.
+
+## Decision 044 - M014 client payments and billing completion boundary
+
+- Date: 2026-08-23
+- Status: Accepted by Product Owner in provider-disabled scope
+- Owner: Product Owner
+- Scope: M014 Client Payments and Billing
+
+M014 owns the provider-neutral financial boundary: immutable server-owned money obligations,
+financial history, signed provider-event admission, idempotency, reconciliation-ready records and
+client-safe billing projections. Payment confirmation is a financial prerequisite only and cannot
+authorize service start; human internal approval remains a distinct M021-owned fact. M042/M046 own
+catalog and pricing policy, while future provider activation, migrations, Stripe traffic, invoices,
+refunds, disputes, tax, external-payment review and production operation remain separate gates.

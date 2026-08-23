@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Provider-disabled implementation ready for Product Owner review; no external-activation gate
+- Status: Accepted by Product Owner in provider-disabled scope; no external-activation gate
 - Surface: Client Portal, with bounded Public and Admin/Backend contributions
 - Domain: Billing, service orders, payments and financial reconciliation
 - Release target: durable Release 1A foundation with compatible Release 1B extensions

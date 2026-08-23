@@ -893,3 +893,11 @@ The Product Owner accepted M013 Client Appointments at commit `73e9157` in provi
 This accepts the internal scheduling authority, client portal and documented security boundary only.
 It does not activate a database migration, Google Calendar, meeting provider, notification delivery,
 public booking, payment prerequisite, deployment or production operation.
+
+## 2026-08-23 - M014 Product Owner acceptance
+
+The Product Owner accepted M014 Client Payments and Billing at commit `b878c26` in provider-disabled
+scope. This accepts the billing contract, financial RLS schema, provider boundaries, signature and
+idempotency controls, private portal posture and activation runbook only. It does not activate a
+database migration, Stripe, prices, payment orders, invoices, refunds, disputes, provider
+credentials, deployment or production financial operation.
