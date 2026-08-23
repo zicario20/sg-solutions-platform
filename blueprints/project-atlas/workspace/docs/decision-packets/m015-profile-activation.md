@@ -57,6 +57,18 @@ direction only: it does not select a first service purpose, field inventory, KMS
 staff access or any other PFL policy value. No sensitive collection, persistence, provider or runtime
 activation is authorized until those values are separately recorded.
 
+## Recorded C1 policy baseline
+
+The Product Owner authorized Codex to finish M015 with conservative defaults on 2026-08-23. The
+first sensitive slice is `home_buying_preparation` and accepts only self-reported monthly gross
+income and recurring monthly debt in USD/monthly cadence. Submissions are immutable unverified
+proposals, stale after 30 days, and never imply eligibility, lender approval or service start.
+
+No household, organization, tax, credit-report, document, identity, provider, AI, notification,
+analytics, export or full-value reveal is enabled. The default data protector is unavailable; all
+financial submission fails closed until an approved KMS adapter, RLS migration, audit and retention
+controls are operational.
+
 ## Decisions that remain mandatory before sensitive data
 
 - PFL-004 through PFL-009: staff access, relationships, verification, conflict and freshness rules.

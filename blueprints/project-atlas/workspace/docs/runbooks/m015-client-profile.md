@@ -15,6 +15,18 @@ audit, financial, tax, credit or document records.
 Each profile can submit each allowlisted goal code once. The API rejects declared or streamed bodies
 above 2 KB before parsing them; it is not a general-purpose intake endpoint.
 
+## Package C1 home-buying financial proposals
+
+Package C1 is implemented but unavailable by default. Its sole field inventory is self-reported
+monthly gross income and recurring monthly debt in USD/monthly cadence for a preliminary DTI. The
+result is not a credit, underwriting, affordability, lender, eligibility or approval decision.
+
+The application encrypts the canonical proposal before persistence through a data-protection port;
+the runtime ships only an unavailable protector. `M015_HOME_BUYING_FINANCIAL_ENABLED` is therefore a
+documented future activation gate, not a switch that can enable collection by itself. Do not enable
+the feature until an approved KMS adapter, applied RLS migration, retention policy, audit integration
+and operational security evidence exist.
+
 ## Activation prerequisites
 
 1. Apply the reviewed database migration using the restricted `atlas_profile_gateway` role and

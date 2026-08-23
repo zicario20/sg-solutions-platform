@@ -730,3 +730,15 @@ purpose-bound sensitive-profile slice only after the applicable PFL policy value
 recorded. It does not authorize any real sensitive field, KMS key custody, retention schedule,
 staff-access matrix, relationship model, provider import, AI access, notification, analytics,
 migration, deployment or feature-flag activation.
+## Decision 048 — M015 C1 home-buying financial proposal baseline
+
+- Date: 2026-08-23
+- Authority: Product Owner
+- Status: approved provider-disabled implementation baseline
+
+The first sensitive M015 slice is limited to self-reported monthly gross income and recurring monthly
+debt in USD/monthly cadence for home_buying_preparation. Submissions are immutable, unverified
+proposals and may produce only a preliminary DTI; they never produce eligibility, underwriting,
+lender, affordability, approval or service-start results. All other sensitive M015 categories remain
+disabled. Ciphertext persistence requires an approved KMS adapter and real RLS/audit/retention
+evidence; the default runtime fails closed.

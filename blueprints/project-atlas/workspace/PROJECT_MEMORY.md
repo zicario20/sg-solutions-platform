@@ -910,3 +910,12 @@ The Product Owner approved moving from the Package B general-goals slice toward 
 approval records architectural direction only; PFL-001 through PFL-020 policy values remain required
 before sensitive data collection, persistence, provider integration, key custody, access or
 activation. No sensitive feature was enabled.
+## 2026-08-23 - M015 C1 conservative provider-disabled implementation
+
+The Product Owner authorized Codex to finish M015 without further questions. Codex recorded the C1
+home-buying financial policy: only monthly gross income and recurring monthly debt in USD/monthly
+cadence, immutable unverified proposals, no eligibility decision and 30-day freshness policy.
+Implementation added an AES-256-GCM test protector, an unavailable runtime protector, ciphertext-only
+Postgres schema/repository boundary, authenticated API contract and bilingual gated portal form.
+No KMS, migration, live data, external provider, notification, analytics, export or deployment was
+activated.

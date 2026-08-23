@@ -280,3 +280,8 @@
   personal-context-only workflow for predefined general goals, a visible notice/version receipt,
   private API/RLS persistence and client-safe Spanish/English portal UI. It collects no free text,
   financial, credit, tax, business, identity or document data.
+
+- Expanded M015 with provider-disabled C1 home-buying financial proposals: a fail-closed data
+  protector boundary, ciphertext-only PostgreSQL schema, personal-context API contract and bilingual
+  gated client form. The only allowed values are self-reported monthly gross income and recurring
+  monthly debt in USD/monthly cadence; DTI is preliminary and non-decisional.

@@ -101,3 +101,11 @@ The Product Owner approved Package C as the next architectural direction. The PF
 remain unresolved, so no sensitive field inventory, migration, KMS/encryption custody, staff access,
 relationship behavior, retention, export, provider, AI, notification, analytics or runtime
 activation is authorized.
+## M015 C1 implementation position
+
+The provider-disabled C1 home-buying financial proposal contract is implemented. It accepts only
+self-reported monthly gross income and recurring monthly debt through a ciphertext-only persistence
+boundary and returns a preliminary non-decisional DTI receipt. The UI/API remains unavailable because
+the shipped data protector is deliberately unavailable and M015_HOME_BUYING_FINANCIAL_ENABLED=false.
+No migration, KMS, real profile data, staff review, document, AI, provider, notification, analytics,
+export or deployment is active. Other sensitive M015 purposes remain disabled.
