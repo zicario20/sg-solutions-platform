@@ -903,3 +903,10 @@ database migration, Stripe, prices, payment orders, invoices, refunds, disputes,
 credentials, deployment or production financial operation.
 - 2026-08-23: Product Owner authorized M015 implementation in sequential provider-disabled scope. Added typed purpose-bound profile contracts, fail-closed authorization fences, immutable client correction proposals, deterministic preliminary DTI/ownership checks, a bilingual protected profile guidance route and focused tests. No profile data, schema, provider, KMS or consent integration was activated.
 - 2026-08-23: Product Owner approved Package B from the M015 profile activation decision packet. The authorized slice permits only an authenticated personal-profile user to submit a predefined general goal with a visible notice and reviewable state. It explicitly excludes free text, sensitive profile data, financial/credit/tax/business/identity/document fields, providers, AI, external notifications and automatic decisions. The feature remains disabled by default pending a real migration/runtime and a separate activation decision.
+
+## 2026-08-23 - M015 Package C direction
+
+The Product Owner approved moving from the Package B general-goals slice toward Package C. The
+approval records architectural direction only; PFL-001 through PFL-020 policy values remain required
+before sensitive data collection, persistence, provider integration, key custody, access or
+activation. No sensitive feature was enabled.

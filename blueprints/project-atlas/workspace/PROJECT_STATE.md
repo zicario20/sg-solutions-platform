@@ -94,3 +94,10 @@ for predefined general goals only. It records a notice version and review state,
 financial, credit, tax, business, identity, document, consent or canonical relationship data.
 No database migration, runtime activation, real client data, provider, deployment or Product Owner
 acceptance of the full M015 module is recorded.
+
+## M015 Package C direction
+
+The Product Owner approved Package C as the next architectural direction. The PFL policy values
+remain unresolved, so no sensitive field inventory, migration, KMS/encryption custody, staff access,
+relationship behavior, retention, export, provider, AI, notification, analytics or runtime
+activation is authorized.

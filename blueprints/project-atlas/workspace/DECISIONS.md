@@ -718,3 +718,15 @@ refunds, disputes, tax, external-payment review and production operation remain 
   the active M007 personal portal context.
 - It excludes personal identity, address, household, financial, credit, tax, business, document,
   provider, external notification and AI data. No submitted goal starts a service.
+
+## Decision 047 — M015 Package C direction approved; policy values pending
+
+- Date: 2026-08-23
+- Authority: Product Owner
+- Status: approved architectural direction; not a sensitive-data activation
+
+The Product Owner approved proceeding toward M015 Package C. This authorizes preparation of the
+purpose-bound sensitive-profile slice only after the applicable PFL policy values are explicitly
+recorded. It does not authorize any real sensitive field, KMS key custody, retention schedule,
+staff-access matrix, relationship model, provider import, AI access, notification, analytics,
+migration, deployment or feature-flag activation.

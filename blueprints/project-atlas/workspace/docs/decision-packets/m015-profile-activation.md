@@ -1,6 +1,6 @@
 # M015 Profile Activation Decision Packet
 
-- Status: Package B approved by Product Owner on 2026-08-23
+- Status: Package B approved; Package C direction approved, PFL policy values pending
 - Date: 2026-08-23
 - Authority: M015 PRD, ADR 019 and the Product Owner
 
@@ -51,6 +51,11 @@ Enable any personal, household, financial, tax, credit, housing or business prof
 requires the full applicable PFL set, the canonical M018/M019 relationship owners, M078 consent, M077
 audit, approved KMS custody and purpose-specific Postgres RLS. It must be approved per service
 purpose, not as a universal client-data collection flow.
+
+The Product Owner approved proceeding to Package C on 2026-08-23. This records the architectural
+direction only: it does not select a first service purpose, field inventory, KMS custody, retention,
+staff access or any other PFL policy value. No sensitive collection, persistence, provider or runtime
+activation is authorized until those values are separately recorded.
 
 ## Decisions that remain mandatory before sensitive data
 
