@@ -30,6 +30,18 @@ export const clientProfileCopy = {
     },
     unavailable: "El perfil no está habilitado en este entorno todavía.",
     retry: "Reintentar",
+    financialTitle: "Preparación financiera para comprar casa",
+    financialIntro:
+      "Comparte solo ingresos mensuales brutos y deudas mensuales recurrentes para una orientación preliminar. Esto no es una aprobación ni una recomendación de préstamo.",
+    incomeLabel: "Ingreso mensual bruto (USD)",
+    debtLabel: "Deuda mensual recurrente (USD)",
+    financialAcknowledgement:
+      "Entiendo que este cálculo es preliminar, no determina elegibilidad y quedará sujeto a revisión.",
+    financialSubmit: "Enviar información preliminar",
+    financialSubmitting: "Enviando información",
+    financialUnavailable:
+      "La preparación financiera segura no está habilitada en este entorno todavía.",
+    dtiLabel: "Relación deuda-ingreso preliminar",
     sections: [
       "Información básica y preferencias aprobadas",
       "Datos solicitados solo para un servicio autorizado",
@@ -72,6 +84,17 @@ export const clientProfileCopy = {
     },
     unavailable: "The profile is not enabled in this environment yet.",
     retry: "Retry",
+    financialTitle: "Financial preparation for home buying",
+    financialIntro:
+      "Share only monthly gross income and recurring monthly debt for preliminary guidance. This is not an approval or lending recommendation.",
+    incomeLabel: "Monthly gross income (USD)",
+    debtLabel: "Recurring monthly debt (USD)",
+    financialAcknowledgement:
+      "I understand this calculation is preliminary, does not determine eligibility, and remains subject to review.",
+    financialSubmit: "Submit preliminary information",
+    financialSubmitting: "Submitting information",
+    financialUnavailable: "Secure financial preparation is not enabled in this environment yet.",
+    dtiLabel: "Preliminary debt-to-income ratio",
     sections: [
       "Approved basic information and preferences",
       "Information requested only for an authorized service",

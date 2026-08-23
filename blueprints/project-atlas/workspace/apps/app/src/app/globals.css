@@ -1236,7 +1236,8 @@ button:hover,
   font-weight: 750;
 }
 .profile-goal-form,
-.profile-goals {
+.profile-goals,
+.profile-financial {
   display: grid;
   gap: 0.75rem;
   padding: 1.25rem;
@@ -1248,7 +1249,8 @@ button:hover,
   color: #163149;
   font-weight: 700;
 }
-.profile-goal-form select {
+.profile-goal-form select,
+.profile-goal-form input {
   min-height: 2.75rem;
   padding: 0.5rem;
   border: 1px solid #a9bfce;

@@ -17,6 +17,7 @@ export function createConfiguredProfileRuntime() {
     kind: "ready" as const,
     canonicalOrigin: dashboard.canonicalOrigin,
     dashboard,
+    homeBuyingFinancialAvailable: false,
     service: new ProfileService(new PostgresProfileRepository(database)),
   };
 }

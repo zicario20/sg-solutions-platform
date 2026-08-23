@@ -227,6 +227,7 @@ export class ProfileService {
   public async submitHomeBuyingFinancialProposal(
     actor: ProfileActor,
     proposal: HomeBuyingFinancialProposal,
+    locale: ProfileLocale = "es",
   ): Promise<HomeBuyingFinancialReceipt | undefined> {
     if (
       actor.contextType !== "personal" ||
@@ -240,7 +241,7 @@ export class ProfileService {
       proposal.monthlyRecurringDebtMinor < 0
     )
       return undefined;
-    const snapshot = await this.repository.ensureSelfServiceRoot(actor, "es");
+    const snapshot = await this.repository.ensureSelfServiceRoot(actor, locale);
     if (!authorized(actor, snapshot.root, "self_service")) return undefined;
     const encryptedPayload = await this.protector.encrypt(JSON.stringify(proposal));
     if (!encryptedPayload) return undefined;

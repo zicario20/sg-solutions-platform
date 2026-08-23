@@ -10,6 +10,10 @@ type Goal = Readonly<{
   state: keyof ReturnType<typeof copyFor>["state"];
   submittedAt: string;
 }>;
+type FinancialReceipt = Readonly<{
+  dti?: Readonly<{ kind: "available"; ratioBasisPoints: number }>;
+}>;
+const toMinor = (value: string) => Math.round(Number(value) * 100);
 export function ClientProfilePortal({
   locale,
   csrfToken,
@@ -22,11 +26,18 @@ export function ClientProfilePortal({
   const [code, setCode] = useState<Goal["code"]>("credit_organization");
   const [accepted, setAccepted] = useState(false);
   const [state, setState] = useState<"loading" | "ready" | "unavailable" | "submitting">("loading");
+  const [homeBuyingFinancialAvailable, setHomeBuyingFinancialAvailable] = useState(false);
+  const [income, setIncome] = useState("");
+  const [debt, setDebt] = useState("");
+  const [financialAccepted, setFinancialAccepted] = useState(false);
+  const [financialState, setFinancialState] = useState<"ready" | "submitting">("ready");
+  const [financialReceipt, setFinancialReceipt] = useState<FinancialReceipt>();
   useEffect(() => {
     fetch("/api/client/profile", { cache: "no-store" })
       .then(async (response) => (response.ok ? response.json() : Promise.reject()))
       .then((value) => {
         setGoals(value.goals ?? []);
+        setHomeBuyingFinancialAvailable(value.homeBuyingFinancialAvailable === true);
         setState("ready");
       })
       .catch(() => setState("unavailable"));
@@ -54,6 +65,44 @@ export function ClientProfilePortal({
       setState("ready");
     } catch {
       setState("unavailable");
+    }
+  };
+  const submitFinancial = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const monthlyGrossIncomeMinor = toMinor(income);
+    const monthlyRecurringDebtMinor = toMinor(debt);
+    if (
+      !financialAccepted ||
+      !csrfToken ||
+      !Number.isSafeInteger(monthlyGrossIncomeMinor) ||
+      monthlyGrossIncomeMinor <= 0 ||
+      !Number.isSafeInteger(monthlyRecurringDebtMinor) ||
+      monthlyRecurringDebtMinor < 0
+    )
+      return;
+    setFinancialState("submitting");
+    try {
+      const response = await fetch("/api/client/profile", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json", "x-atlas-csrf": csrfToken },
+        body: JSON.stringify({
+          action: "submit_home_buying_financial_proposal",
+          monthlyGrossIncomeMinor,
+          monthlyRecurringDebtMinor,
+          currency: "USD",
+          cadence: "monthly",
+          acknowledgementVersion: "m015-home-buying-financial-v1",
+          acknowledgementAccepted: true,
+        }),
+      });
+      if (!response.ok) throw new Error();
+      setFinancialReceipt(await response.json());
+      setFinancialAccepted(false);
+    } catch {
+      setHomeBuyingFinancialAvailable(false);
+    } finally {
+      setFinancialState("ready");
     }
   };
   return (
@@ -121,6 +170,58 @@ export function ClientProfilePortal({
             ))}
           </ul>
         )}
+      </section>
+      <section className="profile-financial" aria-labelledby="profile-financial-title">
+        <h2 id="profile-financial-title">{copy.financialTitle}</h2>
+        <p>{copy.financialIntro}</p>
+        {homeBuyingFinancialAvailable ? (
+          <form className="profile-goal-form" onSubmit={submitFinancial}>
+            <label htmlFor="profile-income">{copy.incomeLabel}</label>
+            <input
+              id="profile-income"
+              inputMode="decimal"
+              min="0.01"
+              onChange={(event) => setIncome(event.target.value)}
+              required
+              step="0.01"
+              type="number"
+              value={income}
+            />
+            <label htmlFor="profile-debt">{copy.debtLabel}</label>
+            <input
+              id="profile-debt"
+              inputMode="decimal"
+              min="0"
+              onChange={(event) => setDebt(event.target.value)}
+              required
+              step="0.01"
+              type="number"
+              value={debt}
+            />
+            <label className="profile-checkbox">
+              <input
+                checked={financialAccepted}
+                onChange={(event) => setFinancialAccepted(event.target.checked)}
+                type="checkbox"
+              />
+              {copy.financialAcknowledgement}
+            </label>
+            <button
+              className="portal-cta"
+              disabled={!financialAccepted || financialState === "submitting"}
+              type="submit"
+            >
+              {financialState === "submitting" ? copy.financialSubmitting : copy.financialSubmit}
+            </button>
+          </form>
+        ) : (
+          <p className="profile-notice">{copy.financialUnavailable}</p>
+        )}
+        {financialReceipt?.dti?.kind === "available" ? (
+          <p>
+            {copy.dtiLabel}: {(financialReceipt.dti.ratioBasisPoints / 100).toFixed(2)}%
+          </p>
+        ) : null}
       </section>
       <section aria-label={copy.title}>
         <ul className="profile-steps">

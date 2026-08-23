@@ -21,6 +21,8 @@ const headers = {
 };
 const respond = (body: unknown, status = 200) => Response.json(body, { status, headers });
 const MAX_BODY_BYTES = 2048;
+const isSafeInteger = (value: unknown): value is number =>
+  typeof value === "number" && Number.isSafeInteger(value);
 async function readBoundedJson(
   request: Request,
 ): Promise<Readonly<{ kind: "ok"; value: unknown }> | Readonly<{ kind: "invalid" | "too_large" }>> {
@@ -79,7 +81,12 @@ export async function GET(request: Request) {
   if (input.kind === "unavailable") return respond({ error: "temporarily_unavailable" }, 503);
   if (input.kind !== "authorized") return respond({ error: "not_found" }, 404);
   const result = await input.runtime.service.selfService(input.actor);
-  return result ? respond(result) : respond({ error: "not_found" }, 404);
+  return result
+    ? respond({
+        ...result,
+        homeBuyingFinancialAvailable: input.runtime.homeBuyingFinancialAvailable,
+      })
+    : respond({ error: "not_found" }, 404);
 }
 export async function POST(request: Request) {
   const input = await admission(request);
@@ -105,7 +112,38 @@ export async function POST(request: Request) {
     goalCode?: unknown;
     noticeVersion?: unknown;
     noticeAccepted?: unknown;
+    monthlyGrossIncomeMinor?: unknown;
+    monthlyRecurringDebtMinor?: unknown;
+    currency?: unknown;
+    cadence?: unknown;
+    acknowledgementVersion?: unknown;
+    acknowledgementAccepted?: unknown;
   };
+  if (value.action === "submit_home_buying_financial_proposal") {
+    if (!input.runtime.homeBuyingFinancialAvailable)
+      return respond({ error: "temporarily_unavailable" }, 503);
+    if (
+      !isSafeInteger(value.monthlyGrossIncomeMinor) ||
+      !isSafeInteger(value.monthlyRecurringDebtMinor) ||
+      value.currency !== "USD" ||
+      value.cadence !== "monthly" ||
+      value.acknowledgementVersion !== "m015-home-buying-financial-v1" ||
+      value.acknowledgementAccepted !== true
+    )
+      return respond({ error: "invalid_request" }, 400);
+    const result = await input.runtime.service.submitHomeBuyingFinancialProposal(
+      input.actor,
+      {
+        monthlyGrossIncomeMinor: value.monthlyGrossIncomeMinor,
+        monthlyRecurringDebtMinor: value.monthlyRecurringDebtMinor,
+        currency: "USD",
+        cadence: "monthly",
+        acknowledgementVersion: "m015-home-buying-financial-v1",
+      },
+      resolveDashboardLocale(undefined, process.env.ATLAS_DEFAULT_LOCALE),
+    );
+    return result ? respond(result, 201) : respond({ error: "invalid_request" }, 400);
+  }
   if (
     value.action !== "submit_goal" ||
     typeof value.goalCode !== "string" ||
