@@ -1,0 +1,4 @@
+import { verifyStripeSignature } from "@atlas/billing";
+export const dynamic="force-dynamic";export const revalidate=0;
+const headers={"cache-control":"no-store","referrer-policy":"no-referrer","x-content-type-options":"nosniff"};
+export async function POST(request:Request){if(process.env.M014_PAYMENTS_ENABLED!=="true"||!process.env.STRIPE_WEBHOOK_SECRET)return Response.json({error:"temporarily_unavailable"},{status:503,headers});const length=Number(request.headers.get("content-length"));if(Number.isFinite(length)&&length>65536)return Response.json({error:"invalid_request"},{status:413,headers});const raw=await request.text();if(raw.length>65536||!verifyStripeSignature(raw,request.headers.get("stripe-signature"),process.env.STRIPE_WEBHOOK_SECRET))return Response.json({error:"invalid_request"},{status:400,headers});return Response.json({accepted:false,reason:"billing_runtime_not_configured"},{status:503,headers})}

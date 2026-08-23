@@ -21,6 +21,7 @@ export * from "./public-forms-outbox-store.ts";
 export * from "./public-forms-repository.ts";
 export * from "./schema/appointments.ts";
 export * from "./schema/auth.ts";
+export * from "./schema/billing.ts";
 export * from "./schema/client-services.ts";
 export * from "./schema/documents.ts";
 export * from "./schema/secure-messaging.ts";

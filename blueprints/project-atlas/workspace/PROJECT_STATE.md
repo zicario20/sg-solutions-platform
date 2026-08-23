@@ -68,3 +68,13 @@ provider-neutral handoff outbox. Google Calendar, meeting, notification, payment
 staff-calendar providers remain disabled. The module is accepted by the Product Owner only in
 provider-disabled scope; it remains unmigrated, undeployed and not operational. Production
 activation still requires real RLS/migration evidence, provider-specific review and a separate gate.
+
+## M014 implementation position
+
+M014 client payments and billing has a provider-disabled foundation: typed payment-provider and
+billing-provider boundaries, integer minor-unit USD contracts, account/context fencing, idempotency,
+raw Stripe signature verification, RLS financial schema, a private bilingual payment surface and an
+inert return page. It is not migrated, deployed, operational or accepted. Prices, payment orders,
+Stripe traffic, invoices, refunds, disputes and provider credentials remain inactive pending policy,
+security review and a separate Product Owner activation gate. Payment confirmation never starts a
+service; internal human approval remains separate.
