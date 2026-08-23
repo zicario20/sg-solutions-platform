@@ -1,4 +1,5 @@
 import type {
+  HomeBuyingFinancialProposalRecord,
   ProfileActor,
   ProfileCorrection,
   ProfileGoal,
@@ -118,6 +119,27 @@ export class PostgresProfileRepository implements ProfileRepository {
     await this.client.unsafe(
       "update profile_self_service_roots set revision = revision + 1, updated_at = now() where id = $1",
       [profileId],
+    );
+  }
+  public async saveHomeBuyingFinancialProposal(
+    record: HomeBuyingFinancialProposalRecord,
+  ): Promise<void> {
+    await this.client.unsafe(
+      "insert into profile_home_buying_financial_proposals (id,profile_id,submitted_by,expected_revision,purpose,acknowledgement_version,ciphertext,encryption_algorithm,key_version,authorization_epoch,policy_epoch,submitted_at,created_at,updated_at) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,now(),now())",
+      [
+        record.proposalRef,
+        record.profileRef,
+        record.submittedBy,
+        record.expectedRevision,
+        record.purpose,
+        record.acknowledgementVersion,
+        record.encryptedPayload.ciphertext,
+        record.encryptedPayload.algorithm,
+        record.encryptedPayload.keyVersion,
+        record.authorizationEpoch,
+        record.policyEpoch,
+        record.submittedAt,
+      ],
     );
   }
   public async saveCorrection(correction: ProfileCorrection): Promise<void> {

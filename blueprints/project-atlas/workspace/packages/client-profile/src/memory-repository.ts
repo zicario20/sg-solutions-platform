@@ -1,4 +1,5 @@
 import type {
+  HomeBuyingFinancialProposalRecord,
   ProfileActor,
   ProfileCorrection,
   ProfileGoal,
@@ -9,6 +10,7 @@ import type {
 export class MemoryProfileRepository implements ProfileRepository {
   private readonly snapshots = new Map<string, ProfileSnapshot>();
   private readonly corrections = new Map<string, ProfileCorrection[]>();
+  private readonly homeBuyingFinancialProposals: HomeBuyingFinancialProposalRecord[] = [];
   public seed(snapshot: ProfileSnapshot): void {
     this.snapshots.set(snapshot.root.clientRef, snapshot);
   }
@@ -63,6 +65,11 @@ export class MemoryProfileRepository implements ProfileRepository {
       goals: [...snapshot.goals, goal],
     };
     this.snapshots.set(snapshot.root.clientRef, next);
+  }
+  public async saveHomeBuyingFinancialProposal(
+    record: HomeBuyingFinancialProposalRecord,
+  ): Promise<void> {
+    this.homeBuyingFinancialProposals.push(record);
   }
   public async saveCorrection(correction: ProfileCorrection): Promise<void> {
     const items = this.corrections.get(correction.profileRef) ?? [];

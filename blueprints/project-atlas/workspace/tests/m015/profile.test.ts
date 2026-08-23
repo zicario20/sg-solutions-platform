@@ -1,5 +1,6 @@
 import {
   calculatePreliminaryDti,
+  MemoryProfileDataProtector,
   MemoryProfileRepository,
   ProfileService,
   validBusinessOwnership,
@@ -132,5 +133,24 @@ describe("M015 purpose-bound profile foundation", () => {
         acknowledgementVersion: "m015-home-buying-financial-v1",
       }),
     ).resolves.toBeUndefined();
+  });
+  it("returns only a preliminary receipt after encrypting a home-buying proposal", async () => {
+    const protector = new MemoryProfileDataProtector();
+    const service = new ProfileService(seeded(), protector);
+    await expect(
+      service.submitHomeBuyingFinancialProposal(actor, {
+        monthlyGrossIncomeMinor: 500000,
+        monthlyRecurringDebtMinor: 150000,
+        currency: "USD",
+        cadence: "monthly",
+        acknowledgementVersion: "m015-home-buying-financial-v1",
+      }),
+    ).resolves.toMatchObject({
+      purpose: "home_buying_preparation",
+      state: "submitted",
+      preliminary: true,
+      dti: { kind: "available", ratioBasisPoints: 3000 },
+    });
+    expect(protector.payloads[0]?.ciphertext).not.toContain("500000");
   });
 });

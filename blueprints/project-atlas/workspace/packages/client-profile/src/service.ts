@@ -11,6 +11,7 @@ import type {
   PreliminaryDti,
   ProfileActor,
   ProfileCorrection,
+  ProfileDataProtector,
   ProfileGoal,
   ProfileLocale,
   ProfileProjection,
@@ -23,6 +24,7 @@ import type {
   TaxProfileDto,
 } from "./contracts.ts";
 import { SELF_SERVICE_GOAL_CODES } from "./contracts.ts";
+import { unavailableProfileDataProtector } from "./data-protection.ts";
 
 function authorized(actor: ProfileActor, root: ProfileRoot, purpose: ProfilePurpose): boolean {
   return (
@@ -65,7 +67,10 @@ function monthlyIncome(snapshot: ProfileSnapshot): {
   };
 }
 export class ProfileService {
-  public constructor(private readonly repository: ProfileRepository) {}
+  public constructor(
+    private readonly repository: ProfileRepository,
+    private readonly protector: ProfileDataProtector = unavailableProfileDataProtector,
+  ) {}
   public async basic(actor: ProfileActor): Promise<BasicClientProfileDto | undefined> {
     const snapshot = await this.repository.find(actor.clientRef, actor.contextRef);
     if (!snapshot || !authorized(actor, snapshot.root, "self_service")) return undefined;
@@ -220,10 +225,47 @@ export class ProfileService {
     return this.selfService(actor);
   }
   public async submitHomeBuyingFinancialProposal(
-    _actor: ProfileActor,
-    _proposal: HomeBuyingFinancialProposal,
+    actor: ProfileActor,
+    proposal: HomeBuyingFinancialProposal,
   ): Promise<HomeBuyingFinancialReceipt | undefined> {
-    return undefined;
+    if (
+      actor.contextType !== "personal" ||
+      !actor.allowedPurposes.includes("self_service") ||
+      proposal.currency !== "USD" ||
+      proposal.cadence !== "monthly" ||
+      proposal.acknowledgementVersion !== "m015-home-buying-financial-v1" ||
+      !Number.isSafeInteger(proposal.monthlyGrossIncomeMinor) ||
+      proposal.monthlyGrossIncomeMinor <= 0 ||
+      !Number.isSafeInteger(proposal.monthlyRecurringDebtMinor) ||
+      proposal.monthlyRecurringDebtMinor < 0
+    )
+      return undefined;
+    const snapshot = await this.repository.ensureSelfServiceRoot(actor, "es");
+    if (!authorized(actor, snapshot.root, "self_service")) return undefined;
+    const encryptedPayload = await this.protector.encrypt(JSON.stringify(proposal));
+    if (!encryptedPayload) return undefined;
+    const now = new Date().toISOString();
+    await this.repository.saveHomeBuyingFinancialProposal({
+      proposalRef: `hbfp_${randomUUID()}`,
+      profileRef: snapshot.root.profileRef,
+      submittedBy: actor.accountId,
+      expectedRevision: snapshot.root.revision,
+      purpose: "home_buying_preparation",
+      authorizationEpoch: actor.authorizationEpoch,
+      policyEpoch: actor.policyEpoch,
+      acknowledgementVersion: proposal.acknowledgementVersion,
+      encryptedPayload,
+      submittedAt: now,
+    });
+    return Object.freeze({
+      purpose: "home_buying_preparation",
+      state: "submitted",
+      preliminary: true,
+      dti: calculatePreliminaryDti(
+        proposal.monthlyRecurringDebtMinor,
+        proposal.monthlyGrossIncomeMinor,
+      ),
+    });
   }
 }
 export function calculatePreliminaryDti(

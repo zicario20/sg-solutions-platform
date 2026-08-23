@@ -220,10 +220,31 @@ export type HomeBuyingFinancialReceipt = Readonly<{
   preliminary: true;
   dti: PreliminaryDti;
 }>;
+export type EncryptedProfilePayload = Readonly<{
+  algorithm: "AES-256-GCM";
+  ciphertext: string;
+  keyVersion: string;
+}>;
+export type ProfileDataProtector = Readonly<{
+  encrypt(plaintext: string): Promise<EncryptedProfilePayload | undefined>;
+}>;
+export type HomeBuyingFinancialProposalRecord = Readonly<{
+  proposalRef: string;
+  profileRef: string;
+  submittedBy: string;
+  expectedRevision: number;
+  purpose: "home_buying_preparation";
+  authorizationEpoch: string;
+  policyEpoch: string;
+  acknowledgementVersion: "m015-home-buying-financial-v1";
+  encryptedPayload: EncryptedProfilePayload;
+  submittedAt: string;
+}>;
 export type ProfileRepository = Readonly<{
   find(clientRef: string, contextRef: string): Promise<ProfileSnapshot | undefined>;
   ensureSelfServiceRoot(actor: ProfileActor, locale: ProfileLocale): Promise<ProfileSnapshot>;
   saveGoal(goal: ProfileGoal): Promise<void>;
+  saveHomeBuyingFinancialProposal(record: HomeBuyingFinancialProposalRecord): Promise<void>;
   saveCorrection(correction: ProfileCorrection): Promise<void>;
   listCorrections(profileRef: string): Promise<readonly ProfileCorrection[]>;
 }>;

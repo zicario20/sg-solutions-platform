@@ -108,3 +108,40 @@ export const profileSelfServiceCorrections = pgTable(
     profileOnly("profile_self_service_corrections"),
   ],
 ).enableRLS();
+
+export const profileHomeBuyingFinancialProposals = pgTable(
+  "profile_home_buying_financial_proposals",
+  {
+    id: text("id").primaryKey(),
+    profileId: text("profile_id")
+      .notNull()
+      .references(() => profileSelfServiceRoots.id, { onDelete: "cascade" }),
+    submittedBy: text("submitted_by").notNull(),
+    expectedRevision: integer("expected_revision").notNull(),
+    purpose: varchar("purpose", { length: 48 }).notNull(),
+    acknowledgementVersion: varchar("acknowledgement_version", { length: 80 }).notNull(),
+    ciphertext: text("ciphertext").notNull(),
+    encryptionAlgorithm: varchar("encryption_algorithm", { length: 32 }).notNull(),
+    keyVersion: varchar("key_version", { length: 80 }).notNull(),
+    authorizationEpoch: varchar("authorization_epoch", { length: 80 }).notNull(),
+    policyEpoch: varchar("policy_epoch", { length: 80 }).notNull(),
+    submittedAt: timestamp("submitted_at", { withTimezone: true, mode: "date" }).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    index("profile_home_buying_financial_proposals_profile_idx").on(
+      table.profileId,
+      table.createdAt,
+    ),
+    check(
+      "profile_home_buying_financial_proposals_purpose",
+      sql`${table.purpose} = 'home_buying_preparation'`,
+    ),
+    check(
+      "profile_home_buying_financial_proposals_algorithm",
+      sql`${table.encryptionAlgorithm} = 'AES-256-GCM'`,
+    ),
+    check("profile_home_buying_financial_proposals_revision", sql`${table.expectedRevision} > 0`),
+    profileOnly("profile_home_buying_financial_proposals"),
+  ],
+).enableRLS();
