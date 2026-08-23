@@ -1,1 +1,12 @@
-import{ClientPortalShell,SecureMessagingPortal}from"@atlas/ui";import{requireDashboardPageContext}from"../../../lib/dashboard/page-context.ts";export const dynamic="force-dynamic";export const revalidate=0;export default async function Page(){const{locale}=await requireDashboardPageContext();return <ClientPortalShell locale={locale} activeRoute="messages"><SecureMessagingPortal locale={locale} state="unavailable"/></ClientPortalShell>}
+import { ClientPortalShell, SecureMessagingPortal } from "@atlas/ui";
+import { requireDashboardPageContext } from "../../../lib/dashboard/page-context.ts";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export default async function Page() {
+  const { locale } = await requireDashboardPageContext();
+  return (
+    <ClientPortalShell locale={locale} activeRoute="messages">
+      <SecureMessagingPortal locale={locale} state="ready" />
+    </ClientPortalShell>
+  );
+}
