@@ -709,3 +709,12 @@ refunds, disputes, tax, external-payment review and production operation remain 
 - Status: Implemented foundation; Product Owner operational activation pending
 - M015 may provide typed, purpose-bound contracts and a protected guidance surface before the canonical Client/Organization, consent, audit, encryption and RLS owners are activated.
 - The foundation stores no profile values, creates no schema with weak ownership references and fails closed unless a future approved repository supplies exact client, context, epoch, purpose and consent evidence.
+
+## Decision 046 - M015 Package B self-service goals
+
+- Date: 2026-08-23
+- Status: Approved by Product Owner; deployment remains disabled by default
+- Package B permits only client-owned, allowlisted general goal codes and reviewable goal proposals in
+  the active M007 personal portal context.
+- It excludes personal identity, address, household, financial, credit, tax, business, document,
+  provider, external notification and AI data. No submitted goal starts a service.

@@ -17,6 +17,7 @@ const actor = {
   accountId: "account-a",
   clientRef: "client-a",
   contextRef: "ctx-a",
+  contextType: "personal" as const,
   authorizationEpoch: "1",
   policyEpoch: "1",
   selfProfileGrant: true,
@@ -91,5 +92,24 @@ describe("M015 purpose-bound profile foundation", () => {
       status: "preliminary",
     });
     expect(projection).not.toHaveProperty("businesses");
+  });
+  it("accepts only allowlisted self-service goals in a personal context", async () => {
+    const service = new ProfileService(new MemoryProfileRepository());
+    const submitted = await service.submitSelfServiceGoal(
+      actor,
+      "es",
+      "credit_organization",
+      "m015-self-service-v1",
+    );
+    expect(submitted?.goals).toHaveLength(1);
+    expect(submitted?.goals[0]).toMatchObject({ code: "credit_organization", state: "submitted" });
+    expect(
+      await service.submitSelfServiceGoal(
+        { ...actor, contextType: "organization" },
+        "es",
+        "credit_organization",
+        "m015-self-service-v1",
+      ),
+    ).toBeUndefined();
   });
 });

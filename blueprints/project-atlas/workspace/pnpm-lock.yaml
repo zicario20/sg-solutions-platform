@@ -58,6 +58,12 @@ importers:
       '@atlas/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@atlas/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
+      '@atlas/client-profile':
+        specifier: workspace:*
+        version: link:../../packages/client-profile
       '@atlas/client-services':
         specifier: workspace:*
         version: link:../../packages/client-services
@@ -154,6 +160,8 @@ importers:
         specifier: 4.4.3
         version: 4.4.3
 
+  packages/billing: {}
+
   packages/client-process-status:
     dependencies:
       '@atlas/client-services':
@@ -162,6 +170,8 @@ importers:
       '@atlas/dashboard':
         specifier: workspace:*
         version: link:../dashboard
+
+  packages/client-profile: {}
 
   packages/client-services:
     dependencies:
@@ -178,6 +188,9 @@ importers:
       '@atlas/appointments':
         specifier: workspace:*
         version: link:../appointments
+      '@atlas/client-profile':
+        specifier: workspace:*
+        version: link:../client-profile
       '@atlas/domain':
         specifier: workspace:*
         version: link:../domain

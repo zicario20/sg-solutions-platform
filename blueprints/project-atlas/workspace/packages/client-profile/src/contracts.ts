@@ -37,10 +37,19 @@ export type ProfileCorrectionState =
   | "accepted"
   | "rejected"
   | "partially_accepted";
+export const SELF_SERVICE_GOAL_CODES = [
+  "credit_organization",
+  "tax_preparation",
+  "business_planning",
+  "home_buying_preparation",
+  "general_support",
+] as const;
+export type SelfServiceGoalCode = (typeof SELF_SERVICE_GOAL_CODES)[number];
 export type ProfileActor = Readonly<{
   accountId: string;
   clientRef: string;
   contextRef: string;
+  contextType: "personal" | "organization";
   authorizationEpoch: string;
   policyEpoch: string;
   selfProfileGrant: boolean;
@@ -93,6 +102,10 @@ export type ProfileGoal = Readonly<{
   goalRef: string;
   purpose: ProfilePurpose;
   label: string;
+  goalCode?: SelfServiceGoalCode;
+  state?: "submitted" | "under_review" | "accepted" | "rejected";
+  noticeVersion?: string;
+  submittedAt?: string;
   quality: ProfileQuality;
 }>;
 export type ProfileSnapshot = Readonly<{
@@ -167,7 +180,12 @@ export type ProfileCorrection = Readonly<{
   submittedBy: string;
   expectedRevision: number;
   state: ProfileCorrectionState;
-  requested: Readonly<{ preferredName?: string; stateCode?: string }>;
+  requested: Readonly<{
+    preferredName?: string;
+    stateCode?: string;
+    goalRef?: string;
+    goalCode?: SelfServiceGoalCode;
+  }>;
   submittedAt: string;
 }>;
 export type PreliminaryDti =
@@ -178,8 +196,21 @@ export type PreliminaryDti =
       preliminary: true;
     }>
   | Readonly<{ kind: "unavailable"; reason: "missing_or_invalid_income"; preliminary: true }>;
+export type SelfServiceProfileDto = Readonly<{
+  profileRef: string;
+  locale: ProfileLocale;
+  revision: number;
+  goals: readonly Readonly<{
+    goalRef: string;
+    code: SelfServiceGoalCode;
+    state: "submitted" | "under_review" | "accepted" | "rejected";
+    submittedAt: string;
+  }>[];
+}>;
 export type ProfileRepository = Readonly<{
-  find(clientRef: string): Promise<ProfileSnapshot | undefined>;
+  find(clientRef: string, contextRef: string): Promise<ProfileSnapshot | undefined>;
+  ensureSelfServiceRoot(actor: ProfileActor, locale: ProfileLocale): Promise<ProfileSnapshot>;
+  saveGoal(goal: ProfileGoal): Promise<void>;
   saveCorrection(correction: ProfileCorrection): Promise<void>;
   listCorrections(profileRef: string): Promise<readonly ProfileCorrection[]>;
 }>;

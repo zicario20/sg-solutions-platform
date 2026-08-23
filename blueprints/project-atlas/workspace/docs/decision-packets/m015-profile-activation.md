@@ -1,6 +1,6 @@
 # M015 Profile Activation Decision Packet
 
-- Status: Awaiting Product Owner decision
+- Status: Package B approved by Product Owner on 2026-08-23
 - Date: 2026-08-23
 - Authority: M015 PRD, ADR 019 and the Product Owner
 
@@ -36,6 +36,14 @@ Required decisions:
 - PFL-016: approve the self-service collection/purpose copy and revocation behavior.
 - PFL-019: keep notifications portal-only.
 - PFL-020: keep analytics to zero-ID aggregate operational events, with session replay off.
+
+## Recorded Package B approval
+
+The Product Owner approved Package B on 2026-08-23. The implementation uses an active M007 personal
+portal context as the narrowly scoped self-profile grant for this first slice. It stores only
+allowlisted general goal codes and an acknowledgement of the displayed notice version. It does not
+create a canonical consent record, contact, client, household, organization, document or financial
+profile. M078 remains the future authority for reusable consent and revocation.
 
 ### Package C - Financial and business profile
 

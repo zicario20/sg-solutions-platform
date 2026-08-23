@@ -276,3 +276,7 @@
   scheduling APIs/UI, immutable schedule revisions and provider-neutral outbox contracts. Calendar,
   notifications, payments and public booking remain unactivated.
 - Added the M015 provider-disabled financial and business profile foundation, including typed purpose-specific projections, correction proposals, deterministic preliminary calculations, protected bilingual profile guidance and focused isolation tests.
+- Expanded M015 with the Product Owner-approved Package B self-service slice: a disabled-by-default,
+  personal-context-only workflow for predefined general goals, a visible notice/version receipt,
+  private API/RLS persistence and client-safe Spanish/English portal UI. It collects no free text,
+  financial, credit, tax, business, identity or document data.

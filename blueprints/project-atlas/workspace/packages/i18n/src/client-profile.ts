@@ -3,10 +3,33 @@ export const clientProfileCopy = {
     eyebrow: "Perfil",
     title: "Tu información, con propósito",
     intro:
-      "Tu perfil se habilitará cuando las políticas de privacidad, consentimiento y revisión estén configuradas para tu servicio.",
-    noticeTitle: "Perfil todavía no disponible",
+      "Indica una necesidad general para que SG Solutions prepare tu próximo paso. No envíes información sensible.",
+    noticeTitle: "Información limitada por diseño",
     notice:
-      "Para proteger tu información, esta función no acepta ni muestra datos personales, financieros o empresariales mientras su fuente autorizada no esté activa.",
+      "Esta primera etapa solo registra objetivos generales. Las actualizaciones quedan sujetas a revisión y no inician un servicio.",
+    goalTitle: "¿Qué quieres organizar?",
+    goalLabel: "Objetivo general",
+    goalOptions: {
+      credit_organization: "Organizar mi crédito",
+      tax_preparation: "Preparar taxes",
+      business_planning: "Planificar un negocio",
+      home_buying_preparation: "Prepararme para comprar casa",
+      general_support: "Recibir orientación general",
+    },
+    noticeLabel:
+      "Entiendo que no debo enviar información sensible y que este objetivo será revisado.",
+    submit: "Enviar objetivo",
+    submitting: "Enviando",
+    goalsTitle: "Objetivos enviados",
+    noGoals: "Todavía no has enviado un objetivo.",
+    state: {
+      submitted: "Enviado para revisión",
+      under_review: "En revisión",
+      accepted: "Aceptado",
+      rejected: "No aceptado",
+    },
+    unavailable: "El perfil no está habilitado en este entorno todavía.",
+    retry: "Reintentar",
     sections: [
       "Información básica y preferencias aprobadas",
       "Datos solicitados solo para un servicio autorizado",
@@ -22,10 +45,33 @@ export const clientProfileCopy = {
     eyebrow: "Profile",
     title: "Your information, with a purpose",
     intro:
-      "Your profile will be enabled when privacy, consent, and review policies are configured for your service.",
-    noticeTitle: "Profile not available yet",
+      "Share a general need so SG Solutions can prepare your next step. Do not send sensitive information.",
+    noticeTitle: "Information is limited by design",
     notice:
-      "To protect your information, this feature does not accept or show personal, financial, or business data while its authorized source is not active.",
+      "This first stage only records general goals. Updates remain subject to review and do not start a service.",
+    goalTitle: "What would you like to organize?",
+    goalLabel: "General goal",
+    goalOptions: {
+      credit_organization: "Organize my credit",
+      tax_preparation: "Prepare taxes",
+      business_planning: "Plan a business",
+      home_buying_preparation: "Prepare to buy a home",
+      general_support: "Receive general guidance",
+    },
+    noticeLabel:
+      "I understand that I should not send sensitive information and that this goal will be reviewed.",
+    submit: "Submit goal",
+    submitting: "Submitting",
+    goalsTitle: "Submitted goals",
+    noGoals: "You have not submitted a goal yet.",
+    state: {
+      submitted: "Submitted for review",
+      under_review: "Under review",
+      accepted: "Accepted",
+      rejected: "Not accepted",
+    },
+    unavailable: "The profile is not enabled in this environment yet.",
+    retry: "Retry",
     sections: [
       "Approved basic information and preferences",
       "Information requested only for an authorized service",

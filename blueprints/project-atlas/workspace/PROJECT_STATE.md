@@ -80,4 +80,17 @@ security review and a separate Product Owner activation gate. Payment confirmati
 service; internal human approval remains separate.
 ## M015 implementation position
 
-M015 now has a provider-disabled typed profile foundation and protected bilingual client route. It implements no active field inventory, database schema, KMS encryption, provider connection, profile data collection or relationship authority. Activation remains blocked on ADR 019 and the applicable PFL Product Owner decisions, M018/M019 canonical relationships, M078 consent, M077 audit and purpose-specific RLS.
+M015 now has a provider-disabled typed profile foundation and protected bilingual client route. Outside
+the narrowly approved Package B goals slice below, it implements no active field inventory, KMS
+encryption, provider connection, profile data collection or relationship authority. Activation of
+sensitive profile capabilities remains blocked on ADR 019 and the applicable PFL Product Owner
+decisions, M018/M019 canonical relationships, M078 consent, M077 audit and purpose-specific RLS.
+
+## M015 Package B implementation position
+
+The Product Owner approved Package B for the narrow self-service goals slice. The isolated branch
+adds a disabled-by-default personal-context route/API, PostgreSQL/RLS persistence and bilingual UI
+for predefined general goals only. It records a notice version and review state, not free text,
+financial, credit, tax, business, identity, document, consent or canonical relationship data.
+No database migration, runtime activation, real client data, provider, deployment or Product Owner
+acceptance of the full M015 module is recorded.

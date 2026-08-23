@@ -9,18 +9,23 @@ import type {
   PreliminaryDti,
   ProfileActor,
   ProfileCorrection,
+  ProfileGoal,
+  ProfileLocale,
   ProfileProjection,
   ProfilePurpose,
   ProfileRepository,
   ProfileRoot,
   ProfileSnapshot,
+  SelfServiceGoalCode,
+  SelfServiceProfileDto,
   TaxProfileDto,
 } from "./contracts.ts";
+import { SELF_SERVICE_GOAL_CODES } from "./contracts.ts";
 
 function authorized(actor: ProfileActor, root: ProfileRoot, purpose: ProfilePurpose): boolean {
   return (
     actor.selfProfileGrant &&
-    actor.consentGranted &&
+    (purpose === "self_service" || actor.consentGranted) &&
     actor.accountId === root.ownerAccountId &&
     actor.clientRef === root.clientRef &&
     actor.contextRef === root.contextRef &&
@@ -37,7 +42,10 @@ function basicStatus(
     return "review_required";
   return section.preferredName || section.stateCode ? "in_progress" : "empty";
 }
-function monthlyIncome(snapshot: ProfileSnapshot): { amountMinor?: number; currency?: string } {
+function monthlyIncome(snapshot: ProfileSnapshot): {
+  monthlyIncomeMinor?: number;
+  currency?: string;
+} {
   const current = snapshot.incomes.filter(
     (item) =>
       item.quality.freshness !== "outdated" &&
@@ -50,14 +58,14 @@ function monthlyIncome(snapshot: ProfileSnapshot): { amountMinor?: number; curre
     income.cadence
   ];
   return {
-    amountMinor: Math.round(((income.amountMinor as number) * multiplier) / 12),
+    monthlyIncomeMinor: Math.round(((income.amountMinor as number) * multiplier) / 12),
     currency: income.currency,
   };
 }
 export class ProfileService {
   public constructor(private readonly repository: ProfileRepository) {}
   public async basic(actor: ProfileActor): Promise<BasicClientProfileDto | undefined> {
-    const snapshot = await this.repository.find(actor.clientRef);
+    const snapshot = await this.repository.find(actor.clientRef, actor.contextRef);
     if (!snapshot || !authorized(actor, snapshot.root, "self_service")) return undefined;
     const corrections = await this.repository.listCorrections(snapshot.root.profileRef);
     return Object.freeze({
@@ -74,7 +82,7 @@ export class ProfileService {
     actor: ProfileActor,
     purpose: Exclude<ProfilePurpose, "self_service">,
   ): Promise<ProfileProjection | undefined> {
-    const snapshot = await this.repository.find(actor.clientRef);
+    const snapshot = await this.repository.find(actor.clientRef, actor.contextRef);
     if (!snapshot || !authorized(actor, snapshot.root, purpose)) return undefined;
     const employmentCategories = Object.freeze(snapshot.employment.map((item) => item.category));
     const goalLabels = Object.freeze(
@@ -106,7 +114,7 @@ export class ProfileService {
         profileRef: snapshot.root.profileRef,
         purpose,
         ...income,
-        status: income.amountMinor ? "preliminary" : "empty",
+        status: income.monthlyIncomeMinor ? "preliminary" : "empty",
       } satisfies HomeBuyingProfileDto);
     if (purpose === "business_formation")
       return Object.freeze({
@@ -120,7 +128,7 @@ export class ProfileService {
       purpose,
       businesses,
       ...income,
-      status: businesses.length || income.amountMinor ? "preliminary" : "empty",
+      status: businesses.length || income.monthlyIncomeMinor ? "preliminary" : "empty",
     } satisfies BusinessFundingProfileDto);
   }
   public async proposeBasicCorrection(
@@ -128,7 +136,7 @@ export class ProfileService {
     expectedRevision: number,
     requested: Readonly<{ preferredName?: string; stateCode?: string }>,
   ): Promise<ProfileCorrection | undefined> {
-    const snapshot = await this.repository.find(actor.clientRef);
+    const snapshot = await this.repository.find(actor.clientRef, actor.contextRef);
     if (
       !snapshot ||
       !authorized(actor, snapshot.root, "self_service") ||
@@ -146,6 +154,66 @@ export class ProfileService {
     });
     await this.repository.saveCorrection(correction);
     return correction;
+  }
+  public async selfService(actor: ProfileActor): Promise<SelfServiceProfileDto | undefined> {
+    if (actor.contextType !== "personal") return undefined;
+    const snapshot = await this.repository.find(actor.clientRef, actor.contextRef);
+    if (!snapshot || !authorized(actor, snapshot.root, "self_service")) return undefined;
+    return Object.freeze({
+      profileRef: snapshot.root.profileRef,
+      locale: snapshot.root.locale,
+      revision: snapshot.root.revision,
+      goals: Object.freeze(
+        snapshot.goals
+          .filter((goal): goal is ProfileGoal & { goalCode: SelfServiceGoalCode } =>
+            Boolean(goal.goalCode && SELF_SERVICE_GOAL_CODES.includes(goal.goalCode)),
+          )
+          .map((goal) =>
+            Object.freeze({
+              goalRef: goal.goalRef,
+              code: goal.goalCode,
+              state: goal.state ?? "submitted",
+              submittedAt: goal.submittedAt ?? goal.quality.assertedAt,
+            }),
+          ),
+      ),
+    });
+  }
+  public async submitSelfServiceGoal(
+    actor: ProfileActor,
+    locale: ProfileLocale,
+    code: SelfServiceGoalCode,
+    noticeVersion: string,
+  ): Promise<SelfServiceProfileDto | undefined> {
+    if (
+      actor.contextType !== "personal" ||
+      !actor.selfProfileGrant ||
+      !actor.allowedPurposes.includes("self_service") ||
+      !SELF_SERVICE_GOAL_CODES.includes(code) ||
+      noticeVersion !== "m015-self-service-v1"
+    )
+      return undefined;
+    const snapshot = await this.repository.ensureSelfServiceRoot(actor, locale);
+    if (!authorized(actor, snapshot.root, "self_service")) return undefined;
+    const now = new Date().toISOString();
+    const goal: ProfileGoal = {
+      goalRef: `goal:${snapshot.root.profileRef}:${randomUUID()}`,
+      purpose: "self_service",
+      label: code,
+      goalCode: code,
+      state: "submitted",
+      noticeVersion,
+      submittedAt: now,
+      quality: {
+        source: "client",
+        support: "self_reported",
+        verification: "not_verified",
+        freshness: "not_evaluated",
+        assertedAt: now,
+      },
+    };
+    await this.repository.saveGoal(Object.freeze(goal));
+    return this.selfService(actor);
   }
 }
 export function calculatePreliminaryDti(
