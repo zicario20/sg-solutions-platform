@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Core implementation complete; Product Owner acceptance and provider activation remain pending
+- Status: Accepted by Product Owner in provider-disabled scope; provider activation remains pending
 - Surface: Public Website `/book`, Client Portal `/client/appointments`, bounded contribution to M024 Admin Calendar
 - Catalog module: M013
 - Related modules: M003–M006, M007–M012, M014, M017–M018, M020–M026, M041, M043–M045,

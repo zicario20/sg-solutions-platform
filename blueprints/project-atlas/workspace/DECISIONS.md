@@ -678,7 +678,7 @@ deployment or release. Concrete mappings stay disabled. M011 remains blocked.
 ## Decision 043 - M013 client appointments completion boundary
 
 - Date: 2026-08-23
-- Status: Implementation evidence; Product Owner acceptance pending
+- Status: Accepted by Product Owner in provider-disabled scope
 - Owner: Product Owner
 - Scope: M013 Client Appointments
 
@@ -688,4 +688,4 @@ cancellation, client-safe projection, schedule audit and post-commit provider-ne
 M024 owns the staff calendar workspace, M026 delivery, M014 payments, M003-M006 channel entry points
 and M041 concrete provider adapters. None of those future modules may replace or bypass M013's
 capacity and authorization authority. This records no provider activation, database migration,
-deployment, acceptance or production operation.
+deployment or production operation.

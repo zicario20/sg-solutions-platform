@@ -886,3 +886,10 @@ capacity serialization, idempotent booking, atomic rescheduling, cancellation, c
 schedule history, audit/outbox and provider-neutral disabled contracts. Focused package typechecks
 and three M013 tests pass. No appointment provider, notification channel, payment, public booking,
 real database migration, deployment or Product Owner acceptance is recorded.
+
+## 2026-08-23 - M013 Product Owner acceptance
+
+The Product Owner accepted M013 Client Appointments at commit `73e9157` in provider-disabled scope.
+This accepts the internal scheduling authority, client portal and documented security boundary only.
+It does not activate a database migration, Google Calendar, meeting provider, notification delivery,
+public booking, payment prerequisite, deployment or production operation.

@@ -2,9 +2,9 @@
 
 - Version: 0.1.0-alpha.30
 - Updated: 2026-08-23
-- Phase: M013 client appointments core implementation ready for Product Owner acceptance
+- Phase: M013 client appointments accepted in provider-disabled scope
 - Accepted base: M009 commit 6667872
-- Next: Product Owner review of M013 core; provider activation remains separately gated
+- Next: Product Owner instruction for the next approved module; provider activation remains separately gated
 - Production: no deployment/live-provider authority
 
 ## Accepted progression
@@ -65,5 +65,6 @@ M013 client appointments now has a durable Postgres appointment authority, authe
 projection, bounded availability, expiring authorization-bound holds, serialized capacity changes,
 idempotent booking, atomic rescheduling, version-fenced cancellation, schedule revisions, audit and
 provider-neutral handoff outbox. Google Calendar, meeting, notification, payment, public-booking and
-staff-calendar providers remain disabled. The module is unaccepted, unmigrated, undeployed and not
-operational; Product Owner acceptance and independent security review remain required.
+staff-calendar providers remain disabled. The module is accepted by the Product Owner only in
+provider-disabled scope; it remains unmigrated, undeployed and not operational. Production
+activation still requires real RLS/migration evidence, provider-specific review and a separate gate.
