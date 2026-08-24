@@ -813,3 +813,14 @@ This gate excludes schema/migrations, real organization data, ownership, registe
 compliance records, EIN requests, client access grants, CRM/client/profile duplication, owner commands,
 imports, exports, AI, providers, deployment, merge, release and Operational status. Product Owner
 acceptance remains required before M020.
+
+## Decision 056 - M019 provider-disabled foundation acceptance
+
+- Date: 2026-08-24
+- Authority: Product Owner
+- Status: accepted foundation; operational activation pending
+
+The Product Owner accepts M016-M019 as provider-disabled technical foundations. For M019 this
+approves the bounded contract, UI, route and safe fail-closed posture only. It does not approve
+canonical organization data, ownership, representatives, registered agents, filings, compliance,
+client access, CRM integration or operational activation.

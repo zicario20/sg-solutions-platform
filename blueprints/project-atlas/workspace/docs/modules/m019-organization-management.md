@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Provider-disabled technical implementation complete; Product Owner acceptance pending
+- Status: Product Owner accepted provider-disabled technical foundation; functional activation pending canonical owners
 - Date: 2026-08-24
 - Surface: internal Admin workspace and bounded domain/application contracts
 

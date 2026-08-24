@@ -2,9 +2,9 @@
 
 - Version: 0.1.0-alpha.31
 - Updated: 2026-08-24
-- Phase: M019 organization management provider-disabled technical closure; Product Owner acceptance pending
+- Phase: M016-M019 provider-disabled foundations accepted; functional activation remains separately gated
 - Accepted base: M009 commit 6667872
-- Next: Product Owner acceptance of M019 before M020; provider activation remains separately gated
+- Next: Continue with the next Product Owner-authorized module; provider activation remains separately gated
 - Production: no deployment/live-provider authority
 
 ## Accepted progression
@@ -126,7 +126,8 @@ M018 has a provider-disabled Client Management baseline: typed ClientRelationshi
 representative-proposal safeguards, minimized Client 360 sections, PII/account rejection and a
 fail-closed Admin route/API with bilingual internal UI. No people, households, client records,
 assignments, representative grants, restrictions, notes, owner facts, migration, provider, AI,
-deployment or operational activation occurred. Product Owner acceptance remains pending.
+deployment or operational activation occurred. The Product Owner accepted this as a technical
+foundation only; functional activation remains pending canonical owners.
 
 ## M019 implementation position
 
@@ -134,4 +135,5 @@ M019 has a provider-disabled Organization Management baseline: organization and 
 projections, reauthentication- and version-fenced state policy, formation proposal safeguards,
 sensitive-field rejection and a fail-closed Admin route/API with bilingual internal UI. No organization,
 ownership, registered-agent, filing, compliance, client-access, migration, provider, AI, deployment or
-operational activation occurred. Product Owner acceptance remains pending.
+operational activation occurred. The Product Owner accepted this as a technical foundation only;
+functional activation remains pending canonical owners.
