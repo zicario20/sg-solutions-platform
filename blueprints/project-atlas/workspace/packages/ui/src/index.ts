@@ -14,6 +14,7 @@ export * from "./client-services/ClientServiceFilters.tsx";
 export * from "./client-services/ClientServiceStates.tsx";
 export * from "./client-services/ClientServicesDirectory.tsx";
 export * from "./client-services/ClientServicesRouteError.tsx";
+export * from "./client-management/ClientManagementWorkspaceView.tsx";
 export * from "./dashboard/ClientPortalShell.tsx";
 export * from "./dashboard/DashboardStates.tsx";
 export * from "./dashboard/DashboardView.tsx";

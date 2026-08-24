@@ -779,3 +779,20 @@ This gate excludes canonical Person/Client/Organization/Lead/ServiceOrder/CaseFi
 database migrations, RLS activation, CRM records, commands, assignments, imports/exports, AI,
 marketing, provider calls, real staff/client data, deployment, merge, release and Operational status.
 Product Owner acceptance remains required before M018.
+
+## Decision 051 - M018 Client Management provider-disabled Build
+
+- Date: 2026-08-24
+- Authority: Product Owner
+- Base/worktree: M017 `be2794b` / `.worktrees/m018-client-management-build`
+- Status: implementation authorized; acceptance pending
+
+M018 may add a typed ClientRelationship and lifecycle policy, minimized sectioned Client 360
+projections, representative-proposal controls, a provider-disabled fail-closed Admin route/API posture
+and bilingual accessible UI. A User/account, CRM relationship, service, payment or invitation never
+becomes a client relationship, client state or representative access grant by implication.
+
+This gate excludes schema/migrations, real Person/Household/Client data, RLS activation, actual
+assignments/representatives/restrictions/notes, owner commands, organization management, imports,
+exports, AI, providers, deployment, merge, release and Operational status. Product Owner acceptance
+remains required before M019.

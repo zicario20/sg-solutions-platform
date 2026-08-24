@@ -70,6 +70,9 @@ importers:
       '@atlas/billing':
         specifier: workspace:*
         version: link:../../packages/billing
+      '@atlas/client-management':
+        specifier: workspace:*
+        version: link:../../packages/client-management
       '@atlas/client-profile':
         specifier: workspace:*
         version: link:../../packages/client-profile
@@ -176,6 +179,8 @@ importers:
 
   packages/billing: {}
 
+  packages/client-management: {}
+
   packages/client-process-status:
     dependencies:
       '@atlas/client-services':
@@ -279,6 +284,9 @@ importers:
       '@atlas/admin-dashboard':
         specifier: workspace:*
         version: link:../admin-dashboard
+      '@atlas/client-management':
+        specifier: workspace:*
+        version: link:../client-management
       '@atlas/client-services':
         specifier: workspace:*
         version: link:../client-services

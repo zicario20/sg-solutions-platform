@@ -2,9 +2,9 @@
 
 - Version: 0.1.0-alpha.31
 - Updated: 2026-08-24
-- Phase: M017 CRM provider-disabled technical closure; Product Owner acceptance pending
+- Phase: M018 client management provider-disabled technical closure; Product Owner acceptance pending
 - Accepted base: M009 commit 6667872
-- Next: Product Owner acceptance of M017 before M018; provider activation remains separately gated
+- Next: Product Owner acceptance of M018 before M019; provider activation remains separately gated
 - Production: no deployment/live-provider authority
 
 ## Accepted progression
@@ -119,3 +119,11 @@ and bilingual responsive internal UI. It owns no canonical identity, Client, Org
 ServiceOrder, CaseFile, Task, Appointment, Message, Payment, Consent or audit truth. No tables,
 migrations, real CRM records, merges, conversions, assignments, imports/exports, AI, providers,
 deployment or product activation occurred. Product Owner acceptance remains pending.
+
+## M018 implementation position
+
+M018 has a provider-disabled Client Management baseline: typed ClientRelationship lifecycle and
+representative-proposal safeguards, minimized Client 360 sections, PII/account rejection and a
+fail-closed Admin route/API with bilingual internal UI. No people, households, client records,
+assignments, representative grants, restrictions, notes, owner facts, migration, provider, AI,
+deployment or operational activation occurred. Product Owner acceptance remains pending.

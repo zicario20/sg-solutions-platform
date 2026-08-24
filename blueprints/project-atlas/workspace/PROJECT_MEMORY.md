@@ -948,3 +948,12 @@ contracts, prohibited-field rejection, fail-closed Admin route/API posture and b
 It neither merges identities nor converts/activates clients, services, orders or cases. Canonical
 owners remain M018-M023 and the relevant existing modules. No migration, real CRM data, provider,
 AI, import/export, deployment or operational activation occurred.
+
+## 2026-08-24 - M018 provider-disabled technical baseline
+
+The Product Owner's autonomous sequential authorization continues from the M017 baseline. M018 adds
+a provider-disabled ClientRelationship boundary, version-fenced lifecycle validation, representative
+proposal controls that never grant access, minimized 360 section projections, prohibited-field
+rejection, fail-closed Admin route/API posture and bilingual internal UI. It does not persist people,
+households, clients, assignments, restrictions, representatives, notes or owner facts. M019 remains
+the organization owner and all composed operational sources remain disabled.

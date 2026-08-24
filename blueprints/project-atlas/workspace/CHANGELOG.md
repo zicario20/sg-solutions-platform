@@ -291,3 +291,8 @@
   protector boundary, ciphertext-only PostgreSQL schema, personal-context API contract and bilingual
   gated client form. The only allowed values are self-reported monthly gross income and recurring
   monthly debt in USD/monthly cadence; DTI is preliminary and non-decisional.
+
+- Added the provider-disabled M018 Client Management technical baseline: ClientRelationship and
+  lifecycle contracts, representative-proposal safeguards, minimized 360 projections, PII/account
+  field rejection, fail-closed Admin route/API and bilingual responsive internal UI. No client records,
+  migrations, access grants, owner actions, organization behavior or provider activation was added.

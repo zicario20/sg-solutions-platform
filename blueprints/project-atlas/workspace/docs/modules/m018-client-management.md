@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Implementation-ready Product/Architecture candidate; decisions remain; no Build gate
+- Status: Provider-disabled technical implementation complete; Product Owner acceptance pending
 - Source version: Product Owner M018 supplied specification, read in full on 2026-08-12
 - Surface: Admin and Backend; minimized projections to Client and other authorized Admin surfaces
 - Release: Release 1A foundation, compatible Release 1B maturity and gated Future capabilities
@@ -24,8 +24,10 @@ appointments; M012/M025 own communications; M078 owns consent; M007/M080 own ide
 M015 owns purpose-bound profile facts; M077 owns audit. M018 composes those owners through typed,
 minimized, authorized projections and commands. It never duplicates their facts.
 
-The document defines the intended implementation contract. It does not authorize `GENERATE`, a
-route, schema, migration, RLS policy, real client record, provider, AI behavior or deployment.
+The Product Owner authorized a narrow provider-disabled technical baseline on 2026-08-24. It adds
+contracts, lifecycle validation, minimized projections, a fail-closed Admin route/API posture and
+bilingual UI. It does not authorize schema, migration, RLS policy activation, real client record,
+provider, AI behavior, deployment or operational activation.
 
 ---
 
