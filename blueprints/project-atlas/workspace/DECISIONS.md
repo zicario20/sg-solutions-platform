@@ -761,3 +761,21 @@ This gate excludes real staff/client data, database migrations, RLS activation, 
 background jobs, saved-view persistence, exports, impersonation, realtime, deployment, merge,
 release and Operational status. Architecture and security closure plus Product Owner acceptance are
 required before M017.
+
+## Decision 050 - M017 CRM provider-disabled Build
+
+- Date: 2026-08-24
+- Authority: Product Owner
+- Base/worktree: M016 `4384d8c` / `.worktrees/m017-crm-build`
+- Status: implementation authorized; acceptance pending
+
+M017 may add a dedicated, internal CRM commercial-workspace contract with exact permission and
+purpose-binding fences, version-checked pipeline transition validation, minimized relationship,
+opportunity, activity and duplicate-candidate projections, a provider-disabled fail-closed route/API
+posture and bilingual accessible UI. Duplicate review is review-only; no automatic identity merge,
+client activation, conversion, payment confirmation or service start is permitted.
+
+This gate excludes canonical Person/Client/Organization/Lead/ServiceOrder/CaseFile/Task ownership,
+database migrations, RLS activation, CRM records, commands, assignments, imports/exports, AI,
+marketing, provider calls, real staff/client data, deployment, merge, release and Operational status.
+Product Owner acceptance remains required before M018.

@@ -12,6 +12,7 @@
   "dependencies": {
     "@atlas/admin-dashboard": "workspace:*",
     "@atlas/client-services": "workspace:*",
+    "@atlas/crm": "workspace:*",
     "@atlas/dashboard": "workspace:*",
     "@atlas/i18n": "workspace:*",
     "radix-ui": "1.6.7",

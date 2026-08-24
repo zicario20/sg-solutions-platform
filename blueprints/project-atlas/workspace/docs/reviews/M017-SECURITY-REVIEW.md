@@ -65,3 +65,18 @@ encryption/idempotency/recovery controls, adversarial tests and independent code
 
 No provider, real client data, route, schema, merge/import/export, automation, AI, deployment or
 production behavior was activated. This report does not authorize merge or release.
+
+## 2026-08-24 provider-disabled implementation surface review
+
+- Reviewer: Codex using the Cyber Neo read-only review methodology.
+- Independence: targeted static self-review only; not an independent security certification.
+- Result: no open finding in the scoped code surface.
+
+The targeted review checked the new CRM package, UI, private route/API, manifests and focused tests.
+No production secret, credential, real contact detail, raw note/message/document content, external
+provider call, browser persistence, dynamic HTML injection, automatic merge or mutable CRM command
+was introduced. The projection guard rejects direct contact, identity, credential, document, message,
+credit, tax, banking and card field names before UI delivery. Route/API paths default to denial and use
+no-store responses. Semgrep, Gitleaks and Trivy were not available in this local environment; their
+absence limits this review. Full authorization/RLS, storage, provider and runtime security assurance
+remain untested and blocked on future owner modules and a separate activation gate.

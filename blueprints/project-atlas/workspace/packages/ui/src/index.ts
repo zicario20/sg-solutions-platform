@@ -1,5 +1,6 @@
 export const UI_PACKAGE_ID = "@atlas/ui";
 export * from "./admin-dashboard/AdminDashboardView.tsx";
+export * from "./crm/CrmWorkspaceView.tsx";
 export * from "./auth/AuthErrorSummary.tsx";
 export * from "./auth/AuthField.tsx";
 export * from "./auth/AuthPortalViews.tsx";

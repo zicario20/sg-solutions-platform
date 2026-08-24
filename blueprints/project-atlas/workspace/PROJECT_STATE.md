@@ -2,9 +2,9 @@
 
 - Version: 0.1.0-alpha.31
 - Updated: 2026-08-24
-- Phase: M016 administrative dashboard technical closure; Product Owner acceptance pending
+- Phase: M017 CRM provider-disabled technical closure; Product Owner acceptance pending
 - Accepted base: M009 commit 6667872
-- Next: Product Owner acceptance of M016 before M017; provider activation remains separately gated
+- Next: Product Owner acceptance of M017 before M018; provider activation remains separately gated
 - Production: no deployment/live-provider authority
 
 ## Accepted progression
@@ -109,3 +109,13 @@ boundary and returns a preliminary non-decisional DTI receipt. The UI/API remain
 the shipped data protector is deliberately unavailable and M015_HOME_BUYING_FINANCIAL_ENABLED=false.
 No migration, KMS, real profile data, staff review, document, AI, provider, notification, analytics,
 export or deployment is active. Other sensitive M015 purposes remain disabled.
+
+## M017 implementation position
+
+M017 has a provider-disabled CRM commercial-workspace baseline: typed relationship, opportunity,
+pipeline-stage, activity and duplicate-review projections; exact permission and purpose-binding
+fences; deterministic stage-transition validation; PII/content rejection; fail-closed Admin route/API;
+and bilingual responsive internal UI. It owns no canonical identity, Client, Organization, Lead,
+ServiceOrder, CaseFile, Task, Appointment, Message, Payment, Consent or audit truth. No tables,
+migrations, real CRM records, merges, conversions, assignments, imports/exports, AI, providers,
+deployment or product activation occurred. Product Owner acceptance remains pending.

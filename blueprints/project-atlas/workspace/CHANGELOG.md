@@ -263,6 +263,12 @@
   remains unauthorized.
 # Unreleased
 
+- Added the provider-disabled M017 CRM technical baseline: purpose- and permission-scoped commercial
+  workspace contracts, version-checked pipeline validation, minimized source projections,
+  duplicate-review-only behavior, PII/content rejection, fail-closed Admin route/API and bilingual
+  responsive internal UI. No CRM records, migrations, merges, conversions, providers or activation
+  were introduced.
+
 - Expanded M012 secure messaging from its initial private shell to a durable PostgreSQL/RLS adapter,
   authenticated inbox and detail APIs, AES-256-GCM message-body sealing, M011 opaque-document
   references, client/resource authorization and audit isolation. External delivery remains disabled.

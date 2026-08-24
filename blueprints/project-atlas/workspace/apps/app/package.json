@@ -16,6 +16,7 @@
     "@atlas/client-profile": "workspace:*",
     "@atlas/client-services": "workspace:*",
     "@atlas/config": "workspace:*",
+    "@atlas/crm": "workspace:*",
     "@atlas/dashboard": "workspace:*",
     "@atlas/database": "workspace:*",
     "@atlas/domain": "workspace:*",

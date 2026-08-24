@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Product/Architecture candidate; no Build gate
+- Status: Provider-disabled technical implementation complete; Product Owner acceptance pending
 - Version: 1.0.0-candidate
 - Date: 2026-08-12
 - Surfaces: Admin Portal and bounded backend domain/application services
@@ -11,9 +11,11 @@
 - Governing ADRs: ADR 001–006, ADR 010–011, ADR 018 and proposed ADRs 021–022
 
 This PRD normalizes the complete Product Owner-supplied M017 source into the approved Project Atlas
-modular-monolith architecture. It specifies a future production module; it does not authorize an
-Admin route, table, migration, RLS policy, worker, import/export, provider, real person/client data,
-merge, marketing message or product code.
+modular-monolith architecture. The Product Owner authorized a narrow provider-disabled technical
+baseline on 2026-08-24: contracts, transition validation, minimized projections, a fail-closed Admin
+route/API posture and bilingual UI. It does not authorize tables, migrations, RLS policy activation,
+workers, imports/exports, providers, real person/client data, merge, conversion, marketing messages
+or operational product activation.
 
 The dedicated M018 contract in [`m018-client-management.md`](m018-client-management.md) and proposed
 [`ADR 022`](../adr/022-client-party-lifecycle-representation-and-aggregate-boundary.md) refine the

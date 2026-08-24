@@ -71,3 +71,18 @@ artifact. This review validates documentary architecture, not runtime routes, sc
 behavior, operational data, accessibility in a browser or restoration. Those require Product Owner
 decisions, acceptance of ADR 021, explicit `GENERATE` plus a Build gate, implementation and a new
 independent runtime review. This report does not authorize merge, deployment or production use.
+
+## 2026-08-24 implementation architecture review
+
+- Reviewer: Codex Architecture Agent conducting a self-review of the provider-disabled implementation.
+- Independence: this is not an independent approval and does not replace Product Owner or separate review.
+- Result: no new material architecture finding in the scoped technical baseline.
+
+The implementation preserves the documented owner boundary: it creates no Person, Client,
+Organization, Lead, ServiceOrder, CaseFile, Task, Appointment, Message, Payment, Consent or audit
+record. CRM projections require an authorization snapshot, a non-empty active purpose-binding set and
+a final revalidation. Missing provider projections remain unavailable; missing permissions are
+suppressed. The stage helper validates only a permitted stage edge plus exact pipeline-version and
+purpose-binding inputs; it does not perform a transition or mutate state. Duplicate candidates are
+explicitly review-only. Routes and API return no workspace unless a future configured owner authorizes
+it. Product Owner acceptance and an independent runtime/security review remain required.

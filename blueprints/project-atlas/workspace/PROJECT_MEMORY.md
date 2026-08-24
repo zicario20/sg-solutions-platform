@@ -938,3 +938,13 @@ review found no open findings. Full UI/application typechecking remains not vali
 pre-existing M008-M010 errors and the pinned Node version mismatch block the workspace checks.
 No real staff/client data, owner integration, command, migration, provider, deployment or production
 activation was added. Product Owner acceptance remains required before M017.
+
+## 2026-08-24 - M017 provider-disabled technical baseline
+
+The Product Owner authorized autonomous sequential work from the M015/M016 base. M017 adds a
+provider-disabled CRM boundary for commercial relationships and opportunities only: permission- and
+purpose-binding-scoped projections, version-fenced stage validation, activity and duplicate-review
+contracts, prohibited-field rejection, fail-closed Admin route/API posture and bilingual internal UI.
+It neither merges identities nor converts/activates clients, services, orders or cases. Canonical
+owners remain M018-M023 and the relevant existing modules. No migration, real CRM data, provider,
+AI, import/export, deployment or operational activation occurred.

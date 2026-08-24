@@ -79,6 +79,9 @@ importers:
       '@atlas/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@atlas/crm':
+        specifier: workspace:*
+        version: link:../../packages/crm
       '@atlas/dashboard':
         specifier: workspace:*
         version: link:../../packages/dashboard
@@ -192,6 +195,8 @@ importers:
 
   packages/config: {}
 
+  packages/crm: {}
+
   packages/dashboard: {}
 
   packages/database:
@@ -277,6 +282,9 @@ importers:
       '@atlas/client-services':
         specifier: workspace:*
         version: link:../client-services
+      '@atlas/crm':
+        specifier: workspace:*
+        version: link:../crm
       '@atlas/dashboard':
         specifier: workspace:*
         version: link:../dashboard
