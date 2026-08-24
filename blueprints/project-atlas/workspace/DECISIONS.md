@@ -796,3 +796,14 @@ This gate excludes schema/migrations, real Person/Household/Client data, RLS act
 assignments/representatives/restrictions/notes, owner commands, organization management, imports,
 exports, AI, providers, deployment, merge, release and Operational status. Product Owner acceptance
 remains required before M019.
+
+## Decision 055 - M018 provider-disabled foundation acceptance
+
+- Date: 2026-08-24
+- Authority: Product Owner
+- Status: accepted foundation; operational activation pending
+
+M018 is accepted as a provider-disabled technical foundation only. Its UI, route, contract and
+safe fail-closed behavior are approved for the current phase. It is not an operational client
+management capability and must not be represented as one until canonical CRM, account and
+organization ownership are implemented and independently reviewed.

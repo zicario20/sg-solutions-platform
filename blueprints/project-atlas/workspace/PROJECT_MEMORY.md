@@ -957,3 +957,10 @@ proposal controls that never grant access, minimized 360 section projections, pr
 rejection, fail-closed Admin route/API posture and bilingual internal UI. It does not persist people,
 households, clients, assignments, restrictions, representatives, notes or owner facts. M019 remains
 the organization owner and all composed operational sources remain disabled.
+
+## 2026-08-24 - M018 provider-disabled foundation accepted
+
+The Product Owner accepted M018 as a provider-disabled technical foundation after the M016-M019
+functional-completeness audit. The acceptance covers the typed contract, safe shell, fail-closed
+runtime behavior and focused verification. It does not approve operational client management or
+waive the need for canonical CRM, account and organization ownership.

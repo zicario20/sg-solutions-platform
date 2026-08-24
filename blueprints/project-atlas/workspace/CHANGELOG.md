@@ -296,3 +296,6 @@
   lifecycle contracts, representative-proposal safeguards, minimized 360 projections, PII/account
   field rejection, fail-closed Admin route/API and bilingual responsive internal UI. No client records,
   migrations, access grants, owner actions, organization behavior or provider activation was added.
+
+- Recorded Product Owner acceptance of M018 as a provider-disabled technical foundation; operational
+  client management remains deferred to canonical CRM, account and organization owners.
