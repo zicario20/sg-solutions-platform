@@ -11,11 +11,11 @@ describe("M007 durable sessions and invitations", () => {
     await expect(sessions.rotate({ handle: issued.handle })).resolves.toEqual({ kind: "family_revoked" });
   });
 
-  it("consumes an invitation only once for the bound identity, contact and scope", async () => {
+  it("consumes an invitation only once through the bound durable invitation repository", async () => {
     let used = false;
-    const invitations = createDurableInvitationService({ issue: async () => undefined, consume: async (input) => input.identityEvidenceId === "identity-1" && input.contactId === "contact-1" && input.scope === "org:read" && !used ? (used = true, { kind: "consumed" }) : { kind: "manual_review" } });
-    const invitation = await invitations.issue({ contactId: "contact-1", scope: "org:read", inviterAccountId: "inviter" });
-    await expect(invitations.consume({ ...invitation, identityEvidenceId: "identity-1", contactId: "contact-1", scope: "org:read" })).resolves.toEqual({ kind: "consumed" });
-    await expect(invitations.consume({ ...invitation, identityEvidenceId: "identity-1", contactId: "contact-1", scope: "org:read" })).resolves.toEqual({ kind: "manual_review" });
+    const invitations = createDurableInvitationService({ issue: async () => undefined, consume: async (input) => input.id.length > 0 && input.proofDigest.length > 0 && input.sessionHandleDigest.length > 0 && !used ? (used = true, { kind: "consumed" }) : { kind: "manual_review" } });
+    const invitation = await invitations.issue({ contactId: "contact-1", scope: "org:read", inviterAccountId: "inviter", expectedProviderSubject: "subject-1" });
+    await expect(invitations.consume({ ...invitation, sessionHandle: "session-1" })).resolves.toEqual({ kind: "consumed" });
+    await expect(invitations.consume({ ...invitation, sessionHandle: "session-1" })).resolves.toEqual({ kind: "manual_review" });
   });
 });

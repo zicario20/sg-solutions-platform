@@ -17,7 +17,7 @@ import { describe, expect, it } from "vitest";
 
 describe("M007 architecture-review security regressions", () => {
   it("dispatches a route-specific backend facade with the configured canonical origin", async () => {
-    const runtime = createServerAuthRuntime({ canonicalOrigin: "https://portal.example", controlPlane: { admit: async () => ({ kind: "accepted" }), revoke: async () => ({ kind: "denied" }) } });
+    const runtime = createServerAuthRuntime({ canonicalOrigin: "https://portal.example", controlPlane: { admit: async () => ({ kind: "accepted" }), revokeCurrent: async () => ({ kind: "denied" }), revokeOthers: async () => ({ kind: "denied" }) }, emailAuth: { signUp: async () => ({ kind: "accepted" as const }), signIn: async () => ({ kind: "accepted" as const }), sendVerification: async () => ({ kind: "accepted" as const }), consumeVerification: async () => ({ kind: "accepted" as const }), requestRecovery: async () => ({ kind: "accepted" as const }), consumeReset: async () => ({ kind: "accepted" as const }), logout: async () => undefined } });
     const response = await createAuthRouteHandler(runtime, "register")(new Request("https://portal.example/api/auth/register", { method: "POST", headers: { origin: "https://portal.example" } }));
     expect(response.status).toBe(202);
     const unavailable = createServerAuthRuntime({ canonicalOrigin: "https://portal.example" });

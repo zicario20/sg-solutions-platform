@@ -8,8 +8,8 @@ class FakeHandlerSql implements AuthSql {
   async begin<T>(callback: (transaction: AuthTransactionSql) => Promise<T>): Promise<T> {
     return callback({ unsafe: async <R>(statement: string, parameters: readonly unknown[] = []) => {
       this.parameters.push([...parameters]);
-      if (statement.includes("atlas_auth_admit_risk_keys")) return [{ allowed: true }] as R;
-      if (statement.includes("auth_security_events")) return [{ id: "audit-1" }] as R;
+      if (statement.includes("atlas_auth_admit_and_enqueue")) return [{ allowed: true }] as R;
+      if (statement.includes("atlas_auth_append_audit")) return [{ appended: true }] as R;
       return [] as R;
     } });
   }
@@ -25,7 +25,7 @@ describe("AR-007 auth handler durable control wiring", () => {
       AUTH_EMAIL_PROVIDER_ENABLED: "true",
     }, { sql });
     if (!controlPlane) throw new Error("expected configured control plane");
-    const runtime = createServerAuthRuntime({ canonicalOrigin: "https://portal.example", controlPlane });
+    const runtime = createServerAuthRuntime({ canonicalOrigin: "https://portal.example", trustProxyHeaders: true, controlPlane });
 
     const response = await runtime.handle("recovery", new Request("https://portal.example/api/auth/recovery", {
       method: "POST",
@@ -33,7 +33,7 @@ describe("AR-007 auth handler durable control wiring", () => {
       body: "email=person%40example.com&phone=%2B15555550100",
     }));
 
-    expect(response.status).toBe(202);
+    expect(response.status).toBe(503);
     const serialized = JSON.stringify(sql.parameters);
     expect(serialized).not.toContain("person@example.com");
     expect(serialized).not.toContain("+15555550100");

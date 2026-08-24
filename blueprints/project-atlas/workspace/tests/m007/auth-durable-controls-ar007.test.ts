@@ -15,11 +15,11 @@ class FakeControlsSql implements AuthSql {
     return callback({
       unsafe: async <R>(statement: string, parameters: readonly unknown[] = []) => {
         this.queries.push({ transaction, statement, parameters });
-        if (statement.includes("atlas_auth_admit_risk_keys")) return [{ allowed: this.allowed }] as R;
-        if (statement.includes("insert into auth_security_events")) {
-          if (this.auditInserted) return [] as R;
+        if (statement.includes("atlas_auth_admit_and_enqueue")) return [{ allowed: this.allowed }] as R;
+        if (statement.includes("atlas_auth_append_audit")) {
+          if (this.auditInserted) return [{ appended: false }] as R;
           this.auditInserted = true;
-          return [{ id: "audit-1" }] as R;
+          return [{ appended: true }] as R;
         }
         return [] as R;
       },
@@ -52,9 +52,9 @@ describe("AR-007 PostgreSQL durable controls", () => {
 
     await expect(repository.admitAndEnqueue(admission)).resolves.toEqual({ kind: "rate_limited" });
 
-    const rate = sql.queries.find((query) => query.statement.includes("atlas_auth_admit_risk_keys"));
-    expect(rate?.parameters).toEqual(["recovery", admission.riskKeyDigests, 5, 900, admission.now]);
-    expect(sql.queries.some((query) => query.statement.includes("insert into auth_outbox"))).toBe(false);
+    const rate = sql.queries.find((query) => query.statement.includes("atlas_auth_admit_and_enqueue"));
+    expect(rate?.parameters.slice(0, 4)).toEqual(["recovery", admission.riskKeyDigests, 5, 900]);
+    expect(sql.queries.some((query) => /insert into auth_(outbox|security_events)/iu.test(query.statement))).toBe(false);
     expect(new Set(sql.queries.map((query) => query.transaction)).size).toBe(1);
   });
 
@@ -71,9 +71,7 @@ describe("AR-007 PostgreSQL durable controls", () => {
     const sql = new FakeControlsSql(true);
     await expect(new PostgresDurableAuthControlsRepository(sql).admitAndEnqueue(admission)).resolves.toEqual({ kind: "accepted" });
     expect(sql.queries.map((query) => query.statement)).toEqual([
-      expect.stringContaining("atlas_auth_admit_risk_keys"),
-      expect.stringContaining("insert into auth_security_events"),
-      expect.stringContaining("insert into auth_outbox"),
+      expect.stringContaining("atlas_auth_admit_and_enqueue"),
     ]);
     expect(new Set(sql.queries.map((query) => query.transaction)).size).toBe(1);
   });

@@ -15,22 +15,10 @@ class FakeIdentitySql implements AuthSql {
     return callback({
       unsafe: async <R>(statement: string, parameters: readonly unknown[] = []) => {
         this.executed.push({ transaction, statement, parameters });
-        if (statement.includes("from auth_supabase_identity_evidence")) {
-          return [{ id: "supabase-evidence-1", provider_subject: "subject-1" }] as R;
-        }
-        if (statement.includes("insert into auth_accounts")) {
-          return [{ id: "account-1", status: "active" }] as R;
-        }
-        if (statement.includes("insert into auth_external_identities")) {
-          return [{ id: "external-1" }] as R;
-        }
-        if (statement.includes("from auth_crm_party_evidence")) {
-          return [{
-            id: "crm-evidence-1",
-            resolution: this.crmResolution,
-            relationship_receipt: this.crmResolution === "linked" ? "crm-link-1" : null,
-          }] as R;
-        }
+        if (statement.includes("atlas_auth_authenticate_identity")) return [{
+          kind: this.crmResolution === "linked" ? "authenticated" : "manual_review",
+          account_id: this.crmResolution === "linked" ? "account-1" : null,
+        }] as R;
         return [] as R;
       },
     });
@@ -48,7 +36,7 @@ const verifiedIdentity = {
 };
 
 describe("M007 PostgreSQL identity evidence", () => {
-  it("creates the account, external identity, CRM link, and hash-only session in one transaction", async () => {
+  it("passes verified evidence to the restricted PostgreSQL identity procedure without a raw session handle", async () => {
     const sql = new FakeIdentitySql();
     const service = createPersistentOAuthAccountService({
       repository: new PostgresAuthIdentityRepository(sql),
@@ -61,18 +49,13 @@ describe("M007 PostgreSQL identity evidence", () => {
 
     expect(result).toMatchObject({ kind: "authenticated", accountId: "account-1" });
     if (result.kind !== "authenticated") throw new Error("expected authenticated result");
-    const accountTransaction = sql.executed.filter((entry) => entry.statement.includes("auth_accounts"))[0]?.transaction;
-    const atomicStatements = sql.executed.filter((entry) => entry.transaction === accountTransaction).map((entry) => entry.statement);
-    expect(atomicStatements).toEqual([
-      expect.stringContaining("from auth_supabase_identity_evidence"),
-      expect.stringContaining("from auth_crm_party_evidence"),
-      expect.stringContaining("insert into auth_accounts"),
-      expect.stringContaining("insert into auth_external_identities"),
-      expect.stringContaining("insert into auth_party_links"),
-      expect.stringContaining("insert into auth_sessions"),
-    ]);
+    expect(sql.executed.some((entry) => entry.statement.includes("atlas_auth_store_supabase_evidence"))).toBe(true);
+    expect(sql.executed.some((entry) => entry.statement.includes("atlas_auth_store_crm_evidence"))).toBe(true);
+    const authentication = sql.executed.find((entry) => entry.statement.includes("atlas_auth_authenticate_identity"));
+    expect(authentication?.parameters).toContain(verifiedIdentity.issuer);
+    expect(authentication?.parameters).toContain(verifiedIdentity.audience);
     expect(sql.executed.flatMap((entry) => entry.parameters)).not.toContain(result.handle);
-    expect(sql.executed.find((entry) => entry.statement.includes("insert into auth_sessions"))?.parameters).toContain(result.handleDigest);
+    expect(authentication?.parameters).toContain(result.handleDigest);
   });
 
   it("persists a manual-review conflict and never creates a session", async () => {
@@ -85,7 +68,6 @@ describe("M007 PostgreSQL identity evidence", () => {
     });
 
     await expect(service.authenticate(verifiedIdentity)).resolves.toEqual({ kind: "manual_review" });
-    expect(sql.executed.some((entry) => entry.statement.includes("insert into auth_identity_conflicts"))).toBe(true);
-    expect(sql.executed.some((entry) => entry.statement.includes("insert into auth_sessions"))).toBe(false);
+    expect(sql.executed.some((entry) => entry.statement.includes("atlas_auth_authenticate_identity"))).toBe(true);
   });
 });

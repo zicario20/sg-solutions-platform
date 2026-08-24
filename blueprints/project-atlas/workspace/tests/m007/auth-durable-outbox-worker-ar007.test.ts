@@ -9,6 +9,8 @@ const command: DurableAuthOutboxCommand = {
   payload: { ownerKeyDigest: "owner-hash" },
   attemptCount: 0,
   leaseVersion: 1,
+  leaseOwner: "worker-1",
+  leasePurpose: "dispatch",
 };
 
 class FakeOutboxRepository implements DurableAuthOutboxRepository {
@@ -21,8 +23,8 @@ class FakeOutboxRepository implements DurableAuthOutboxRepository {
   }
 
   async lease(input: { leasePurpose: "dispatch" | "reconcile" }) {
-    if (input.leasePurpose === "dispatch" && this.state === "pending") return [command];
-    if (input.leasePurpose === "reconcile" && this.state === "reconciling") return [{ ...command, leaseVersion: 2 }];
+    if (input.leasePurpose === "dispatch" && this.state === "pending") return [{ ...command, leaseOwner: input.owner, leasePurpose: input.leasePurpose }];
+    if (input.leasePurpose === "reconcile" && this.state === "reconciling") return [{ ...command, leaseVersion: 2, leaseOwner: input.owner, leasePurpose: input.leasePurpose }];
     return [];
   }
 

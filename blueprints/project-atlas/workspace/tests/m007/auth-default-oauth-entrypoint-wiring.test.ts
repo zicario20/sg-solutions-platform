@@ -4,16 +4,17 @@ import { describe, expect, it } from "vitest";
 
 class FakeOAuthSql implements AuthSql {
   readonly statements: string[] = [];
+  private nonceCiphertext = "";
+  private pkceVerifierCiphertext = "";
 
   async begin<T>(callback: (transaction: AuthTransactionSql) => Promise<T>): Promise<T> {
     return callback({
-      unsafe: async <R>(statement: string) => {
+      unsafe: async <R>(statement: string, parameters: readonly unknown[] = []) => {
         this.statements.push(statement);
-        if (statement.includes("update auth_transactions")) return [{ id: "oauth-transaction-1" }] as R;
-        if (statement.includes("from auth_supabase_identity_evidence")) return [{ id: "supabase-evidence-1", provider_subject: "subject-1" }] as R;
-        if (statement.includes("insert into auth_accounts")) return [{ id: "account-1", status: "active" }] as R;
-        if (statement.includes("insert into auth_external_identities")) return [{ id: "external-1" }] as R;
-        if (statement.includes("from auth_crm_party_evidence")) return [{ id: "crm-evidence-1", resolution: "linked", relationship_receipt: "crm-link-1" }] as R;
+        if (statement.includes("atlas_auth_issue_oauth_transaction")) { this.nonceCiphertext = String(parameters[8]); this.pkceVerifierCiphertext = String(parameters[9]); return [] as R; }
+        if (statement.includes("atlas_auth_load_oauth_transaction")) return [{ nonce_ciphertext: this.nonceCiphertext, pkce_verifier_ciphertext: this.pkceVerifierCiphertext }] as R;
+        if (statement.includes("atlas_auth_consume_oauth_transaction")) return [{ outcome: "consumed" }] as R;
+        if (statement.includes("atlas_auth_authenticate_identity")) return [{ kind: "authenticated", account_id: "account-1" }] as R;
         return [] as R;
       },
     });
@@ -29,24 +30,26 @@ describe("M007 default OAuth entrypoint wiring", () => {
       SUPABASE_OAUTH_ENABLED: "true",
       SUPABASE_ISSUER: "https://supabase.example/auth/v1",
       SUPABASE_AUDIENCE: "authenticated",
+      SUPABASE_URL: "https://supabase.example",
+      AUTH_OAUTH_SECRET_KEY: "oauth-secret-at-least-32-characters-long",
     }, {
       sql,
-      provider: { verifyGoogle: async () => ({ issuer: "https://supabase.example/auth/v1", audience: "authenticated", subject: "subject-1", emailVerified: true, expiresAt: Date.now() + 60_000, transactionId: "provider-transaction-1", provider: "google" }) },
+      provider: { authorizationUrl: ({ state }) => `https://supabase.example/auth/v1/authorize?state=${state}`, exchangeAndVerify: async ({ code }) => code === "code-1" ? ({ issuer: "https://supabase.example/auth/v1", audience: "authenticated", subject: "subject-1", emailVerified: true, expiresAt: Date.now() + 60_000, transactionId: "provider-transaction-1", provider: "google" }) : undefined },
       crm: { resolve: async () => ({ kind: "linked", relationshipReceipt: "crm-link-1", partyId: "party-1" }) },
     });
-    const routes = createOAuthInvitationEntryPoints(adapter);
+    const routes = createOAuthInvitationEntryPoints(adapter, "csrf-secret-at-least-32-bytes-long");
 
     const started = await routes.start(new Request("https://portal.example/api/auth/oauth/google/start", { method: "POST", headers: { origin: "https://portal.example" } }));
-    const transaction = await started.json() as { state: string; nonce: string; pkceVerifier: string };
+    const state = new URL(started.headers.get("location") ?? "https://invalid.example").searchParams.get("state") ?? "";
     const bindingCookie = started.headers.get("set-cookie") ?? "";
-    const callback = await routes.callback(new Request(`https://portal.example/api/auth/oauth/google/callback?state=${transaction.state}&nonce=${transaction.nonce}&code_verifier=${transaction.pkceVerifier}`, { headers: { origin: "https://portal.example", cookie: bindingCookie } }));
+    const callback = await routes.callback(new Request(`https://portal.example/api/auth/oauth/google/callback?state=${state}&code=code-1`, { headers: { origin: "https://portal.example", cookie: bindingCookie } }));
 
-    expect(started.status).toBe(202);
+    expect(started.status).toBe(303);
     expect(callback.status).toBe(204);
     expect(callback.headers.get("set-cookie")).toContain("__Host-atlas_auth=");
-    expect(sql.statements.some((statement) => statement.includes("auth_supabase_identity_evidence"))).toBe(true);
-    expect(sql.statements.some((statement) => statement.includes("auth_crm_party_evidence"))).toBe(true);
-    expect(sql.statements.some((statement) => statement.includes("insert into auth_sessions"))).toBe(true);
+    expect(sql.statements.some((statement) => statement.includes("atlas_auth_store_supabase_evidence"))).toBe(true);
+    expect(sql.statements.some((statement) => statement.includes("atlas_auth_store_crm_evidence"))).toBe(true);
+    expect(sql.statements.some((statement) => statement.includes("atlas_auth_authenticate_identity"))).toBe(true);
   });
 
   it("fails closed with a neutral unavailable response when provider composition is missing", async () => {
