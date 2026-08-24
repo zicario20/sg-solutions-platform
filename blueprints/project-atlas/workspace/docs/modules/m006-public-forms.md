@@ -2,7 +2,7 @@
 
 - Owner: Product Owner
 - Architect: Codex Architecture Agent
-- Status: Provider-disabled implementation complete; Product Owner acceptance pending
+- Status: Product Owner accepted provider-disabled implementation; activation, merge, deployment and release remain pending
 - Date: 2026-08-20
 - Catalog module: `M006`
 - Surface: Public Website with Backend/domain handoff
