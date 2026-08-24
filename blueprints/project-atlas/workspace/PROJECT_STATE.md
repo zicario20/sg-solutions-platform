@@ -109,3 +109,9 @@ boundary and returns a preliminary non-decisional DTI receipt. The UI/API remain
 the shipped data protector is deliberately unavailable and M015_HOME_BUYING_FINANCIAL_ENABLED=false.
 No migration, KMS, real profile data, staff review, document, AI, provider, notification, analytics,
 export or deployment is active. Other sensitive M015 purposes remain disabled.
+
+## M016 Product Owner acceptance
+
+M016 is accepted by the Product Owner as a provider-disabled foundation at commit `4384d8c`. It is
+not operational, deployed or connected to live owner data. Real aggregation, staff authorization,
+audit, provider activation and production acceptance remain separately gated.

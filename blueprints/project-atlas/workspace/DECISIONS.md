@@ -761,3 +761,14 @@ This gate excludes real staff/client data, database migrations, RLS activation, 
 background jobs, saved-view persistence, exports, impersonation, realtime, deployment, merge,
 release and Operational status. Architecture and security closure plus Product Owner acceptance are
 required before M017.
+
+## Decision 053 - M016 Product Owner provider-disabled foundation acceptance
+
+- Date: 2026-08-24
+- Authority: Product Owner
+- Accepted commit: `4384d8c`
+- Status: accepted foundation; operational activation pending
+
+The Product Owner accepts the M016 provider-disabled foundation only. Full operational acceptance
+remains contingent on the real owner modules, authorization adapter, data sources, audit, performance
+evidence and a separate activation gate.

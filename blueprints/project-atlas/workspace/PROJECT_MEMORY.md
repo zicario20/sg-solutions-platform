@@ -938,3 +938,10 @@ review found no open findings. Full UI/application typechecking remains not vali
 pre-existing M008-M010 errors and the pinned Node version mismatch block the workspace checks.
 No real staff/client data, owner integration, command, migration, provider, deployment or production
 activation was added. Product Owner acceptance remains required before M017.
+
+## 2026-08-24 - M016 Product Owner foundation acceptance
+
+The Product Owner accepted M016 Administrative Dashboard at commit `4384d8c` as a
+provider-disabled foundation. This accepts the role/permission aggregation boundary, deterministic
+priority policy, safe dashboard DTO/UI and fail-closed posture. It does not activate real staff/client
+data, owner adapters, commands, migrations, providers, deployment or operational dashboard behavior.
