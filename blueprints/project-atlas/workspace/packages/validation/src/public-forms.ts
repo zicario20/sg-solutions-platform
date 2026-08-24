@@ -21,6 +21,22 @@ const consents = z
   .refine((record) => Object.keys(record).every((key) => !forbiddenKeys.has(key)))
   .transform((record) => Object.freeze({ ...record }));
 
+const attributionValue = z.string().trim().min(1).max(512).refine((value) => !/[\r\n]/u.test(value));
+const attribution = z
+  .object({
+    landingPage: attributionValue.optional(),
+    referrer: attributionValue.optional(),
+    utmSource: attributionValue.optional(),
+    utmMedium: attributionValue.optional(),
+    utmCampaign: attributionValue.optional(),
+    utmTerm: attributionValue.optional(),
+    utmContent: attributionValue.optional(),
+    partnerCode: attributionValue.optional(),
+  })
+  .strict()
+  .optional()
+  .transform((value) => (value === undefined ? undefined : Object.freeze({ ...value })));
+
 export const publicSubmissionEnvelopeSchema = z
   .object({
     formCode: safeCode,
@@ -33,6 +49,7 @@ export const publicSubmissionEnvelopeSchema = z
     idempotencyKey: safeOpaqueToken,
     answers,
     consents,
+    attribution,
     honeypot: z.literal("").optional(),
   })
   .strict();

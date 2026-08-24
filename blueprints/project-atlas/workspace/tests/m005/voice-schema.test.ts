@@ -38,12 +38,7 @@ describe("M005 metadata-only voice schema", () => {
 
   it("generates a forward lease and scoped forced-RLS migration through Drizzle", () => {
     const workspace = fileURLToPath(new URL("../../", import.meta.url));
-    const journal = JSON.parse(
-      readFileSync(`${workspace}drizzle/meta/_journal.json`, "utf8"),
-    ) as { entries: Array<{ idx: number; tag: string }> };
-    const latest = journal.entries.at(-1);
-    expect(latest?.idx).toBeGreaterThanOrEqual(18);
-    const sql = readFileSync(`${workspace}drizzle/${latest?.tag}.sql`, "utf8");
+    const sql = readFileSync(`${workspace}drizzle/0018_m005_voice_rls_hardening.sql`, "utf8");
     for (const table of [
       "voice_calls",
       "voice_interactions",

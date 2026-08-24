@@ -17,6 +17,7 @@ const dependencies = (mode: "allowed" | "revoked" = "allowed"): DashboardHttpDep
     query: service.query.bind(service),
     selectContext: async () => ({ kind: "denied" }),
     verifyCsrf: () => false,
+    admit: async () => "accepted",
   };
 };
 
@@ -42,11 +43,25 @@ describe("M008 security integration", () => {
     expect(response.status).toBe(200);
     const body = await response.text();
     expect(body).not.toMatch(/accountId|sessionFamilyId|userId|membershipFence|resourceGrantFence|entitlementFence|stripe|synthetic-account|synthetic-user/i);
-    expect(JSON.parse(body)).toMatchObject({ context: { type: "personal" }, priority: { kind: "none" } });
+    expect(JSON.parse(body)).toMatchObject({ context: { type: "personal" }, priority: { kind: "unconfirmed" } });
   });
 
   it("isolates cache keys across users and contexts", () => {
-    const first: DashboardAuthorizationSnapshot = { ...syntheticEvidence, locale: "es", capturedAt: new Date("2026-08-21T12:00:00.000Z") };
+    const first: DashboardAuthorizationSnapshot = {
+      ...syntheticEvidence,
+      schemaVersion: "m008.auth.v2",
+      sessionId: "synthetic-session",
+      accountStatus: "active",
+      sessionStatus: "active",
+      sessionExpiresAt: "2099-08-21T13:00:00.000Z",
+      assurance: "aal1",
+      authenticationEpoch: "7",
+      authorizationEpoch: "11",
+      policyEpoch: "13",
+      contextOptions: [{ opaqueRef: "synthetic-context", label: "Personal", type: "personal" }],
+      locale: "es",
+      capturedAt: new Date("2026-08-21T12:00:00.000Z"),
+    };
     const second: DashboardAuthorizationSnapshot = { ...first, userId: "synthetic-user-b", context: { type: "organization", opaqueRef: "synthetic-context-b" } };
     expect(buildDashboardCacheKey(first, "help")).not.toBe(buildDashboardCacheKey(second, "help"));
   });

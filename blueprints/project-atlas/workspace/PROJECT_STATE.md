@@ -1,55 +1,43 @@
 # Project Atlas - Current State
 
-- Version: 0.1.0-alpha.31
+- Version: 0.1.0-alpha.32
 - Updated: 2026-08-24
 - Phase: M016-M019 provider-disabled foundations accepted; functional activation remains separately gated
 - Accepted base: M009 commit 6667872
-- Next: Continue with the next Product Owner-authorized module; provider activation remains separately gated
+- Next: an explicit Product Owner gate for the next module; provider activation remains separately gated
 - Production: no deployment/live-provider authority
 
-## Accepted progression
+## Accepted provider-disabled progression
 
-M008 was accepted at `09c9403`. Decision 041 records Product Owner acceptance of provider-disabled
-M009 at `6667872`. Decision 042 accepts ADR 014 and authorizes only the isolated provider-disabled
-M010 Build.
+Decisions 032, 034–035, 037, 039, 041, 043–044 and 056 record accepted bounded scopes for M004–M009,
+M013–M014 and M016–M019. Those decisions accept technical foundations only. They do not create live
+providers, production data, migrations, deployment, release or Operational status.
 
 ## Current gate
 
-M010 T1-T9 implementation evidence has reached independent static closure review. Architecture is
-`APPROVED` with `0` Critical, `0` Important and `0` Minor findings. Cyber Neo is `APPROVED` with
-`0` Critical, `0` High, `0` Medium and `0` Low findings.
+M016–M019 are accepted provider-disabled technical foundations. Their routes, projections and UI
+must fail closed when their canonical owner data is absent. They neither replace the owners for
+Party/Client/Organization/ServiceOrder/Case/Task/Document/Message/Payment truth nor authorize
+provider activation.
 
-M011 secure-core implementation is ready for explicit Product Owner acceptance. It provides typed
-document authority, quarantine-first lifecycle, fail-closed scan state, immutable version metadata,
-server-only Drizzle schema, private client route/API posture and bilingual client-safe UI. It is not
-accepted, deployed, released or `Operational`; MinIO/S3, ClamAV, migrations/RLS under real roles,
-upload traffic and real client data remain inactive.
-
-## Architecture position
-
-M010 is one request-scoped read-only public projection per authorized M009 `ServiceOrder`. M009
-remains service directory/root owner and M008 remains dashboard/global-priority owner. M010 owns no
-command, process truth, timeline table, writer, materializer or provider integration.
-
-Configured sources remain unavailable unless an approved owner is injected. Missing or uncertain
-critical evidence returns `unconfirmed` or `unavailable`; no process facts, milestones, dates,
-percentages, events or provider responses are invented. Payment does not imply approval or start.
+M010 remains an unaccepted provider-disabled closure candidate. M011 and M012 have implementation
+evidence but remain unaccepted, unmigrated, undeployed and provider-disabled. Their document and
+message flows must stay unavailable until the named Storage, scanner, retention, encryption and
+authorization gates are approved and proven.
 
 ## Evidence limitations and blockers
 
-- Tests and typechecks were `NOT EXECUTED`: pnpm failed with `EPERM`, and the repository requires
-  Node `24.18.1` while Node `24.19.0` is available.
-- Providers, configured owners, live PostgreSQL, migrations/RLS under real roles, live integrations,
-  browser/visual behavior, full build and deployment are not validated.
-- Credentials, real client data, provider activation, merge, deployment, release and production
-  authority remain outside Decision 042.
-- Concrete mappings, event allowlists, copy, estimates, freshness thresholds and later owner-module
-  activation retain their Product Owner and module-specific gates.
+- The 2026-08-24 repository audit repaired M007's stale secure-auth test fixtures. The focused
+  M007/M011/M012/M014/M015/M018/M019 suite passed 60 files and 140 tests on this branch.
+- Providers, configured owner data, real PostgreSQL migrations/RLS under production roles, browser
+  behavior, full build, deployment and recovery testing remain unvalidated.
+- Credentials, real client data, provider activation, merge, release and production authority remain
+  outside every accepted provider-disabled scope.
 
 ## Next action
 
-The Product Owner may accept or reject M010 in provider-disabled scope. No M011 work may begin until
-explicit M010 acceptance and a separate M011 gate are recorded.
+Do not activate a provider or treat any accepted foundation as operational. Begin only the next
+module explicitly authorized by the Product Owner and preserve one-module-at-a-time execution.
 
 ## M012 implementation position
 
@@ -74,7 +62,7 @@ activation still requires real RLS/migration evidence, provider-specific review 
 M014 client payments and billing is accepted by the Product Owner in provider-disabled scope. It has typed payment-provider and
 billing-provider boundaries, integer minor-unit USD contracts, account/context fencing, idempotency,
 raw Stripe signature verification, RLS financial schema, a private bilingual payment surface and an
-inert return page. It is not migrated, deployed, operational or accepted. Prices, payment orders,
+inert return page. It is not migrated, deployed or operational. Prices, payment orders,
 Stripe traffic, invoices, refunds, disputes and provider credentials remain inactive pending policy,
 security review and a separate Product Owner activation gate. Payment confirmation never starts a
 service; internal human approval remains separate.
@@ -118,7 +106,8 @@ fences; deterministic stage-transition validation; PII/content rejection; fail-c
 and bilingual responsive internal UI. It owns no canonical identity, Client, Organization, Lead,
 ServiceOrder, CaseFile, Task, Appointment, Message, Payment, Consent or audit truth. No tables,
 migrations, real CRM records, merges, conversions, assignments, imports/exports, AI, providers,
-deployment or product activation occurred. Product Owner acceptance remains pending.
+deployment or product activation occurred. The Product Owner accepted it as a provider-disabled
+technical foundation only; functional activation remains pending canonical owners.
 
 ## M018 implementation position
 
@@ -137,3 +126,10 @@ sensitive-field rejection and a fail-closed Admin route/API with bilingual inter
 ownership, registered-agent, filing, compliance, client-access, migration, provider, AI, deployment or
 operational activation occurred. The Product Owner accepted this as a technical foundation only;
 functional activation remains pending canonical owners.
+
+## 2026-08-24 - Technical audit reconciliation
+
+- M005-M019 provider-disabled audit completed with 136 passing test files and 436 passing tests.
+- Corrected M006 attribution validation and stale M005/M007/M008/M010 test contracts; no provider, persistence, migration, deployment or operational workflow was activated.
+- Provider connection inventory: `docs/runbooks/PROVIDER_AND_FUTURE_CONNECTIONS.md`.
+- Product Owner acceptance remains distinct from technical verification and is still required where the catalog says pending.

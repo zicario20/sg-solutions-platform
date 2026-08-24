@@ -8,10 +8,20 @@ import { recordDashboardEvent } from "@atlas/observability";
 import { describe, expect, it } from "vitest";
 
 const snapshot = (changes: Partial<DashboardAuthorizationSnapshot> = {}): DashboardAuthorizationSnapshot => ({
+  schemaVersion: "m008.auth.v2",
   accountId: "account-private-a",
+  sessionId: "session-private-a",
   sessionFamilyId: "family-private-a",
   userId: "user-private-a",
+  accountStatus: "active",
+  sessionStatus: "active",
+  sessionExpiresAt: "2099-08-21T12:00:00.000Z",
+  assurance: "aal1",
+  authenticationEpoch: "1",
+  authorizationEpoch: "1",
+  policyEpoch: "1",
   context: { type: "personal", opaqueRef: "context-private-a" },
+  contextOptions: [{ type: "personal", opaqueRef: "context-private-a", label: "Personal" }],
   membershipFence: "membership-1",
   resourceGrantFence: "grant-1",
   entitlementFence: "entitlement-1",

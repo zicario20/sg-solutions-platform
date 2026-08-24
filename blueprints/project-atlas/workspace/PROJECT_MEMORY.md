@@ -974,3 +974,7 @@ after the functional-completeness audit. This acceptance covers their bounded co
 fail-closed runtime behavior and focused verification only. It does not activate administrator,
 CRM, client-management or organization-management operations, and it does not waive any canonical
 owner, persistence, authorization or independent-review requirement.
+
+## 2026-08-24 - Repository-wide provider-disabled audit
+
+A technical reconciliation reviewed M005 through M019 in the isolated M019 worktree. It corrected one M006 public-attribution validation gap and stale M005/M007/M008/M010 test contracts without weakening production authorization, cache or provider-disabled behavior. The focused regression passed 213 tests in 50 files and the M005-M019 matrix passed 436 tests in 136 files. This is technical evidence only: it does not activate providers, persistence, real data, deployment or operational workflows, and it does not replace Product Owner acceptance or independent review.

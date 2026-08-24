@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Provider-disabled technical implementation complete; Product Owner acceptance pending
+- Status: Product Owner accepted provider-disabled technical foundation; functional activation remains pending canonical owners
 - Source version: Product Owner M018 supplied specification, read in full on 2026-08-12
 - Surface: Admin and Backend; minimized projections to Client and other authorized Admin surfaces
 - Release: Release 1A foundation, compatible Release 1B maturity and gated Future capabilities

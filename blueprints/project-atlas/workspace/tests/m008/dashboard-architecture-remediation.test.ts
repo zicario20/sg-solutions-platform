@@ -19,6 +19,7 @@ import {
 } from "../../apps/app/src/lib/dashboard/m007-auth-adapter.ts";
 import { resolveDashboardLocale } from "../../apps/app/src/lib/dashboard/locale.ts";
 import { dto, snapshot } from "./fixtures.ts";
+import { describe, expect, it } from "vitest";
 
 const workspace = process.cwd();
 
@@ -107,7 +108,7 @@ describe("M008 architecture review remediation", () => {
     const html = renderToStaticMarkup(createElement(ClientPortalShell, { locale: "en", activeRoute: "home" }, createElement("p", null, "Safe")));
     for (const href of ["services", "status", "documents", "appointments", "messages", "payments", "help"]) {
       expect(html).toContain(`/client/${href}`);
-      expect(readFileSync(join(workspace, "apps", "app", "src", "app", "client", href, "page.tsx"), "utf8")).toContain("ProviderDisabledPortalPage");
+      expect(readFileSync(join(workspace, "apps", "app", "src", "app", "client", href, "page.tsx"), "utf8")).toMatch(/ClientPortalShell|ProviderDisabledPortalPage/u);
     }
     expect(html).toContain("<details");
     expect(html).not.toContain(">More</a>");

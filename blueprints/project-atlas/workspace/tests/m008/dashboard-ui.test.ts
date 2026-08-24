@@ -40,8 +40,9 @@ describe("M008 client portal shell", () => {
 const unavailable = (): DashboardSection<never> => ({ state: "unavailable", safeReason: "provider_disabled" });
 const providerDisabledDto: DashboardDto = {
   locale: "es",
-  context: { type: "personal" },
+  context: { type: "personal", selectedOpaqueRef: "personal", options: [] },
   priority: { kind: "unconfirmed", safeReason: "required_source_unavailable", policyVersion: "m008.v1" },
+  importantAlerts: unavailable(),
   security: unavailable(),
   services: unavailable(),
   tasks: unavailable(),

@@ -10,9 +10,18 @@ import { describe, expect, it } from "vitest";
 
 const evidence = {
   accountId: "account-a",
+  sessionId: "session-a",
   sessionFamilyId: "family-a",
   userId: "user-a",
+  accountStatus: "active" as const,
+  sessionStatus: "active" as const,
+  sessionExpiresAt: "2099-08-21T12:00:00.000Z",
+  assurance: "aal1" as const,
+  authenticationEpoch: "1",
+  authorizationEpoch: "1",
+  policyEpoch: "1",
   context: { type: "personal" as const, opaqueRef: "context-a" },
+  contextOptions: [{ type: "personal" as const, opaqueRef: "context-a", label: "Personal" }],
   membershipFence: "membership-1",
   resourceGrantFence: "grant-1",
   entitlementFence: "entitlement-1",

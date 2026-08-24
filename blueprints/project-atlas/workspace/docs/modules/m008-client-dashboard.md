@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Provider-disabled implementation T1-T9 complete; Product Owner acceptance pending
+- Status: Product Owner accepted provider-disabled implementation T1-T9; activation, merge, deployment and release remain pending
 - Surface: Client Portal Home `/client`
 - Workstream: R1.5 Client Portal & Launch
 - Release target: Release 1A minimum dashboard with compatible Release 1B extensions

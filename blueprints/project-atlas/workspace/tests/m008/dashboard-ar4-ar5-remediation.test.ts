@@ -5,6 +5,7 @@ import { authorizeDashboardPageAccess } from "../../apps/app/src/lib/dashboard/p
 import { createM007DashboardAuthPort, type M007DashboardAuthProjection, type M007DashboardAuthRepository } from "../../apps/app/src/lib/dashboard/m007-auth-adapter.ts";
 import { dashboardGet } from "../../apps/app/src/lib/dashboard/http.ts";
 import { dto, syntheticAuthPort, syntheticOwnerPorts } from "./fixtures.ts";
+import { describe, expect, it } from "vitest";
 
 const validHandle = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 const origin = "https://portal.example.test";
