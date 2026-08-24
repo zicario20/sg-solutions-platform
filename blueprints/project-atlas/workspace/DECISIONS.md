@@ -742,3 +742,22 @@ proposals and may produce only a preliminary DTI; they never produce eligibility
 lender, affordability, approval or service-start results. All other sensitive M015 categories remain
 disabled. Ciphertext persistence requires an approved KMS adapter and real RLS/audit/retention
 evidence; the default runtime fails closed.
+
+## Decision 049 - M016 Administrative Dashboard provider-disabled Build
+
+- Date: 2026-08-24
+- Authority: Product Owner
+- Base/worktree: M015 `0dfa6dc` / `.worktrees/m016-admin-dashboard-build`
+- Status: implementation authorized; acceptance pending
+
+M016 may add a dedicated read-only administrative dashboard contract, deterministic priority policy,
+per-widget authorization boundary, provider-disabled aggregation runtime, safe route/API posture and
+bilingual accessible UI. Every widget remains a minimized projection with explicit evidence state;
+missing owners must be unavailable, never zero. The dashboard cannot own CRM, client, case, payment,
+document, appointment, communication, approval, provider or audit truth and cannot issue sensitive
+commands.
+
+This gate excludes real staff/client data, database migrations, RLS activation, provider calls,
+background jobs, saved-view persistence, exports, impersonation, realtime, deployment, merge,
+release and Operational status. Architecture and security closure plus Product Owner acceptance are
+required before M017.

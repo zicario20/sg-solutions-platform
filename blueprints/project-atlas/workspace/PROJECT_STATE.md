@@ -1,10 +1,10 @@
 # Project Atlas - Current State
 
-- Version: 0.1.0-alpha.30
-- Updated: 2026-08-23
-- Phase: M013 client appointments accepted in provider-disabled scope
+- Version: 0.1.0-alpha.31
+- Updated: 2026-08-24
+- Phase: M016 administrative dashboard technical closure; Product Owner acceptance pending
 - Accepted base: M009 commit 6667872
-- Next: Product Owner instruction for the next approved module; provider activation remains separately gated
+- Next: Product Owner acceptance of M016 before M017; provider activation remains separately gated
 - Production: no deployment/live-provider authority
 
 ## Accepted progression

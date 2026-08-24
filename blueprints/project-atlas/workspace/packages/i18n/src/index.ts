@@ -1,4 +1,5 @@
 export const I18N_PACKAGE_ID = "@atlas/i18n";
+export * from "./admin-dashboard.ts";
 export * from "./auth.ts";
 export * from "./client-profile.ts";
 export * from "./client-services.ts";
