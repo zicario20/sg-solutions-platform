@@ -100,6 +100,9 @@ importers:
       '@atlas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
+      '@atlas/organization-management':
+        specifier: workspace:*
+        version: link:../../packages/organization-management
       '@atlas/secure-messaging':
         specifier: workspace:*
         version: link:../../packages/secure-messaging
@@ -277,6 +280,8 @@ importers:
         specifier: 19.2.8
         version: 19.2.8(react@19.2.8)
 
+  packages/organization-management: {}
+
   packages/secure-messaging: {}
 
   packages/ui:
@@ -299,6 +304,9 @@ importers:
       '@atlas/i18n':
         specifier: workspace:*
         version: link:../i18n
+      '@atlas/organization-management':
+        specifier: workspace:*
+        version: link:../organization-management
       radix-ui:
         specifier: 1.6.7
         version: 1.6.7(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)

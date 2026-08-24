@@ -31,3 +31,4 @@ export * from "./process-status/ProcessStatusStates.tsx";
 export * from "./process-status/ProcessStatusView.tsx";
 export * from "./process-status/ProcessTimeline.tsx";
 export * from "./profile/ClientProfilePortal.tsx";
+export * from "./organization-management/OrganizationManagementWorkspaceView.tsx";

@@ -796,3 +796,20 @@ This gate excludes schema/migrations, real Person/Household/Client data, RLS act
 assignments/representatives/restrictions/notes, owner commands, organization management, imports,
 exports, AI, providers, deployment, merge, release and Operational status. Product Owner acceptance
 remains required before M019.
+
+## Decision 052 - M019 Organization Management provider-disabled Build
+
+- Date: 2026-08-24
+- Authority: Product Owner
+- Base/worktree: M018 `6017ef4` / `.worktrees/m019-organization-management-build`
+- Status: implementation authorized; acceptance pending
+
+M019 may add a typed Organization and person-organization relationship boundary, state policy guarded
+by reauthentication and version evidence, minimized authorized projections, a provider-disabled
+fail-closed Admin route/API posture and bilingual accessible UI. Ownership, role, relationship or
+organization state never grants portal/client access by implication.
+
+This gate excludes schema/migrations, real organization data, ownership, registered agents, filings,
+compliance records, EIN requests, client access grants, CRM/client/profile duplication, owner commands,
+imports, exports, AI, providers, deployment, merge, release and Operational status. Product Owner
+acceptance remains required before M020.

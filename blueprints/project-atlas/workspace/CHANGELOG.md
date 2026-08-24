@@ -296,3 +296,8 @@
   lifecycle contracts, representative-proposal safeguards, minimized 360 projections, PII/account
   field rejection, fail-closed Admin route/API and bilingual responsive internal UI. No client records,
   migrations, access grants, owner actions, organization behavior or provider activation was added.
+
+- Added the provider-disabled M019 Organization Management technical baseline: organization and
+  relationship contracts, reauthentication-fenced lifecycle policy, formation safeguards, sensitive
+  identifier rejection, fail-closed Admin route/API and bilingual responsive UI. No organization,
+  filing, compliance, ownership, provider or client-access behavior was activated.

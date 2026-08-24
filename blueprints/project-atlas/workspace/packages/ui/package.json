@@ -16,6 +16,7 @@
     "@atlas/crm": "workspace:*",
     "@atlas/dashboard": "workspace:*",
     "@atlas/i18n": "workspace:*",
+    "@atlas/organization-management": "workspace:*",
     "radix-ui": "1.6.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",

@@ -957,3 +957,12 @@ proposal controls that never grant access, minimized 360 section projections, pr
 rejection, fail-closed Admin route/API posture and bilingual internal UI. It does not persist people,
 households, clients, assignments, restrictions, representatives, notes or owner facts. M019 remains
 the organization owner and all composed operational sources remain disabled.
+
+## 2026-08-24 - M019 provider-disabled technical baseline
+
+The Product Owner's autonomous sequential authorization continues from the M018 baseline. M019 adds
+a provider-disabled Organization boundary with relationship-scoped projections, version- and
+reauthentication-fenced lifecycle policy, formation proposal safeguards, prohibited-field rejection,
+fail-closed Admin route/API posture and bilingual internal UI. It does not persist organizations,
+ownership, representatives, registered agents, filings, compliance obligations or external relations.
+Business Profile, CRM, ClientRelationship and downstream operational owners remain separate.
