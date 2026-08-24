@@ -939,6 +939,7 @@ pre-existing M008-M010 errors and the pinned Node version mismatch block the wor
 No real staff/client data, owner integration, command, migration, provider, deployment or production
 activation was added. Product Owner acceptance remains required before M017.
 
+<<<<<<< HEAD
 ## 2026-08-24 - M017 provider-disabled technical baseline
 
 The Product Owner authorized autonomous sequential work from the M015/M016 base. M017 adds a
@@ -948,3 +949,19 @@ contracts, prohibited-field rejection, fail-closed Admin route/API posture and b
 It neither merges identities nor converts/activates clients, services, orders or cases. Canonical
 owners remain M018-M023 and the relevant existing modules. No migration, real CRM data, provider,
 AI, import/export, deployment or operational activation occurred.
+=======
+## 2026-08-24 - M016 Product Owner foundation acceptance
+
+The Product Owner accepted M016 Administrative Dashboard at commit `4384d8c` as a
+provider-disabled foundation. This accepts the role/permission aggregation boundary, deterministic
+priority policy, safe dashboard DTO/UI and fail-closed posture. It does not activate real staff/client
+data, owner adapters, commands, migrations, providers, deployment or operational dashboard behavior.
+>>>>>>> f31751b (docs(m016): record provider-disabled foundation acceptance)
+
+## 2026-08-24 - M017 Product Owner foundation acceptance
+
+The Product Owner accepted M017 CRM at commit `be2794b` as a provider-disabled foundation. This
+accepts only its purpose-scoped commercial-workspace contracts, duplicate review-only safeguards,
+stage policy and fail-closed presentation boundary. CRM records, identity resolution, leads,
+opportunities, pipelines, activities, imports/exports, owners, channels, migrations and operational
+activation remain separately gated.

@@ -110,6 +110,7 @@ the shipped data protector is deliberately unavailable and M015_HOME_BUYING_FINA
 No migration, KMS, real profile data, staff review, document, AI, provider, notification, analytics,
 export or deployment is active. Other sensitive M015 purposes remain disabled.
 
+<<<<<<< HEAD
 ## M017 implementation position
 
 M017 has a provider-disabled CRM commercial-workspace baseline: typed relationship, opportunity,
@@ -119,3 +120,16 @@ and bilingual responsive internal UI. It owns no canonical identity, Client, Org
 ServiceOrder, CaseFile, Task, Appointment, Message, Payment, Consent or audit truth. No tables,
 migrations, real CRM records, merges, conversions, assignments, imports/exports, AI, providers,
 deployment or product activation occurred. Product Owner acceptance remains pending.
+=======
+## M016 Product Owner acceptance
+
+M016 is accepted by the Product Owner as a provider-disabled foundation at commit `4384d8c`. It is
+not operational, deployed or connected to live owner data. Real aggregation, staff authorization,
+audit, provider activation and production acceptance remain separately gated.
+>>>>>>> f31751b (docs(m016): record provider-disabled foundation acceptance)
+
+## M017 Product Owner acceptance
+
+M017 is accepted by the Product Owner as a provider-disabled foundation at commit `be2794b`. It is
+not operational, deployed or connected to canonical CRM data. Durable CRM state, owner integrations,
+audit and production activation remain separately gated.

@@ -291,3 +291,12 @@
   protector boundary, ciphertext-only PostgreSQL schema, personal-context API contract and bilingual
   gated client form. The only allowed values are self-reported monthly gross income and recurring
   monthly debt in USD/monthly cadence; DTI is preliminary and non-decisional.
+<<<<<<< HEAD
+=======
+- Product Owner accepted M016 Administrative Dashboard as a provider-disabled foundation at `4384d8c`.
+  No real dashboard source, command, migration, provider, deployment or operational activation is
+  accepted or enabled.
+>>>>>>> f31751b (docs(m016): record provider-disabled foundation acceptance)
+
+- Product Owner accepted M017 CRM as a provider-disabled foundation at `be2794b`. No live CRM data,
+  identity merge, lead workflow, provider, migration, deployment or operational activation is accepted.

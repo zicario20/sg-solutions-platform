@@ -762,6 +762,7 @@ background jobs, saved-view persistence, exports, impersonation, realtime, deplo
 release and Operational status. Architecture and security closure plus Product Owner acceptance are
 required before M017.
 
+<<<<<<< HEAD
 ## Decision 050 - M017 CRM provider-disabled Build
 
 - Date: 2026-08-24
@@ -779,3 +780,25 @@ This gate excludes canonical Person/Client/Organization/Lead/ServiceOrder/CaseFi
 database migrations, RLS activation, CRM records, commands, assignments, imports/exports, AI,
 marketing, provider calls, real staff/client data, deployment, merge, release and Operational status.
 Product Owner acceptance remains required before M018.
+=======
+## Decision 053 - M016 Product Owner provider-disabled foundation acceptance
+
+- Date: 2026-08-24
+- Authority: Product Owner
+- Accepted commit: `4384d8c`
+- Status: accepted foundation; operational activation pending
+
+The Product Owner accepts the M016 provider-disabled foundation only. Full operational acceptance
+remains contingent on the real owner modules, authorization adapter, data sources, audit, performance
+evidence and a separate activation gate.
+>>>>>>> f31751b (docs(m016): record provider-disabled foundation acceptance)
+
+## Decision 054 - M017 Product Owner provider-disabled foundation acceptance
+
+- Date: 2026-08-24
+- Authority: Product Owner
+- Accepted commit: `be2794b`
+- Status: accepted foundation; operational activation pending
+
+The Product Owner accepts the M017 provider-disabled foundation only. Its full acceptance awaits the
+canonical owner modules, durable CRM state, authorization/RLS evidence, audit and a separate activation gate.

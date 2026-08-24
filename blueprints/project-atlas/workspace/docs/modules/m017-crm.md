@@ -2,7 +2,7 @@
 
 - Owner: Codex Architecture Agent
 - Final approver: Product Owner
-- Status: Provider-disabled technical implementation complete; Product Owner acceptance pending
+- Status: Provider-disabled foundation accepted by Product Owner; operational activation pending
 - Version: 1.0.0-candidate
 - Date: 2026-08-12
 - Surfaces: Admin Portal and bounded backend domain/application services
