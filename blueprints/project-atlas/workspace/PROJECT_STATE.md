@@ -145,3 +145,52 @@ M022 Forms/Intake, M023 Tasks, M024 Human Approvals, M025 AI Hub and M026 DevSec
 
 - Focused evidence: Biome clean over the M021-M026 change set; direct TypeScript checks passed for eight affected packages; Vitest passed 17/17 tests in 9 files; `git diff --check` passed.
 - Global limitation: repository-wide typecheck remains blocked by pre-existing `@atlas/client-process-status` M010 errors, and global formatting reports pre-existing diagnostics outside this change set.
+
+## M027-M030 implementation position
+
+M027 Governance/Privacy/Risk, M028 Analytics, M029 Tradeline Operations and M030 Tax Operations have provider-disabled local foundations only. They retain no legal, tax, credit, partner or client data; execute no disposition, referral, placement, filing or provider request; and are not accepted, deployed or operational.
+
+- Focused evidence: Biome clean over the M027-M030 change set; direct TypeScript checks passed for four packages; Vitest passed 9/9 tests in 4 files.
+
+## M031 implementation position
+
+M031 Bookkeeping has an authorized controlled-internal Build Gate following its provider-disabled ledger and readiness-policy foundation. It creates isolated accounting books, limited-scope cases and unconnected financial-account registry entries; validates balanced double-entry drafts, chart configuration and controlled period transitions; keeps engagements, imports, classification, duplicate detection, receipt matching, splits, transfers and reconciliation reviewable; produces reproducible financial snapshots; requires human close review; prevents automatic tax filing; blocks AI posting/tax decisions; and fails closed for accounting integrations, external posting, closed-period sync conflicts and sensitive exports. Provider activation, tax calculation/filing, payment initiation, external financial exports, production deployment, merge and release remain unauthorized.
+
+- Focused evidence: Biome clean over the M031 change set; direct TypeScript checks passed for `@atlas/bookkeeping` and `@atlas/database`; Vitest passed 29/29 tests in 8 files; `git diff --check` passed.
+
+## M031 controlled implementation update
+
+- A Drizzle-owned bookkeeping schema and migration were authored but not executed. The PostgreSQL gateway scopes every query to the authenticated owner, context and authorization/policy epochs.
+- The gateway supports engagement, book, period and chart-account setup plus balanced posted journal entries in an open period, with immutable posted rows, audit evidence and outbox records in the posting transaction.
+- The client bookkeeping route and page are authenticated read-only. Client mutation requests return `bookkeeping_mutations_not_enabled` until a separate administrative authorization adapter is approved and implemented.
+- The gateway can register unconnected financial-account records, record idempotent manual source transactions for review, and create review-required reconciliation sessions. It does not connect, retrieve or synchronize any external financial account.
+- No provider, financial-account connection, external synchronization, tax calculation/filing, payment, external export, deployment, merge or release is active.
+
+### M007 purpose-bound close-review delegation (2026-08-25)
+
+- Product Owner Decision 062 authorizes a revocable M007 grant for one AAL2 reviewer to review one accounting entity's period close.
+- The grant is bound to owner and reviewer authorization/policy epochs, entity reference, expiry and revocation; M031 verifies it transactionally before soft close.
+- The migration is authored but not executed. This does not activate providers, posting, payments, tax, external exports, deployment, merge or release.
+
+### M031 controlled implementation update (2026-08-25)
+
+- Prepared database migration remains unexecuted.
+- Internal report, manual posting, and disconnected account-registry routes exist behind M007 authorization, AAL2 permission checks, CSRF protection for mutations, and private no-store responses.
+- No provider connection, bank feed, accounting sync, tax calculation/filing, payment, export, production deployment, or cross-client reviewer delegation is enabled.
+- M031 status: controlled build in progress; Product Owner acceptance pending.
+
+### M031 entity and integration hardening (2026-08-25)
+
+- Accounting-entity and bookkeeping-case setup commands are now M007 permission- and CSRF-gated, context/epoch-fenced, and use references only for sensitive identifiers.
+- The authored-but-unexecuted migration adds accounting-entity referential integrity for engagements, books and cases. Setup replays are idempotent.
+- Accounting providers are represented only by a disabled contract: SG Solutions remains the sole source of truth, external capability is empty and the kill switch is on.
+- Client and admin bookkeeping surfaces are bilingual, private, provider-disabled and do not expose client-side opaque entity references.
+- Opening balances, adjusting entries, categorization, merchant normalization, client questions, comparative reporting, tax mapping/handoff and client report packages are review-only local domain contracts. They do not post, export, file or activate a provider.
+- M031 remains unaccepted, unmigrated, undeployed and non-operational. Provider activation, hard close/reopening, external sync, tax calculation/filing, payments and exports remain unauthorized.
+
+## 2026-08-25 - M036-M038 controlled foundations
+
+- M036 Home Buying Assistance: controlled technical foundation implemented; provider activation, lender/referral/data-sharing/property/closing operations remain disabled and not deployed.
+- M037 Financial Marketplace: controlled technical foundation implemented; partner providers, redirects, referrals, data sharing, webhooks and commission feeds remain disabled and not deployed.
+- M038 Recommendation Engine: controlled technical foundation implemented; live personalization, experiments, AI providers, external candidate feeds and external actions remain disabled and not deployed.
+- Cross-module architecture audit: complete; documented findings corrected. Product Owner acceptance and production activation remain pending.

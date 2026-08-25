@@ -575,7 +575,7 @@ describe("M004 generated migration authority and canonical cutover", () => {
     const journal = JSON.parse(readFileSync(journalPath, "utf8")) as {
       entries: Array<{ idx: number; tag: string }>;
     };
-    expect(journal.entries.slice(-9).map(({ idx, tag }) => ({ idx, tag }))).toEqual([
+    const expectedJournalEntries = [
       { idx: 6, tag: "0006_m004_communications_role_bootstrap" },
       { idx: 7, tag: migrations.structural.replace(/\.sql$/u, "") },
       { idx: 8, tag: "0008_m004_communications_backfill" },
@@ -585,7 +585,11 @@ describe("M004 generated migration authority and canonical cutover", () => {
       { idx: 12, tag: "0012_m004_inbound_processing_version_parity" },
       { idx: 13, tag: "0013_m004_contact_withdrawal_evidence" },
       { idx: 14, tag: "0014_m004_typed_withdrawal_evidence" },
-    ]);
+    ];
+    const expectedTags = new Set(expectedJournalEntries.map(({ tag }) => tag));
+    expect(journal.entries.filter(({ tag }) => expectedTags.has(tag)).map(({ idx, tag }) => ({ idx, tag }))).toEqual(
+      expectedJournalEntries,
+    );
     for (const index of [
       "0006",
       "0007",

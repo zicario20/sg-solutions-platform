@@ -240,6 +240,22 @@ async function queueOutbound(service: any, overrides: Record<string, unknown> = 
   });
 }
 
+async function seedConnectedConversation(repository: any) {
+  await repository.acceptInbound({
+    connectionId: "connection_1",
+    providerEventId: "provider_event_status_seed",
+    providerBodyDigest: "body_status_seed",
+    endpointDigests: [{ version: "v1", digest: "endpoint_digest_v1" }],
+    envelope: {
+      event: { eventId: "event_status_seed", channel: "whatsapp", locale: "en", connectionState: "active", bindingId: "binding_1", conversationId: "conversation_1", messageId: "message_status_seed", receivedAt: NOW, state: "persisted", correlationId: "correlation_out_1" },
+      conversation: { id: "conversation_1", channel: "whatsapp", locale: "en", status: "new", participantIds: ["participant_1"], version: 1, createdAt: NOW, updatedAt: NOW, lastActivityAt: NOW },
+      participant: { participantId: "participant_1", conversationId: "conversation_1", bindingId: "binding_1", role: "external_contact", createdAt: NOW },
+      message: { id: "message_status_seed", conversationId: "conversation_1", channel: "whatsapp", direction: "inbound", senderParticipantId: "participant_1", locale: "en", kind: "text", body: "Synthetic status seed", createdAt: NOW },
+    },
+    optOutSignal: "none",
+  });
+}
+
 describe("atomic opt-out and dispatch fencing", () => {
   it("uses a controlled binding lock so withdrawal wins before a queued dispatch claim", async () => {
     const withdrawalEntered = deferred();
@@ -720,6 +736,7 @@ describe("durable leases, attempts and recovery", () => {
 describe("monotonic exactly-once provider statuses", () => {
   it("ignores duplicate and delayed regressive statuses without moving backward", async () => {
     const repository = createRepository();
+    await seedConnectedConversation(repository);
     const queued = await queueOutbound(createService(repository));
     const claimed = await repository.claimOutbound({
       commandId: queued.commandId,
@@ -772,6 +789,7 @@ describe("monotonic exactly-once provider statuses", () => {
 
   it("closes the active attempt when provider status arrives before dispatch completion", async () => {
     const repository = createRepository();
+    await seedConnectedConversation(repository);
     const queued = await queueOutbound(createService(repository));
     const claimed = await repository.claimOutbound({
       commandId: queued.commandId,

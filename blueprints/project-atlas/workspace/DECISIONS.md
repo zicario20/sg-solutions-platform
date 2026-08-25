@@ -839,3 +839,105 @@ client access, CRM integration or operational activation.
 - Status: implementation foundations in progress; Product Owner final acceptance pending
 
 The Product Owner authorized sequential work for M022 through M026. M022 composes M006 rather than creating a second form engine. M023 supplies central task policy, M024 human approval policy, M025 a disabled AI control plane and M026 provider/operations gating. All external providers, persistence activation, migrations, production deployment and operational execution remain disabled pending separate approvals.
+
+## Decision 059 - M027-M030 provider-disabled foundation sequence
+
+- Date: 2026-08-25
+- Owner: Product Owner
+- Status: implementation foundations in progress; Product Owner final acceptance pending
+
+The Product Owner authorized the sequential M027 governance, M028 analytics, M029 tradeline and M030 tax foundations. These packages are policy and safety boundaries only. They must fail closed and may not execute legal/privacy disposition, provider referral, tradeline placement, tax calculation, e-file submission, payment, migration or deployment without a separate approved activation gate.
+
+## Decision 060 - M031 bookkeeping provider-disabled foundation
+
+- Date: 2026-08-25
+- Owner: Product Owner
+- Status: implementation foundation in progress; Product Owner final acceptance pending
+
+The Product Owner authorized M031 Bookkeeping and Accounting. The provider-disabled foundation may validate ledger mechanics and readiness policies only. It may not connect a bank, use QuickBooks/Xero, retain financial records, automatically classify/post/reconcile transactions, calculate tax, submit a filing, initiate payment, run a migration or deploy without separate approvals.
+
+## Decision 061 - M031 controlled bookkeeping Build Gate
+
+- Date: 2026-08-25
+- Authority: Product Owner
+- Status: implementation authorized; operational/provider activation remains pending
+
+The Product Owner authorized the controlled internal implementation of M031 after the provider-disabled foundation. This Build Gate permits Drizzle-owned schema and migrations, PostgreSQL repositories, authenticated internal/client projections, controlled ledger commands, audit/outbox evidence and focused testing in the isolated M031 branch. It does not authorize a bank feed, QuickBooks, Xero, external accounting synchronization, provider credential, automatic classification/posting/reconciliation, tax calculation, tax filing, payment initiation, external financial export, production deployment, merge or release. All provider-facing capabilities remain disabled and fail closed.
+
+## Decision 062 - M007 purpose-bound bookkeeping close-review delegation
+
+- Date: 2026-08-25
+- Authority: Product Owner
+- Status: implementation authorized; operational acceptance pending
+
+The Product Owner approves an M007-issued, revocable delegation solely for
+`bookkeeping_period_close_review`. A delegation binds one reviewer, one accounting entity, the
+client-owned context, owner and reviewer authorization/policy epochs, an explicit expiry and an
+immutable grant identifier. It is additive to, and never replaces, the reviewer's AAL2 role
+permission. M031 must verify it transactionally before approving a close. It grants no general
+client-data access, posting, payment, tax, provider, export or external-execution capability.
+
+## 2026-08-25 - M032 business formation controlled boundary
+
+**Decision:** Business Formation must use deterministic, versioned requirements and readiness
+rules; filing is a provider-adapter action that remains disabled until a separately approved
+activation. Payment, approval, signature, documents, and a permitted filing method are distinct
+preconditions. AI may explain or prepare review material only and cannot select an entity, approve,
+price, sign, or file. The persistence gateway uses RLS and immutable filing-outcome records.
+
+**Rationale:** Formation has legal, financial, privacy, and operational consequences. A
+provider-disabled boundary preserves future integrations without allowing an unreviewed UI, model,
+or payment event to create external legal effects.
+
+## Decision — 2026-08-25 — M034 Controlled Compliance Foundation
+
+The Product Owner authorized the controlled technical foundation for M034 — Business Compliance.
+
+Decision:
+
+- Compliance requirements must be effective-dated, source-backed, jurisdiction-aware and versioned before they can drive an obligation or deadline.
+- The application may organize compliance work, calculate deterministic deadlines from approved rules, create reminders, prepare filing packages and preserve evidence.
+- Provider filing execution, regulator submission, government-portal automation and legal conclusions remain disabled by default. A payment, reminder, prepared package or client action never authorizes a filing.
+- Compliance completion requires human-gated evidence. Ownership-reporting requests require professional review and cannot be automatically classified as a filing outcome.
+- Existing Organization Management remains the shared organization system of record; the M034 client projection is a minimal safe summary rather than a duplicate organization, document or calendar interface.
+- Changes to requirements must use a new version and produce impact analysis for active obligations. Existing work retains its compliance snapshot.
+
+Status: controlled foundation implemented. Provider enablement, legal/compliance approval, verified source operations, jurisdiction-specific configuration, migrations, live integrations and production activation remain pending Product Owner approval.
+
+## Decision — 2026-08-25 — M035 Business Funding Controlled Foundation
+
+The Product Owner authorized the controlled technical foundation for M035 — Business Funding.
+
+Decision:
+
+- M035 is a preparation, education, document-packaging, comparison and referral domain. It is not a lender, underwriting authority, guarantor or external-application executor.
+- Funding profiles, financial profiles, product versions, screening rules, matches, packages, consents, provider outcomes and lifecycle records preserve source lineage and immutable versions where material.
+- Preliminary screening and matching are explainable indicators only. They must not represent approval, expected rate, expected amount, term or funding result.
+- Provider-originated decisions, offers and funding confirmation require verified external evidence. Client selection records an internal choice only; it does not accept a provider contract.
+- Provider status remains disabled by default. Provider data sharing, application submission, credit pull, offer retrieval and funding confirmation integrations remain fail-closed until approved activation evidence exists.
+- Commission recognition remains separate from client payments and requires partner reconciliation.
+- AI may create grounded drafts only. It may not publish recommendations, submit applications, change outcomes, accept offers or mark funding as confirmed.
+
+Status: controlled foundation implemented. Provider onboarding, jurisdiction-specific rules, agreements, disclosures, human approval roles, live adapters, migrations, security/compliance reviews and production activation remain pending Product Owner approval.
+
+## 2026-08-25 - M036 Home Buying Assistance controlled foundation
+
+**Decision:** Home Buying Assistance is implemented as a controlled education, readiness, coordination, and evidence-tracking domain. It is not a lender, mortgage broker, real-estate broker, title agent, escrow provider, underwriting engine, or closing authority.
+
+**Controls:** Program content must be source-backed and reviewed; readiness and matching remain preliminary; externally reported milestones require verified evidence; lender referrals and external data sharing fail closed while providers are disabled; AI cannot decide eligibility, rank lenders, submit applications, create offers, or direct wire activity.
+
+**Status:** Technical foundation implemented. Provider activation, operational policies, external integrations, and production release remain pending Product Owner authorization.
+## 2026-08-25 - M037 Financial Marketplace controlled foundation
+
+**Decision:** The existing Marketplace package is the single Marketplace foundation. It is extended with provider-identified catalog content, versioning, source freshness, scoped consent, deterministic referral journeys, verified conversions, and commission lifecycle controls. Marketplace products remain distinct from SG Solutions services and client billing.
+
+**Controls:** Providers are disabled by default and cannot be enabled through application configuration. Referral submission, redirect, data sharing, provider credentials, webhooks, and integrations fail closed. Personalization requires scoped consent and excludes protected or sensitive factors. Commission recognition requires a verified provider conversion plus a contract reference and versioned calculation rule.
+
+**Status:** Technical foundation implemented. No partner is connected, activated, or operational. Product Owner authorization is required before any provider activation.
+## 2026-08-25 - M038 Recommendation Engine controlled foundation
+
+**Decision:** Recommendation Engine is an explainable, policy-driven, source-backed ranking layer. It receives immutable candidates and eligibility results from authoritative domain modules and must not duplicate, override, or infer eligibility, underwriting, provider terms, external approvals, or client decisions.
+
+**Controls:** Unknown hard constraints fail closed. Published policies require human approval and source lineage. Compensation, commission, protected-trait, and sensitive features are excluded from organic ranking. Personalization requires scoped consent and is cleared on withdrawal. Specialist review preserves the original candidate set. AI is limited to grounded explanations that require human review and cannot change policies, rankings, eligibility, providers, referrals, or external state.
+
+**Status:** Technical foundation implemented. No live personalized recommendations, experiments, AI provider, external candidate feed, provider action, or production release is enabled.

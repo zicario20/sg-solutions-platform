@@ -307,6 +307,67 @@ export const authRoleAssignments = pgTable(
   ],
 ).enableRLS();
 
+/** M007-owned, resource-specific delegation; it never replaces a role assignment. */
+export const authPurposeDelegations = pgTable(
+  "auth_purpose_delegations",
+  {
+    id: text("id").primaryKey(),
+    grantedByAccountId: text("granted_by_account_id")
+      .notNull()
+      .references(() => authAccounts.id, { onDelete: "restrict" }),
+    delegateAccountId: text("delegate_account_id")
+      .notNull()
+      .references(() => authAccounts.id, { onDelete: "restrict" }),
+    ownerAccountId: text("owner_account_id")
+      .notNull()
+      .references(() => authAccounts.id, { onDelete: "restrict" }),
+    purpose: varchar("purpose", { length: 64 }).notNull(),
+    resourceType: varchar("resource_type", { length: 32 }).notNull(),
+    resourceReference: text("resource_reference").notNull(),
+    ownerContextRef: text("owner_context_ref").notNull(),
+    ownerAuthorizationEpoch: integer("owner_authorization_epoch").notNull(),
+    ownerPolicyEpoch: integer("owner_policy_epoch").notNull(),
+    delegateAuthorizationEpoch: integer("delegate_authorization_epoch").notNull(),
+    delegatePolicyEpoch: integer("delegate_policy_epoch").notNull(),
+    state: varchar("state", { length: 16 }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),
+    version: integer("version").notNull().default(1),
+    ...timestamps,
+  },
+  (table) => [
+    index("auth_purpose_delegations_delegate_lookup_idx").on(
+      table.delegateAccountId,
+      table.purpose,
+      table.resourceReference,
+      table.state,
+      table.expiresAt,
+    ),
+    check(
+      "auth_purpose_delegations_purpose_valid",
+      sql`${table.purpose} = 'bookkeeping_period_close_review'`,
+    ),
+    check(
+      "auth_purpose_delegations_resource_type_valid",
+      sql`${table.resourceType} = 'accounting_entity'`,
+    ),
+    check(
+      "auth_purpose_delegations_state_valid",
+      sql`${table.state} in ('active', 'revoked', 'expired')`,
+    ),
+    check(
+      "auth_purpose_delegations_epoch_positive",
+      sql`${table.ownerAuthorizationEpoch} > 0 and ${table.ownerPolicyEpoch} > 0 and ${table.delegateAuthorizationEpoch} > 0 and ${table.delegatePolicyEpoch} > 0`,
+    ),
+    check("auth_purpose_delegations_expiry_valid", sql`${table.expiresAt} > ${table.createdAt}`),
+    check(
+      "auth_purpose_delegations_revocation_valid",
+      sql`(${table.state} = 'revoked') = (${table.revokedAt} is not null)`,
+    ),
+    authGatewayOnly("auth_purpose_delegations"),
+  ],
+).enableRLS();
+
 export const authMfaFactors = pgTable(
   "auth_mfa_factors",
   {

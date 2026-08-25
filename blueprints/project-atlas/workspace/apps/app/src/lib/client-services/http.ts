@@ -1,10 +1,12 @@
 import { CLIENT_SERVICE_REF_PATTERN, type ClientServiceDetailDto, type ClientServiceListDto, type ClientServicesQueryResult } from "@atlas/client-services";
+import type { DashboardAuthorizationSnapshot } from "@atlas/dashboard";
 import { createClientServicesAnalyticsEvent, type ClientServicesAnalyticsEvent } from "@atlas/observability";
 
 import type { ClientServicesAdmissionAction } from "./admission.ts";
 
 interface ClientServicesHttpQuery {
   list(input: { request: unknown; query?: string; status?: string; limit?: number }): Promise<ClientServicesQueryResult<ClientServiceListDto>>;
+  listAuthorized(input: { snapshot: DashboardAuthorizationSnapshot; query?: string; status?: string; limit?: number }): Promise<ClientServicesQueryResult<ClientServiceListDto>>;
   detail(input: { request: unknown; opaqueRef: string }): Promise<ClientServicesQueryResult<ClientServiceDetailDto>>;
 }
 

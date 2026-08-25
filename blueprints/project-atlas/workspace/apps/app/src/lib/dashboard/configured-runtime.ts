@@ -50,9 +50,14 @@ export type DashboardHttpDependencies = Readonly<{
     | Readonly<{ kind: "denied" }>
   >;
   verifyCsrf(sessionHandle: string, token: string): boolean;
-  admit?(action: DashboardRateAction, request: Request): Promise<DashboardAdmissionResult>;
+  admit?(action: DashboardHttpRateAction, request: Request): Promise<DashboardAdmissionResult>;
   emitAnalytics?(event: DashboardEvent): Promise<void> | void;
 }>;
+type DashboardHttpRateAction =
+  | "dashboard_get"
+  | "dashboard_context"
+  | "dashboard_analytics"
+  | "dashboard_ssr";
 export type ConfiguredDependencies = Readonly<{
   authRepository?: M007DashboardAuthRepository;
   sql?: AuthSql;
@@ -96,11 +101,7 @@ export function createConfiguredDashboardOwnerPorts(
         classification: "client_safe" as const,
         safeReason: "source_unavailable" as const,
       };
-    return loadAuthorizedClientServicesDashboardFragment(
-      runtime.query,
-      snapshot as Parameters<typeof loadAuthorizedClientServicesDashboardFragment>[1],
-      limit,
-    );
+    return loadAuthorizedClientServicesDashboardFragment(runtime.query, snapshot, limit);
   });
   return createUnavailableDashboardOwnerPorts(services as DashboardOwnerPorts["services"]);
 }
@@ -162,7 +163,7 @@ export function createConfiguredDashboardRuntime(
     verifyCsrf: (sessionHandle, token) =>
       configured && verifySessionCsrfToken(csrfSecret, sessionHandle, token),
     admit: async (
-      action: DashboardRateAction,
+      action: DashboardHttpRateAction,
       request: Request,
     ): Promise<DashboardAdmissionResult> => {
       const keyDigests = buildDashboardTrustedRateKeys(request, action, {

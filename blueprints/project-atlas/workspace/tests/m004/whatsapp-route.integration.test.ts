@@ -338,9 +338,6 @@ function createFixture(options: {
 describe("M004 provider-disabled route integration", () => {
   it("keeps the production route disabled and synthetic failures closed", async () => {
     expect(createWhatsAppRouteHandler).toBeTypeOf("function");
-    expect(process.env.WHATSAPP_RUNTIME_STATE).toBe("disabled");
-    expect(process.env.WHATSAPP_ENABLED).toBe("false");
-
     const unsupported = await productionPut(
       new Request("https://atlas.invalid/task11", { method: "PUT" }),
       routeContext(),

@@ -5,6 +5,6 @@ describe("test discovery scope", () => {
   it("constrains Vitest discovery to repository contract tests", () => {
     const config = readFileSync("vitest.config.ts", "utf8");
 
-    expect(config).toContain('include: ["tests/**/*.test.ts"]');
+    expect(config).toContain('include: ["tests/**/*.test.{ts,tsx}"]');
   });
 });

@@ -526,3 +526,21 @@ colapsar oportunidad, cliente, pago, entitlement, aprobación y expediente.
 
 No hay activaciones externas cerradas todavía. Cada cierre futuro añadirá fecha, módulo, ambiente,
 evidencia no sensible, responsable, decisión y limitaciones conocidas.
+
+## M037 Financial Marketplace
+
+| Provider or capability | Status | Activation boundary | Notes |
+| --- | --- | --- | --- |
+| Marketplace provider catalog and limited informational listings | `provider_disabled` | Product Owner approval, provider agreement, source verification, privacy/security/compliance review, operational owner | Listing content may be prepared; CTAs and provider actions remain disabled. |
+| Partner referrals and lead submission | `provider_disabled` | Approved provider adapter, scoped consent, idempotency evidence, sandbox validation, kill switch | No referral or lead is sent by the application. |
+| External redirects | `provider_disabled` | Approved provider, scoped redirect consent, allowlisted HTTPS domain, compliance approval | No redirect is generated while providers remain disabled. |
+| Marketplace data and document sharing | `provider_disabled` | Provider-specific consent, data-minimization policy, secure delivery, revocation and audit evidence | All sharing fails closed. |
+| Provider webhooks, status sync, conversion feeds and commission reconciliation | `provider_disabled` | Credential governance, webhook signature validation, replay protection, sandbox validation, reconciliation owner | No external status or commission is treated as live. |
+## M038 Recommendation Engine
+
+| Provider or capability | Status | Activation boundary | Notes |
+| --- | --- | --- | --- |
+| Personalized recommendation delivery | `provider_disabled` | Product Owner approval, consent wording, launch domains, client UX review, monitoring, human-review process | The domain is implemented, but no client-facing personalization is active. |
+| AI explanation provider and model access | `provider_disabled` | Model approval, secret management, prompt registry, source-grounding evaluation, redaction, human-review workflow | AI contracts are provider-neutral and require human review. |
+| Experiments, learning loops and model training | `provider_disabled` | Approved experiment registry, guardrails, fairness review, rollback owner, data-governance approval | No experiment or automated learning loop can start. |
+| External candidate feeds and provider actions | `provider_disabled` | M037 provider activation, source verification, consent, adapter testing, audit and kill switch | M038 consumes supplied snapshots only and sends no external action. |

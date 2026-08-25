@@ -1,6 +1,16 @@
 {
   "extends": "../../tsconfig.json",
-  "compilerOptions": { "incremental": true, "plugins": [{ "name": "next" }] },
+  "compilerOptions": {
+    "incremental": true,
+    "jsx": "preserve",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@atlas/*": ["../../packages/*/src/index.ts"]
+    },
+    "plugins": [{ "name": "next" }]
+  },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": [
     "../../blueprints/**",

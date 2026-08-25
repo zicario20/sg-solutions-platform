@@ -26,7 +26,7 @@ export function createMarketplaceReferralDraft(
     productCode: product.productCode,
     productVersion: product.productVersion,
     partnerCode: product.partnerCode,
-    status: "ready_to_refer",
+    status: "provider_disabled",
     dataSharingMode: product.dataSharingMode,
     providerStatus: "unknown",
   };

@@ -265,6 +265,9 @@
   remains unauthorized.
 # Unreleased
 
+- Hardened the controlled M031 bookkeeping build with context-fenced entity/case setup, idempotent book replay, authored entity referential constraints, an internal-ledger-only disabled integration contract, and safer bilingual client/admin status surfaces. No accounting provider, bank connection, external synchronization, tax filing, payment, export, migration execution or deployment was activated.
+- Added review-only M031 contracts for opening balances, adjusting entries, merchant/rule categorization, client questions, financial comparisons, tax mapping/handoff and client report packaging. None can auto-post, decide tax deductibility, file, export or activate a provider.
+
 - Added the provider-disabled M017 CRM technical baseline: purpose- and permission-scoped commercial
   workspace contracts, version-checked pipeline validation, minimized source projections,
   duplicate-review-only behavior, PII/content rejection, fail-closed Admin route/API and bilingual

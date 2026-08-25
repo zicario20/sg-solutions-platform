@@ -17,7 +17,7 @@ export function DocumentPortal({
   state: "ready" | "empty" | "unavailable";
   documents: readonly DocumentPortalRow[];
 }>) {
-  const copy = documentCopy[locale];
+  const copy = documentCopy[locale]!;
   return (
     <main className="document-portal" aria-labelledby="documents-title">
       <header className="document-portal-header">

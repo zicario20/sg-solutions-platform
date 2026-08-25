@@ -21,8 +21,8 @@ export async function loadClientServicesDashboardFragment(query: ListQuery, requ
 
 export async function loadAuthorizedClientServicesDashboardFragment(query: AuthorizedListQuery, snapshot: DashboardAuthorizationSnapshot, limit: number) { return dashboardFragment(await query.listAuthorized({ snapshot, limit })); }
 
-export function createClientServicesDashboardOwnerPort(load: (input: { snapshot: unknown; signal: AbortSignal; limit: number }) => ReturnType<typeof loadClientServicesDashboardFragment>) {
-  return Object.freeze({ owner: "services" as const, query: async ({ snapshot, snapshotId, signal, limit }: { readonly snapshot: unknown; readonly snapshotId: string; readonly signal: AbortSignal; readonly limit: number }) => {
+export function createClientServicesDashboardOwnerPort(load: (input: { snapshot: DashboardAuthorizationSnapshot; signal: AbortSignal; limit: number }) => ReturnType<typeof loadClientServicesDashboardFragment>) {
+  return Object.freeze({ owner: "services" as const, query: async ({ snapshot, snapshotId, signal, limit }: { readonly snapshot: DashboardAuthorizationSnapshot; readonly snapshotId: string; readonly signal: AbortSignal; readonly limit: number }) => {
     const fragment = await load({ snapshot, signal, limit });
     return Object.freeze({ owner: "services" as const, snapshotId, sourceVersion: "m009.service-order.v2", ...fragment });
   } });

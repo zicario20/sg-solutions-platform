@@ -110,6 +110,18 @@ const safeExpected = [
   const { senderEndpoint: _discarded, ...safe } = fixture as typeof fixture & {
     senderEndpoint?: string;
   };
+  if (safe.kind === "template_projection") {
+    return {
+      ...safe,
+      projection: {
+        ...safe.projection,
+        components: safe.projection.components.map(({ type, format }) => ({
+          type,
+          ...(format === undefined ? {} : { format }),
+        })),
+      },
+    };
+  }
   return safe;
 });
 describe("M004 deterministic Meta envelope persistence codec", () => {
@@ -122,9 +134,11 @@ describe("M004 deterministic Meta envelope persistence codec", () => {
       });
       expect(validateCommunicationEventRecord(record)).toBe(record);
       expect(deserializeMetaCanonicalEnvelopeRecord(record)).toEqual(
-        event.kind === "text_message"
-          ? { status: "not_reversible", eventKind: "text_message", reason: "metadata_only" }
-          : { status: "available", envelope: safeExpected[index] },
+        event.kind === "text_message" || event.kind === "interactive_reply"
+          ? { status: "not_reversible", eventKind: event.kind, reason: "metadata_only" }
+          : event.kind === "message_status"
+            ? { status: "not_reversible", eventKind: "message_status", reason: "verified_context_required" }
+            : { status: "available", envelope: safeExpected[index] },
       );
       expect(JSON.stringify(record)).not.toContain("sender_endpoint_synthetic");
       expect(JSON.stringify(record)).not.toContain("synthetic text");

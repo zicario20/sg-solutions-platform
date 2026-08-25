@@ -988,3 +988,70 @@ The Product Owner confirmed that M021 Service Orders and Marketplace are complem
 The Product Owner authorized work to continue across M022 through M026 without provider activation. The repository adds local contracts for intake publication, task transitions, human approval payload binding, AI tool policy and provider activation gating. No persistence, migration execution, provider setup, secret, real client data, production route, Docker/Dokploy/Cloudflare change, deployment or operational activation occurred. Product Owner acceptance remains pending for each module.
 
 Focused verification on 2026-08-25 passed Biome for the M021-M026 change set, direct TypeScript checks for the eight affected packages, 17 Vitest tests across 9 files and `git diff --check`. The repository-wide typecheck remains blocked by pre-existing M010 client-process-status errors; global formatting also reports existing diagnostics outside this change set.
+
+## 2026-08-25 - M027-M030 sequential provider-disabled foundations
+
+The Product Owner authorized M027 through M030 to continue on a new isolated branch. The implementation adds local, fail-closed contracts for governance/risk/retention review, privacy-preserving aggregate metrics, tradeline referral safeguards and tax filing readiness. Focused Biome, four direct TypeScript package checks and 9 focused Vitest tests passed. No legal conclusion, privacy disposition, analytics provider, tradeline provider, tax calculation, e-file provider, external request, migration, credential, deployment or production activation occurred.
+
+## 2026-08-25 - M031 bookkeeping provider-disabled foundation
+
+The Product Owner authorized implementation of M031 Bookkeeping and Accounting. The local foundation owns accounting books, bookkeeping cases and unconnected financial-account registry entries; balanced journal-draft validation; immutable posted-entry representation; chart validation; controlled engagement and period transitions; source-transaction idempotency; reviewable classification, duplicate, receipt-match, split and transfer proposals; reconciliation differences; close checklists; trial-balance, general-ledger, profit-and-loss and balance-sheet snapshots; tax-ready handoff gating; AI and export safety boundaries; audit evidence; accounting-provider readiness checks; disabled external posting; and hard-closed-period conflict protection. Focused Biome, direct TypeScript and 18 focused Vitest tests passed. No financial account, transaction, journal, reconciliation, tax calculation, bank feed, QuickBooks/Xero, external accounting provider, payment, migration, credential, deployment or operational activation occurred.
+
+## 2026-08-25 - M031 controlled bookkeeping Build Gate
+
+The Product Owner authorized controlled internal M031 implementation. The isolated branch may add a Drizzle-owned schema/migration, PostgreSQL repository, authenticated routes and limited admin/client projections, provided every provider-facing capability remains disabled. The authorization does not permit a bank feed, QuickBooks/Xero, credentials, external synchronization, automatic accounting decisions, tax calculation/filing, payments, external exports, deployment, merge or release. Product Owner acceptance remains pending.
+
+## 2026-08-25 - M031 controlled implementation increment
+
+The M031 isolated branch now contains an unexecuted Drizzle migration, a context/epoch-fenced PostgreSQL gateway, a double-entry posting path that writes journal, audit and outbox records atomically, and an authenticated client read projection. The client mutation endpoint intentionally returns `bookkeeping_mutations_not_enabled`; no administrative mutation adapter has been approved or added. No financial records, provider connections, external synchronization, tax calculation, filing, payment, export, deployment, merge or release occurred.
+
+## 2026-08-25 - M031 controlled bookkeeping increment
+
+- Added provider-disabled bookkeeping report routes, a CSRF- and M007-permission-gated internal journal-entry command with deterministic idempotency, and local financial-account registration that remains explicitly disconnected.
+- Added bounded transactional-outbox claiming and stale-claim recovery foundations. No external consumers, bank feeds, accounting providers, credentials, migrations, deployments, or production activation were performed.
+- M031 remains in controlled implementation; Product Owner acceptance remains pending.
+
+- Extended the M031 controlled foundation with manual source-transaction intake and manual reconciliation-session creation. Both remain internal, idempotent, reviewed workflows with no bank-feed/provider activation or automatic approval.
+
+## 2026-08-25 - M031 entity and integration hardening
+
+The controlled M031 build now includes tenant/context/epoch-fenced accounting-entity and bookkeeping-case commands, authored-but-unexecuted entity referential constraints, idempotent setup replay handling, and a disabled accounting-integration contract. It also removes opaque entity identifiers from the client surface and adds accessible provider-disabled status treatment to the administrative surface. No financial provider, bank connection, credential, sync, tax calculation/filing, payment, export, migration execution, deployment, merge or release occurred. Product Owner acceptance remains pending.
+
+The same incremental controlled build added evidence-linked opening balance and adjusting-entry drafts, review-only merchant/categorization/question contracts, bounded internal cash-flow/comparative/variance reports, tax-mapping and tax-handoff controls, and non-published client report packages. These are local domain controls only; they do not post automatically, determine tax deductibility, export records or file taxes.
+
+## 2026-08-25 - M007 purpose-bound bookkeeping close-review delegation
+
+The Product Owner approved a narrow M007 delegation for bookkeeping period-close review. The
+auth-owned grant is limited to one accounting entity, one reviewer, `bookkeeping_period_close_review`,
+both parties' current authorization/policy epochs and an explicit expiry/revocation state. M031
+checks the grant inside its close-approval transaction in addition to the reviewer's AAL2 role
+permission and segregation-of-duties check. The approval creates no general client-data access and
+does not activate providers, posting, payments, tax activity, migration execution, deployment,
+merge or release.
+
+## 2026-08-25 - M032 controlled business-formation foundation
+
+The Product Owner-authorized M032 foundation now defines deterministic formation-case, requirement,
+ownership, readiness, package, provider-disabled filing, fee, handoff, and AI-boundary contracts.
+The persistence migration is authored but unexecuted. Filing providers and the authenticated client
+surface remain provider-disabled until the activation prerequisites in `docs/modules/m032-business-formation.md`
+are approved and validated. This records implementation evidence only; it is not Product Owner
+acceptance, production activation, or a legal/tax service authorization.
+
+## 2026-08-25 — M034 Business Compliance controlled foundation
+
+Implemented the provider-disabled technical foundation for Business Compliance. It introduces effective-dated and source-backed requirements, deterministic applicability and deadline rules, obligations, reminders, report preparation, immutable filing packages, human-gated completion evidence, notices, ownership-reporting review, safe cross-module handoffs, agent boundaries, audit contracts, operational maintenance contracts and database migration authoring. The implementation intentionally does not submit filings, reach government portals, infer legal conclusions, activate providers or modify the shared Organization Management system of record. Focused M034 tests and package checks passed; final project-wide validation is pending this entry.
+
+## 2026-08-25 — M035 Business Funding controlled foundation
+
+Implemented M035 as a provider-disabled domain foundation. It includes versioned funding cases and profiles, use-of-funds reconciliation, readiness and fundability records, source-backed financial analysis, DSCR and balance-sheet checks, product registry and preliminary screening, explainable matching, scoped consent, application-package and referral drafts, external decision/offer/funding evidence contracts, disclosures, client-safe projection, lifecycle planning, provider governance, audit controls, migration authoring and focused tests. No lender/provider was activated; no credit pull, application submission, offer retrieval, funding confirmation, commission reconciliation, real data migration or production connection occurred.
+
+## 2026-08-25 - M036 Home Buying Assistance foundation implemented
+
+Implemented the controlled M036 Home Buying Assistance foundation: versioned profiles and financial-readiness records, source-backed program versions and deterministic preliminary screening, consent-bound but provider-disabled referral drafts, verified-external milestone gates, safe bilingual client projections, wire-fraud controls, schema, authored migration, tests, and documentation. Focused M036 tests and package/database typechecks passed. No lender, agent, title, escrow, property feed, referral, data-sharing, application, offer, closing, pricing, payment, or production provider integration was enabled.
+## 2026-08-25 - M037 Financial Marketplace foundation implemented
+
+Expanded the pre-existing Marketplace package rather than creating a parallel marketplace. Added versioned provider/catalog/listing contracts, source freshness and bilingual content, consent-aware eligibility context, explainable matching boundaries, idempotent journeys, disabled referral and redirect gates, conversion and commission lifecycle controls, client-safe projections, schema, authored migration, tests, and documentation. Focused M021 plus M037 tests and marketplace/database typechecks passed. No provider, partner credential, redirect, referral submission, data sharing, webhook, commission feed, public Marketplace activation, or production integration was enabled.
+## 2026-08-25 - M038 Recommendation Engine foundation implemented
+
+Implemented M038 as a separate, source-eligibility-consuming recommendation package: immutable requests/context/candidate/policy/constraint snapshots, deterministic gated ranking, hard and soft constraints, non-decisional outputs, alternatives, client decisions, constrained specialist review, personalization withdrawal, experiments with approval gates, fairness findings, grounded AI explanation contracts, schema, authored migration, tests, and documentation. Focused M038 tests and recommendation/database typechecks passed. No autonomous decision model, personalized production behavior, experiment, AI provider, provider integration, referral action, or production service was enabled.

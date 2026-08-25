@@ -29,7 +29,7 @@ describe("M009 authority and security remediation", () => {
     }
     expect(repository).toContain("set local role atlas_client_services_reader");
     expect(runtime).toContain("m009_database_role");
-    expect(runtime).toContain('==="atlas_client_services_reader"');
+    expect(runtime).toMatch(/databaserole\s*===\s*"atlas_client_services_reader"/u);
   });
 
   it("applies the authoritative status predicate before LIMIT so later matching rows remain eligible", () => {

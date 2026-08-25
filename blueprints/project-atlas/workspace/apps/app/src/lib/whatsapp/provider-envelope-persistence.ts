@@ -98,7 +98,7 @@ function isTemplateComponent(value: unknown): value is PersistedTemplateComponen
   const keys = Object.keys(value);
   if (
     !keys.includes("type") ||
-    keys.some((key) => !["type", "format"].includes(key)) ||
+    keys.some((key) => !["type", "format", "text"].includes(key)) ||
     !TEMPLATE_COMPONENT_TYPES.has(String(value.type))
   ) {
     return false;
@@ -106,6 +106,7 @@ function isTemplateComponent(value: unknown): value is PersistedTemplateComponen
   if (value.format !== undefined && !TEMPLATE_COMPONENT_FORMATS.has(String(value.format))) {
     return false;
   }
+  if (value.text !== undefined && typeof value.text !== "string") return false;
   return true;
 }
 

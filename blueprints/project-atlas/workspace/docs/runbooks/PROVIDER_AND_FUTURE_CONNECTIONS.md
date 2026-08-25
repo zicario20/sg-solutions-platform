@@ -30,6 +30,7 @@ This document is a checklist, not activation authority. A provider remains disab
 | M017 | CRM | Canonical M018-M023 owners; future import/export/channel/AI adapters | Purpose binding, dedup/merge controls, audit, retention, export authorization |
 | M018 | Client management | Identity/contact verification and approved partner adapters | Identity proof policy, representative authorization, sensitive-data controls |
 | M019 | Organization management | Filing/business-verification adapter when approved | Jurisdiction policy, authority evidence, reauthentication, external reconciliation |
+| M031 | Bookkeeping and accounting | QuickBooks Online, Xero, bank-data, receipt, payroll, commerce, expense and tax-platform adapters | Separate provider approval, scoped secrets, internal-ledger source-of-truth policy, RLS/migration evidence, signed ingress, idempotent reconciliation, kill switch, security review and rollback |
 
 ## Future provider families
 

@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { DASHBOARD_SESSION_COOKIE } from "../../../../../lib/dashboard/auth-context.ts";
-import { resolveDashboardLocale } from "../../../../../lib/dashboard/locale.ts";
-import { loadConfiguredOrganizationManagement } from "../../../../../lib/organization-management/runtime.ts";
+import { DASHBOARD_SESSION_COOKIE } from "@/lib/dashboard/auth-context";
+import { resolveDashboardLocale } from "@/lib/dashboard/locale";
+import { loadConfiguredOrganizationManagement } from "@/lib/organization-management/runtime";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export async function GET() {

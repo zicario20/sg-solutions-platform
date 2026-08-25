@@ -70,6 +70,9 @@ importers:
       '@atlas/billing':
         specifier: workspace:*
         version: link:../../packages/billing
+      '@atlas/bookkeeping':
+        specifier: workspace:*
+        version: link:../../packages/bookkeeping
       '@atlas/client-management':
         specifier: workspace:*
         version: link:../../packages/client-management
@@ -171,6 +174,8 @@ importers:
 
   packages/ai-control-plane: {}
 
+  packages/analytics-governance: {}
+
   packages/appointments: {}
 
   packages/approvals: {}
@@ -185,6 +190,14 @@ importers:
         version: 4.4.3
 
   packages/billing: {}
+
+  packages/bookkeeping: {}
+
+  packages/business-compliance: {}
+
+  packages/business-formation: {}
+
+  packages/business-funding: {}
 
   packages/client-management: {}
 
@@ -255,6 +268,12 @@ importers:
         specifier: 4.4.3
         version: 4.4.3
 
+  packages/ein-business-documents: {}
+
+  packages/governance-risk: {}
+
+  packages/home-buying-assistance: {}
+
   packages/i18n:
     dependencies:
       '@atlas/client-services':
@@ -296,9 +315,15 @@ importers:
 
   packages/provider-control: {}
 
+  packages/recommendation-engine: {}
+
   packages/secure-messaging: {}
 
   packages/task-management: {}
+
+  packages/tax-operations: {}
+
+  packages/tradeline-operations: {}
 
   packages/ui:
     dependencies:

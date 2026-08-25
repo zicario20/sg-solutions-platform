@@ -2,4 +2,6 @@ import { dashboardGet } from "../../../../lib/dashboard/http.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-export const GET = dashboardGet;
+export async function GET(request: Request) {
+  return dashboardGet(request);
+}

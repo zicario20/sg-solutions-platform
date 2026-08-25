@@ -13,6 +13,7 @@
     "@atlas/auth": "workspace:*",
     "@atlas/appointments": "workspace:*",
     "@atlas/billing": "workspace:*",
+    "@atlas/bookkeeping": "workspace:*",
     "@atlas/client-profile": "workspace:*",
     "@atlas/client-services": "workspace:*",
     "@atlas/client-management": "workspace:*",

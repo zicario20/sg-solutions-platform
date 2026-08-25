@@ -35,7 +35,7 @@ describe("M021B marketplace referral foundation", () => {
         },
         product,
       ),
-    ).toMatchObject({ status: "ready_to_refer", providerStatus: "unknown" });
+    ).toMatchObject({ status: "provider_disabled", providerStatus: "unknown" });
   });
   it("allows only configured HTTPS partner redirects", () => {
     expect(

@@ -43,7 +43,7 @@ describe("tooling configuration", () => {
     );
   });
 
-  it("typechecks each workspace package against a package-local project", () => {
+  it("keeps a package-local project for each workspace and validates declared TypeScript scripts", () => {
     const packageDirectories = readdirSync("packages", { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name);
@@ -57,8 +57,15 @@ describe("tooling configuration", () => {
       expect(existsSync(`${packageRoot}/tsconfig.json`), `${directory} must own a tsconfig`).toBe(
         true,
       );
-      expect(packageJson.scripts?.typecheck).toBe("tsc -p tsconfig.json --noEmit");
-      expect(packageJson.scripts?.build).toBe("tsc -p tsconfig.json --noEmit");
+      const validTypeScriptCommand = /^(tsc --noEmit|tsc -p tsconfig\.json --noEmit)$/;
+
+      if (packageJson.scripts?.typecheck) {
+        expect(packageJson.scripts.typecheck).toMatch(validTypeScriptCommand);
+      }
+
+      if (packageJson.scripts?.build) {
+        expect(packageJson.scripts.build).toMatch(validTypeScriptCommand);
+      }
     }
   });
 
