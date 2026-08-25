@@ -824,3 +824,18 @@ The Product Owner accepts M016-M019 as provider-disabled technical foundations. 
 approves the bounded contract, UI, route and safe fail-closed posture only. It does not approve
 canonical organization data, ownership, representatives, registered agents, filings, compliance,
 client access, CRM integration or operational activation.
+
+## Decision 057 - M021 commercial module decomposition
+
+- Date: 2026-08-25
+- Owner: Product Owner
+- Decision: M020 remains Leads. M021 combines Service Orders/Catalog/Commercial Workflows (M021A) and Marketplace/Partners/Referrals (M021B) as complementary parts of one commercial module.
+- Status: Provider-disabled technical foundation in progress; no external provider, payment, referral, deployment or operational activation is authorized by this decision.
+
+## Decision 058 - M022-M026 provider-disabled foundation sequence
+
+- Date: 2026-08-25
+- Owner: Product Owner
+- Status: implementation foundations in progress; Product Owner final acceptance pending
+
+The Product Owner authorized sequential work for M022 through M026. M022 composes M006 rather than creating a second form engine. M023 supplies central task policy, M024 human approval policy, M025 a disabled AI control plane and M026 provider/operations gating. All external providers, persistence activation, migrations, production deployment and operational execution remain disabled pending separate approvals.

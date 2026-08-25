@@ -169,7 +169,11 @@ importers:
 
   packages/admin-dashboard: {}
 
+  packages/ai-control-plane: {}
+
   packages/appointments: {}
+
+  packages/approvals: {}
 
   packages/auth:
     dependencies:
@@ -200,6 +204,10 @@ importers:
       '@atlas/dashboard':
         specifier: workspace:*
         version: link:../dashboard
+
+  packages/commercial-catalog: {}
+
+  packages/commercial-workflows: {}
 
   packages/config: {}
 
@@ -253,6 +261,10 @@ importers:
         specifier: workspace:*
         version: link:../client-services
 
+  packages/intake-forms: {}
+
+  packages/marketplace: {}
+
   packages/observability:
     dependencies:
       '@opentelemetry/api':
@@ -282,7 +294,11 @@ importers:
 
   packages/organization-management: {}
 
+  packages/provider-control: {}
+
   packages/secure-messaging: {}
+
+  packages/task-management: {}
 
   packages/ui:
     dependencies:

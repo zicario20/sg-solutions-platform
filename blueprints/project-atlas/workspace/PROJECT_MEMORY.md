@@ -978,3 +978,13 @@ owner, persistence, authorization or independent-review requirement.
 ## 2026-08-24 - Repository-wide provider-disabled audit
 
 A technical reconciliation reviewed M005 through M019 in the isolated M019 worktree. It corrected one M006 public-attribution validation gap and stale M005/M007/M008/M010 test contracts without weakening production authorization, cache or provider-disabled behavior. The focused regression passed 213 tests in 50 files and the M005-M019 matrix passed 436 tests in 136 files. This is technical evidence only: it does not activate providers, persistence, real data, deployment or operational workflows, and it does not replace Product Owner acceptance or independent review.
+
+## 2026-08-25 - M021 provider-disabled implementation position
+
+The Product Owner confirmed that M021 Service Orders and Marketplace are complementary parts of one commercial module. M020 remains the Lead domain. M021 is recorded as a provider-disabled technical foundation in progress, not accepted or operational. The first local catalog contracts calculate deterministic minor-unit prices and preliminary availability/eligibility only; no provider or commercial operation was activated.
+
+## 2026-08-25 - M022-M026 sequential provider-disabled foundations
+
+The Product Owner authorized work to continue across M022 through M026 without provider activation. The repository adds local contracts for intake publication, task transitions, human approval payload binding, AI tool policy and provider activation gating. No persistence, migration execution, provider setup, secret, real client data, production route, Docker/Dokploy/Cloudflare change, deployment or operational activation occurred. Product Owner acceptance remains pending for each module.
+
+Focused verification on 2026-08-25 passed Biome for the M021-M026 change set, direct TypeScript checks for the eight affected packages, 17 Vitest tests across 9 files and `git diff --check`. The repository-wide typecheck remains blocked by pre-existing M010 client-process-status errors; global formatting also reports existing diagnostics outside this change set.

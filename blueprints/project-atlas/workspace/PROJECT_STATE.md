@@ -133,3 +133,15 @@ functional activation remains pending canonical owners.
 - Corrected M006 attribution validation and stale M005/M007/M008/M010 test contracts; no provider, persistence, migration, deployment or operational workflow was activated.
 - Provider connection inventory: `docs/runbooks/PROVIDER_AND_FUTURE_CONNECTIONS.md`.
 - Product Owner acceptance remains distinct from technical verification and is still required where the catalog says pending.
+
+## 2026-08-25 - M021 provider-disabled foundation
+
+- M021A/M021B is in progress as one provider-disabled commercial module. Catalog validation, deterministic pricing, state availability and preliminary eligibility are implemented as local contracts only.
+- No catalog persistence, service order, workflow, entitlement, Stripe, partner, marketplace referral, redirect, payment, provider, migration execution, deployment or production operation is active.
+
+## M022-M026 implementation position
+
+M022 Forms/Intake, M023 Tasks, M024 Human Approvals, M025 AI Hub and M026 DevSecOps now have provider-disabled local policy foundations only. They do not persist business records, activate providers, create external work, deploy infrastructure or claim Product Owner acceptance. M006 remains the public form authority; M021 remains the commercial owner.
+
+- Focused evidence: Biome clean over the M021-M026 change set; direct TypeScript checks passed for eight affected packages; Vitest passed 17/17 tests in 9 files; `git diff --check` passed.
+- Global limitation: repository-wide typecheck remains blocked by pre-existing `@atlas/client-process-status` M010 errors, and global formatting reports pre-existing diagnostics outside this change set.
