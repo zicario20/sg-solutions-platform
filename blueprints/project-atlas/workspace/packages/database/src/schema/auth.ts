@@ -45,8 +45,14 @@ export const authAccounts = pgTable(
     ...timestamps,
   },
   (table) => [
-    check("auth_accounts_status_valid", sql`${table.status} in ('pending_verification', 'limited', 'active', 'suspended', 'closed')`),
-    check("auth_accounts_epoch_positive", sql`${table.authenticationEpoch} > 0 and ${table.accessEpoch} > 0 and ${table.policyEpoch} > 0`),
+    check(
+      "auth_accounts_status_valid",
+      sql`${table.status} in ('pending_verification', 'limited', 'active', 'suspended', 'closed')`,
+    ),
+    check(
+      "auth_accounts_epoch_positive",
+      sql`${table.authenticationEpoch} > 0 and ${table.accessEpoch} > 0 and ${table.policyEpoch} > 0`,
+    ),
     check("auth_accounts_version_positive", sql`${table.version} > 0`),
     authGatewayOnly("auth_accounts"),
   ],
@@ -56,7 +62,9 @@ export const authExternalIdentities = pgTable(
   "auth_external_identities",
   {
     id: text("id").primaryKey(),
-    accountId: text("account_id").notNull().references(() => authAccounts.id, { onDelete: "cascade" }),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => authAccounts.id, { onDelete: "cascade" }),
     provider: varchar("provider", { length: 32 }).notNull(),
     providerSubject: text("provider_subject").notNull(),
     state: varchar("state", { length: 24 }).notNull(),
@@ -65,9 +73,18 @@ export const authExternalIdentities = pgTable(
     ...timestamps,
   },
   (table) => [
-    unique("auth_external_identities_provider_subject_unique").on(table.provider, table.providerSubject),
-    check("auth_external_identities_provider_valid", sql`${table.provider} in ('email_password', 'google')`),
-    check("auth_external_identities_state_valid", sql`${table.state} in ('pending', 'active', 'reconciling', 'revoked')`),
+    unique("auth_external_identities_provider_subject_unique").on(
+      table.provider,
+      table.providerSubject,
+    ),
+    check(
+      "auth_external_identities_provider_valid",
+      sql`${table.provider} in ('email_password', 'google')`,
+    ),
+    check(
+      "auth_external_identities_state_valid",
+      sql`${table.state} in ('pending', 'active', 'reconciling', 'revoked')`,
+    ),
     authGatewayOnly("auth_external_identities"),
   ],
 ).enableRLS();
@@ -89,7 +106,10 @@ export const authSupabaseIdentityEvidence = pgTable(
   (table) => [
     index("auth_supabase_identity_evidence_subject_idx").on(table.provider, table.providerSubject),
     check("auth_supabase_identity_evidence_provider_valid", sql`${table.provider} = 'google'`),
-    check("auth_supabase_identity_evidence_expiry_valid", sql`${table.expiresAt} > ${table.verifiedAt}`),
+    check(
+      "auth_supabase_identity_evidence_expiry_valid",
+      sql`${table.expiresAt} > ${table.verifiedAt}`,
+    ),
     authGatewayOnly("auth_supabase_identity_evidence"),
   ],
 ).enableRLS();
@@ -98,7 +118,9 @@ export const authCrmPartyEvidence = pgTable(
   "auth_crm_party_evidence",
   {
     id: text("id").primaryKey(),
-    supabaseEvidenceId: text("supabase_evidence_id").notNull().references(() => authSupabaseIdentityEvidence.id, { onDelete: "restrict" }),
+    supabaseEvidenceId: text("supabase_evidence_id")
+      .notNull()
+      .references(() => authSupabaseIdentityEvidence.id, { onDelete: "restrict" }),
     partyId: text("party_id"),
     resolution: varchar("resolution", { length: 24 }).notNull(),
     relationshipReceipt: text("relationship_receipt"),
@@ -108,8 +130,14 @@ export const authCrmPartyEvidence = pgTable(
   },
   (table) => [
     index("auth_crm_party_evidence_identity_idx").on(table.supabaseEvidenceId, table.verifiedAt),
-    check("auth_crm_party_evidence_resolution_valid", sql`${table.resolution} in ('linked', 'possible_match', 'conflict', 'unavailable')`),
-    check("auth_crm_party_evidence_link_receipt", sql`${table.resolution} <> 'linked' or ${table.relationshipReceipt} is not null`),
+    check(
+      "auth_crm_party_evidence_resolution_valid",
+      sql`${table.resolution} in ('linked', 'possible_match', 'conflict', 'unavailable')`,
+    ),
+    check(
+      "auth_crm_party_evidence_link_receipt",
+      sql`${table.resolution} <> 'linked' or ${table.relationshipReceipt} is not null`,
+    ),
     check("auth_crm_party_evidence_expiry_valid", sql`${table.expiresAt} > ${table.verifiedAt}`),
     authGatewayOnly("auth_crm_party_evidence"),
   ],
@@ -119,17 +147,28 @@ export const authIdentityConflicts = pgTable(
   "auth_identity_conflicts",
   {
     id: text("id").primaryKey(),
-    accountId: text("account_id").notNull().references(() => authAccounts.id, { onDelete: "cascade" }),
-    externalIdentityId: text("external_identity_id").notNull().references(() => authExternalIdentities.id, { onDelete: "cascade" }),
-    supabaseEvidenceId: text("supabase_evidence_id").notNull().references(() => authSupabaseIdentityEvidence.id, { onDelete: "restrict" }),
-    crmEvidenceId: text("crm_evidence_id").notNull().references(() => authCrmPartyEvidence.id, { onDelete: "restrict" }),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => authAccounts.id, { onDelete: "cascade" }),
+    externalIdentityId: text("external_identity_id")
+      .notNull()
+      .references(() => authExternalIdentities.id, { onDelete: "cascade" }),
+    supabaseEvidenceId: text("supabase_evidence_id")
+      .notNull()
+      .references(() => authSupabaseIdentityEvidence.id, { onDelete: "restrict" }),
+    crmEvidenceId: text("crm_evidence_id")
+      .notNull()
+      .references(() => authCrmPartyEvidence.id, { onDelete: "restrict" }),
     reason: varchar("reason", { length: 32 }).notNull(),
     state: varchar("state", { length: 24 }).notNull(),
     ...timestamps,
   },
   (table) => [
     index("auth_identity_conflicts_account_state_idx").on(table.accountId, table.state),
-    check("auth_identity_conflicts_state_valid", sql`${table.state} in ('manual_review', 'resolved')`),
+    check(
+      "auth_identity_conflicts_state_valid",
+      sql`${table.state} in ('manual_review', 'resolved')`,
+    ),
     authGatewayOnly("auth_identity_conflicts"),
   ],
 ).enableRLS();
@@ -138,14 +177,19 @@ export const authSessions = pgTable(
   "auth_sessions",
   {
     id: text("id").primaryKey(),
-    accountId: text("account_id").notNull().references(() => authAccounts.id, { onDelete: "cascade" }),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => authAccounts.id, { onDelete: "cascade" }),
     handleDigest: text("handle_digest").notNull().unique(),
     familyId: text("family_id").notNull(),
     generation: integer("generation").notNull(),
     assurance: varchar("assurance", { length: 8 }).notNull(),
     state: varchar("state", { length: 24 }).notNull(),
     idleExpiresAt: timestamp("idle_expires_at", { withTimezone: true, mode: "date" }).notNull(),
-    absoluteExpiresAt: timestamp("absolute_expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    absoluteExpiresAt: timestamp("absolute_expires_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
     revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),
     version: integer("version").notNull().default(1),
     ...timestamps,
@@ -155,7 +199,10 @@ export const authSessions = pgTable(
     index("auth_sessions_account_state_idx").on(table.accountId, table.state, table.updatedAt),
     check("auth_sessions_generation_positive", sql`${table.generation} > 0`),
     check("auth_sessions_assurance_valid", sql`${table.assurance} in ('aal1', 'aal2')`),
-    check("auth_sessions_state_valid", sql`${table.state} in ('active', 'rotating', 'rotated', 'revoked', 'expired', 'risk_blocked')`),
+    check(
+      "auth_sessions_state_valid",
+      sql`${table.state} in ('active', 'rotating', 'rotated', 'revoked', 'expired', 'risk_blocked')`,
+    ),
     check("auth_sessions_expiry_valid", sql`${table.absoluteExpiresAt} > ${table.idleExpiresAt}`),
     authGatewayOnly("auth_sessions"),
   ],
@@ -165,7 +212,10 @@ export const authProviderVault = pgTable(
   "auth_provider_vault",
   {
     id: text("id").primaryKey(),
-    sessionId: text("session_id").notNull().references(() => authSessions.id, { onDelete: "cascade" }).unique(),
+    sessionId: text("session_id")
+      .notNull()
+      .references(() => authSessions.id, { onDelete: "cascade" })
+      .unique(),
     ciphertext: text("ciphertext").notNull(),
     keyReference: text("key_reference").notNull(),
     purpose: varchar("purpose", { length: 32 }).notNull(),
@@ -197,7 +247,10 @@ export const authTransactions = pgTable(
     ...timestamps,
   },
   (table) => [
-    check("auth_transactions_state_valid", sql`${table.state} in ('pending', 'consumed', 'expired', 'reconciling')`),
+    check(
+      "auth_transactions_state_valid",
+      sql`${table.state} in ('pending', 'consumed', 'expired', 'reconciling')`,
+    ),
     check("auth_transactions_expiry_valid", sql`${table.expiresAt} > ${table.createdAt}`),
     authGatewayOnly("auth_transactions"),
   ],
@@ -219,7 +272,10 @@ export const authProofs = pgTable(
   },
   (table) => [
     index("auth_proofs_expiry_idx").on(table.expiresAt),
-    check("auth_proofs_state_valid", sql`${table.state} in ('issued', 'consumed', 'revoked', 'expired')`),
+    check(
+      "auth_proofs_state_valid",
+      sql`${table.state} in ('issued', 'consumed', 'revoked', 'expired')`,
+    ),
     authGatewayOnly("auth_proofs"),
   ],
 ).enableRLS();
@@ -229,13 +285,19 @@ export const authInvitations = pgTable(
   {
     id: text("id").primaryKey(),
     intendedMembershipReceipt: text("intended_membership_receipt").notNull(),
-    proofId: text("proof_id").notNull().references(() => authProofs.id, { onDelete: "restrict" }).unique(),
+    proofId: text("proof_id")
+      .notNull()
+      .references(() => authProofs.id, { onDelete: "restrict" })
+      .unique(),
     state: varchar("state", { length: 24 }).notNull(),
     revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),
     ...timestamps,
   },
   (table) => [
-    check("auth_invitations_state_valid", sql`${table.state} in ('issued', 'accepted', 'revoked', 'expired')`),
+    check(
+      "auth_invitations_state_valid",
+      sql`${table.state} in ('issued', 'accepted', 'revoked', 'expired')`,
+    ),
     authGatewayOnly("auth_invitations"),
   ],
 ).enableRLS();
@@ -244,14 +306,19 @@ export const authPartyLinks = pgTable(
   "auth_party_links",
   {
     id: text("id").primaryKey(),
-    accountId: text("account_id").notNull().references(() => authAccounts.id, { onDelete: "cascade" }),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => authAccounts.id, { onDelete: "cascade" }),
     relationshipReceipt: text("relationship_receipt").notNull().unique(),
     state: varchar("state", { length: 24 }).notNull(),
     accessVersion: integer("access_version").notNull(),
     ...timestamps,
   },
   (table) => [
-    check("auth_party_links_state_valid", sql`${table.state} in ('active', 'manual_review', 'conflict', 'revoked')`),
+    check(
+      "auth_party_links_state_valid",
+      sql`${table.state} in ('active', 'manual_review', 'conflict', 'revoked')`,
+    ),
     check("auth_party_links_version_positive", sql`${table.accessVersion} > 0`),
     authGatewayOnly("auth_party_links"),
   ],
@@ -267,7 +334,10 @@ export const authOrganizations = pgTable(
     ...timestamps,
   },
   (table) => [
-    check("auth_organizations_state_valid", sql`${table.state} in ('active', 'suspended', 'closed')`),
+    check(
+      "auth_organizations_state_valid",
+      sql`${table.state} in ('active', 'suspended', 'closed')`,
+    ),
     check("auth_organizations_version_positive", sql`${table.accessVersion} > 0`),
     authGatewayOnly("auth_organizations"),
   ],
@@ -275,27 +345,42 @@ export const authOrganizations = pgTable(
 
 export const authRoles = pgTable(
   "auth_roles",
-  { id: text("id").primaryKey(), code: varchar("code", { length: 64 }).notNull().unique(), ...timestamps },
+  {
+    id: text("id").primaryKey(),
+    code: varchar("code", { length: 64 }).notNull().unique(),
+    ...timestamps,
+  },
   () => [authGatewayOnly("auth_roles")],
 ).enableRLS();
 
 export const authRolePermissions = pgTable(
   "auth_role_permissions",
   {
-    roleId: text("role_id").notNull().references(() => authRoles.id, { onDelete: "cascade" }),
+    roleId: text("role_id")
+      .notNull()
+      .references(() => authRoles.id, { onDelete: "cascade" }),
     permission: varchar("permission", { length: 128 }).notNull(),
     ...timestamps,
   },
-  (table) => [unique("auth_role_permissions_role_permission_unique").on(table.roleId, table.permission), authGatewayOnly("auth_role_permissions")],
+  (table) => [
+    unique("auth_role_permissions_role_permission_unique").on(table.roleId, table.permission),
+    authGatewayOnly("auth_role_permissions"),
+  ],
 ).enableRLS();
 
 export const authRoleAssignments = pgTable(
   "auth_role_assignments",
   {
     id: text("id").primaryKey(),
-    accountId: text("account_id").notNull().references(() => authAccounts.id, { onDelete: "cascade" }),
-    roleId: text("role_id").notNull().references(() => authRoles.id, { onDelete: "restrict" }),
-    organizationId: text("organization_id").references(() => authOrganizations.id, { onDelete: "cascade" }),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => authAccounts.id, { onDelete: "cascade" }),
+    roleId: text("role_id")
+      .notNull()
+      .references(() => authRoles.id, { onDelete: "restrict" }),
+    organizationId: text("organization_id").references(() => authOrganizations.id, {
+      onDelete: "cascade",
+    }),
     state: varchar("state", { length: 24 }).notNull(),
     accessVersion: integer("access_version").notNull(),
     ...timestamps,
@@ -372,7 +457,9 @@ export const authMfaFactors = pgTable(
   "auth_mfa_factors",
   {
     id: text("id").primaryKey(),
-    accountId: text("account_id").notNull().references(() => authAccounts.id, { onDelete: "cascade" }),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => authAccounts.id, { onDelete: "cascade" }),
     provider: varchar("provider", { length: 16 }).notNull(),
     providerFactorReference: text("provider_factor_reference"),
     state: varchar("state", { length: 24 }).notNull(),
@@ -425,12 +512,17 @@ export const authSecurityEvents = pgTable(
     id: text("id").primaryKey(),
     eventKey: text("event_key").notNull().unique(),
     accountId: text("account_id").references(() => authAccounts.id, { onDelete: "set null" }),
-    sequence: bigint("sequence", { mode: "number" }).notNull().default(sql`nextval('auth_security_event_sequence')`),
+    sequence: bigint("sequence", { mode: "number" })
+      .notNull()
+      .default(sql`nextval('auth_security_event_sequence')`),
     eventName: varchar("event_name", { length: 80 }).notNull(),
     outcome: varchar("outcome", { length: 32 }).notNull(),
     correlationId: text("correlation_id").notNull(),
     policyVersion: integer("policy_version").notNull(),
-    metadata: jsonb("metadata").$type<Readonly<Record<string, string | number | boolean>>>().notNull().default({}),
+    metadata: jsonb("metadata")
+      .$type<Readonly<Record<string, string | number | boolean>>>()
+      .notNull()
+      .default({}),
     occurredAt: timestamp("occurred_at", { withTimezone: true, mode: "date" }).notNull(),
   },
   (table) => [
@@ -465,19 +557,47 @@ export const authOutbox = pgTable(
   },
   (table) => [
     index("auth_outbox_dispatch_idx").on(table.state, table.availableAt, table.leaseExpiresAt),
-    check("auth_outbox_state_valid", sql`${table.state} in ('pending', 'leased', 'reconciling', 'completed', 'manual_review')`),
-    check("auth_outbox_channel_valid", sql`${table.channel} is null or ${table.channel} in ('email', 'otp', 'security_alert', 'invitation')`),
-    check("auth_outbox_lease_purpose_valid", sql`${table.leasePurpose} is null or ${table.leasePurpose} in ('dispatch', 'reconcile')`),
-    check("auth_outbox_provider_outcome_valid", sql`${table.providerOutcome} is null or ${table.providerOutcome} in ('sent', 'failed', 'unknown')`),
+    check(
+      "auth_outbox_state_valid",
+      sql`${table.state} in ('pending', 'leased', 'reconciling', 'completed', 'manual_review')`,
+    ),
+    check(
+      "auth_outbox_channel_valid",
+      sql`${table.channel} is null or ${table.channel} in ('email', 'otp', 'security_alert', 'invitation')`,
+    ),
+    check(
+      "auth_outbox_lease_purpose_valid",
+      sql`${table.leasePurpose} is null or ${table.leasePurpose} in ('dispatch', 'reconcile')`,
+    ),
+    check(
+      "auth_outbox_provider_outcome_valid",
+      sql`${table.providerOutcome} is null or ${table.providerOutcome} in ('sent', 'failed', 'unknown')`,
+    ),
     authGatewayOnly("auth_outbox"),
   ],
 ).enableRLS();
 
 export const authTables = [
-  "auth_accounts", "auth_external_identities", "auth_supabase_identity_evidence", "auth_crm_party_evidence", "auth_identity_conflicts", "auth_sessions", "auth_provider_vault",
-  "auth_transactions", "auth_proofs", "auth_invitations", "auth_party_links", "auth_organizations",
-  "auth_roles", "auth_role_permissions", "auth_role_assignments", "auth_mfa_factors",
-  "auth_service_accounts", "auth_rate_buckets", "auth_security_events", "auth_outbox",
+  "auth_accounts",
+  "auth_external_identities",
+  "auth_supabase_identity_evidence",
+  "auth_crm_party_evidence",
+  "auth_identity_conflicts",
+  "auth_sessions",
+  "auth_provider_vault",
+  "auth_transactions",
+  "auth_proofs",
+  "auth_invitations",
+  "auth_party_links",
+  "auth_organizations",
+  "auth_roles",
+  "auth_role_permissions",
+  "auth_role_assignments",
+  "auth_mfa_factors",
+  "auth_service_accounts",
+  "auth_rate_buckets",
+  "auth_security_events",
+  "auth_outbox",
 ] as const;
 
 export const authRlsHardeningSql = `

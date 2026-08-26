@@ -1066,3 +1066,13 @@ Implemented M040 central Partner contracts, lifecycle gating, onboarding, capabi
 - 2026-08-26: Implemented M041 Provider Abstraction as a provider-disabled controlled foundation. It establishes technical provider contracts and safeguards without activating vendors, routing, webhooks, polling, secrets or network traffic. A provider remains separate from an M040 Partner relationship.
 
 - 2026-08-26: Implemented M042 Service Catalog as a controlled foundation across its four specification parts. It reuses @atlas/commercial-catalog, records configuration/version/governance contracts and remains unmigrated, undeployed, execution-disabled and pending Product Owner acceptance.
+
+## 2026-08-26 - Repository audit remediation
+
+The Product Owner authorized correction of audit findings. The canonical 110-module catalog was
+restored from the last verified pre-corruption revision and is now protected by a regression test.
+M042 discovery now excludes unpublished, non-public or incomplete versions and emits Spanish and
+English discovery documents from their respective source content. Forward-only migration 0051
+enables RLS and adds restrictive deny-all policies for the previously omitted M040 Partner and
+M041 Provider tables. The migration is authored only: no database, provider, external route,
+deployment, partner, payment or client data operation was activated.

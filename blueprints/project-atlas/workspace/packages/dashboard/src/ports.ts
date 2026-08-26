@@ -7,12 +7,14 @@ import type {
 
 export type DashboardOwnerPort<K extends DashboardOwnerCode = DashboardOwnerCode> = Readonly<{
   owner: K;
-  query(input: Readonly<{
-    snapshot: DashboardAuthorizationSnapshot;
-    snapshotId: string;
-    limit: number;
-    signal: AbortSignal;
-  }>): Promise<DashboardOwnerFragment<K>>;
+  query(
+    input: Readonly<{
+      snapshot: DashboardAuthorizationSnapshot;
+      snapshotId: string;
+      limit: number;
+      signal: AbortSignal;
+    }>,
+  ): Promise<DashboardOwnerFragment<K>>;
 }>;
 
 export type DashboardOwnerPorts = Readonly<{

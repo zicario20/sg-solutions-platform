@@ -105,7 +105,10 @@ export function evaluateOutboundPolicy(input: OutboundPolicyInput): OutboundPoli
     return { allowed: false, code: "binding_freshness_invalid" };
   }
   if (input.binding.freshUntil <= input.now) return { allowed: false, code: "binding_stale" };
-  if (input.contactPolicy.state !== "normal" && input.contactPolicy.state !== "normal_after_review") {
+  if (
+    input.contactPolicy.state !== "normal" &&
+    input.contactPolicy.state !== "normal_after_review"
+  ) {
     return { allowed: false, code: "contact_policy_denied" };
   }
   if (input.consent.state !== "granted") return { allowed: false, code: "consent_not_granted" };
@@ -137,10 +140,7 @@ export function evaluateOutboundPolicy(input: OutboundPolicyInput): OutboundPoli
   ) {
     return { allowed: false, code: "authority_receipt_invalid" };
   }
-  if (
-    !input.destinationKey ||
-    input.authorizationReceipt.destinationKey !== input.destinationKey
-  ) {
+  if (!input.destinationKey || input.authorizationReceipt.destinationKey !== input.destinationKey) {
     return { allowed: false, code: "destination_mismatch" };
   }
   return { allowed: true, code: "allowed" };
@@ -151,7 +151,9 @@ export function evaluateAuthorityChange(input: {
   bindingId: string;
   receipt?: OwningAuthorityReceipt;
   now: Date;
-}): { allowed: true; code: "allowed" } | { allowed: false; code: "authority_receipt_missing" | "authority_receipt_invalid" } {
+}):
+  | { allowed: true; code: "allowed" }
+  | { allowed: false; code: "authority_receipt_missing" | "authority_receipt_invalid" } {
   if (!input.receipt) return { allowed: false, code: "authority_receipt_missing" };
   const expectedOwner = input.operation === "binding_revalidation" ? "identity" : "consent";
   if (
@@ -166,8 +168,7 @@ export function evaluateAuthorityChange(input: {
   return { allowed: true, code: "allowed" };
 }
 
-export type OptOutClassification =
-  { action: "none"; code: "opt_out_policy_disabled" };
+export type OptOutClassification = { action: "none"; code: "opt_out_policy_disabled" };
 
 export function classifyInboundOptOut(): OptOutClassification {
   return { action: "none", code: "opt_out_policy_disabled" };

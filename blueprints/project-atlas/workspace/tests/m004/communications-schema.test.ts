@@ -587,20 +587,12 @@ describe("M004 generated migration authority and canonical cutover", () => {
       { idx: 14, tag: "0014_m004_typed_withdrawal_evidence" },
     ];
     const expectedTags = new Set(expectedJournalEntries.map(({ tag }) => tag));
-    expect(journal.entries.filter(({ tag }) => expectedTags.has(tag)).map(({ idx, tag }) => ({ idx, tag }))).toEqual(
-      expectedJournalEntries,
-    );
-    for (const index of [
-      "0006",
-      "0007",
-      "0008",
-      "0009",
-      "0010",
-      "0011",
-      "0012",
-      "0013",
-      "0014",
-    ]) {
+    expect(
+      journal.entries
+        .filter(({ tag }) => expectedTags.has(tag))
+        .map(({ idx, tag }) => ({ idx, tag })),
+    ).toEqual(expectedJournalEntries);
+    for (const index of ["0006", "0007", "0008", "0009", "0010", "0011", "0012", "0013", "0014"]) {
       expect(
         existsSync(
           fileURLToPath(new URL(`../../drizzle/meta/${index}_snapshot.json`, import.meta.url)),
@@ -615,7 +607,7 @@ describe("M004 generated migration authority and canonical cutover", () => {
     );
     const sql = readFileSync(path, "utf8");
     expect(sql).toContain(
-      'ADD COLUMN "contact_evidence_event_kind" varchar(40) DEFAULT \'contact_withdrawal_recorded\' NOT NULL',
+      "ADD COLUMN \"contact_evidence_event_kind\" varchar(40) DEFAULT 'contact_withdrawal_recorded' NOT NULL",
     );
     expect(sql).toContain(
       'CONSTRAINT "communication_contact_evidence_events_contact_kind_valid" CHECK ("communication_contact_evidence_events"."contact_evidence_event_kind" = \'contact_withdrawal_recorded\')',
@@ -1357,7 +1349,6 @@ describe.sequential("M004 disposable real-Postgres migration and RLS contract", 
   );
 });
 
-
 describe("Task 7 recovered current-contract schema guards", () => {
   it("preserves neutral contact linkage and current durable authority evidence", () => {
     const bindingChecks = tableConfig("communicationContactBindings").checks.map(
@@ -1401,9 +1392,7 @@ describe("Task 7 recovered current-contract schema guards", () => {
   });
 
   it("persists every current template authority axis and the full safe media discriminator", () => {
-    const columns = tableConfig("communicationEventEnvelopes").columns.map(
-      (column) => column.name,
-    );
+    const columns = tableConfig("communicationEventEnvelopes").columns.map((column) => column.name);
     expect(columns).toEqual(
       expect.arrayContaining([
         "template_id",

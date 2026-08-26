@@ -1,5 +1,141 @@
-import{describe,expect,it,vi}from"vitest";import{CLIENT_SERVICE_SECTION_NAMES,ClientServicesQueryService}from"@atlas/client-services";
-const now=new Date("2026-08-21T12:00:00Z"),snapshot={schemaVersion:"m008.auth.v2",accountId:"acct",sessionId:"s",sessionFamilyId:"f",userId:"u",accountStatus:"active",sessionStatus:"active",sessionExpiresAt:"2026-08-22T00:00:00Z",assurance:"aal1",authenticationEpoch:"1",authorizationEpoch:"5",policyEpoch:"6",context:{type:"organization",opaqueRef:"ctx"},contextOptions:[{type:"organization",opaqueRef:"ctx",label:"Acme"}],membershipFence:"m",resourceGrantFence:"r",entitlementFence:"e",policyVersion:"p",locale:"en",capturedAt:now}as const;
-const labels={commercial:{active:"Active"},financial:{paid:"Paid"},activation:{approved:"Approved"},fulfillment:{in_progress:"In progress"}};const display={contextLabel:"Acme",serviceName:"Service",categoryLabel:"Advisory",scopeLabel:"Accepted scope",publicStateLabels:{in_progress:"In progress",unconfirmed:"Unconfirmed"},axisLabels:labels,nextStepLabel:"Continue",milestones:[{label:"Start",stateLabel:"Done"}]};
-const root={serviceOrderId:"order",ownerAccountId:"acct",ownerContextOpaqueRef:"ctx",resourceEpoch:7,acceptedDefinitionVersionId:"def-v1",acceptedDefinitionEpoch:2,opaqueRef:"csr1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",publicReference:"SR-1",contextType:"organization",axes:{commercial:"active",financial:"paid",activation:"approved",fulfillment:"in_progress"},ownerFacts:{financial:{sourceVersion:"financial.v1",resourceEpoch:1},activation:{sourceVersion:"activation.v1",resourceEpoch:1},fulfillment:{sourceVersion:"fulfillment.v1",resourceEpoch:1}},displays:{es:display,en:display},currentMilestoneIndex:0,completedMilestones:1,criticalSources:{tasks:"fresh",documents:"fresh",payments:"fresh"},updatedAt:now,grant:{permission:"client.service.read",state:"active",accountId:"acct",contextOpaqueRef:"ctx",authorizationEpoch:5,policyEpoch:6,resourceEpoch:7,expiresAt:"2026-08-22T00:00:00Z"}}as const;
-describe("M009 child and ownership fencing",()=>{it("passes every child resource to one final fence",async()=>{const verify=vi.fn().mockResolvedValue(true),sections=Object.fromEntries(CLIENT_SERVICE_SECTION_NAMES.map((name,index)=>[name,{load:vi.fn().mockResolvedValue({section:{state:"empty",generatedAt:now.toISOString()},sourceVersion:`${name}.v1`,bindingMode:"absence_fence",resourceFences:[{internalResourceId:`child-${index}`,resourceEpoch:index+1,sourceVersion:`${name}.v1`}]})}]));const query=new ClientServicesQueryService({auth:{authorize:vi.fn().mockResolvedValue({kind:"authorized",snapshot}),revalidate:vi.fn().mockResolvedValue(true)},source:{list:vi.fn(),detail:vi.fn().mockResolvedValue({state:"fresh",generatedAt:now,root}),verifyFinalFence:verify},sections,now:()=>now});expect((await query.detail({request:{},opaqueRef:root.opaqueRef})).kind).toBe("ok");expect(verify.mock.calls[0][0].fence.childResources).toHaveLength(8);expect(verify.mock.calls[0][0].fence.ownerFacts).toEqual(root.ownerFacts)});it("ownership mismatch is neutral and never invokes child owners",async()=>{const load=vi.fn(),query=new ClientServicesQueryService({auth:{authorize:vi.fn().mockResolvedValue({kind:"authorized",snapshot}),revalidate:vi.fn()},source:{list:vi.fn(),detail:vi.fn().mockResolvedValue({state:"fresh",generatedAt:now,root:{...root,ownerAccountId:"other"}}),verifyFinalFence:vi.fn()},sections:{tasks:{load}},now:()=>now});expect((await query.detail({request:{},opaqueRef:root.opaqueRef})).kind).toBe("not_found");expect(load).not.toHaveBeenCalled()})});
+import { CLIENT_SERVICE_SECTION_NAMES, ClientServicesQueryService } from "@atlas/client-services";
+import { describe, expect, it, vi } from "vitest";
+
+const now = new Date("2026-08-21T12:00:00Z"),
+  snapshot = {
+    schemaVersion: "m008.auth.v2",
+    accountId: "acct",
+    sessionId: "s",
+    sessionFamilyId: "f",
+    userId: "u",
+    accountStatus: "active",
+    sessionStatus: "active",
+    sessionExpiresAt: "2026-08-22T00:00:00Z",
+    assurance: "aal1",
+    authenticationEpoch: "1",
+    authorizationEpoch: "5",
+    policyEpoch: "6",
+    context: { type: "organization", opaqueRef: "ctx" },
+    contextOptions: [{ type: "organization", opaqueRef: "ctx", label: "Acme" }],
+    membershipFence: "m",
+    resourceGrantFence: "r",
+    entitlementFence: "e",
+    policyVersion: "p",
+    locale: "en",
+    capturedAt: now,
+  } as const;
+const labels = {
+  commercial: { active: "Active" },
+  financial: { paid: "Paid" },
+  activation: { approved: "Approved" },
+  fulfillment: { in_progress: "In progress" },
+};
+const display = {
+  contextLabel: "Acme",
+  serviceName: "Service",
+  categoryLabel: "Advisory",
+  scopeLabel: "Accepted scope",
+  publicStateLabels: { in_progress: "In progress", unconfirmed: "Unconfirmed" },
+  axisLabels: labels,
+  nextStepLabel: "Continue",
+  milestones: [{ label: "Start", stateLabel: "Done" }],
+};
+const root = {
+  serviceOrderId: "order",
+  ownerAccountId: "acct",
+  ownerContextOpaqueRef: "ctx",
+  resourceEpoch: 7,
+  acceptedDefinitionVersionId: "def-v1",
+  acceptedDefinitionEpoch: 2,
+  opaqueRef: "csr1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  publicReference: "SR-1",
+  contextType: "organization",
+  axes: {
+    commercial: "active",
+    financial: "paid",
+    activation: "approved",
+    fulfillment: "in_progress",
+  },
+  ownerFacts: {
+    financial: { sourceVersion: "financial.v1", resourceEpoch: 1 },
+    activation: { sourceVersion: "activation.v1", resourceEpoch: 1 },
+    fulfillment: { sourceVersion: "fulfillment.v1", resourceEpoch: 1 },
+  },
+  displays: { es: display, en: display },
+  currentMilestoneIndex: 0,
+  completedMilestones: 1,
+  criticalSources: { tasks: "fresh", documents: "fresh", payments: "fresh" },
+  updatedAt: now,
+  grant: {
+    permission: "client.service.read",
+    state: "active",
+    accountId: "acct",
+    contextOpaqueRef: "ctx",
+    authorizationEpoch: 5,
+    policyEpoch: 6,
+    resourceEpoch: 7,
+    expiresAt: "2026-08-22T00:00:00Z",
+  },
+} as const;
+describe("M009 child and ownership fencing", () => {
+  it("passes every child resource to one final fence", async () => {
+    const verify = vi.fn().mockResolvedValue(true),
+      sections = Object.fromEntries(
+        CLIENT_SERVICE_SECTION_NAMES.map((name, index) => [
+          name,
+          {
+            load: vi.fn().mockResolvedValue({
+              section: { state: "empty", generatedAt: now.toISOString() },
+              sourceVersion: `${name}.v1`,
+              bindingMode: "absence_fence",
+              resourceFences: [
+                {
+                  internalResourceId: `child-${index}`,
+                  resourceEpoch: index + 1,
+                  sourceVersion: `${name}.v1`,
+                },
+              ],
+            }),
+          },
+        ]),
+      );
+    const query = new ClientServicesQueryService({
+      auth: {
+        authorize: vi.fn().mockResolvedValue({ kind: "authorized", snapshot }),
+        revalidate: vi.fn().mockResolvedValue(true),
+      },
+      source: {
+        list: vi.fn(),
+        detail: vi.fn().mockResolvedValue({ state: "fresh", generatedAt: now, root }),
+        verifyFinalFence: verify,
+      },
+      sections,
+      now: () => now,
+    });
+    expect((await query.detail({ request: {}, opaqueRef: root.opaqueRef })).kind).toBe("ok");
+    expect(verify.mock.calls[0][0].fence.childResources).toHaveLength(8);
+    expect(verify.mock.calls[0][0].fence.ownerFacts).toEqual(root.ownerFacts);
+  });
+  it("ownership mismatch is neutral and never invokes child owners", async () => {
+    const load = vi.fn(),
+      query = new ClientServicesQueryService({
+        auth: {
+          authorize: vi.fn().mockResolvedValue({ kind: "authorized", snapshot }),
+          revalidate: vi.fn(),
+        },
+        source: {
+          list: vi.fn(),
+          detail: vi.fn().mockResolvedValue({
+            state: "fresh",
+            generatedAt: now,
+            root: { ...root, ownerAccountId: "other" },
+          }),
+          verifyFinalFence: vi.fn(),
+        },
+        sections: { tasks: { load } },
+        now: () => now,
+      });
+    expect((await query.detail({ request: {}, opaqueRef: root.opaqueRef })).kind).toBe("not_found");
+    expect(load).not.toHaveBeenCalled();
+  });
+});

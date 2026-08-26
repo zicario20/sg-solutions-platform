@@ -1,4 +1,217 @@
-import{PROCESS_MILESTONE_STATES,PROCESS_SECTION_NAMES,PROCESS_STATUS_CODES,PROCESS_TIMELINE_COPY_KEYS,type ProcessLocale,type ProcessMilestoneState,type ProcessResponsibleParty,type ProcessSectionName,type ProcessStatusCode,type ProcessTimelineCopyKey}from"@atlas/client-process-status";export interface ProcessStatusCopy{title:string;eyebrow:string;intro:string;context:string;choose:string;view:string;loadMore:string;back:string;nextAction:string;responsible:string;blockers:string;milestones:string;timeline:string;lastConfirmed:string;support:string;emptyTitle:string;emptyBody:string;unavailableTitle:string;unavailableBody:string;unconfirmedTitle:string;unconfirmedBody:string;partialTitle:string;partialBody:string;staleTitle:string;staleBody:string;noTimeline:string;timelineUnavailable:string;sectionEmpty:string;sectionStale:string;sectionUnavailable:string;states:Record<ProcessStatusCode,string>;sections:Record<ProcessSectionName,string>;parties:Record<ProcessResponsibleParty,string>;milestoneStates:Record<ProcessMilestoneState,string>;timelineEvents:Record<ProcessTimelineCopyKey,string>}
-const es:ProcessStatusCopy={title:"Estado de mi proceso",eyebrow:"Seguimiento autorizado",intro:"Consulta información confirmada por las fuentes responsables de tu servicio.",context:"Contexto",choose:"Elige un servicio",view:"Ver proceso",loadMore:"Cargar más procesos",back:"Volver al estado de mis procesos",nextAction:"Próxima acción",responsible:"Responsable",blockers:"Bloqueos",milestones:"Hitos",timeline:"Cronología",lastConfirmed:"Última confirmación",support:"Obtener ayuda",emptyTitle:"No hay procesos disponibles",emptyBody:"No encontramos un servicio autorizado y elegible para este contexto.",unavailableTitle:"No podemos mostrar este proceso ahora",unavailableBody:"Tus datos permanecen protegidos. Inténtalo de nuevo más tarde.",unconfirmedTitle:"Estado por confirmar",unconfirmedBody:"Falta una fuente necesaria para confirmar el estado o la próxima acción.",partialTitle:"Información parcialmente disponible",partialBody:"Algunas fuentes no están disponibles; solo mostramos lo confirmado.",staleTitle:"Información pendiente de actualización",staleBody:"Una fuente excedió su vigencia y no se usa para confirmar el proceso.",noTimeline:"No hay eventos confirmados para mostrar.",timelineUnavailable:"La cronología no está disponible o no puede confirmarse.",sectionEmpty:"No hay elementos confirmados.",sectionStale:"Esta sección necesita actualizarse.",sectionUnavailable:"Esta sección no está disponible.",states:{not_started:"No iniciado",waiting_for_payment:"Esperando pago",waiting_for_client:"Esperando tu acción",under_review:"En revisión",approved_to_start:"Aprobado para iniciar",in_progress:"En curso",waiting_for_external_party:"Esperando a un tercero",action_required:"Acción requerida",on_hold:"En pausa",completed:"Completado",cancelled:"Cancelado",refunded:"Reembolsado"},sections:{tasks:"Tareas",documents:"Documentos",payments:"Pagos",appointments:"Citas",dependencies:"Dependencias",help:"Ayuda",messages:"Mensajes",deliverables:"Entregables"},parties:{client:"Cliente",sg_solutions:"SG Solutions",external_entity:"Entidad externa",partner:"Socio",none:"Sin responsable"},milestoneStates:{completed:"Completado",current:"Actual",upcoming:"Próximo",blocked:"Bloqueado",skipped:"Omitido",cancelled:"Cancelado"},timelineEvents:{"timeline.step_completed":"Paso completado","timeline.action_required":"Acción requerida","timeline.document_received":"Documento recibido","timeline.payment_received":"Pago recibido","timeline.appointment_scheduled":"Cita programada","timeline.message_received":"Mensaje recibido","timeline.deliverable_ready":"Entregable disponible"}};
-const en:ProcessStatusCopy={title:"My process status",eyebrow:"Authorized tracking",intro:"Review information confirmed by the sources responsible for your service.",context:"Context",choose:"Choose a service",view:"View process",loadMore:"Load more processes",back:"Back to process status",nextAction:"Next action",responsible:"Responsible party",blockers:"Blockers",milestones:"Milestones",timeline:"Timeline",lastConfirmed:"Last confirmed",support:"Get help",emptyTitle:"No processes are available",emptyBody:"We could not find an authorized, eligible service for this context.",unavailableTitle:"We cannot show this process right now",unavailableBody:"Your data remains protected. Please try again later.",unconfirmedTitle:"Status unconfirmed",unconfirmedBody:"A required source is missing, so the status or next action cannot be confirmed.",partialTitle:"Information partially available",partialBody:"Some sources are unavailable; only confirmed information is shown.",staleTitle:"Information awaiting refresh",staleBody:"A source exceeded its freshness window and is not used to confirm the process.",noTimeline:"There are no confirmed events to show.",timelineUnavailable:"The timeline is unavailable or cannot be confirmed.",sectionEmpty:"No confirmed items are available.",sectionStale:"This section needs to be refreshed.",sectionUnavailable:"This section is unavailable.",states:{not_started:"Not started",waiting_for_payment:"Waiting for payment",waiting_for_client:"Waiting for you",under_review:"Under review",approved_to_start:"Approved to start",in_progress:"In progress",waiting_for_external_party:"Waiting for an external party",action_required:"Action required",on_hold:"On hold",completed:"Completed",cancelled:"Cancelled",refunded:"Refunded"},sections:{tasks:"Tasks",documents:"Documents",payments:"Payments",appointments:"Appointments",dependencies:"Dependencies",help:"Help",messages:"Messages",deliverables:"Deliverables"},parties:{client:"Client",sg_solutions:"SG Solutions",external_entity:"External entity",partner:"Partner",none:"No responsible party"},milestoneStates:{completed:"Completed",current:"Current",upcoming:"Upcoming",blocked:"Blocked",skipped:"Skipped",cancelled:"Cancelled"},timelineEvents:{"timeline.step_completed":"Step completed","timeline.action_required":"Action required","timeline.document_received":"Document received","timeline.payment_received":"Payment received","timeline.appointment_scheduled":"Appointment scheduled","timeline.message_received":"Message received","timeline.deliverable_ready":"Deliverable ready"}};
-export function getProcessStatusCopy(locale:ProcessLocale):ProcessStatusCopy{return locale==="en"?en:es}void PROCESS_STATUS_CODES;void PROCESS_SECTION_NAMES;void PROCESS_MILESTONE_STATES;void PROCESS_TIMELINE_COPY_KEYS;
+import {
+  PROCESS_MILESTONE_STATES,
+  PROCESS_SECTION_NAMES,
+  PROCESS_STATUS_CODES,
+  PROCESS_TIMELINE_COPY_KEYS,
+  type ProcessLocale,
+  type ProcessMilestoneState,
+  type ProcessResponsibleParty,
+  type ProcessSectionName,
+  type ProcessStatusCode,
+  type ProcessTimelineCopyKey,
+} from "@atlas/client-process-status";
+export interface ProcessStatusCopy {
+  title: string;
+  eyebrow: string;
+  intro: string;
+  context: string;
+  choose: string;
+  view: string;
+  loadMore: string;
+  back: string;
+  nextAction: string;
+  responsible: string;
+  blockers: string;
+  milestones: string;
+  timeline: string;
+  lastConfirmed: string;
+  support: string;
+  emptyTitle: string;
+  emptyBody: string;
+  unavailableTitle: string;
+  unavailableBody: string;
+  unconfirmedTitle: string;
+  unconfirmedBody: string;
+  partialTitle: string;
+  partialBody: string;
+  staleTitle: string;
+  staleBody: string;
+  noTimeline: string;
+  timelineUnavailable: string;
+  sectionEmpty: string;
+  sectionStale: string;
+  sectionUnavailable: string;
+  states: Record<ProcessStatusCode, string>;
+  sections: Record<ProcessSectionName, string>;
+  parties: Record<ProcessResponsibleParty, string>;
+  milestoneStates: Record<ProcessMilestoneState, string>;
+  timelineEvents: Record<ProcessTimelineCopyKey, string>;
+}
+const es: ProcessStatusCopy = {
+  title: "Estado de mi proceso",
+  eyebrow: "Seguimiento autorizado",
+  intro: "Consulta información confirmada por las fuentes responsables de tu servicio.",
+  context: "Contexto",
+  choose: "Elige un servicio",
+  view: "Ver proceso",
+  loadMore: "Cargar más procesos",
+  back: "Volver al estado de mis procesos",
+  nextAction: "Próxima acción",
+  responsible: "Responsable",
+  blockers: "Bloqueos",
+  milestones: "Hitos",
+  timeline: "Cronología",
+  lastConfirmed: "Última confirmación",
+  support: "Obtener ayuda",
+  emptyTitle: "No hay procesos disponibles",
+  emptyBody: "No encontramos un servicio autorizado y elegible para este contexto.",
+  unavailableTitle: "No podemos mostrar este proceso ahora",
+  unavailableBody: "Tus datos permanecen protegidos. Inténtalo de nuevo más tarde.",
+  unconfirmedTitle: "Estado por confirmar",
+  unconfirmedBody: "Falta una fuente necesaria para confirmar el estado o la próxima acción.",
+  partialTitle: "Información parcialmente disponible",
+  partialBody: "Algunas fuentes no están disponibles; solo mostramos lo confirmado.",
+  staleTitle: "Información pendiente de actualización",
+  staleBody: "Una fuente excedió su vigencia y no se usa para confirmar el proceso.",
+  noTimeline: "No hay eventos confirmados para mostrar.",
+  timelineUnavailable: "La cronología no está disponible o no puede confirmarse.",
+  sectionEmpty: "No hay elementos confirmados.",
+  sectionStale: "Esta sección necesita actualizarse.",
+  sectionUnavailable: "Esta sección no está disponible.",
+  states: {
+    not_started: "No iniciado",
+    waiting_for_payment: "Esperando pago",
+    waiting_for_client: "Esperando tu acción",
+    under_review: "En revisión",
+    approved_to_start: "Aprobado para iniciar",
+    in_progress: "En curso",
+    waiting_for_external_party: "Esperando a un tercero",
+    action_required: "Acción requerida",
+    on_hold: "En pausa",
+    completed: "Completado",
+    cancelled: "Cancelado",
+    refunded: "Reembolsado",
+  },
+  sections: {
+    tasks: "Tareas",
+    documents: "Documentos",
+    payments: "Pagos",
+    appointments: "Citas",
+    dependencies: "Dependencias",
+    help: "Ayuda",
+    messages: "Mensajes",
+    deliverables: "Entregables",
+  },
+  parties: {
+    client: "Cliente",
+    sg_solutions: "SG Solutions",
+    external_entity: "Entidad externa",
+    partner: "Socio",
+    none: "Sin responsable",
+  },
+  milestoneStates: {
+    completed: "Completado",
+    current: "Actual",
+    upcoming: "Próximo",
+    blocked: "Bloqueado",
+    skipped: "Omitido",
+    cancelled: "Cancelado",
+  },
+  timelineEvents: {
+    "timeline.step_completed": "Paso completado",
+    "timeline.action_required": "Acción requerida",
+    "timeline.document_received": "Documento recibido",
+    "timeline.payment_received": "Pago recibido",
+    "timeline.appointment_scheduled": "Cita programada",
+    "timeline.message_received": "Mensaje recibido",
+    "timeline.deliverable_ready": "Entregable disponible",
+  },
+};
+const en: ProcessStatusCopy = {
+  title: "My process status",
+  eyebrow: "Authorized tracking",
+  intro: "Review information confirmed by the sources responsible for your service.",
+  context: "Context",
+  choose: "Choose a service",
+  view: "View process",
+  loadMore: "Load more processes",
+  back: "Back to process status",
+  nextAction: "Next action",
+  responsible: "Responsible party",
+  blockers: "Blockers",
+  milestones: "Milestones",
+  timeline: "Timeline",
+  lastConfirmed: "Last confirmed",
+  support: "Get help",
+  emptyTitle: "No processes are available",
+  emptyBody: "We could not find an authorized, eligible service for this context.",
+  unavailableTitle: "We cannot show this process right now",
+  unavailableBody: "Your data remains protected. Please try again later.",
+  unconfirmedTitle: "Status unconfirmed",
+  unconfirmedBody:
+    "A required source is missing, so the status or next action cannot be confirmed.",
+  partialTitle: "Information partially available",
+  partialBody: "Some sources are unavailable; only confirmed information is shown.",
+  staleTitle: "Information awaiting refresh",
+  staleBody: "A source exceeded its freshness window and is not used to confirm the process.",
+  noTimeline: "There are no confirmed events to show.",
+  timelineUnavailable: "The timeline is unavailable or cannot be confirmed.",
+  sectionEmpty: "No confirmed items are available.",
+  sectionStale: "This section needs to be refreshed.",
+  sectionUnavailable: "This section is unavailable.",
+  states: {
+    not_started: "Not started",
+    waiting_for_payment: "Waiting for payment",
+    waiting_for_client: "Waiting for you",
+    under_review: "Under review",
+    approved_to_start: "Approved to start",
+    in_progress: "In progress",
+    waiting_for_external_party: "Waiting for an external party",
+    action_required: "Action required",
+    on_hold: "On hold",
+    completed: "Completed",
+    cancelled: "Cancelled",
+    refunded: "Refunded",
+  },
+  sections: {
+    tasks: "Tasks",
+    documents: "Documents",
+    payments: "Payments",
+    appointments: "Appointments",
+    dependencies: "Dependencies",
+    help: "Help",
+    messages: "Messages",
+    deliverables: "Deliverables",
+  },
+  parties: {
+    client: "Client",
+    sg_solutions: "SG Solutions",
+    external_entity: "External entity",
+    partner: "Partner",
+    none: "No responsible party",
+  },
+  milestoneStates: {
+    completed: "Completed",
+    current: "Current",
+    upcoming: "Upcoming",
+    blocked: "Blocked",
+    skipped: "Skipped",
+    cancelled: "Cancelled",
+  },
+  timelineEvents: {
+    "timeline.step_completed": "Step completed",
+    "timeline.action_required": "Action required",
+    "timeline.document_received": "Document received",
+    "timeline.payment_received": "Payment received",
+    "timeline.appointment_scheduled": "Appointment scheduled",
+    "timeline.message_received": "Message received",
+    "timeline.deliverable_ready": "Deliverable ready",
+  },
+};
+export function getProcessStatusCopy(locale: ProcessLocale): ProcessStatusCopy {
+  return locale === "en" ? en : es;
+}
+void PROCESS_STATUS_CODES;
+void PROCESS_SECTION_NAMES;
+void PROCESS_MILESTONE_STATES;
+void PROCESS_TIMELINE_COPY_KEYS;

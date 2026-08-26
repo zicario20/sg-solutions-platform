@@ -1,6 +1,5 @@
 import { authorizeConversation } from "./authorization.ts";
 import type { MessageCipher } from "./cipher.ts";
-import type { SecureMessagingDocumentAccess } from "./document-access.ts";
 import type {
   ClientConversationDto,
   ClientInboxItemDto,
@@ -10,7 +9,9 @@ import type {
   StaffMessagingActor,
   StoredConversation,
 } from "./contracts.ts";
+import type { SecureMessagingDocumentAccess } from "./document-access.ts";
 import type { SecureMessagingRepository } from "./repository.ts";
+
 const clean = (value: string, maximum: number) =>
   value
     .replace(/[\r\n\t]+/gu, " ")

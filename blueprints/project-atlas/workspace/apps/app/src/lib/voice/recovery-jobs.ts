@@ -1,9 +1,6 @@
 import { createHash } from "node:crypto";
 import type { VoiceCommand } from "@atlas/domain";
-import type {
-  VoiceOperationsFacade,
-  VoiceServiceContext,
-} from "./operations-facade.ts";
+import type { VoiceOperationsFacade, VoiceServiceContext } from "./operations-facade.ts";
 
 export const RECOVERY_OPERATIONS = [
   "request_transfer",
@@ -50,9 +47,7 @@ function operationFor(
   return "request_callback";
 }
 
-export async function recoverVoiceCall(
-  input: RecoverVoiceCallInput,
-): Promise<VoiceRecoveryResult> {
+export async function recoverVoiceCall(input: RecoverVoiceCallInput): Promise<VoiceRecoveryResult> {
   if (
     !canonicalId.test(input.callId) ||
     !canonicalId.test(input.correlationId) ||
@@ -61,10 +56,7 @@ export async function recoverVoiceCall(
   ) {
     return { outcome: "ended", code: "invalid_request" };
   }
-  if (
-    (input.fallback === "callback" || input.fallback === "voicemail") &&
-    !input.callerConfirmed
-  ) {
+  if ((input.fallback === "callback" || input.fallback === "voicemail") && !input.callerConfirmed) {
     return { outcome: "ended", code: "confirmation_required" };
   }
 

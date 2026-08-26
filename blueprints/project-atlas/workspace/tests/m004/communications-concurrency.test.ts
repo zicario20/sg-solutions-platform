@@ -123,7 +123,8 @@ function repositoryOptions(overrides: Record<string, unknown> = {}) {
 }
 
 function createRepository(overrides: Record<string, unknown> = {}) {
-  const { MemoryCommunicationsRepository, createVerifiedProviderStatusReceiptAuthority } = runtimeApi();
+  const { MemoryCommunicationsRepository, createVerifiedProviderStatusReceiptAuthority } =
+    runtimeApi();
   const authority = createVerifiedProviderStatusReceiptAuthority({
     nextReceiptId: (() => {
       let sequence = 0;
@@ -247,10 +248,47 @@ async function seedConnectedConversation(repository: any) {
     providerBodyDigest: "body_status_seed",
     endpointDigests: [{ version: "v1", digest: "endpoint_digest_v1" }],
     envelope: {
-      event: { eventId: "event_status_seed", channel: "whatsapp", locale: "en", connectionState: "active", bindingId: "binding_1", conversationId: "conversation_1", messageId: "message_status_seed", receivedAt: NOW, state: "persisted", correlationId: "correlation_out_1" },
-      conversation: { id: "conversation_1", channel: "whatsapp", locale: "en", status: "new", participantIds: ["participant_1"], version: 1, createdAt: NOW, updatedAt: NOW, lastActivityAt: NOW },
-      participant: { participantId: "participant_1", conversationId: "conversation_1", bindingId: "binding_1", role: "external_contact", createdAt: NOW },
-      message: { id: "message_status_seed", conversationId: "conversation_1", channel: "whatsapp", direction: "inbound", senderParticipantId: "participant_1", locale: "en", kind: "text", body: "Synthetic status seed", createdAt: NOW },
+      event: {
+        eventId: "event_status_seed",
+        channel: "whatsapp",
+        locale: "en",
+        connectionState: "active",
+        bindingId: "binding_1",
+        conversationId: "conversation_1",
+        messageId: "message_status_seed",
+        receivedAt: NOW,
+        state: "persisted",
+        correlationId: "correlation_out_1",
+      },
+      conversation: {
+        id: "conversation_1",
+        channel: "whatsapp",
+        locale: "en",
+        status: "new",
+        participantIds: ["participant_1"],
+        version: 1,
+        createdAt: NOW,
+        updatedAt: NOW,
+        lastActivityAt: NOW,
+      },
+      participant: {
+        participantId: "participant_1",
+        conversationId: "conversation_1",
+        bindingId: "binding_1",
+        role: "external_contact",
+        createdAt: NOW,
+      },
+      message: {
+        id: "message_status_seed",
+        conversationId: "conversation_1",
+        channel: "whatsapp",
+        direction: "inbound",
+        senderParticipantId: "participant_1",
+        locale: "en",
+        kind: "text",
+        body: "Synthetic status seed",
+        createdAt: NOW,
+      },
     },
     optOutSignal: "none",
   });
@@ -292,7 +330,10 @@ describe("atomic opt-out and dispatch fencing", () => {
     releaseWithdrawal.resolve();
 
     await expect(withdrawal).resolves.toMatchObject({ status: "changed", state: "withdrawn" });
-    await expect(dispatch).resolves.toEqual({ status: "not_dispatched", code: "contact_policy_denied" });
+    await expect(dispatch).resolves.toEqual({
+      status: "not_dispatched",
+      code: "contact_policy_denied",
+    });
     expect(providerCalls).toBe(0);
     expect(repository.referenceState().outbound[0]).toMatchObject({ state: "cancelled" });
   });
@@ -349,8 +390,10 @@ describe("durable leases, attempts and recovery", () => {
       dispatch: async ({ attemptId }: { attemptId: string }) => {
         durableAttemptObserved = repository
           .referenceState()
-          .attempts.some((attempt: { attemptId: string; state: string }) =>
-            attempt.attemptId === attemptId && attempt.state === "dispatching");
+          .attempts.some(
+            (attempt: { attemptId: string; state: string }) =>
+              attempt.attemptId === attemptId && attempt.state === "dispatching",
+          );
         return { status: "accepted", providerReference: "provider_ref_1" };
       },
     });
@@ -608,7 +651,8 @@ describe("durable leases, attempts and recovery", () => {
         resolve: async () => ({ status: "resolved", endpoint: "raw:endpoint:synthetic" }),
       },
       boundedExecutor: {
-        run: async (_operation: string, _timeout: number, action: () => Promise<unknown>) => action(),
+        run: async (_operation: string, _timeout: number, action: () => Promise<unknown>) =>
+          action(),
       },
       provider: { dispatch: async () => ({ status: "accepted" }) },
       publicKnowledge: {
@@ -678,7 +722,8 @@ describe("durable leases, attempts and recovery", () => {
       await runtimeApi().processInboundChannelEvent({
         repository: inboundRepository,
         executor: {
-          run: async (_operation: string, _timeout: number, action: () => Promise<unknown>) => action(),
+          run: async (_operation: string, _timeout: number, action: () => Promise<unknown>) =>
+            action(),
         },
         contentPolicy: { evaluate: () => ({ allowed: true, code: "allowed" }) },
         publicOrientation: {
@@ -768,20 +813,38 @@ describe("monotonic exactly-once provider statuses", () => {
       LATER,
     );
 
-    expect(
-      await repository.applyProviderStatus(delivered),
-    ).toMatchObject({ status: "applied", commandState: "delivered" });
-    expect(
-      await repository.applyProviderStatus(delivered),
-    ).toMatchObject({ status: "duplicate", commandState: "delivered" });
+    expect(await repository.applyProviderStatus(delivered)).toMatchObject({
+      status: "applied",
+      commandState: "delivered",
+    });
+    expect(await repository.applyProviderStatus(delivered)).toMatchObject({
+      status: "duplicate",
+      commandState: "delivered",
+    });
     expect(
       await repository.applyProviderStatus(
-        providerStatus(repository, queued.commandId, attemptId, connectionId, "status_event_1", "sent", NOW),
+        providerStatus(
+          repository,
+          queued.commandId,
+          attemptId,
+          connectionId,
+          "status_event_1",
+          "sent",
+          NOW,
+        ),
       ),
     ).toMatchObject({ status: "regressive", commandState: "delivered" });
     expect(
       await repository.applyProviderStatus(
-        providerStatus(repository, queued.commandId, attemptId, connectionId, "status_event_3", "read", TOMORROW),
+        providerStatus(
+          repository,
+          queued.commandId,
+          attemptId,
+          connectionId,
+          "status_event_3",
+          "read",
+          TOMORROW,
+        ),
       ),
     ).toMatchObject({ status: "applied", commandState: "read" });
     expect(repository.referenceState().providerStatuses).toHaveLength(3);
@@ -805,7 +868,15 @@ describe("monotonic exactly-once provider statuses", () => {
 
     expect(
       await repository.applyProviderStatus(
-        providerStatus(repository, queued.commandId, attemptId, connectionId, "early_status_1", "sent", NOW),
+        providerStatus(
+          repository,
+          queued.commandId,
+          attemptId,
+          connectionId,
+          "early_status_1",
+          "sent",
+          NOW,
+        ),
       ),
     ).toEqual({ status: "denied", code: "provider_status_binding_mismatch" });
 
@@ -820,7 +891,15 @@ describe("monotonic exactly-once provider statuses", () => {
     });
     expect(
       await repository.applyProviderStatus(
-        providerStatus(repository, queued.commandId, attemptId, connectionId, "status_event_1", "sent", NOW),
+        providerStatus(
+          repository,
+          queued.commandId,
+          attemptId,
+          connectionId,
+          "status_event_1",
+          "sent",
+          NOW,
+        ),
       ),
     ).toMatchObject({ status: "applied", commandState: "sent" });
     expect(repository.referenceState().attempts).toEqual([
@@ -917,7 +996,8 @@ describe("controlled inbound opt-out and reconciliation races", () => {
     const processPrior = runtimeApi().processInboundChannelEvent({
       repository,
       executor: {
-        run: async (_operation: string, _timeout: number, action: () => Promise<unknown>) => action(),
+        run: async (_operation: string, _timeout: number, action: () => Promise<unknown>) =>
+          action(),
       },
       contentPolicy: { evaluate: () => ({ allowed: true, code: "allowed" }) },
       publicOrientation: {

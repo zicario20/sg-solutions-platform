@@ -198,7 +198,6 @@ function createService(options: Record<string, unknown> = {}) {
   const digestCalls: Array<{ key: string; payload: string }> = [];
   let id = 0;
   const dependencies = {
-    repository,
     clock: { now: () => NOW },
     ids: { next: (kind: string) => `${kind}_${++id}` },
     endpointDigestKeys: {
@@ -404,9 +403,10 @@ describe("canonical inbound and application behavior", () => {
   it("maps disabled knowledge and absent handoff receipts to honest manual outcomes", async () => {
     const disabled = createService();
     await acceptInbound(disabled.service);
-    expect(
-      await processInbound(disabled.repository, {}),
-    ).toEqual({ status: "manual_review", code: "knowledge_unavailable" });
+    expect(await processInbound(disabled.repository, {})).toEqual({
+      status: "manual_review",
+      code: "knowledge_unavailable",
+    });
 
     const noReceipt = createService();
     await acceptInbound(noReceipt.service);
@@ -428,11 +428,11 @@ describe("canonical inbound and application behavior", () => {
       { prompt: "Synthetic question" },
       {
         publicOrientation: {
-        answer: async () => ({
-          status: "available",
-          text: "Send private identity and payment details here",
+          answer: async () => ({
+            status: "available",
+            text: "Send private identity and payment details here",
             receipt: validM002Receipt(),
-        }),
+          }),
         },
         contentPolicy: { evaluate: () => ({ allowed: false, code: "protected_content" }) },
       },
@@ -552,9 +552,9 @@ describe("receipt-gated consent, binding and template behavior", () => {
         now: NOW,
       }),
     ).toMatchObject({ status: "applied", internallyApproved: false });
-    expect(
-      await templates.evaluateEligibility({ templateId: "template_1", locale: "en" }),
-    ).toEqual({ eligible: false, code: "internal_approval_required" });
+    expect(await templates.evaluateEligibility({ templateId: "template_1", locale: "en" })).toEqual(
+      { eligible: false, code: "internal_approval_required" },
+    );
     expect(
       await templates.recordInternalApproval({
         templateId: "template_1",
@@ -792,12 +792,15 @@ describe("endpoint digest isolation and fail-closed dependencies", () => {
       },
       "endpoint_digest_key_invalid",
     ],
-  ] as const)("fails closed for unavailable or invalid digest key rings", async (resolved, code) => {
-    const fixture = createService({ endpointDigestKeys: { resolve: async () => resolved } });
+  ] as const)(
+    "fails closed for unavailable or invalid digest key rings",
+    async (resolved, code) => {
+      const fixture = createService({ endpointDigestKeys: { resolve: async () => resolved } });
 
-    expect(await acceptInbound(fixture.service)).toEqual({ status: "unavailable", code });
-    expect(fixture.repository.referenceState().inbound).toEqual([]);
-  });
+      expect(await acceptInbound(fixture.service)).toEqual({ status: "unavailable", code });
+      expect(fixture.repository.referenceState().inbound).toEqual([]);
+    },
+  );
 
   it("fails closed when destination resolution is disabled", async () => {
     const fixture = createService({
@@ -855,7 +858,10 @@ describe("endpoint digest isolation and fail-closed dependencies", () => {
     });
     expect(resolverCalls).toBe(1);
     releaseResolver();
-    await expect(first).resolves.toMatchObject({ status: "created", commandId: "outbound_command_1" });
+    await expect(first).resolves.toMatchObject({
+      status: "created",
+      commandId: "outbound_command_1",
+    });
   });
 
   it("accepts a duplicate only when the stored outbound command is queued", async () => {

@@ -1,14 +1,14 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import {
   createVerifiedProviderStatusReceiptAuthority,
   MemoryCommunicationsRepository,
 } from "@atlas/domain";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { describe, expect, it } from "vitest";
 import {
   assertRestrictedCommunicationsPrincipal,
   COMMUNICATIONS_TRANSACTION_SQL,
 } from "../../packages/database/src/postgres-communications-store.ts";
-import { describe, expect, it } from "vitest";
 import {
   communicationsConformanceSeed,
   runCommunicationsRepositoryConformance,
@@ -29,7 +29,9 @@ runCommunicationsRepositoryConformance("memory", async (scenario) => {
 
 describe("Postgres communications transaction contract", () => {
   const storeSource = readFileSync(
-    fileURLToPath(new URL("../../packages/database/src/postgres-communications-store.ts", import.meta.url)),
+    fileURLToPath(
+      new URL("../../packages/database/src/postgres-communications-store.ts", import.meta.url),
+    ),
     "utf8",
   );
   const schemaSource = readFileSync(
@@ -72,9 +74,7 @@ describe("Postgres communications transaction contract", () => {
     expect(COMMUNICATIONS_TRANSACTION_SQL.claimInbound).toContain(
       "for update of receipt skip locked",
     );
-    expect(COMMUNICATIONS_TRANSACTION_SQL.claimOutbound).toContain(
-      "for update skip locked",
-    );
+    expect(COMMUNICATIONS_TRANSACTION_SQL.claimOutbound).toContain("for update skip locked");
     expect(COMMUNICATIONS_TRANSACTION_SQL.lockBinding).toContain("for update");
     expect(COMMUNICATIONS_TRANSACTION_SQL.lockPolicy).toContain("for update");
   });
@@ -90,7 +90,9 @@ describe("Postgres communications transaction contract", () => {
     );
     expect(storeSource).toMatch(/processing_version[^;]+null, 0, null/su);
     expect(storeSource).toContain("processing_version = processing_version + 1");
-    expect(storeSource).toContain("select id from communication_conversations where id = $1 for update");
+    expect(storeSource).toContain(
+      "select id from communication_conversations where id = $1 for update",
+    );
     expect(storeSource).toContain("coalesce(max(ordinal), 0)::integer + 1 as ordinal");
     expect(storeSource).toContain("canonicalEndpointReference(");
     expect(storeSource).toContain("then 'inbound_event' else 'authority' end as source");
@@ -102,14 +104,20 @@ describe("Postgres communications transaction contract", () => {
     expect(createOutboundSource).toContain("existing.locale !== input.command.locale");
     expect(createOutboundSource).toContain("raced.locale !== input.command.locale");
     expect(schemaSource).toContain("sql`${table.processingVersion} >= 0`");
-    expect(schemaSource).toContain('messageBodyDigest: char("message_body_digest", { length: 64 })');
+    expect(schemaSource).toContain(
+      'messageBodyDigest: char("message_body_digest", { length: 64 })',
+    );
   });
 
   it("uses exhaustive domain-to-database outcome and reconciliation vocabularies", () => {
     expect(storeSource).toContain('known_failure: { state: "failed", resultCode: "failed" }');
-    expect(storeSource).toContain('unknown: { state: "dispatch_unknown", resultCode: "dispatch_unknown" }');
+    expect(storeSource).toContain(
+      'unknown: { state: "dispatch_unknown", resultCode: "dispatch_unknown" }',
+    );
     expect(schemaSource).toContain("('provider_lookup', 'manual_authority')");
-    expect(schemaSource).toContain("('reconciled_accepted', 'confirmed_not_sent', 'terminal_failure')");
+    expect(schemaSource).toContain(
+      "('reconciled_accepted', 'confirmed_not_sent', 'terminal_failure')",
+    );
     expect(storeSource.match(/evaluateOutboundPolicy\(/gu)).toHaveLength(2);
   });
 
@@ -136,7 +144,9 @@ describe("Postgres communications transaction contract", () => {
   it("hardens both receipt tables with scoped policy, FORCE RLS, revokes, and least privilege", () => {
     expect(schemaSource).toContain("communicationsCommandScope(table.commandId)");
     const securityMigration = readFileSync(
-      fileURLToPath(new URL("../../drizzle/0011_m004_receipt_security_hardening.sql", import.meta.url)),
+      fileURLToPath(
+        new URL("../../drizzle/0011_m004_receipt_security_hardening.sql", import.meta.url),
+      ),
       "utf8",
     );
     for (const table of [

@@ -3,8 +3,8 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
-  withAttestedPublicFormsStaffRole,
   type PublicFormsSql,
+  withAttestedPublicFormsStaffRole,
 } from "../../packages/database/src/public-forms-repository.ts";
 
 describe("M006 attested staff RLS", () => {
@@ -16,12 +16,14 @@ describe("M006 attested staff RLS", () => {
           async unsafe(statement, parameters) {
             statements.push(statement.replace(/\s+/gu, " ").trim());
             if (statement.includes("pg_has_role")) {
-              return [{
-                session_user_name: "atlas_staff_runtime",
-                is_member: parameters?.[0] === "atlas_public_forms_preview",
-                rolsuper: false,
-                rolbypassrls: false,
-              }] as never;
+              return [
+                {
+                  session_user_name: "atlas_staff_runtime",
+                  is_member: parameters?.[0] === "atlas_public_forms_preview",
+                  rolsuper: false,
+                  rolbypassrls: false,
+                },
+              ] as never;
             }
             return [] as never;
           },
@@ -29,13 +31,13 @@ describe("M006 attested staff RLS", () => {
       },
     };
 
-    await expect(withAttestedPublicFormsStaffRole(sql, "preview", async () => "allowed")).resolves.toBe(
-      "allowed",
-    );
+    await expect(
+      withAttestedPublicFormsStaffRole(sql, "preview", async () => "allowed"),
+    ).resolves.toBe("allowed");
     expect(statements).toContain("set local role atlas_public_forms_preview");
-    await expect(withAttestedPublicFormsStaffRole(sql, "review", async () => "forbidden")).rejects.toThrowError(
-      "PUBLIC_FORMS_STAFF_ROLE_DENIED",
-    );
+    await expect(
+      withAttestedPublicFormsStaffRole(sql, "review", async () => "forbidden"),
+    ).rejects.toThrowError("PUBLIC_FORMS_STAFF_ROLE_DENIED");
     expect(statements.join("\n")).not.toContain("atlas.staff_permission");
   });
 

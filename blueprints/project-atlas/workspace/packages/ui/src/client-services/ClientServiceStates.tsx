@@ -1,5 +1,42 @@
 import type { ClientServiceLocale } from "@atlas/client-services";
 import { getClientServicesCopy } from "@atlas/i18n";
 
-export function ClientServiceState({ locale, state }: { locale: ClientServiceLocale; state: "empty" | "filter-empty" | "partial" | "stale" | "unavailable" }) { const copy = getClientServicesCopy(locale); const content=state==="empty"?[copy.emptyTitle,copy.emptyBody]:state==="filter-empty"?[copy.filterEmptyTitle,copy.filterEmptyBody]:state==="partial"?[copy.partialTitle,copy.unavailableBody]:state==="stale"?[copy.staleTitle,copy.sectionStale]:[copy.unavailableTitle,copy.unavailableBody];return <section className="m009-message" role="status" aria-live="polite"><span aria-hidden="true">{state === "empty" ? "○" : "!"}</span><h2>{content[0]}</h2><p>{content[1]}</p></section>; }
-export function ClientServicesSkeleton({ locale }: { locale: ClientServiceLocale }) { return <div className="m009-skeleton" role="status" aria-label={locale === "es" ? "Cargando servicios" : "Loading services"}>{[0, 1, 2].map((item) => <span key={item} />)}</div>; }
+export function ClientServiceState({
+  locale,
+  state,
+}: {
+  locale: ClientServiceLocale;
+  state: "empty" | "filter-empty" | "partial" | "stale" | "unavailable";
+}) {
+  const copy = getClientServicesCopy(locale);
+  const content =
+    state === "empty"
+      ? [copy.emptyTitle, copy.emptyBody]
+      : state === "filter-empty"
+        ? [copy.filterEmptyTitle, copy.filterEmptyBody]
+        : state === "partial"
+          ? [copy.partialTitle, copy.unavailableBody]
+          : state === "stale"
+            ? [copy.staleTitle, copy.sectionStale]
+            : [copy.unavailableTitle, copy.unavailableBody];
+  return (
+    <section className="m009-message" role="status" aria-live="polite">
+      <span aria-hidden="true">{state === "empty" ? "○" : "!"}</span>
+      <h2>{content[0]}</h2>
+      <p>{content[1]}</p>
+    </section>
+  );
+}
+export function ClientServicesSkeleton({ locale }: { locale: ClientServiceLocale }) {
+  return (
+    <div
+      className="m009-skeleton"
+      role="status"
+      aria-label={locale === "es" ? "Cargando servicios" : "Loading services"}
+    >
+      {[0, 1, 2].map((item) => (
+        <span key={item} />
+      ))}
+    </div>
+  );
+}

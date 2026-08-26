@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { transitionConversationOwnership } from "../../packages/domain/src/communications/index.ts";
 import {
   type AuditEvent,
   type ChatCommandResult,
@@ -15,7 +16,6 @@ import {
   type PublicChatConversation,
   type PublicKnowledgeProvider,
 } from "../../packages/domain/src/public-chat/index.ts";
-import { transitionConversationOwnership } from "../../packages/domain/src/communications/index.ts";
 import { inspectProhibitedChatContent } from "../../packages/validation/src/public-chat.ts";
 
 const NOW = new Date("2026-08-12T18:00:00.000Z");

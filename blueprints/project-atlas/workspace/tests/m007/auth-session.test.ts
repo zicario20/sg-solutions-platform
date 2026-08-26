@@ -1,6 +1,6 @@
 import { ApplicationSessionService, MemorySessionStore } from "@atlas/auth";
-import { createAuthSessionCookie } from "../../apps/app/src/lib/auth/cookies.ts";
 import { describe, expect, it } from "vitest";
+import { createAuthSessionCookie } from "../../apps/app/src/lib/auth/cookies.ts";
 
 describe("M007 application sessions", () => {
   it("serializes only a secure host-only opaque handle", () => {

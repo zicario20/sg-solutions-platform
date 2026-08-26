@@ -3,12 +3,8 @@ import http from "node:http";
 import https from "node:https";
 import net from "node:net";
 import tls from "node:tls";
-import {
-  MemoryCommunicationsRepository,
-  type AcceptInboundCommand,
-} from "@atlas/domain";
+import { type AcceptInboundCommand, MemoryCommunicationsRepository } from "@atlas/domain";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { createMetaCloudAdapter } from "../../apps/app/src/lib/whatsapp/meta-adapter.ts";
 import {
   createFixedWindowRateBudget,
   createIngressSemaphore,
@@ -19,6 +15,7 @@ import {
   type MetaWebhookConnectionAuthority,
   type WhatsAppIngressHandler,
 } from "../../apps/app/src/lib/whatsapp/ingress.ts";
+import { createMetaCloudAdapter } from "../../apps/app/src/lib/whatsapp/meta-adapter.ts";
 
 const APP_SECRET = "synthetic-task11-app-secret";
 const VERIFY_TOKEN = "synthetic-task11-verify-token";
@@ -179,19 +176,13 @@ function signature(raw: Uint8Array): string {
   return `sha256=${createHmac("sha256", APP_SECRET).update(raw).digest("hex")}`;
 }
 
-function postRequest(
-  body: BodyInit,
-  headers: Readonly<Record<string, string>> = {},
-): Request {
-  return new Request(
-    `https://atlas.invalid/api/integrations/whatsapp/meta/${CONNECTION_ID}`,
-    {
-      method: "POST",
-      headers: { "content-type": "application/json", ...headers },
-      body,
-      duplex: "half",
-    } as RequestInit & { duplex: "half" },
-  );
+function postRequest(body: BodyInit, headers: Readonly<Record<string, string>> = {}): Request {
+  return new Request(`https://atlas.invalid/api/integrations/whatsapp/meta/${CONNECTION_ID}`, {
+    method: "POST",
+    headers: { "content-type": "application/json", ...headers },
+    body,
+    duplex: "half",
+  } as RequestInit & { duplex: "half" });
 }
 
 function stalledBody() {
@@ -262,11 +253,13 @@ function repositoryCommand(command: DurableInboundAcceptanceCommand): AcceptInbo
   };
 }
 
-function createFixture(options: {
-  readonly clock?: ControlledClock;
-  readonly credentialsUnavailable?: boolean;
-  readonly maxRawBodyBytes?: number;
-} = {}) {
+function createFixture(
+  options: {
+    readonly clock?: ControlledClock;
+    readonly credentialsUnavailable?: boolean;
+    readonly maxRawBodyBytes?: number;
+  } = {},
+) {
   const clock = options.clock ?? new ControlledClock();
   const repository = new MemoryCommunicationsRepository();
   const telemetry: IngressTelemetryEvent[] = [];

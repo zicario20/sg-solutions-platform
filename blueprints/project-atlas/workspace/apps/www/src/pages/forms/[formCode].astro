@@ -1,9 +1,9 @@
 ---
 import PublicFormExperience from "../../components/forms/PublicFormExperience.astro";
 import type { PublicFormRenderProjection } from "../../components/forms/types";
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import type { PublicPage } from "../../domain/public-site";
 import { getPublicFormStaticPaths } from "../../content/public-forms";
+import type { PublicPage } from "../../domain/public-site";
+import BaseLayout from "../../layouts/BaseLayout.astro";
 
 interface Props {
   page: PublicPage;

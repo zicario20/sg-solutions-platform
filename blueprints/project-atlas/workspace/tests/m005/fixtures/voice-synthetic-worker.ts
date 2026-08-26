@@ -1,8 +1,4 @@
 import { createInterface } from "node:readline";
-import {
-  MemoryVoiceCommandReceiptRepository,
-  MemoryVoiceLifecycleRepository,
-} from "../../../packages/database/src/index.ts";
 import { VoiceOperationsFacade } from "../../../apps/app/src/lib/voice/operations-facade.ts";
 import { createFailClosedOwnerPorts } from "../../../apps/app/src/lib/voice/owner-ports.ts";
 import {
@@ -10,14 +6,19 @@ import {
   VoiceServiceAuthenticator,
 } from "../../../apps/app/src/lib/voice/service-auth.ts";
 import { SyntheticVoicePlatform } from "../../../apps/app/src/lib/voice/synthetic-platform.ts";
+import {
+  MemoryVoiceCommandReceiptRepository,
+  MemoryVoiceLifecycleRepository,
+} from "../../../packages/database/src/index.ts";
 
-const secret = Buffer.from(
-  "m005-composed-platform-secret-000000000000000000000000000000",
-);
-const reconciled = new Map<string, {
-  receiptId: string;
-  outcome: "transfer_requested";
-}>();
+const secret = Buffer.from("m005-composed-platform-secret-000000000000000000000000000000");
+const reconciled = new Map<
+  string,
+  {
+    receiptId: string;
+    outcome: "transfer_requested";
+  }
+>();
 const owners = {
   ...createFailClosedOwnerPorts(),
   requestTransfer: async (input: { idempotencyKey: string }) => {
@@ -30,19 +31,15 @@ const owners = {
   },
   reconcileCommand: async (input: { idempotencyKey: string }) => {
     const receipt = reconciled.get(input.idempotencyKey);
-    return receipt
-      ? { status: "completed" as const, receipt }
-      : { status: "unknown" as const };
+    return receipt ? { status: "completed" as const, receipt } : { status: "unknown" as const };
   },
 };
 const lifecycle = new MemoryVoiceLifecycleRepository();
 const credentials = new BoundedMemoryVoiceCredentialRepository({ capacity: 128 });
 const facade = new VoiceOperationsFacade({
-  authenticator: new VoiceServiceAuthenticator(
-    secret,
-    credentials,
-    { allowBoundedTestRepository: true },
-  ),
+  authenticator: new VoiceServiceAuthenticator(secret, credentials, {
+    allowBoundedTestRepository: true,
+  }),
   receipts: new MemoryVoiceCommandReceiptRepository(),
   owners,
 });

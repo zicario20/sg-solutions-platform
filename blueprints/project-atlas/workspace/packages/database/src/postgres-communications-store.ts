@@ -8,7 +8,6 @@ import {
   type BindingChangeResult,
   type ClaimInboundCommand,
   type ClaimOutboundCommand,
-  canonicalEndpointReference,
   type CommunicationsReferenceState,
   type CommunicationsRepository,
   type CompleteInboundCommand,
@@ -16,6 +15,7 @@ import {
   type ConsentRecord,
   type CreateOutboundCommand,
   type CreateOutboundResult,
+  canonicalEndpointReference,
   type DispatchReconciliationOutcome,
   type EvaluateTemplateEligibility,
   evaluateAuthorityChange,
@@ -25,28 +25,28 @@ import {
   type GrantConsentCommand,
   type InboundClaimResult,
   type MarkDispatchOutcomeCommand,
-  type OutboundClaimResult,
   type OutboundAuthorizationReceipt,
+  type OutboundClaimResult,
   type OutboundCommandState,
   type ProviderStatusResult,
-  type RecoveryCandidate,
-  type RecoveryQuery,
   type ReconcileOutboundCommand,
   type ReconcileOutboundResult,
   type ReconcileTemplateCommand,
+  type RecoveryCandidate,
+  type RecoveryQuery,
   type RegisterTemplateDefinition,
   type ResolveOptOutCommand,
   type RevalidateBindingCommand,
   type SuspendBindingCommand,
+  sameVerifiedProviderStatusRecord,
   type TemplateEligibilityResult,
   type TemplateLifecycleState,
   type TemplateReconciliationResult,
   type TemplateResult,
-  type WithdrawContactCommand,
-  type WithdrawContactResult,
-  sameVerifiedProviderStatusRecord,
   type VerifiedProviderStatusReceiptRecord,
   type VerifiedProviderStatusReceiptResolver,
+  type WithdrawContactCommand,
+  type WithdrawContactResult,
 } from "@atlas/domain";
 import postgres from "postgres";
 
@@ -91,8 +91,7 @@ export const COMMUNICATIONS_TRANSACTION_SQL = {
     limit 1
   `,
   setLocalRole: "set local role atlas_communications_gateway",
-  proveLocalRole:
-    "select session_user as session_user_name, current_role as current_role_name",
+  proveLocalRole: "select session_user as session_user_name, current_role as current_role_name",
   claimInbound: `
     select receipt.id
     from communication_provider_event_receipts receipt
@@ -105,8 +104,7 @@ export const COMMUNICATIONS_TRANSACTION_SQL = {
     where id = $1 and state = 'queued'
     for update skip locked
   `,
-  lockBinding:
-    "select * from communication_contact_bindings where id = $1 for update",
+  lockBinding: "select * from communication_contact_bindings where id = $1 for update",
   lockPolicy: `
     select * from communication_contact_policies
     where binding_id = $1 and purpose = $2
@@ -349,13 +347,25 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         ) values ($1, $2, 'whatsapp', $3, $4, 'text_message', 'persisted',
           'meta-envelope.v1', true, $5, null, 0, null, null, null, $6, $6, null, $6, $6)
         on conflict (connection_id, external_event_reference) do nothing returning id`,
-        [envelope.event.eventId, input.connectionId, input.providerEventId,
-          input.providerBodyDigest, envelope.event.correlationId, envelope.event.receivedAt],
+        [
+          envelope.event.eventId,
+          input.connectionId,
+          input.providerEventId,
+          input.providerBodyDigest,
+          envelope.event.correlationId,
+          envelope.event.receivedAt,
+        ],
       );
       if (!reserved[0]) {
         const raced = (
-          await query<{ id: string; body_digest: string; binding_id: string;
-            endpoint_digest: string; endpoint_digest_key_version: string }>(tx,
+          await query<{
+            id: string;
+            body_digest: string;
+            binding_id: string;
+            endpoint_digest: string;
+            endpoint_digest_key_version: string;
+          }>(
+            tx,
             `select receipt.id, receipt.body_digest, envelope.binding_id, binding.endpoint_digest,
                binding.endpoint_digest_key_version
              from communication_provider_event_receipts receipt
@@ -363,15 +373,22 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
              join communication_contact_bindings binding on binding.id = envelope.binding_id
              where receipt.connection_id = $1 and receipt.external_event_reference = $2
              limit 1 for update of receipt`,
-            [input.connectionId, input.providerEventId])
+            [input.connectionId, input.providerEventId],
+          )
         )[0];
-        if (!raced || raced.body_digest !== input.providerBodyDigest ||
-          raced.binding_id !== input.envelope.event.bindingId) {
+        if (
+          !raced ||
+          raced.body_digest !== input.providerBodyDigest ||
+          raced.binding_id !== input.envelope.event.bindingId
+        ) {
           return { status: "replay_mismatch", code: "provider_replay_mismatch" } as const;
         }
-        return { status: "duplicate", eventId: raced.id,
+        return {
+          status: "duplicate",
+          eventId: raced.id,
           endpointDigestVersion: raced.endpoint_digest_key_version,
-          endpointDigest: raced.endpoint_digest } as const;
+          endpointDigest: raced.endpoint_digest,
+        } as const;
       }
       await query(
         tx,
@@ -395,12 +412,15 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       await query(tx, `select id from communication_conversations where id = $1 for update`, [
         envelope.conversation.id,
       ]);
-      const ordinal = (
-        await query<{ ordinal: number }>(tx,
-          `select coalesce(max(ordinal), 0)::integer + 1 as ordinal
+      const ordinal =
+        (
+          await query<{ ordinal: number }>(
+            tx,
+            `select coalesce(max(ordinal), 0)::integer + 1 as ordinal
            from communication_messages where conversation_id = $1`,
-          [envelope.conversation.id])
-      )[0]?.ordinal ?? 1;
+            [envelope.conversation.id],
+          )
+        )[0]?.ordinal ?? 1;
       const participantKind =
         envelope.participant.role === "external_contact"
           ? "external"
@@ -489,17 +509,18 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
     }
     return withCommunicationsTransaction(this.sql, async (tx) => {
       const candidate = (
-        await query<{ id: string }>(tx, COMMUNICATIONS_TRANSACTION_SQL.claimInbound, [input.eventId])
+        await query<{ id: string }>(tx, COMMUNICATIONS_TRANSACTION_SQL.claimInbound, [
+          input.eventId,
+        ])
       )[0];
       if (!candidate) return this.inboundNotClaimed(tx, input);
       const row = await this.loadInbound(tx, input.eventId);
       if (!row) return { status: "not_claimed", code: "not_found" } as const;
       const policy = (
-        await query<{ version: number; fence_state: InboundClaimResult extends infer _ ? string : never }>(
-          tx,
-          COMMUNICATIONS_TRANSACTION_SQL.lockPolicy,
-          [row.binding_id, "transactional"],
-        )
+        await query<{
+          version: number;
+          fence_state: InboundClaimResult extends infer _ ? string : never;
+        }>(tx, COMMUNICATIONS_TRANSACTION_SQL.lockPolicy, [row.binding_id, "transactional"])
       )[0];
       if (!policy || policy.version !== input.requiredPolicyVersion) {
         return { status: "not_claimed", code: "policy_version_mismatch" } as const;
@@ -520,7 +541,10 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         status: "claimed",
         eventId: input.eventId,
         leaseVersion,
-        policyState: policy.fence_state as Extract<InboundClaimResult, { status: "claimed" }>["policyState"],
+        policyState: policy.fence_state as Extract<
+          InboundClaimResult,
+          { status: "claimed" }
+        >["policyState"],
         envelope: {
           event: {
             eventId: row.event_id,
@@ -593,11 +617,9 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
   async createOutbound(input: CreateOutboundCommand): Promise<CreateOutboundResult> {
     return withCommunicationsTransaction(this.sql, async (tx) => {
       const binding = (
-        await query<{ connection_id: string }>(
-          tx,
-          COMMUNICATIONS_TRANSACTION_SQL.lockBinding,
-          [input.command.bindingId],
-        )
+        await query<{ connection_id: string }>(tx, COMMUNICATIONS_TRANSACTION_SQL.lockBinding, [
+          input.command.bindingId,
+        ])
       )[0];
       if (!binding) return { status: "conflict", code: "idempotency_mismatch" } as const;
       const messageBodyDigest = sha256(JSON.stringify(input.message.body));
@@ -660,20 +682,31 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       );
       if (!inserted[0]) {
         const raced = (
-          await query<CommandRow>(tx,
+          await query<CommandRow>(
+            tx,
             `select * from communication_outbound_commands
              where binding_id = $1 and idempotency_key = $2 limit 1 for update`,
-            [input.command.bindingId, input.command.idempotencyKey])
+            [input.command.bindingId, input.command.idempotencyKey],
+          )
         )[0];
-        if (!raced || raced.conversation_id !== input.command.conversationId ||
+        if (
+          !raced ||
+          raced.conversation_id !== input.command.conversationId ||
           raced.locale !== input.command.locale ||
-          raced.message_body_digest !== messageBodyDigest || raced.purpose !== input.purpose ||
-          raced.template_key !== input.templateId) {
+          raced.message_body_digest !== messageBodyDigest ||
+          raced.purpose !== input.purpose ||
+          raced.template_key !== input.templateId
+        ) {
           return { status: "conflict", code: "idempotency_mismatch" } as const;
         }
         const reason = this.duplicateReason(raced);
-        return { status: "duplicate", commandId: raced.id, messageId: raced.message_reference,
-          commandState: raced.state, ...(reason ? { reason } : {}) } as const;
+        return {
+          status: "duplicate",
+          commandId: raced.id,
+          messageId: raced.message_reference,
+          commandState: raced.state,
+          ...(reason ? { reason } : {}),
+        } as const;
       }
       await query(
         tx,
@@ -684,14 +717,15 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         on conflict (id) do nothing`,
         [input.message.senderParticipantId, input.message.conversationId, input.message.createdAt],
       );
-      const ordinal = (
-        await query<{ ordinal: number }>(
-          tx,
-          `select coalesce(max(ordinal), 0)::integer + 1 as ordinal
+      const ordinal =
+        (
+          await query<{ ordinal: number }>(
+            tx,
+            `select coalesce(max(ordinal), 0)::integer + 1 as ordinal
            from communication_messages where conversation_id = $1`,
-          [input.message.conversationId],
-        )
-      )[0]?.ordinal ?? 1;
+            [input.message.conversationId],
+          )
+        )[0]?.ordinal ?? 1;
       await query(
         tx,
         `insert into communication_messages (
@@ -726,9 +760,11 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
     const destinationReference = canonicalEndpointReference(activeDigest.digest);
     return withCommunicationsTransaction(this.sql, async (tx) => {
       const command = (
-        await query<CommandRow>(tx,
+        await query<CommandRow>(
+          tx,
           `select * from communication_outbound_commands where id = $1 and state = 'draft' for update`,
-          [input.commandId])
+          [input.commandId],
+        )
       )[0];
       if (!command) return { status: "conflict", code: "idempotency_mismatch" } as const;
       const context = await this.loadOutboundPolicyContext(tx, command);
@@ -801,10 +837,9 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       const binding = (
         await query<{
           id: string;
-          trust_state: Extract<
-            Extract<OutboundClaimResult, { status: "not_claimed" }>["code"],
-            string
-          > | "reverified";
+          trust_state:
+            | Extract<Extract<OutboundClaimResult, { status: "not_claimed" }>["code"], string>
+            | "reverified";
           verification_expires_at: Date | null;
         }>(tx, COMMUNICATIONS_TRANSACTION_SQL.lockBinding, [command.binding_id])
       )[0];
@@ -835,11 +870,18 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       )[0];
       if (!consent) return { status: "not_claimed", code: "consent_not_found" } as const;
       const connection = (
-        await query<{ readiness_state: "disabled" | "configured" | "sandbox_verified" | "production_verified" | "active" | "suspended" | "retired" }>(
-          tx,
-          `select readiness_state from communication_channel_connections where id = $1`,
-          [command.connection_id],
-        )
+        await query<{
+          readiness_state:
+            | "disabled"
+            | "configured"
+            | "sandbox_verified"
+            | "production_verified"
+            | "active"
+            | "suspended"
+            | "retired";
+        }>(tx, `select readiness_state from communication_channel_connections where id = $1`, [
+          command.connection_id,
+        ])
       )[0];
       const template = (
         await query<{ internally_approved: boolean; state: string }>(
@@ -882,7 +924,9 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         },
         connectionState: connection?.readiness_state ?? "disabled",
         template: {
-          eligible: Boolean(template?.internally_approved && template.state === "provider_approved"),
+          eligible: Boolean(
+            template?.internally_approved && template.state === "provider_approved",
+          ),
         },
         authorizationReceipt:
           command.owning_receipt_id &&
@@ -913,14 +957,15 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         [input.attemptId],
       );
       if (duplicateAttempt[0]) return { status: "not_claimed", code: "lease_conflict" };
-      const ordinal = (
-        await query<{ ordinal: number }>(
-          tx,
-          `select coalesce(max(attempt_ordinal), 0)::integer + 1 as ordinal
+      const ordinal =
+        (
+          await query<{ ordinal: number }>(
+            tx,
+            `select coalesce(max(attempt_ordinal), 0)::integer + 1 as ordinal
            from communication_dispatch_attempts where command_id = $1`,
-          [command.id],
-        )
-      )[0]?.ordinal ?? 1;
+            [command.id],
+          )
+        )[0]?.ordinal ?? 1;
       const ownerHash = sha256(input.leaseOwner);
       const leaseVersion = command.version + 1;
       await query(
@@ -1012,9 +1057,7 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
     });
   }
 
-  async markDispatchOutcome(
-    input: MarkDispatchOutcomeCommand,
-  ): Promise<"completed" | "conflict"> {
+  async markDispatchOutcome(input: MarkDispatchOutcomeCommand): Promise<"completed" | "conflict"> {
     if (!finiteDate(input.now)) return "conflict";
     return withCommunicationsTransaction(this.sql, async (tx) => {
       const command = (
@@ -1174,15 +1217,15 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       if (status === "applied") {
         await query(
           tx,
-           `update communication_outbound_commands set state = $2, lease_owner_id = null,
+          `update communication_outbound_commands set state = $2, lease_owner_id = null,
               lease_token_hash = null, lease_expires_at = null, updated_at = $3 where id = $1`,
-           [input.commandId, nextState, evidence.occurredAt],
+          [input.commandId, nextState, evidence.occurredAt],
         );
         await query(
           tx,
           `update communication_dispatch_attempts set state = $3, completed_at = $4, updated_at = $4
            where id = $1 and command_id = $2`,
-           [input.attemptId, input.commandId, nextState, evidence.occurredAt],
+          [input.attemptId, input.commandId, nextState, evidence.occurredAt],
         );
       }
       return { status, commandState: nextState };
@@ -1214,16 +1257,25 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         return { status: "denied", code: "reconsent_receipt_required" } as const;
       }
       const latest = (
-        await query<{ evidence_receipt_id: string; authority_version: number }>(tx,
+        await query<{ evidence_receipt_id: string; authority_version: number }>(
+          tx,
           `select evidence_receipt_id, authority_version
            from communication_contact_evidence_events
            where binding_id = $1 and purpose = $2
              and event_kind in ('consent_granted', 'consent_regranted')
            order by sequence desc limit 1 for update`,
-          [input.bindingId, input.purpose])
+          [input.bindingId, input.purpose],
+        )
       )[0];
-      if (policy.consent_state === "granted" && latest?.evidence_receipt_id === input.receipt!.receiptId) {
-        return { status: "duplicate", state: "granted", version: latest.authority_version } as const;
+      if (
+        policy.consent_state === "granted" &&
+        latest?.evidence_receipt_id === input.receipt!.receiptId
+      ) {
+        return {
+          status: "duplicate",
+          state: "granted",
+          version: latest.authority_version,
+        } as const;
       }
       const nextAuthorityVersion = (latest?.authority_version ?? 0) + 1;
       const nextPolicyVersion = policy.version + 1;
@@ -1279,7 +1331,12 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
     }
     return withCommunicationsTransaction(this.sql, async (tx) => {
       await query(tx, COMMUNICATIONS_TRANSACTION_SQL.lockBinding, [input.bindingId]);
-      const policies = await query<{ purpose: string; fence_state: string; version: number; fence: number }>(
+      const policies = await query<{
+        purpose: string;
+        fence_state: string;
+        version: number;
+        fence: number;
+      }>(
         tx,
         `select purpose, fence_state, version, fence from communication_contact_policies
          where binding_id = $1 for update`,
@@ -1316,9 +1373,11 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         )
       )[0];
       const expectedDomain = evidence.source === "inbound_event" ? "M004" : "M078";
-      const expectedRole = evidence.source === "inbound_event" ? "channel_policy_detection" : "consent";
+      const expectedRole =
+        evidence.source === "inbound_event" ? "channel_policy_detection" : "consent";
       const expectedEventId = evidence.source === "inbound_event" ? evidence.receipt.eventId : null;
-      const storedEvidenceMatches = storedEvidence &&
+      const storedEvidenceMatches =
+        storedEvidence &&
         storedEvidence.binding_id === input.bindingId &&
         storedEvidence.owning_domain === expectedDomain &&
         storedEvidence.authority_role === expectedRole &&
@@ -1445,11 +1504,9 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
   async suspendBinding(input: SuspendBindingCommand): Promise<BindingChangeResult> {
     return withCommunicationsTransaction(this.sql, async (tx) => {
       const binding = (
-        await query<{ trust_state: string }>(
-          tx,
-          COMMUNICATIONS_TRANSACTION_SQL.lockBinding,
-          [input.bindingId],
-        )
+        await query<{ trust_state: string }>(tx, COMMUNICATIONS_TRANSACTION_SQL.lockBinding, [
+          input.bindingId,
+        ])
       )[0];
       if (!binding) return { status: "denied", code: "binding_not_found" } as const;
       if (binding.trust_state === "suspended") {
@@ -1499,7 +1556,13 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
   ): Promise<TemplateResult> {
     return withCommunicationsTransaction(this.sql, async (tx) => {
       const existing = (
-        await query<{ definition_version: number; internally_approved: boolean; state: TemplateLifecycleState; projection_version: number; updated_at: Date }>(
+        await query<{
+          definition_version: number;
+          internally_approved: boolean;
+          state: TemplateLifecycleState;
+          projection_version: number;
+          updated_at: Date;
+        }>(
           tx,
           `select definition_version, internally_approved, state, projection_version, updated_at
            from communication_message_templates where template_key = $1 and locale = $2`,
@@ -1593,9 +1656,7 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
     });
   }
 
-  async reconcileTemplate(
-    input: ReconcileTemplateCommand,
-  ): Promise<TemplateReconciliationResult> {
+  async reconcileTemplate(input: ReconcileTemplateCommand): Promise<TemplateReconciliationResult> {
     if (!input.receipt) return { status: "denied", code: "provider_receipt_missing" };
     const receipt = input.receipt;
     if (
@@ -1612,7 +1673,13 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
     }
     return withCommunicationsTransaction(this.sql, async (tx) => {
       const row = (
-        await query<{ definition_version: number; internally_approved: boolean; state: TemplateLifecycleState; projection_version: number; updated_at: Date }>(
+        await query<{
+          definition_version: number;
+          internally_approved: boolean;
+          state: TemplateLifecycleState;
+          projection_version: number;
+          updated_at: Date;
+        }>(
           tx,
           `select definition_version, internally_approved, state, projection_version, updated_at
            from communication_message_templates where template_key = $1 and locale = $2 for update`,
@@ -1671,7 +1738,9 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       receipt.commandId !== input.commandId ||
       receipt.attemptId !== input.attemptId ||
       !["provider_lookup", "manual_authority"].includes(receipt.source) ||
-      !["reconciled_accepted", "confirmed_not_sent", "terminal_failure"].includes(receipt.outcome) ||
+      !["reconciled_accepted", "confirmed_not_sent", "terminal_failure"].includes(
+        receipt.outcome,
+      ) ||
       !receipt.receiptId ||
       !currentReceipt(receipt, input.now)
     ) {
@@ -1706,7 +1775,9 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         return { status: "duplicate", commandState: this.reconciledState(prior.outcome) } as const;
       }
       const row = (
-        await query<CommandRow & { attempt_command_id: string; attempt_lease_expires_at: Date | null }>(
+        await query<
+          CommandRow & { attempt_command_id: string; attempt_lease_expires_at: Date | null }
+        >(
           tx,
           `select command.*, attempt.command_id as attempt_command_id,
              attempt.lease_expires_at as attempt_lease_expires_at
@@ -1883,23 +1954,59 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
 
   async referenceState(): Promise<CommunicationsReferenceState> {
     return withCommunicationsTransaction(this.sql, async (tx) => {
-      const [inbound, outbound, attempts, policies, bindings, consentHistory, templates, statuses, withdrawals] =
-        await Promise.all([
-          query<Record<string, unknown>>(tx, `select receipt.id as "eventId", receipt.state, receipt.processing_version as "leaseVersion", message.ordinal from communication_provider_event_receipts receipt join communication_event_envelopes envelope on envelope.receipt_id = receipt.id join communication_messages message on message.id = envelope.message_id order by receipt.id`),
-          query<Record<string, unknown>>(tx, `select id as "commandId", state, version as "leaseVersion", failure_code as "failureCode" from communication_outbound_commands order by id`),
-          query<Record<string, unknown>>(tx, `select id as "attemptId", command_id as "commandId", attempt_ordinal as ordinal, state, case result_code when 'failed' then 'known_failure' when 'dispatch_unknown' then 'unknown' else result_code end as "resultCode", lease_owner_hash as "leaseOwnerHash", lease_version as "leaseVersion", lease_expires_at as "leaseExpiresAt", provider_reference_digest as "providerReferenceDigest", started_at as "startedAt", completed_at as "completedAt" from communication_dispatch_attempts order by command_id, attempt_ordinal`),
-          query<Record<string, unknown>>(tx, `select id as "policyId", binding_id as "bindingId", fence_state as state, version, fence, updated_at as "updatedAt" from communication_contact_policies order by id`),
-          query<Record<string, unknown>>(tx, `select id as "bindingId", channel_kind as channel, trust_state as "trustState", verification_expires_at as "freshUntil", created_at as "createdAt", updated_at as "updatedAt" from communication_contact_bindings order by id`),
-          query<Record<string, unknown>>(tx, `select binding_id as "bindingId", purpose, consent_state as state, authority_version as version, case when event_kind = 'consent_withdrawn' then null else evidence_receipt_id end as "authorityReceiptId", occurred_at as "changedAt" from communication_contact_evidence_events where purpose is not null order by binding_id, sequence`),
-          query<Record<string, unknown>>(tx, `select template_key as "templateId", locale, definition_version as "definitionVersion", internally_approved as "internallyApproved", approval_receipt_id as "approvalReceiptId", provider_receipt_id as "providerReceiptId", provider_correlation_id as "providerCorrelationId", state as "providerState", projection_version as "providerVersion", updated_at as "updatedAt" from communication_message_templates order by template_key, locale`),
-          query<Record<string, unknown>>(tx, `select receipt_id as "receiptId", 'meta_hmac_sha256' as verification,
+      const [
+        inbound,
+        outbound,
+        attempts,
+        policies,
+        bindings,
+        consentHistory,
+        templates,
+        statuses,
+        withdrawals,
+      ] = await Promise.all([
+        query<Record<string, unknown>>(
+          tx,
+          `select receipt.id as "eventId", receipt.state, receipt.processing_version as "leaseVersion", message.ordinal from communication_provider_event_receipts receipt join communication_event_envelopes envelope on envelope.receipt_id = receipt.id join communication_messages message on message.id = envelope.message_id order by receipt.id`,
+        ),
+        query<Record<string, unknown>>(
+          tx,
+          `select id as "commandId", state, version as "leaseVersion", failure_code as "failureCode" from communication_outbound_commands order by id`,
+        ),
+        query<Record<string, unknown>>(
+          tx,
+          `select id as "attemptId", command_id as "commandId", attempt_ordinal as ordinal, state, case result_code when 'failed' then 'known_failure' when 'dispatch_unknown' then 'unknown' else result_code end as "resultCode", lease_owner_hash as "leaseOwnerHash", lease_version as "leaseVersion", lease_expires_at as "leaseExpiresAt", provider_reference_digest as "providerReferenceDigest", started_at as "startedAt", completed_at as "completedAt" from communication_dispatch_attempts order by command_id, attempt_ordinal`,
+        ),
+        query<Record<string, unknown>>(
+          tx,
+          `select id as "policyId", binding_id as "bindingId", fence_state as state, version, fence, updated_at as "updatedAt" from communication_contact_policies order by id`,
+        ),
+        query<Record<string, unknown>>(
+          tx,
+          `select id as "bindingId", channel_kind as channel, trust_state as "trustState", verification_expires_at as "freshUntil", created_at as "createdAt", updated_at as "updatedAt" from communication_contact_bindings order by id`,
+        ),
+        query<Record<string, unknown>>(
+          tx,
+          `select binding_id as "bindingId", purpose, consent_state as state, authority_version as version, case when event_kind = 'consent_withdrawn' then null else evidence_receipt_id end as "authorityReceiptId", occurred_at as "changedAt" from communication_contact_evidence_events where purpose is not null order by binding_id, sequence`,
+        ),
+        query<Record<string, unknown>>(
+          tx,
+          `select template_key as "templateId", locale, definition_version as "definitionVersion", internally_approved as "internallyApproved", approval_receipt_id as "approvalReceiptId", provider_receipt_id as "providerReceiptId", provider_correlation_id as "providerCorrelationId", state as "providerState", projection_version as "providerVersion", updated_at as "updatedAt" from communication_message_templates order by template_key, locale`,
+        ),
+        query<Record<string, unknown>>(
+          tx,
+          `select receipt_id as "receiptId", 'meta_hmac_sha256' as verification,
             connection_id as "connectionId", command_id as "commandId", attempt_id as "attemptId",
             external_message_reference_digest as "externalMessageReferenceDigest",
             provider_event_id as "providerEventId", status, occurred_at as "occurredAt",
             verified_at as "verifiedAt", body_digest as "bodyDigest", correlation_id as "correlationId"
-            from communication_provider_status_verifications order by connection_id, provider_event_id`),
-          query<Record<string, unknown>>(tx, `select binding_id as "bindingId", case when owning_domain = 'M004' then 'inbound_event' else 'authority' end as source, evidence_receipt_id as "receiptId", case when owning_domain = 'M004' then 'communications' else 'consent' end as owner, case when owning_domain = 'M004' then 'inbound_opt_out' else 'contact_withdrawal' end as operation, triggering_event_id as "eventId", correlation_id as "correlationId", receipt_issued_at as "issuedAt", receipt_valid_until as "expiresAt", occurred_at as "changedAt" from communication_contact_evidence_events where event_kind = 'contact_withdrawal_recorded' order by binding_id, sequence`),
-        ]);
+            from communication_provider_status_verifications order by connection_id, provider_event_id`,
+        ),
+        query<Record<string, unknown>>(
+          tx,
+          `select binding_id as "bindingId", case when owning_domain = 'M004' then 'inbound_event' else 'authority' end as source, evidence_receipt_id as "receiptId", case when owning_domain = 'M004' then 'communications' else 'consent' end as owner, case when owning_domain = 'M004' then 'inbound_opt_out' else 'contact_withdrawal' end as operation, triggering_event_id as "eventId", correlation_id as "correlationId", receipt_issued_at as "issuedAt", receipt_valid_until as "expiresAt", occurred_at as "changedAt" from communication_contact_evidence_events where event_kind = 'contact_withdrawal_recorded' order by binding_id, sequence`,
+        ),
+      ]);
       return {
         inbound,
         outbound,
@@ -1913,7 +2020,8 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         ) as unknown as CommunicationsReferenceState["consentHistory"],
         templates: templates as unknown as CommunicationsReferenceState["templates"],
         providerStatuses: statuses as unknown as CommunicationsReferenceState["providerStatuses"],
-        withdrawalHistory: withdrawals as unknown as CommunicationsReferenceState["withdrawalHistory"],
+        withdrawalHistory:
+          withdrawals as unknown as CommunicationsReferenceState["withdrawalHistory"],
       };
     });
   }
@@ -2001,7 +2109,10 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       return "outbound_reconciliation_required";
     }
     if (row.state === "failed") {
-      return (row.failure_code as Extract<CreateOutboundResult, { status: "duplicate" }>["reason"]) ?? "outbound_command_failed";
+      return (
+        (row.failure_code as Extract<CreateOutboundResult, { status: "duplicate" }>["reason"]) ??
+        "outbound_command_failed"
+      );
     }
     if (row.state === "cancelled") return "outbound_command_cancelled";
     if (row.state === "confirmed_not_sent") return "outbound_confirmed_not_sent";
@@ -2027,7 +2138,11 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
     )[0];
     if (!policy) return undefined;
     const consent = (
-      await query<{ evidence_receipt_id: string; receipt_issued_at: Date; receipt_valid_until: Date }>(
+      await query<{
+        evidence_receipt_id: string;
+        receipt_issued_at: Date;
+        receipt_valid_until: Date;
+      }>(
         tx,
         `select evidence_receipt_id, receipt_issued_at, receipt_valid_until
          from communication_contact_evidence_events
@@ -2101,14 +2216,15 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
     await query(tx, `select pg_advisory_xact_lock(hashtextextended($1, 0))`, [
       `communications:audit:${envelope.conversation.id}`,
     ]);
-    const sequence = (
-      await query<{ sequence: number }>(
-        tx,
-        `select coalesce(max(sequence), 0)::integer + 1 as sequence
+    const sequence =
+      (
+        await query<{ sequence: number }>(
+          tx,
+          `select coalesce(max(sequence), 0)::integer + 1 as sequence
          from communication_audit_events where conversation_id = $1`,
-        [envelope.conversation.id],
-      )
-    )[0]?.sequence ?? 1;
+          [envelope.conversation.id],
+        )
+      )[0]?.sequence ?? 1;
     await query(
       tx,
       `insert into communication_audit_events (
@@ -2151,14 +2267,15 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       occurredAt: Date;
     },
   ): Promise<void> {
-    const sequence = (
-      await query<{ sequence: number }>(
-        tx,
-        `select coalesce(max(sequence), 0)::integer + 1 as sequence
+    const sequence =
+      (
+        await query<{ sequence: number }>(
+          tx,
+          `select coalesce(max(sequence), 0)::integer + 1 as sequence
          from communication_contact_evidence_events where binding_id = $1`,
-        [input.bindingId],
-      )
-    )[0]?.sequence ?? 1;
+          [input.bindingId],
+        )
+      )[0]?.sequence ?? 1;
     await query(
       tx,
       `insert into communication_contact_evidence_events (
@@ -2205,14 +2322,15 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       occurredAt: Date;
     },
   ): Promise<{ id: string } | undefined> {
-    const sequence = (
-      await query<{ sequence: number }>(
-        tx,
-        `select coalesce(max(sequence), 0)::integer + 1 as sequence
+    const sequence =
+      (
+        await query<{ sequence: number }>(
+          tx,
+          `select coalesce(max(sequence), 0)::integer + 1 as sequence
          from communication_contact_evidence_events where binding_id = $1`,
-        [input.bindingId],
-      )
-    )[0]?.sequence ?? 1;
+          [input.bindingId],
+        )
+      )[0]?.sequence ?? 1;
     const id = `evidence_${sha256(`${input.bindingId}:${input.receiptId}:contact`).slice(0, 24)}`;
     return (
       await query<{ id: string }>(
@@ -2227,9 +2345,19 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
           null, null, $4, 'contact_withdrawal', $5, $6, null, null, $7, null,
           $8, $9, $10, $11, $11)
         on conflict (evidence_receipt_id) do nothing returning id`,
-        [id, input.bindingId, sequence, input.receiptId, input.owningDomain,
-          input.authorityRole, input.triggeringEventId ?? null, input.correlationId,
-          input.issuedAt, input.expiresAt, input.occurredAt],
+        [
+          id,
+          input.bindingId,
+          sequence,
+          input.receiptId,
+          input.owningDomain,
+          input.authorityRole,
+          input.triggeringEventId ?? null,
+          input.correlationId,
+          input.issuedAt,
+          input.expiresAt,
+          input.occurredAt,
+        ],
       )
     )[0];
   }
@@ -2244,14 +2372,15 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       occurredAt: Date;
     },
   ): Promise<void> {
-    const sequence = (
-      await query<{ sequence: number }>(
-        tx,
-        `select coalesce(max(sequence), 0)::integer + 1 as sequence
+    const sequence =
+      (
+        await query<{ sequence: number }>(
+          tx,
+          `select coalesce(max(sequence), 0)::integer + 1 as sequence
          from communication_contact_evidence_events where binding_id = $1`,
-        [input.bindingId],
-      )
-    )[0]?.sequence ?? 1;
+          [input.bindingId],
+        )
+      )[0]?.sequence ?? 1;
     await query(
       tx,
       `insert into communication_contact_evidence_events (

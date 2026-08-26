@@ -1,7 +1,8 @@
 "use client";
-import { secureMessagingCopy } from "@atlas/i18n";
 import type { DashboardLocale } from "@atlas/dashboard";
+import { secureMessagingCopy } from "@atlas/i18n";
 import { useEffect, useState } from "react";
+
 type InboxItem = Readonly<{
   opaqueRef: string;
   subject: string;

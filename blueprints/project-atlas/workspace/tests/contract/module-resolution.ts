@@ -1,6 +1,4 @@
 import { PROJECT_CODE } from "@atlas/config";
-import { createWhatsAppIngressHandler } from "../../apps/app/src/lib/whatsapp/ingress.ts";
-import { whatsAppRuntimeHandler } from "../../apps/app/src/lib/whatsapp/runtime.ts";
 import {
   DELETE as whatsappWebhookDelete,
   GET as whatsappWebhookGet,
@@ -11,6 +9,8 @@ import {
   PUT as whatsappWebhookPut,
   runtime as whatsappWebhookRuntime,
 } from "../../apps/app/src/app/api/integrations/whatsapp/meta/[connectionId]/route.ts";
+import { createWhatsAppIngressHandler } from "../../apps/app/src/lib/whatsapp/ingress.ts";
+import { whatsAppRuntimeHandler } from "../../apps/app/src/lib/whatsapp/runtime.ts";
 
 if (PROJECT_CODE !== "project-atlas") {
   throw new Error("module_resolution_contract_failed");

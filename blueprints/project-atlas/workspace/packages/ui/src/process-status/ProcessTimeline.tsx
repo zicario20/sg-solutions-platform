@@ -1,1 +1,51 @@
-import type{ProcessLocale,ProcessTimelineDto}from"@atlas/client-process-status";import{getProcessStatusCopy}from"@atlas/i18n";export function ProcessTimeline({locale,timeline,serviceRef}:{locale:ProcessLocale;timeline:ProcessTimelineDto;serviceRef:string}){const copy=getProcessStatusCopy(locale);return<section aria-labelledby="m010-timeline"><h2 id="m010-timeline">{copy.timeline}</h2>{timeline.state==="fresh"?<><ol className="m010-timeline">{timeline.items.map(item=><li key={item.eventRef}><time dateTime={item.occurredAt}>{new Intl.DateTimeFormat(locale,{dateStyle:"medium"}).format(new Date(item.occurredAt))}</time><strong>{copy.timelineEvents[item.copyKey]}</strong><span>{copy.parties[item.actorCategory]}</span></li>)}</ol>{timeline.hasMore&&timeline.cursor?<a href={"/client/status/"+encodeURIComponent(serviceRef)+"?timelineCursor="+encodeURIComponent(timeline.cursor)}>{copy.loadMore}</a>:null}</>:<p role="status">{timeline.state==="empty"?copy.noTimeline:copy.timelineUnavailable}</p>}</section>}
+import type { ProcessLocale, ProcessTimelineDto } from "@atlas/client-process-status";
+import { getProcessStatusCopy } from "@atlas/i18n";
+export function ProcessTimeline({
+  locale,
+  timeline,
+  serviceRef,
+}: {
+  locale: ProcessLocale;
+  timeline: ProcessTimelineDto;
+  serviceRef: string;
+}) {
+  const copy = getProcessStatusCopy(locale);
+  return (
+    <section aria-labelledby="m010-timeline">
+      <h2 id="m010-timeline">{copy.timeline}</h2>
+      {timeline.state === "fresh" ? (
+        <>
+          <ol className="m010-timeline">
+            {timeline.items.map((item) => (
+              <li key={item.eventRef}>
+                <time dateTime={item.occurredAt}>
+                  {new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
+                    new Date(item.occurredAt),
+                  )}
+                </time>
+                <strong>{copy.timelineEvents[item.copyKey]}</strong>
+                <span>{copy.parties[item.actorCategory]}</span>
+              </li>
+            ))}
+          </ol>
+          {timeline.hasMore && timeline.cursor ? (
+            <a
+              href={
+                "/client/status/" +
+                encodeURIComponent(serviceRef) +
+                "?timelineCursor=" +
+                encodeURIComponent(timeline.cursor)
+              }
+            >
+              {copy.loadMore}
+            </a>
+          ) : null}
+        </>
+      ) : (
+        <p role="status">
+          {timeline.state === "empty" ? copy.noTimeline : copy.timelineUnavailable}
+        </p>
+      )}
+    </section>
+  );
+}

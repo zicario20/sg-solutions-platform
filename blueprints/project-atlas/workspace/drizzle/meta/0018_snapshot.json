@@ -139,14 +139,8 @@
           "name": "communication_audit_events_conversation_channel_fk",
           "tableFrom": "communication_audit_events",
           "tableTo": "communication_conversations",
-          "columnsFrom": [
-            "conversation_id",
-            "channel_kind"
-          ],
-          "columnsTo": [
-            "id",
-            "channel_kind"
-          ],
+          "columnsFrom": ["conversation_id", "channel_kind"],
+          "columnsTo": ["id", "channel_kind"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -156,10 +150,7 @@
         "communication_audit_events_conversation_sequence_unique": {
           "name": "communication_audit_events_conversation_sequence_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "conversation_id",
-            "sequence"
-          ]
+          "columns": ["conversation_id", "sequence"]
         }
       },
       "policies": {
@@ -167,9 +158,7 @@
           "name": "communication_audit_events_public_chat_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "\"communication_audit_events\".\"channel_kind\" = 'public_web' and exists (\n    select 1\n    from public_chat_conversation_sessions pcs\n    where pcs.conversation_id = \"communication_audit_events\".\"conversation_id\"\n      and pcs.session_id = nullif(current_setting('atlas.public_chat_session_id', true), '')\n  )",
           "withCheck": "\"communication_audit_events\".\"channel_kind\" = 'public_web' and exists (\n    select 1\n    from public_chat_conversation_sessions pcs\n    where pcs.conversation_id = \"communication_audit_events\".\"conversation_id\"\n      and pcs.session_id = nullif(current_setting('atlas.public_chat_session_id', true), '')\n  )"
         },
@@ -177,9 +166,7 @@
           "name": "communication_audit_events_communications_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "\"communication_audit_events\".\"channel_kind\" = 'whatsapp'",
           "withCheck": "\"communication_audit_events\".\"channel_kind\" = 'whatsapp'"
         }
@@ -320,10 +307,7 @@
         "communication_channel_connections_id_channel_unique": {
           "name": "communication_channel_connections_id_channel_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "channel_kind"
-          ]
+          "columns": ["id", "channel_kind"]
         }
       },
       "policies": {
@@ -331,9 +315,7 @@
           "name": "communication_channel_connections_communications_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -493,12 +475,8 @@
           "name": "communication_contact_bindings_connection_id_communication_channel_connections_id_fk",
           "tableFrom": "communication_contact_bindings",
           "tableTo": "communication_channel_connections",
-          "columnsFrom": [
-            "connection_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["connection_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -506,14 +484,8 @@
           "name": "communication_contact_bindings_connection_channel_fk",
           "tableFrom": "communication_contact_bindings",
           "tableTo": "communication_channel_connections",
-          "columnsFrom": [
-            "connection_id",
-            "channel_kind"
-          ],
-          "columnsTo": [
-            "id",
-            "channel_kind"
-          ],
+          "columnsFrom": ["connection_id", "channel_kind"],
+          "columnsTo": ["id", "channel_kind"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -523,28 +495,17 @@
         "communication_contact_bindings_id_connection_channel_unique": {
           "name": "communication_contact_bindings_id_connection_channel_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "connection_id",
-            "channel_kind"
-          ]
+          "columns": ["id", "connection_id", "channel_kind"]
         },
         "communication_contact_bindings_id_channel_unique": {
           "name": "communication_contact_bindings_id_channel_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "channel_kind"
-          ]
+          "columns": ["id", "channel_kind"]
         },
         "communication_contact_bindings_endpoint_unique": {
           "name": "communication_contact_bindings_endpoint_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "connection_id",
-            "endpoint_digest_key_version",
-            "endpoint_digest"
-          ]
+          "columns": ["connection_id", "endpoint_digest_key_version", "endpoint_digest"]
         }
       },
       "policies": {
@@ -552,9 +513,7 @@
           "name": "communication_contact_bindings_communications_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -763,12 +722,8 @@
           "name": "communication_contact_evidence_events_binding_id_communication_contact_bindings_id_fk",
           "tableFrom": "communication_contact_evidence_events",
           "tableTo": "communication_contact_bindings",
-          "columnsFrom": [
-            "binding_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["binding_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -776,16 +731,8 @@
           "name": "communication_contact_evidence_events_typed_contact_binding_fk",
           "tableFrom": "communication_contact_evidence_events",
           "tableTo": "communication_contact_evidence_events",
-          "columnsFrom": [
-            "contact_evidence_event_id",
-            "binding_id",
-            "contact_evidence_event_kind"
-          ],
-          "columnsTo": [
-            "id",
-            "binding_id",
-            "event_kind"
-          ],
+          "columnsFrom": ["contact_evidence_event_id", "binding_id", "contact_evidence_event_kind"],
+          "columnsTo": ["id", "binding_id", "event_kind"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -795,26 +742,17 @@
         "communication_contact_evidence_events_binding_sequence_unique": {
           "name": "communication_contact_evidence_events_binding_sequence_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "binding_id",
-            "sequence"
-          ]
+          "columns": ["binding_id", "sequence"]
         },
         "communication_contact_evidence_events_receipt_unique": {
           "name": "communication_contact_evidence_events_receipt_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "evidence_receipt_id"
-          ]
+          "columns": ["evidence_receipt_id"]
         },
         "communication_contact_evidence_events_id_binding_kind_unique": {
           "name": "communication_contact_evidence_events_id_binding_kind_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "binding_id",
-            "event_kind"
-          ]
+          "columns": ["id", "binding_id", "event_kind"]
         }
       },
       "policies": {
@@ -822,18 +760,14 @@
           "name": "communication_contact_evidence_events_communications_select",
           "as": "PERMISSIVE",
           "for": "SELECT",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "true"
         },
         "communication_contact_evidence_events_communications_insert": {
           "name": "communication_contact_evidence_events_communications_insert",
           "as": "PERMISSIVE",
           "for": "INSERT",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "withCheck": "true"
         }
       },
@@ -983,12 +917,8 @@
           "name": "communication_contact_policies_binding_id_communication_contact_bindings_id_fk",
           "tableFrom": "communication_contact_policies",
           "tableTo": "communication_contact_bindings",
-          "columnsFrom": [
-            "binding_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["binding_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -998,10 +928,7 @@
         "communication_contact_policies_binding_purpose_unique": {
           "name": "communication_contact_policies_binding_purpose_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "binding_id",
-            "purpose"
-          ]
+          "columns": ["binding_id", "purpose"]
         }
       },
       "policies": {
@@ -1009,9 +936,7 @@
           "name": "communication_contact_policies_communications_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -1172,10 +1097,7 @@
         "communication_conversations_id_channel_unique": {
           "name": "communication_conversations_id_channel_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "channel_kind"
-          ]
+          "columns": ["id", "channel_kind"]
         }
       },
       "policies": {
@@ -1183,9 +1105,7 @@
           "name": "communication_conversations_public_chat_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "\"communication_conversations\".\"channel_kind\" = 'public_web' and exists (\n    select 1\n    from public_chat_conversation_sessions pcs\n    where pcs.conversation_id = \"communication_conversations\".\"id\"\n      and pcs.session_id = nullif(current_setting('atlas.public_chat_session_id', true), '')\n  )",
           "withCheck": "\"communication_conversations\".\"channel_kind\" = 'public_web' and exists (\n    select 1\n    from public_chat_conversation_sessions pcs\n    where pcs.conversation_id = \"communication_conversations\".\"id\"\n      and pcs.session_id = nullif(current_setting('atlas.public_chat_session_id', true), '')\n  )"
         },
@@ -1193,9 +1113,7 @@
           "name": "communication_conversations_communications_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "\"communication_conversations\".\"channel_kind\" = 'whatsapp'",
           "withCheck": "\"communication_conversations\".\"channel_kind\" = 'whatsapp'"
         }
@@ -1423,12 +1341,8 @@
           "name": "communication_dispatch_attempts_connection_id_communication_channel_connections_id_fk",
           "tableFrom": "communication_dispatch_attempts",
           "tableTo": "communication_channel_connections",
-          "columnsFrom": [
-            "connection_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["connection_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -1436,14 +1350,8 @@
           "name": "communication_dispatch_attempts_command_connection_fk",
           "tableFrom": "communication_dispatch_attempts",
           "tableTo": "communication_outbound_commands",
-          "columnsFrom": [
-            "command_id",
-            "connection_id"
-          ],
-          "columnsTo": [
-            "id",
-            "connection_id"
-          ],
+          "columnsFrom": ["command_id", "connection_id"],
+          "columnsTo": ["id", "connection_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1453,26 +1361,17 @@
         "communication_dispatch_attempts_command_ordinal_unique": {
           "name": "communication_dispatch_attempts_command_ordinal_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "command_id",
-            "attempt_ordinal"
-          ]
+          "columns": ["command_id", "attempt_ordinal"]
         },
         "communication_dispatch_attempts_id_command_unique": {
           "name": "communication_dispatch_attempts_id_command_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "command_id"
-          ]
+          "columns": ["id", "command_id"]
         },
         "communication_dispatch_attempts_external_reference_unique": {
           "name": "communication_dispatch_attempts_external_reference_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "connection_id",
-            "external_message_reference"
-          ]
+          "columns": ["connection_id", "external_message_reference"]
         }
       },
       "policies": {
@@ -1480,9 +1379,7 @@
           "name": "communication_dispatch_attempts_communications_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -1612,14 +1509,8 @@
           "name": "communication_dispatch_reconciliation_receipts_attempt_command_fk",
           "tableFrom": "communication_dispatch_reconciliation_receipts",
           "tableTo": "communication_dispatch_attempts",
-          "columnsFrom": [
-            "attempt_id",
-            "command_id"
-          ],
-          "columnsTo": [
-            "id",
-            "command_id"
-          ],
+          "columnsFrom": ["attempt_id", "command_id"],
+          "columnsTo": ["id", "command_id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -1627,14 +1518,8 @@
           "name": "communication_dispatch_reconciliation_receipts_command_binding_fk",
           "tableFrom": "communication_dispatch_reconciliation_receipts",
           "tableTo": "communication_outbound_commands",
-          "columnsFrom": [
-            "command_id",
-            "binding_id"
-          ],
-          "columnsTo": [
-            "id",
-            "binding_id"
-          ],
+          "columnsFrom": ["command_id", "binding_id"],
+          "columnsTo": ["id", "binding_id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -1646,9 +1531,7 @@
           "name": "communication_dispatch_reconciliation_receipts_communications_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "exists (\n    select 1 from communication_outbound_commands command\n    where command.id = \"communication_dispatch_reconciliation_receipts\".\"command_id\" and command.channel_kind = 'whatsapp'\n  )",
           "withCheck": "exists (\n    select 1 from communication_outbound_commands command\n    where command.id = \"communication_dispatch_reconciliation_receipts\".\"command_id\" and command.channel_kind = 'whatsapp'\n  )"
         }
@@ -1936,14 +1819,8 @@
           "name": "communication_event_envelopes_receipt_connection_fk",
           "tableFrom": "communication_event_envelopes",
           "tableTo": "communication_provider_event_receipts",
-          "columnsFrom": [
-            "receipt_id",
-            "connection_id"
-          ],
-          "columnsTo": [
-            "id",
-            "connection_id"
-          ],
+          "columnsFrom": ["receipt_id", "connection_id"],
+          "columnsTo": ["id", "connection_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1951,14 +1828,8 @@
           "name": "communication_event_envelopes_conversation_channel_fk",
           "tableFrom": "communication_event_envelopes",
           "tableTo": "communication_conversations",
-          "columnsFrom": [
-            "conversation_id",
-            "channel_kind"
-          ],
-          "columnsTo": [
-            "id",
-            "channel_kind"
-          ],
+          "columnsFrom": ["conversation_id", "channel_kind"],
+          "columnsTo": ["id", "channel_kind"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -1966,16 +1837,8 @@
           "name": "communication_event_envelopes_participant_conversation_channel_fk",
           "tableFrom": "communication_event_envelopes",
           "tableTo": "communication_participants",
-          "columnsFrom": [
-            "participant_id",
-            "conversation_id",
-            "channel_kind"
-          ],
-          "columnsTo": [
-            "id",
-            "conversation_id",
-            "channel_kind"
-          ],
+          "columnsFrom": ["participant_id", "conversation_id", "channel_kind"],
+          "columnsTo": ["id", "conversation_id", "channel_kind"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -1983,14 +1846,8 @@
           "name": "communication_event_envelopes_message_conversation_fk",
           "tableFrom": "communication_event_envelopes",
           "tableTo": "communication_messages",
-          "columnsFrom": [
-            "message_id",
-            "conversation_id"
-          ],
-          "columnsTo": [
-            "id",
-            "conversation_id"
-          ],
+          "columnsFrom": ["message_id", "conversation_id"],
+          "columnsTo": ["id", "conversation_id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -1998,16 +1855,8 @@
           "name": "communication_event_envelopes_binding_connection_channel_fk",
           "tableFrom": "communication_event_envelopes",
           "tableTo": "communication_contact_bindings",
-          "columnsFrom": [
-            "binding_id",
-            "connection_id",
-            "channel_kind"
-          ],
-          "columnsTo": [
-            "id",
-            "connection_id",
-            "channel_kind"
-          ],
+          "columnsFrom": ["binding_id", "connection_id", "channel_kind"],
+          "columnsTo": ["id", "connection_id", "channel_kind"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -2017,9 +1866,7 @@
         "communication_event_envelopes_receipt_id_unique": {
           "name": "communication_event_envelopes_receipt_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "receipt_id"
-          ]
+          "columns": ["receipt_id"]
         }
       },
       "policies": {
@@ -2027,9 +1874,7 @@
           "name": "communication_event_envelopes_communications_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -2181,14 +2026,8 @@
           "name": "communication_handoffs_conversation_channel_fk",
           "tableFrom": "communication_handoffs",
           "tableTo": "communication_conversations",
-          "columnsFrom": [
-            "conversation_id",
-            "channel_kind"
-          ],
-          "columnsTo": [
-            "id",
-            "channel_kind"
-          ],
+          "columnsFrom": ["conversation_id", "channel_kind"],
+          "columnsTo": ["id", "channel_kind"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2196,14 +2035,8 @@
           "name": "communication_handoffs_assignee_conversation_fk",
           "tableFrom": "communication_handoffs",
           "tableTo": "communication_participants",
-          "columnsFrom": [
-            "assigned_participant_id",
-            "conversation_id"
-          ],
-          "columnsTo": [
-            "id",
-            "conversation_id"
-          ],
+          "columnsFrom": ["assigned_participant_id", "conversation_id"],
+          "columnsTo": ["id", "conversation_id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2215,9 +2048,7 @@
           "name": "communication_handoffs_public_chat_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "\"communication_handoffs\".\"channel_kind\" = 'public_web' and exists (\n    select 1\n    from public_chat_conversation_sessions pcs\n    where pcs.conversation_id = \"communication_handoffs\".\"conversation_id\"\n      and pcs.session_id = nullif(current_setting('atlas.public_chat_session_id', true), '')\n  )",
           "withCheck": "\"communication_handoffs\".\"channel_kind\" = 'public_web' and exists (\n    select 1\n    from public_chat_conversation_sessions pcs\n    where pcs.conversation_id = \"communication_handoffs\".\"conversation_id\"\n      and pcs.session_id = nullif(current_setting('atlas.public_chat_session_id', true), '')\n  )"
         },
@@ -2225,9 +2056,7 @@
           "name": "communication_handoffs_communications_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "\"communication_handoffs\".\"channel_kind\" = 'whatsapp'",
           "withCheck": "\"communication_handoffs\".\"channel_kind\" = 'whatsapp'"
         }
@@ -2416,11 +2245,7 @@
         "communication_message_templates_definition_unique": {
           "name": "communication_message_templates_definition_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "template_key",
-            "locale",
-            "definition_version"
-          ]
+          "columns": ["template_key", "locale", "definition_version"]
         }
       },
       "policies": {
@@ -2428,9 +2253,7 @@
           "name": "communication_message_templates_communications_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -2628,14 +2451,8 @@
           "name": "communication_messages_conversation_channel_fk",
           "tableFrom": "communication_messages",
           "tableTo": "communication_conversations",
-          "columnsFrom": [
-            "conversation_id",
-            "channel_kind"
-          ],
-          "columnsTo": [
-            "id",
-            "channel_kind"
-          ],
+          "columnsFrom": ["conversation_id", "channel_kind"],
+          "columnsTo": ["id", "channel_kind"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2643,14 +2460,8 @@
           "name": "communication_messages_sender_conversation_fk",
           "tableFrom": "communication_messages",
           "tableTo": "communication_participants",
-          "columnsFrom": [
-            "sender_participant_id",
-            "conversation_id"
-          ],
-          "columnsTo": [
-            "id",
-            "conversation_id"
-          ],
+          "columnsFrom": ["sender_participant_id", "conversation_id"],
+          "columnsTo": ["id", "conversation_id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -2658,14 +2469,8 @@
           "name": "communication_messages_recipient_conversation_fk",
           "tableFrom": "communication_messages",
           "tableTo": "communication_participants",
-          "columnsFrom": [
-            "recipient_participant_id",
-            "conversation_id"
-          ],
-          "columnsTo": [
-            "id",
-            "conversation_id"
-          ],
+          "columnsFrom": ["recipient_participant_id", "conversation_id"],
+          "columnsTo": ["id", "conversation_id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -2675,18 +2480,12 @@
         "communication_messages_id_conversation_unique": {
           "name": "communication_messages_id_conversation_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "conversation_id"
-          ]
+          "columns": ["id", "conversation_id"]
         },
         "communication_messages_conversation_ordinal_unique": {
           "name": "communication_messages_conversation_ordinal_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "conversation_id",
-            "ordinal"
-          ]
+          "columns": ["conversation_id", "ordinal"]
         }
       },
       "policies": {
@@ -2694,9 +2493,7 @@
           "name": "communication_messages_public_chat_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "\"communication_messages\".\"channel_kind\" = 'public_web' and exists (\n    select 1\n    from public_chat_conversation_sessions pcs\n    where pcs.conversation_id = \"communication_messages\".\"conversation_id\"\n      and pcs.session_id = nullif(current_setting('atlas.public_chat_session_id', true), '')\n  )",
           "withCheck": "\"communication_messages\".\"channel_kind\" = 'public_web' and exists (\n    select 1\n    from public_chat_conversation_sessions pcs\n    where pcs.conversation_id = \"communication_messages\".\"conversation_id\"\n      and pcs.session_id = nullif(current_setting('atlas.public_chat_session_id', true), '')\n  )"
         },
@@ -2704,9 +2501,7 @@
           "name": "communication_messages_communications_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "\"communication_messages\".\"channel_kind\" = 'whatsapp'",
           "withCheck": "\"communication_messages\".\"channel_kind\" = 'whatsapp'"
         }
@@ -2999,14 +2794,8 @@
           "name": "communication_outbound_commands_conversation_channel_fk",
           "tableFrom": "communication_outbound_commands",
           "tableTo": "communication_conversations",
-          "columnsFrom": [
-            "conversation_id",
-            "channel_kind"
-          ],
-          "columnsTo": [
-            "id",
-            "channel_kind"
-          ],
+          "columnsFrom": ["conversation_id", "channel_kind"],
+          "columnsTo": ["id", "channel_kind"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -3014,16 +2803,8 @@
           "name": "communication_outbound_commands_binding_connection_channel_fk",
           "tableFrom": "communication_outbound_commands",
           "tableTo": "communication_contact_bindings",
-          "columnsFrom": [
-            "binding_id",
-            "connection_id",
-            "channel_kind"
-          ],
-          "columnsTo": [
-            "id",
-            "connection_id",
-            "channel_kind"
-          ],
+          "columnsFrom": ["binding_id", "connection_id", "channel_kind"],
+          "columnsTo": ["id", "connection_id", "channel_kind"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -3033,26 +2814,17 @@
         "communication_outbound_commands_id_connection_unique": {
           "name": "communication_outbound_commands_id_connection_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "connection_id"
-          ]
+          "columns": ["id", "connection_id"]
         },
         "communication_outbound_commands_id_binding_unique": {
           "name": "communication_outbound_commands_id_binding_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "binding_id"
-          ]
+          "columns": ["id", "binding_id"]
         },
         "communication_outbound_commands_binding_key_unique": {
           "name": "communication_outbound_commands_binding_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "binding_id",
-            "idempotency_key"
-          ]
+          "columns": ["binding_id", "idempotency_key"]
         }
       },
       "policies": {
@@ -3060,9 +2832,7 @@
           "name": "communication_outbound_commands_communications_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -3234,14 +3004,8 @@
           "name": "communication_participants_conversation_channel_fk",
           "tableFrom": "communication_participants",
           "tableTo": "communication_conversations",
-          "columnsFrom": [
-            "conversation_id",
-            "channel_kind"
-          ],
-          "columnsTo": [
-            "id",
-            "channel_kind"
-          ],
+          "columnsFrom": ["conversation_id", "channel_kind"],
+          "columnsTo": ["id", "channel_kind"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3249,14 +3013,8 @@
           "name": "communication_participants_binding_channel_fk",
           "tableFrom": "communication_participants",
           "tableTo": "communication_contact_bindings",
-          "columnsFrom": [
-            "channel_binding_id",
-            "channel_kind"
-          ],
-          "columnsTo": [
-            "id",
-            "channel_kind"
-          ],
+          "columnsFrom": ["channel_binding_id", "channel_kind"],
+          "columnsTo": ["id", "channel_kind"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -3266,19 +3024,12 @@
         "communication_participants_id_conversation_unique": {
           "name": "communication_participants_id_conversation_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "conversation_id"
-          ]
+          "columns": ["id", "conversation_id"]
         },
         "communication_participants_id_conversation_channel_unique": {
           "name": "communication_participants_id_conversation_channel_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "conversation_id",
-            "channel_kind"
-          ]
+          "columns": ["id", "conversation_id", "channel_kind"]
         }
       },
       "policies": {
@@ -3286,9 +3037,7 @@
           "name": "communication_participants_public_chat_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "\"communication_participants\".\"channel_kind\" = 'public_web' and exists (\n    select 1\n    from public_chat_conversation_sessions pcs\n    where pcs.conversation_id = \"communication_participants\".\"conversation_id\"\n      and pcs.session_id = nullif(current_setting('atlas.public_chat_session_id', true), '')\n  )",
           "withCheck": "\"communication_participants\".\"channel_kind\" = 'public_web' and exists (\n    select 1\n    from public_chat_conversation_sessions pcs\n    where pcs.conversation_id = \"communication_participants\".\"conversation_id\"\n      and pcs.session_id = nullif(current_setting('atlas.public_chat_session_id', true), '')\n  )"
         },
@@ -3296,9 +3045,7 @@
           "name": "communication_participants_communications_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "\"communication_participants\".\"channel_kind\" = 'whatsapp'",
           "withCheck": "\"communication_participants\".\"channel_kind\" = 'whatsapp'"
         }
@@ -3479,12 +3226,8 @@
           "name": "communication_provider_event_receipts_connection_id_communication_channel_connections_id_fk",
           "tableFrom": "communication_provider_event_receipts",
           "tableTo": "communication_channel_connections",
-          "columnsFrom": [
-            "connection_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["connection_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -3492,14 +3235,8 @@
           "name": "communication_provider_event_receipts_connection_channel_fk",
           "tableFrom": "communication_provider_event_receipts",
           "tableTo": "communication_channel_connections",
-          "columnsFrom": [
-            "connection_id",
-            "channel_kind"
-          ],
-          "columnsTo": [
-            "id",
-            "channel_kind"
-          ],
+          "columnsFrom": ["connection_id", "channel_kind"],
+          "columnsTo": ["id", "channel_kind"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -3509,18 +3246,12 @@
         "communication_provider_event_receipts_id_connection_unique": {
           "name": "communication_provider_event_receipts_id_connection_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "connection_id"
-          ]
+          "columns": ["id", "connection_id"]
         },
         "communication_provider_event_receipts_identity_unique": {
           "name": "communication_provider_event_receipts_identity_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "connection_id",
-            "external_event_reference"
-          ]
+          "columns": ["connection_id", "external_event_reference"]
         }
       },
       "policies": {
@@ -3528,9 +3259,7 @@
           "name": "communication_provider_event_receipts_communications_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -3620,12 +3349,8 @@
           "name": "communication_provider_status_receipts_command_id_communication_outbound_commands_id_fk",
           "tableFrom": "communication_provider_status_receipts",
           "tableTo": "communication_outbound_commands",
-          "columnsFrom": [
-            "command_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["command_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3633,10 +3358,7 @@
       "compositePrimaryKeys": {
         "communication_provider_status_receipts_command_event_pk": {
           "name": "communication_provider_status_receipts_command_event_pk",
-          "columns": [
-            "command_id",
-            "provider_event_id"
-          ]
+          "columns": ["command_id", "provider_event_id"]
         }
       },
       "uniqueConstraints": {},
@@ -3645,9 +3367,7 @@
           "name": "communication_provider_status_receipts_communications_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "exists (\n    select 1 from communication_outbound_commands command\n    where command.id = \"communication_provider_status_receipts\".\"command_id\" and command.channel_kind = 'whatsapp'\n  )",
           "withCheck": "exists (\n    select 1 from communication_outbound_commands command\n    where command.id = \"communication_provider_status_receipts\".\"command_id\" and command.channel_kind = 'whatsapp'\n  )"
         }
@@ -3743,14 +3463,8 @@
           "name": "communication_provider_status_verifications_command_connection_fk",
           "tableFrom": "communication_provider_status_verifications",
           "tableTo": "communication_outbound_commands",
-          "columnsFrom": [
-            "command_id",
-            "connection_id"
-          ],
-          "columnsTo": [
-            "id",
-            "connection_id"
-          ],
+          "columnsFrom": ["command_id", "connection_id"],
+          "columnsTo": ["id", "connection_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3758,14 +3472,8 @@
           "name": "communication_provider_status_verifications_attempt_command_fk",
           "tableFrom": "communication_provider_status_verifications",
           "tableTo": "communication_dispatch_attempts",
-          "columnsFrom": [
-            "attempt_id",
-            "command_id"
-          ],
-          "columnsTo": [
-            "id",
-            "command_id"
-          ],
+          "columnsFrom": ["attempt_id", "command_id"],
+          "columnsTo": ["id", "command_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3775,10 +3483,7 @@
         "communication_provider_status_verifications_connection_event_unique": {
           "name": "communication_provider_status_verifications_connection_event_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "connection_id",
-            "provider_event_id"
-          ]
+          "columns": ["connection_id", "provider_event_id"]
         }
       },
       "policies": {
@@ -3786,18 +3491,14 @@
           "name": "communication_provider_status_verifications_read_scope",
           "as": "PERMISSIVE",
           "for": "SELECT",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "using": "exists (\n    select 1 from communication_outbound_commands command\n    where command.id = \"communication_provider_status_verifications\".\"command_id\" and command.channel_kind = 'whatsapp'\n  )"
         },
         "communication_provider_status_verifications_append_scope": {
           "name": "communication_provider_status_verifications_append_scope",
           "as": "PERMISSIVE",
           "for": "INSERT",
-          "to": [
-            "atlas_communications_gateway"
-          ],
+          "to": ["atlas_communications_gateway"],
           "withCheck": "exists (\n    select 1 from communication_outbound_commands command\n    where command.id = \"communication_provider_status_verifications\".\"command_id\" and command.channel_kind = 'whatsapp'\n  )"
         }
       },
@@ -3892,12 +3593,8 @@
           "name": "public_chat_citations_message_id_communication_messages_id_fk",
           "tableFrom": "public_chat_citations",
           "tableTo": "communication_messages",
-          "columnsFrom": [
-            "message_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["message_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -3907,10 +3604,7 @@
         "public_chat_citations_message_source_unique": {
           "name": "public_chat_citations_message_source_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "message_id",
-            "source_id"
-          ]
+          "columns": ["message_id", "source_id"]
         }
       },
       "policies": {
@@ -3918,9 +3612,7 @@
           "name": "public_chat_citations_server_gateway_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "exists (\n    select 1\n    from communication_messages message\n    join public_chat_conversation_sessions pcs on pcs.conversation_id = message.conversation_id\n    where message.id = \"public_chat_citations\".\"message_id\"\n      and message.channel_kind = 'public_web'\n      and pcs.session_id = nullif(current_setting('atlas.public_chat_session_id', true), '')\n  )",
           "withCheck": "exists (\n    select 1\n    from communication_messages message\n    join public_chat_conversation_sessions pcs on pcs.conversation_id = message.conversation_id\n    where message.id = \"public_chat_citations\".\"message_id\"\n      and message.channel_kind = 'public_web'\n      and pcs.session_id = nullif(current_setting('atlas.public_chat_session_id', true), '')\n  )"
         }
@@ -4031,12 +3723,8 @@
           "name": "public_chat_conversation_sessions_session_id_public_chat_sessions_id_fk",
           "tableFrom": "public_chat_conversation_sessions",
           "tableTo": "public_chat_sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4044,14 +3732,8 @@
           "name": "public_chat_conversation_sessions_conversation_channel_fk",
           "tableFrom": "public_chat_conversation_sessions",
           "tableTo": "communication_conversations",
-          "columnsFrom": [
-            "conversation_id",
-            "channel_kind"
-          ],
-          "columnsTo": [
-            "id",
-            "channel_kind"
-          ],
+          "columnsFrom": ["conversation_id", "channel_kind"],
+          "columnsTo": ["id", "channel_kind"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4059,16 +3741,8 @@
           "name": "public_chat_conversation_sessions_participant_conversation_channel_fk",
           "tableFrom": "public_chat_conversation_sessions",
           "tableTo": "communication_participants",
-          "columnsFrom": [
-            "participant_id",
-            "conversation_id",
-            "channel_kind"
-          ],
-          "columnsTo": [
-            "id",
-            "conversation_id",
-            "channel_kind"
-          ],
+          "columnsFrom": ["participant_id", "conversation_id", "channel_kind"],
+          "columnsTo": ["id", "conversation_id", "channel_kind"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4078,17 +3752,12 @@
         "public_chat_conversation_sessions_conversation_unique": {
           "name": "public_chat_conversation_sessions_conversation_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "conversation_id"
-          ]
+          "columns": ["conversation_id"]
         },
         "public_chat_conversation_sessions_session_start_key_unique": {
           "name": "public_chat_conversation_sessions_session_start_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "session_id",
-            "start_idempotency_key"
-          ]
+          "columns": ["session_id", "start_idempotency_key"]
         }
       },
       "policies": {
@@ -4096,9 +3765,7 @@
           "name": "public_chat_conversation_sessions_public_chat_scope",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "\"public_chat_conversation_sessions\".\"session_id\" = nullif(current_setting('atlas.public_chat_session_id', true), '')",
           "withCheck": "\"public_chat_conversation_sessions\".\"session_id\" = nullif(current_setting('atlas.public_chat_session_id', true), '')"
         }
@@ -4226,12 +3893,8 @@
           "name": "public_chat_idempotency_conversation_id_communication_conversations_id_fk",
           "tableFrom": "public_chat_idempotency",
           "tableTo": "communication_conversations",
-          "columnsFrom": [
-            "conversation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["conversation_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -4241,10 +3904,7 @@
         "public_chat_idempotency_conversation_key_unique": {
           "name": "public_chat_idempotency_conversation_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "conversation_id",
-            "idempotency_key"
-          ]
+          "columns": ["conversation_id", "idempotency_key"]
         }
       },
       "policies": {
@@ -4252,9 +3912,7 @@
           "name": "public_chat_idempotency_server_gateway_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "exists (\n    select 1\n    from public_chat_conversation_sessions pcs\n    where pcs.conversation_id = \"public_chat_idempotency\".\"conversation_id\"\n      and pcs.session_id = nullif(current_setting('atlas.public_chat_session_id', true), '')\n  )",
           "withCheck": "exists (\n    select 1\n    from public_chat_conversation_sessions pcs\n    where pcs.conversation_id = \"public_chat_idempotency\".\"conversation_id\"\n      and pcs.session_id = nullif(current_setting('atlas.public_chat_session_id', true), '')\n  )"
         }
@@ -4335,9 +3993,7 @@
           "name": "public_chat_rate_limits_server_gateway_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -4430,9 +4086,7 @@
         "public_chat_sessions_session_hash_unique": {
           "name": "public_chat_sessions_session_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "session_hash"
-          ]
+          "columns": ["session_hash"]
         }
       },
       "policies": {
@@ -4440,9 +4094,7 @@
           "name": "public_chat_sessions_server_gateway_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -4509,12 +4161,8 @@
           "name": "voice_artifacts_call_id_voice_calls_id_fk",
           "tableFrom": "voice_artifacts",
           "tableTo": "voice_calls",
-          "columnsFrom": [
-            "call_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["call_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4522,10 +4170,7 @@
       "compositePrimaryKeys": {
         "voice_artifacts_pk": {
           "name": "voice_artifacts_pk",
-          "columns": [
-            "call_id",
-            "id"
-          ]
+          "columns": ["call_id", "id"]
         }
       },
       "uniqueConstraints": {},
@@ -4534,27 +4179,21 @@
           "name": "voice_artifacts_voice_select",
           "as": "PERMISSIVE",
           "for": "SELECT",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "using": "\"voice_artifacts\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         },
         "voice_artifacts_voice_insert": {
           "name": "voice_artifacts_voice_insert",
           "as": "PERMISSIVE",
           "for": "INSERT",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "withCheck": "\"voice_artifacts\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         },
         "voice_artifacts_voice_update": {
           "name": "voice_artifacts_voice_update",
           "as": "PERMISSIVE",
           "for": "UPDATE",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "using": "\"voice_artifacts\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')",
           "withCheck": "\"voice_artifacts\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         }
@@ -4644,12 +4283,8 @@
           "name": "voice_callback_requests_call_id_voice_calls_id_fk",
           "tableFrom": "voice_callback_requests",
           "tableTo": "voice_calls",
-          "columnsFrom": [
-            "call_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["call_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4657,20 +4292,14 @@
       "compositePrimaryKeys": {
         "voice_callback_requests_pk": {
           "name": "voice_callback_requests_pk",
-          "columns": [
-            "call_id",
-            "id"
-          ]
+          "columns": ["call_id", "id"]
         }
       },
       "uniqueConstraints": {
         "voice_callback_requests_call_idempotency_unique": {
           "name": "voice_callback_requests_call_idempotency_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "call_id",
-            "idempotency_key"
-          ]
+          "columns": ["call_id", "idempotency_key"]
         }
       },
       "policies": {
@@ -4678,27 +4307,21 @@
           "name": "voice_callback_requests_voice_select",
           "as": "PERMISSIVE",
           "for": "SELECT",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "using": "\"voice_callback_requests\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         },
         "voice_callback_requests_voice_insert": {
           "name": "voice_callback_requests_voice_insert",
           "as": "PERMISSIVE",
           "for": "INSERT",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "withCheck": "\"voice_callback_requests\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         },
         "voice_callback_requests_voice_update": {
           "name": "voice_callback_requests_voice_update",
           "as": "PERMISSIVE",
           "for": "UPDATE",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "using": "\"voice_callback_requests\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')",
           "withCheck": "\"voice_callback_requests\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         }
@@ -4817,9 +4440,7 @@
         "voice_calls_correlation_id_unique": {
           "name": "voice_calls_correlation_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "correlation_id"
-          ]
+          "columns": ["correlation_id"]
         }
       },
       "policies": {
@@ -4827,27 +4448,21 @@
           "name": "voice_calls_voice_select",
           "as": "PERMISSIVE",
           "for": "SELECT",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "using": "\"voice_calls\".\"id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         },
         "voice_calls_voice_insert": {
           "name": "voice_calls_voice_insert",
           "as": "PERMISSIVE",
           "for": "INSERT",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "withCheck": "\"voice_calls\".\"id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         },
         "voice_calls_voice_update": {
           "name": "voice_calls_voice_update",
           "as": "PERMISSIVE",
           "for": "UPDATE",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "using": "\"voice_calls\".\"id\" = nullif(current_setting('atlas.voice_call_id', true), '')",
           "withCheck": "\"voice_calls\".\"id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         }
@@ -5001,12 +4616,8 @@
           "name": "voice_command_receipts_call_id_voice_calls_id_fk",
           "tableFrom": "voice_command_receipts",
           "tableTo": "voice_calls",
-          "columnsFrom": [
-            "call_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["call_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -5016,18 +4627,12 @@
         "voice_command_receipts_call_command_unique": {
           "name": "voice_command_receipts_call_command_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "call_id",
-            "command_id"
-          ]
+          "columns": ["call_id", "command_id"]
         },
         "voice_command_receipts_call_idempotency_unique": {
           "name": "voice_command_receipts_call_idempotency_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "call_id",
-            "idempotency_key"
-          ]
+          "columns": ["call_id", "idempotency_key"]
         }
       },
       "policies": {
@@ -5035,27 +4640,21 @@
           "name": "voice_command_receipts_voice_select",
           "as": "PERMISSIVE",
           "for": "SELECT",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "using": "\"voice_command_receipts\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         },
         "voice_command_receipts_voice_insert": {
           "name": "voice_command_receipts_voice_insert",
           "as": "PERMISSIVE",
           "for": "INSERT",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "withCheck": "\"voice_command_receipts\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         },
         "voice_command_receipts_voice_update": {
           "name": "voice_command_receipts_voice_update",
           "as": "PERMISSIVE",
           "for": "UPDATE",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "using": "\"voice_command_receipts\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')",
           "withCheck": "\"voice_command_receipts\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         }
@@ -5191,12 +4790,8 @@
           "name": "voice_escalations_call_id_voice_calls_id_fk",
           "tableFrom": "voice_escalations",
           "tableTo": "voice_calls",
-          "columnsFrom": [
-            "call_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["call_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -5204,10 +4799,7 @@
       "compositePrimaryKeys": {
         "voice_escalations_pk": {
           "name": "voice_escalations_pk",
-          "columns": [
-            "call_id",
-            "id"
-          ]
+          "columns": ["call_id", "id"]
         }
       },
       "uniqueConstraints": {},
@@ -5216,27 +4808,21 @@
           "name": "voice_escalations_voice_select",
           "as": "PERMISSIVE",
           "for": "SELECT",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "using": "\"voice_escalations\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         },
         "voice_escalations_voice_insert": {
           "name": "voice_escalations_voice_insert",
           "as": "PERMISSIVE",
           "for": "INSERT",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "withCheck": "\"voice_escalations\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         },
         "voice_escalations_voice_update": {
           "name": "voice_escalations_voice_update",
           "as": "PERMISSIVE",
           "for": "UPDATE",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "using": "\"voice_escalations\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')",
           "withCheck": "\"voice_escalations\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         }
@@ -5322,12 +4908,8 @@
           "name": "voice_interactions_call_id_voice_calls_id_fk",
           "tableFrom": "voice_interactions",
           "tableTo": "voice_calls",
-          "columnsFrom": [
-            "call_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["call_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -5335,20 +4917,14 @@
       "compositePrimaryKeys": {
         "voice_interactions_pk": {
           "name": "voice_interactions_pk",
-          "columns": [
-            "call_id",
-            "id"
-          ]
+          "columns": ["call_id", "id"]
         }
       },
       "uniqueConstraints": {
         "voice_interactions_call_ordinal_unique": {
           "name": "voice_interactions_call_ordinal_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "call_id",
-            "ordinal"
-          ]
+          "columns": ["call_id", "ordinal"]
         }
       },
       "policies": {
@@ -5356,18 +4932,14 @@
           "name": "voice_interactions_voice_select",
           "as": "PERMISSIVE",
           "for": "SELECT",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "using": "\"voice_interactions\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         },
         "voice_interactions_voice_insert": {
           "name": "voice_interactions_voice_insert",
           "as": "PERMISSIVE",
           "for": "INSERT",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "withCheck": "\"voice_interactions\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         }
       },
@@ -5452,12 +5024,8 @@
           "name": "voice_verification_attempts_call_id_voice_calls_id_fk",
           "tableFrom": "voice_verification_attempts",
           "tableTo": "voice_calls",
-          "columnsFrom": [
-            "call_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["call_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -5465,10 +5033,7 @@
       "compositePrimaryKeys": {
         "voice_verification_attempts_pk": {
           "name": "voice_verification_attempts_pk",
-          "columns": [
-            "call_id",
-            "id"
-          ]
+          "columns": ["call_id", "id"]
         }
       },
       "uniqueConstraints": {},
@@ -5477,18 +5042,14 @@
           "name": "voice_verification_attempts_voice_select",
           "as": "PERMISSIVE",
           "for": "SELECT",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "using": "\"voice_verification_attempts\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         },
         "voice_verification_attempts_voice_insert": {
           "name": "voice_verification_attempts_voice_insert",
           "as": "PERMISSIVE",
           "for": "INSERT",
-          "to": [
-            "atlas_voice_operations"
-          ],
+          "to": ["atlas_voice_operations"],
           "withCheck": "\"voice_verification_attempts\".\"call_id\" = nullif(current_setting('atlas.voice_call_id', true), '')"
         }
       },

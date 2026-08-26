@@ -1,4 +1,7 @@
-import type { CommunicationsRepository, VerifiedProviderStatusReceiptResolver } from "@atlas/domain";
+import type {
+  CommunicationsRepository,
+  VerifiedProviderStatusReceiptResolver,
+} from "@atlas/domain";
 import {
   type CommunicationsSql,
   PostgresCommunicationsRepository,

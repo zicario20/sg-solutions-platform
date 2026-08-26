@@ -1,9 +1,9 @@
 import {
   createDashboardAuthorizationSnapshot,
+  type DashboardAuthorizationSnapshot,
+  type DashboardAuthPort,
   revalidateDashboardAuthorization,
   selectDashboardContext,
-  type DashboardAuthPort,
-  type DashboardAuthorizationSnapshot,
 } from "@atlas/dashboard";
 import { describe, expect, it } from "vitest";
 
@@ -20,7 +20,9 @@ const evidence = {
   authorizationEpoch: "1",
   policyEpoch: "1",
   context: { type: "organization" as const, opaqueRef: "context-a" },
-  contextOptions: [{ type: "organization" as const, opaqueRef: "context-a", label: "Organization 1" }],
+  contextOptions: [
+    { type: "organization" as const, opaqueRef: "context-a", label: "Organization 1" },
+  ],
   membershipFence: "membership-1",
   resourceGrantFence: "grant-1",
   entitlementFence: "entitlement-1",
@@ -80,16 +82,10 @@ describe("M008 authorization snapshot", () => {
 
   it("issues an opaque context handle only after owner authorization", async () => {
     await expect(
-      selectDashboardContext(
-        { sessionHandle: "opaque", requestedContext: "context-a" },
-        port(),
-      ),
+      selectDashboardContext({ sessionHandle: "opaque", requestedContext: "context-a" }, port()),
     ).resolves.toEqual({ kind: "selected", contextHandle: "opaque-context-handle" });
     await expect(
-      selectDashboardContext(
-        { sessionHandle: "opaque", requestedContext: "foreign" },
-        port(),
-      ),
+      selectDashboardContext({ sessionHandle: "opaque", requestedContext: "foreign" }, port()),
     ).resolves.toEqual({ kind: "denied" });
   });
 });

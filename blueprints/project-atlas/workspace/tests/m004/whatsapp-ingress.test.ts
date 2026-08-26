@@ -1,7 +1,5 @@
 import { createHmac } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createMetaCloudAdapter } from "../../apps/app/src/lib/whatsapp/meta-adapter.ts";
-import type { CanonicalProviderEnvelope } from "../../apps/app/src/lib/whatsapp/meta-contracts.ts";
 import {
   createFixedWindowRateBudget,
   createIngressSemaphore,
@@ -9,6 +7,8 @@ import {
   type IngressClock,
   type MetaWebhookConnectionAuthority,
 } from "../../apps/app/src/lib/whatsapp/ingress.ts";
+import { createMetaCloudAdapter } from "../../apps/app/src/lib/whatsapp/meta-adapter.ts";
+import type { CanonicalProviderEnvelope } from "../../apps/app/src/lib/whatsapp/meta-contracts.ts";
 
 const APP_SECRET = "synthetic-meta-app-secret-task6";
 const VERIFY_TOKEN = "synthetic-meta-verify-token-task6";
@@ -76,27 +76,33 @@ function rawJson(value: unknown): Uint8Array {
 function messagePayload(text = "Synthetic safe message") {
   return {
     object: "whatsapp_business_account",
-    entry: [{
-      id: BUSINESS_ACCOUNT_ID,
-      changes: [{
-        field: "messages",
-        value: {
-          messaging_product: "whatsapp",
-          metadata: {
-            display_phone_number: "15550000000",
-            phone_number_id: PHONE_NUMBER_ID,
+    entry: [
+      {
+        id: BUSINESS_ACCOUNT_ID,
+        changes: [
+          {
+            field: "messages",
+            value: {
+              messaging_product: "whatsapp",
+              metadata: {
+                display_phone_number: "15550000000",
+                phone_number_id: PHONE_NUMBER_ID,
+              },
+              contacts: [{ profile: { name: "Synthetic Person" }, wa_id: "15550000001" }],
+              messages: [
+                {
+                  from: "15550000001",
+                  id: "wamid.synthetic.task6.text.1",
+                  timestamp: "1786661700",
+                  type: "text",
+                  text: { body: text },
+                },
+              ],
+            },
           },
-          contacts: [{ profile: { name: "Synthetic Person" }, wa_id: "15550000001" }],
-          messages: [{
-            from: "15550000001",
-            id: "wamid.synthetic.task6.text.1",
-            timestamp: "1786661700",
-            type: "text",
-            text: { body: text },
-          }],
-        },
-      }],
-    }],
+        ],
+      },
+    ],
   };
 }
 
@@ -167,7 +173,8 @@ function postRequest(
   const headers = new Headers();
   headers.set("content-type", options.contentType ?? "application/json");
   if (options.contentLength !== undefined) headers.set("content-length", options.contentLength);
-  if (options.contentEncoding !== undefined) headers.set("content-encoding", options.contentEncoding);
+  if (options.contentEncoding !== undefined)
+    headers.set("content-encoding", options.contentEncoding);
   if (options.signatureHeader !== undefined) {
     headers.set("x-hub-signature-256", options.signatureHeader);
   }
@@ -195,7 +202,10 @@ const AUTHORITY: MetaWebhookConnectionAuthority = Object.freeze({
 function createHarness(overrides: Record<string, unknown> = {}) {
   const clock = (overrides.clock as ControlledClock | undefined) ?? new ControlledClock();
   const credentials = {
-    resolveVerificationSecret: vi.fn(async () => ({ appSecret: APP_SECRET, verifyToken: VERIFY_TOKEN })),
+    resolveVerificationSecret: vi.fn(async () => ({
+      appSecret: APP_SECRET,
+      verifyToken: VERIFY_TOKEN,
+    })),
     resolveDispatchSecret: vi.fn(async () => {
       throw new Error("dispatch credentials must not be reached");
     }),
@@ -215,8 +225,10 @@ function createHarness(overrides: Record<string, unknown> = {}) {
     maxNormalizedPayloadBytes: 64 * 1024,
     maxProviderResponseBytes: 16 * 1024,
   });
-  const normalizeVerifiedEvent = vi.fn((...args: Parameters<typeof realAdapter.normalizeVerifiedEvent>) =>
-    realAdapter.normalizeVerifiedEvent(...args));
+  const normalizeVerifiedEvent = vi.fn(
+    (...args: Parameters<typeof realAdapter.normalizeVerifiedEvent>) =>
+      realAdapter.normalizeVerifiedEvent(...args),
+  );
   const adapter = { normalizeVerifiedEvent };
   const acceptInbound = vi.fn(async () => ({ status: "accepted" as const }));
   const telemetry = { record: vi.fn() };
@@ -283,10 +295,9 @@ describe("bounded WhatsApp webhook ingress", () => {
   it("validates the connection identifier before authority or credential lookup", async () => {
     const { handler, authorityResolver, credentials } = createHarness();
 
-    const response = await handler(
-      new Request("https://atlas.invalid/task6", { method: "GET" }),
-      { connectionId: "../PRIVATE-CONNECTION" },
-    );
+    const response = await handler(new Request("https://atlas.invalid/task6", { method: "GET" }), {
+      connectionId: "../PRIVATE-CONNECTION",
+    });
 
     expect(response.status).toBe(400);
     expect(await responseText(response)).not.toContain("PRIVATE-CONNECTION");
@@ -320,10 +331,9 @@ describe("bounded WhatsApp webhook ingress", () => {
     };
     const { handler, credentials } = createHarness({ authorityResolver });
 
-    const response = await handler(
-      new Request("https://atlas.invalid/task6", { method: "GET" }),
-      { connectionId: CONNECTION_ID },
-    );
+    const response = await handler(new Request("https://atlas.invalid/task6", { method: "GET" }), {
+      connectionId: CONNECTION_ID,
+    });
 
     expect(response.status).toBe(403);
     expect(credentials.resolveVerificationSecret).not.toHaveBeenCalled();
@@ -342,7 +352,9 @@ describe("bounded WhatsApp webhook ingress", () => {
     const body = controlledBody();
     body.close();
     const { handler, credentials } = createHarness();
-    const response = await handler(postRequest(body.stream, headers), { connectionId: CONNECTION_ID });
+    const response = await handler(postRequest(body.stream, headers), {
+      connectionId: CONNECTION_ID,
+    });
 
     expect(response.status).toBe(status);
     expect(body.getReader).not.toHaveBeenCalled();
@@ -386,8 +398,12 @@ describe("bounded WhatsApp webhook ingress", () => {
     const unresolved = deferred<{ appSecret: string; verifyToken: string }>();
     const credentials = {
       resolveVerificationSecret: vi.fn(() => unresolved.promise),
-      resolveDispatchSecret: vi.fn(async () => { throw new Error("unreachable"); }),
-      resolveTemplateConnectionAuthority: vi.fn(async () => { throw new Error("unreachable"); }),
+      resolveDispatchSecret: vi.fn(async () => {
+        throw new Error("unreachable");
+      }),
+      resolveTemplateConnectionAuthority: vi.fn(async () => {
+        throw new Error("unreachable");
+      }),
     };
     const body = controlledBody();
     const { handler } = createHarness({ clock, credentials });
@@ -430,9 +446,10 @@ describe("bounded WhatsApp webhook ingress", () => {
       "hub.verify_token": VERIFY_TOKEN,
       "hub.challenge": "123456789",
     });
-    const request = () => new Request(`https://atlas.invalid/task6?${challenge.toString()}`, {
-      method: "GET",
-    });
+    const request = () =>
+      new Request(`https://atlas.invalid/task6?${challenge.toString()}`, {
+        method: "GET",
+      });
     const first = handler(request(), { connectionId: CONNECTION_ID });
     await flushMicrotasks();
 
@@ -477,9 +494,10 @@ describe("bounded WhatsApp webhook ingress", () => {
       "hub.verify_token": VERIFY_TOKEN,
       "hub.challenge": "123456789",
     });
-    const request = () => new Request(`https://atlas.invalid/task6?${challenge.toString()}`, {
-      method: "GET",
-    });
+    const request = () =>
+      new Request(`https://atlas.invalid/task6?${challenge.toString()}`, {
+        method: "GET",
+      });
 
     const first = handler(request(), { connectionId: CONNECTION_ID });
     const second = handler(request(), { connectionId: CONNECTION_ID });
@@ -522,9 +540,10 @@ describe("bounded WhatsApp webhook ingress", () => {
       "hub.verify_token": VERIFY_TOKEN,
       "hub.challenge": "123456789",
     });
-    const request = () => new Request(`https://atlas.invalid/task6?${challenge.toString()}`, {
-      method: "GET",
-    });
+    const request = () =>
+      new Request(`https://atlas.invalid/task6?${challenge.toString()}`, {
+        method: "GET",
+      });
 
     const first = handler(request(), { connectionId: CONNECTION_ID });
     const second = handler(request(), { connectionId: CONNECTION_ID });
@@ -625,10 +644,9 @@ describe("bounded WhatsApp webhook ingress", () => {
     const rateBudget = createFixedWindowRateBudget(1, 60_000);
     const firstRaw = rawJson(messagePayload());
     const { handler, credentials } = createHarness({ rateBudget });
-    await handler(
-      postRequest(immediateBody(firstRaw), { signatureHeader: signature(firstRaw) }),
-      { connectionId: CONNECTION_ID },
-    );
+    await handler(postRequest(immediateBody(firstRaw), { signatureHeader: signature(firstRaw) }), {
+      connectionId: CONNECTION_ID,
+    });
     credentials.resolveVerificationSecret.mockClear();
     const secondBody = controlledBody();
 
@@ -713,31 +731,30 @@ describe("bounded WhatsApp webhook ingress", () => {
       invoked.resolve();
       return committed.promise;
     });
-    const {
-      handler,
-      authorityResolver,
-      credentials,
-      normalizeVerifiedEvent,
-    } = createHarness({ acceptInbound });
+    const { handler, authorityResolver, credentials, normalizeVerifiedEvent } = createHarness({
+      acceptInbound,
+    });
     let settled = false;
-    const pending = handler(
-      postRequest(immediateBody(raw), { signatureHeader: signature(raw) }),
-      { connectionId: CONNECTION_ID },
-    ).then((response) => {
+    const pending = handler(postRequest(immediateBody(raw), { signatureHeader: signature(raw) }), {
+      connectionId: CONNECTION_ID,
+    }).then((response) => {
       settled = true;
       return response;
     });
     await invoked.promise;
 
     expect(settled).toBe(false);
-    expect(acceptInbound).toHaveBeenCalledWith(expect.objectContaining({
-      authority: AUTHORITY,
-      connectionId: CONNECTION_ID,
-      providerEventId: "wamid.synthetic.task6.text.1",
-      providerBodyDigest: expect.stringMatching(/^[a-f0-9]{64}$/u),
-      envelope: expect.objectContaining({ kind: "text_message" }) as CanonicalProviderEnvelope,
-      correlationId: "correlation_task6_opaque_0001",
-    }), expect.any(AbortSignal));
+    expect(acceptInbound).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authority: AUTHORITY,
+        connectionId: CONNECTION_ID,
+        providerEventId: "wamid.synthetic.task6.text.1",
+        providerBodyDigest: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        envelope: expect.objectContaining({ kind: "text_message" }) as CanonicalProviderEnvelope,
+        correlationId: "correlation_task6_opaque_0001",
+      }),
+      expect.any(AbortSignal),
+    );
     const operationSignal = authorityResolver.resolveWebhookConnectionAuthority.mock.calls[0]?.[1];
     expect(operationSignal).toBeInstanceOf(AbortSignal);
     expect(credentials.resolveVerificationSecret.mock.calls[0]?.[1]).toBe(operationSignal);
@@ -808,11 +825,12 @@ describe("bounded WhatsApp webhook ingress", () => {
     ] as const;
 
     for (const [method, routeHandler] of handlers) {
-      expect(routeHandler, `${method} must be exported by the real route module`).toBeTypeOf("function");
-      const response = await routeHandler(
-        new Request("https://atlas.invalid/task6", { method }),
-        { params: Promise.resolve({ connectionId: CONNECTION_ID }) },
+      expect(routeHandler, `${method} must be exported by the real route module`).toBeTypeOf(
+        "function",
       );
+      const response = await routeHandler(new Request("https://atlas.invalid/task6", { method }), {
+        params: Promise.resolve({ connectionId: CONNECTION_ID }),
+      });
       expect(response.status).toBe(405);
       expect(response.headers.get("allow")).toBe("GET, POST");
       expect(response.headers.get("cache-control")).toBe("no-store");

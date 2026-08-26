@@ -1,8 +1,8 @@
 import {
-  type CommunicationEventSchemaVersion,
   type CommunicationEventPersistenceRecord,
-  type PersistedTemplateComponent,
+  type CommunicationEventSchemaVersion,
   isSupportedCommunicationEventSchemaVersion,
+  type PersistedTemplateComponent,
   validateCommunicationEventRecord,
 } from "@atlas/database";
 import type {
@@ -67,7 +67,9 @@ function isMetaReference(value: unknown, pattern: RegExp): value is string {
   return typeof value === "string" && pattern.test(value);
 }
 
-function assertPersistenceContext(value: unknown): asserts value is ProviderEnvelopePersistenceContext {
+function assertPersistenceContext(
+  value: unknown,
+): asserts value is ProviderEnvelopePersistenceContext {
   if (
     !isObject(value) ||
     Object.keys(value).some((key) => !PERSISTENCE_CONTEXT_KEYS.has(key)) ||
@@ -194,7 +196,9 @@ function assertProviderEnvelope(
           (key) => !["externalReference", "declaredKind", "mimeType", "checksum"].includes(key),
         ) ||
         !isMetaReference(value.media.externalReference, META_GRAPH_NUMERIC_REFERENCE_PATTERN) ||
-        !["image", "document", "audio", "sticker", "video"].includes(String(value.media.declaredKind)) ||
+        !["image", "document", "audio", "sticker", "video"].includes(
+          String(value.media.declaredKind),
+        ) ||
         (value.media.mimeType !== undefined && !isNonEmptyString(value.media.mimeType)) ||
         (value.media.checksum !== undefined &&
           (typeof value.media.checksum !== "string" ||
@@ -225,7 +229,16 @@ function assertProviderEnvelope(
         ]) ||
         !isNonEmptyString(projection.templateId) ||
         !["es", "en"].includes(String(projection.locale)) ||
-        !["draft", "internally_approved", "submitted", "provider_approved", "provider_rejected", "paused", "disabled", "superseded"].includes(String(projection.state)) ||
+        ![
+          "draft",
+          "internally_approved",
+          "submitted",
+          "provider_approved",
+          "provider_rejected",
+          "paused",
+          "disabled",
+          "superseded",
+        ].includes(String(projection.state)) ||
         !Number.isSafeInteger(projection.version) ||
         Number(projection.version) <= 0 ||
         !isValidDate(projection.updatedAt) ||

@@ -13,13 +13,16 @@ export default {
     alias: [
       { find: /^@atlas\/(.+)$/, replacement: `${workspaceRoot}/packages/$1/src/index.ts` },
       { find: "react/jsx-runtime", replacement: resolve(reactRoot, "react/jsx-runtime.js") },
-      { find: "react/jsx-dev-runtime", replacement: resolve(reactRoot, "react/jsx-dev-runtime.js") },
+      {
+        find: "react/jsx-dev-runtime",
+        replacement: resolve(reactRoot, "react/jsx-dev-runtime.js"),
+      },
       { find: "react-dom/server", replacement: resolve(reactRoot, "react-dom/server.node.js") },
-      { find: "react", replacement: resolve(reactRoot, "react/index.js") }
-    ]
+      { find: "react", replacement: resolve(reactRoot, "react/index.js") },
+    ],
   },
   test: {
     environment: "node",
-    include: ["tests/m009/**/*.test.ts", "tests/m009/**/*.test.tsx"]
-  }
+    include: ["tests/m009/**/*.test.ts", "tests/m009/**/*.test.tsx"],
+  },
 };

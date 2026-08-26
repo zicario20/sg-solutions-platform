@@ -1,23 +1,411 @@
 import { CLIENT_SERVICE_REF_PATTERN, type ClientServiceContextType } from "@atlas/client-services";
 
-export const PROCESS_STATUS_CODES=["not_started","waiting_for_payment","waiting_for_client","under_review","approved_to_start","in_progress","waiting_for_external_party","action_required","on_hold","completed","cancelled","refunded"]as const;
-export const PROCESS_SECTION_NAMES=["tasks","documents","payments","appointments","dependencies","help","messages","deliverables"]as const;
-export const PROCESS_ROUTE_KEYS=["services","status","documents","appointments","messages","payments","help","support"]as const;
-export const PROCESS_TIMELINE_COPY_KEYS=["timeline.step_completed","timeline.action_required","timeline.document_received","timeline.payment_received","timeline.appointment_scheduled","timeline.message_received","timeline.deliverable_ready"]as const;
-export const PROCESS_MILESTONE_STATES=["completed","current","upcoming","blocked","skipped","cancelled"]as const;
-export const PROCESS_STATUS_POLICY_VERSION="m010.status.v2"as const;
-export const PROCESS_LANDING_CURSOR_PATTERN=/^psc1_[A-Za-z0-9_-]{24,256}$/u;
-export const PROCESS_TIMELINE_CURSOR_PATTERN=/^ptc1_[A-Za-z0-9_-]{24,256}$/u;
-export const PROCESS_EVENT_REF_PATTERN=/^pev1_[A-Za-z0-9_-]{32}$/u;
-export type ProcessStatusCode=(typeof PROCESS_STATUS_CODES)[number];export type ProcessSectionName=(typeof PROCESS_SECTION_NAMES)[number];export type ProcessRouteKey=(typeof PROCESS_ROUTE_KEYS)[number];export type ProcessTimelineCopyKey=(typeof PROCESS_TIMELINE_COPY_KEYS)[number];export type ProcessMilestoneState=(typeof PROCESS_MILESTONE_STATES)[number];export type ProcessLocale="es"|"en";export type ProcessAvailability="fresh"|"empty"|"unconfirmed"|"partial"|"stale"|"unavailable";export type ProcessResponsibleParty="client"|"sg_solutions"|"external_entity"|"partner"|"none";
-export interface ProcessContextDto{type:ClientServiceContextType;label:string}export interface ProcessChoiceDto{serviceRef:string;serviceLabel:string;instanceLabel?:string;context:ProcessContextDto}export interface ClientProcessLandingDto{schemaVersion:"m010.landing.v1";availability:ProcessAvailability;context:ProcessContextDto;choices:readonly ProcessChoiceDto[];hasMore:boolean;cursor?:string}
-export interface ProcessStatusDto{code:ProcessStatusCode}export interface ProcessActionDto{type:"security_identity"|"blocking_payment"|"blocking_document"|"signature"|"due_task"|"immediate_appointment"|"missing_information"|"general_action";label:string;responsibleParty:ProcessResponsibleParty;routeKey:ProcessRouteKey}export interface ProcessBlockerDto{code:string;label:string;effect:"action_required"|"on_hold"|"informational";responsibleParty:ProcessResponsibleParty;routeKey?:ProcessRouteKey}export interface ProcessMilestoneDto{label:string;state:ProcessMilestoneState;date?:string}export interface ProcessTimelineItemDto{eventRef:string;code:string;copyKey:ProcessTimelineCopyKey;actorCategory:ProcessResponsibleParty;occurredAt:string;routeKey?:ProcessRouteKey}export interface ProcessTimelineDto{state:"fresh"|"empty"|"unconfirmed"|"unavailable";items:readonly ProcessTimelineItemDto[];hasMore:boolean;cursor?:string}export interface ProcessSectionItemDto{label:string;statusLabel?:string;date?:string;routeKey?:ProcessRouteKey}export type ProcessSectionDto={state:"fresh";asOf:string;items:readonly ProcessSectionItemDto[]}|{state:"empty";asOf:string}|{state:"stale";asOf:string}|{state:"unavailable"};export interface ClientProcessDetailDto{schemaVersion:"m010.detail.v1";availability:ProcessAvailability;context:ProcessContextDto;service:{serviceRef:string;label:string;instanceLabel?:string};status?:ProcessStatusDto;nextAction?:ProcessActionDto;responsibleParty?:ProcessResponsibleParty;blockers?:readonly ProcessBlockerDto[];milestones?:readonly ProcessMilestoneDto[];timeline?:ProcessTimelineDto;sections:Partial<Record<ProcessSectionName,ProcessSectionDto>>;lastConfirmedAt?:string}
-export class ProcessContractError extends Error{constructor(){super("PROCESS_STATUS_CONTRACT_INVALID");this.name="ProcessContractError"}}
-function obj(v:unknown){if(!v||typeof v!=="object"||Array.isArray(v))throw new ProcessContractError();return v as Record<string,unknown>}function exact(v:Record<string,unknown>,a:readonly string[]){if(Object.keys(v).some(k=>!a.includes(k)))throw new ProcessContractError()}function text(v:unknown,m=200){if(typeof v!=="string"||!v.trim()||v.length>m||/[\u0000-\u001f]/u.test(v))throw new ProcessContractError();return v}function one<T extends readonly string[]>(v:unknown,a:T):T[number]{if(typeof v!=="string"||!a.includes(v))throw new ProcessContractError();return v as T[number]}function date(v:unknown){const x=text(v,40);if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/u.test(x)||!Number.isFinite(Date.parse(x)))throw new ProcessContractError();return x}function arr<T>(v:unknown,m:number,p:(x:unknown)=>T){if(!Array.isArray(v)||v.length>m)throw new ProcessContractError();return Object.freeze(v.map(p))}
-const parties=["client","sg_solutions","external_entity","partner","none"]as const,actionTypes=["security_identity","blocking_payment","blocking_document","signature","due_task","immediate_appointment","missing_information","general_action"]as const,effects=["action_required","on_hold","informational"]as const;
-function context(v:unknown):ProcessContextDto{const r=obj(v);exact(r,["type","label"]);return Object.freeze({type:one(r.type,["personal","organization"]as const),label:text(r.label,96)})}function choice(v:unknown):ProcessChoiceDto{const r=obj(v);exact(r,["serviceRef","serviceLabel","instanceLabel","context"]);const serviceRef=text(r.serviceRef,37);if(!CLIENT_SERVICE_REF_PATTERN.test(serviceRef))throw new ProcessContractError();return Object.freeze({serviceRef,serviceLabel:text(r.serviceLabel,160),...(r.instanceLabel===undefined?{}:{instanceLabel:text(r.instanceLabel,120)}),context:context(r.context)})}function availability(v:unknown):ProcessAvailability{return one(v,["fresh","empty","unconfirmed","partial","stale","unavailable"]as const)}function route(v:unknown):ProcessRouteKey{return one(v,PROCESS_ROUTE_KEYS)}function party(v:unknown):ProcessResponsibleParty{return one(v,parties)}
-function status(v:unknown):ProcessStatusDto{const r=obj(v);exact(r,["code"]);return Object.freeze({code:one(r.code,PROCESS_STATUS_CODES)})}function action(v:unknown):ProcessActionDto{const r=obj(v);exact(r,["type","label","responsibleParty","routeKey"]);return Object.freeze({type:one(r.type,actionTypes),label:text(r.label,160),responsibleParty:party(r.responsibleParty),routeKey:route(r.routeKey)})}function blocker(v:unknown):ProcessBlockerDto{const r=obj(v);exact(r,["code","label","effect","responsibleParty","routeKey"]);const code=text(r.code,64);if(!/^[a-z][a-z0-9_.-]{1,63}$/u.test(code))throw new ProcessContractError();return Object.freeze({code,label:text(r.label,160),effect:one(r.effect,effects),responsibleParty:party(r.responsibleParty),...(r.routeKey===undefined?{}:{routeKey:route(r.routeKey)})})}function milestone(v:unknown):ProcessMilestoneDto{const r=obj(v);exact(r,["label","state","date"]);return Object.freeze({label:text(r.label,160),state:one(r.state,PROCESS_MILESTONE_STATES),...(r.date===undefined?{}:{date:date(r.date)})})}
-function timelineItem(v:unknown):ProcessTimelineItemDto{const r=obj(v);exact(r,["eventRef","code","copyKey","actorCategory","occurredAt","routeKey"]);const eventRef=text(r.eventRef,37),code=text(r.code,64);if(!PROCESS_EVENT_REF_PATTERN.test(eventRef)||!/^[a-z][a-z0-9_.-]{1,63}$/u.test(code))throw new ProcessContractError();return Object.freeze({eventRef,code,copyKey:one(r.copyKey,PROCESS_TIMELINE_COPY_KEYS),actorCategory:party(r.actorCategory),occurredAt:date(r.occurredAt),...(r.routeKey===undefined?{}:{routeKey:route(r.routeKey)})})}function timeline(v:unknown):ProcessTimelineDto{const r=obj(v);exact(r,["state","items","hasMore","cursor"]);const state=one(r.state,["fresh","empty","unconfirmed","unavailable"]as const),items=arr(r.items,20,timelineItem),cursor=r.cursor===undefined?undefined:text(r.cursor,261);if(typeof r.hasMore!=="boolean"||(state!=="fresh"&&(items.length||r.hasMore||cursor))||(r.hasMore!==Boolean(cursor))||(cursor&&!PROCESS_TIMELINE_CURSOR_PATTERN.test(cursor)))throw new ProcessContractError();return Object.freeze({state,items,hasMore:r.hasMore,...(cursor?{cursor}:{})})}
-function sectionItem(v:unknown):ProcessSectionItemDto{const r=obj(v);exact(r,["label","statusLabel","date","routeKey"]);return Object.freeze({label:text(r.label,160),...(r.statusLabel===undefined?{}:{statusLabel:text(r.statusLabel,120)}),...(r.date===undefined?{}:{date:date(r.date)}),...(r.routeKey===undefined?{}:{routeKey:route(r.routeKey)})})}function section(v:unknown):ProcessSectionDto{const r=obj(v),state=one(r.state,["fresh","empty","stale","unavailable"]as const);if(state==="fresh"){exact(r,["state","asOf","items"]);const items=arr(r.items,24,sectionItem);if(!items.length)throw new ProcessContractError();return Object.freeze({state,asOf:date(r.asOf),items})}if(state==="empty"||state==="stale"){exact(r,["state","asOf"]);return Object.freeze({state,asOf:date(r.asOf)})}exact(r,["state"]);return Object.freeze({state})}
-export function parseClientProcessLandingDto(v:unknown):ClientProcessLandingDto{const r=obj(v);exact(r,["schemaVersion","availability","context","choices","hasMore","cursor"]);if(r.schemaVersion!=="m010.landing.v1"||typeof r.hasMore!=="boolean")throw new ProcessContractError();const choices=arr(r.choices,24,choice),state=availability(r.availability),cursor=r.cursor===undefined?undefined:text(r.cursor,261);if((cursor&&!PROCESS_LANDING_CURSOR_PATTERN.test(cursor))||(state==="empty"&&choices.length)||(r.hasMore!==Boolean(cursor)))throw new ProcessContractError();return Object.freeze({schemaVersion:"m010.landing.v1",availability:state,context:context(r.context),choices,hasMore:r.hasMore,...(cursor?{cursor}:{})})}
-export function parseClientProcessDetailDto(v:unknown):ClientProcessDetailDto{const r=obj(v);exact(r,["schemaVersion","availability","context","service","status","nextAction","responsibleParty","blockers","milestones","timeline","sections","lastConfirmedAt"]);if(r.schemaVersion!=="m010.detail.v1")throw new ProcessContractError();const s=obj(r.service);exact(s,["serviceRef","label","instanceLabel"]);const serviceRef=text(s.serviceRef,37);if(!CLIENT_SERVICE_REF_PATTERN.test(serviceRef))throw new ProcessContractError();const sr=obj(r.sections);if(Object.keys(sr).some(k=>!PROCESS_SECTION_NAMES.includes(k as ProcessSectionName)))throw new ProcessContractError();const sections=Object.freeze(Object.fromEntries(Object.entries(sr).map(([k,x])=>[k,section(x)])))as Partial<Record<ProcessSectionName,ProcessSectionDto>>;const st=r.status===undefined?undefined:status(r.status),next=r.nextAction===undefined?undefined:action(r.nextAction),resp=r.responsibleParty===undefined?undefined:party(r.responsibleParty),blocks=r.blockers===undefined?undefined:arr(r.blockers,12,blocker),milestones=r.milestones===undefined?undefined:arr(r.milestones,24,milestone),tl=r.timeline===undefined?undefined:timeline(r.timeline),confirmed=r.lastConfirmedAt===undefined?undefined:date(r.lastConfirmedAt);return Object.freeze({schemaVersion:"m010.detail.v1",availability:availability(r.availability),context:context(r.context),service:Object.freeze({serviceRef,label:text(s.label,160),...(s.instanceLabel===undefined?{}:{instanceLabel:text(s.instanceLabel,120)})}),...(st?{status:st}:{}),...(next?{nextAction:next}:{}),...(resp?{responsibleParty:resp}:{}),...(blocks?{blockers:blocks}:{}),...(milestones?{milestones}:{}),...(tl?{timeline:tl}:{}),sections,...(confirmed?{lastConfirmedAt:confirmed}:{})})}
+export const PROCESS_STATUS_CODES = [
+  "not_started",
+  "waiting_for_payment",
+  "waiting_for_client",
+  "under_review",
+  "approved_to_start",
+  "in_progress",
+  "waiting_for_external_party",
+  "action_required",
+  "on_hold",
+  "completed",
+  "cancelled",
+  "refunded",
+] as const;
+export const PROCESS_SECTION_NAMES = [
+  "tasks",
+  "documents",
+  "payments",
+  "appointments",
+  "dependencies",
+  "help",
+  "messages",
+  "deliverables",
+] as const;
+export const PROCESS_ROUTE_KEYS = [
+  "services",
+  "status",
+  "documents",
+  "appointments",
+  "messages",
+  "payments",
+  "help",
+  "support",
+] as const;
+export const PROCESS_TIMELINE_COPY_KEYS = [
+  "timeline.step_completed",
+  "timeline.action_required",
+  "timeline.document_received",
+  "timeline.payment_received",
+  "timeline.appointment_scheduled",
+  "timeline.message_received",
+  "timeline.deliverable_ready",
+] as const;
+export const PROCESS_MILESTONE_STATES = [
+  "completed",
+  "current",
+  "upcoming",
+  "blocked",
+  "skipped",
+  "cancelled",
+] as const;
+export const PROCESS_STATUS_POLICY_VERSION = "m010.status.v2" as const;
+export const PROCESS_LANDING_CURSOR_PATTERN = /^psc1_[A-Za-z0-9_-]{24,256}$/u;
+export const PROCESS_TIMELINE_CURSOR_PATTERN = /^ptc1_[A-Za-z0-9_-]{24,256}$/u;
+export const PROCESS_EVENT_REF_PATTERN = /^pev1_[A-Za-z0-9_-]{32}$/u;
+export type ProcessStatusCode = (typeof PROCESS_STATUS_CODES)[number];
+export type ProcessSectionName = (typeof PROCESS_SECTION_NAMES)[number];
+export type ProcessRouteKey = (typeof PROCESS_ROUTE_KEYS)[number];
+export type ProcessTimelineCopyKey = (typeof PROCESS_TIMELINE_COPY_KEYS)[number];
+export type ProcessMilestoneState = (typeof PROCESS_MILESTONE_STATES)[number];
+export type ProcessLocale = "es" | "en";
+export type ProcessAvailability =
+  | "fresh"
+  | "empty"
+  | "unconfirmed"
+  | "partial"
+  | "stale"
+  | "unavailable";
+export type ProcessResponsibleParty =
+  | "client"
+  | "sg_solutions"
+  | "external_entity"
+  | "partner"
+  | "none";
+export interface ProcessContextDto {
+  type: ClientServiceContextType;
+  label: string;
+}
+export interface ProcessChoiceDto {
+  serviceRef: string;
+  serviceLabel: string;
+  instanceLabel?: string;
+  context: ProcessContextDto;
+}
+export interface ClientProcessLandingDto {
+  schemaVersion: "m010.landing.v1";
+  availability: ProcessAvailability;
+  context: ProcessContextDto;
+  choices: readonly ProcessChoiceDto[];
+  hasMore: boolean;
+  cursor?: string;
+}
+export interface ProcessStatusDto {
+  code: ProcessStatusCode;
+}
+export interface ProcessActionDto {
+  type:
+    | "security_identity"
+    | "blocking_payment"
+    | "blocking_document"
+    | "signature"
+    | "due_task"
+    | "immediate_appointment"
+    | "missing_information"
+    | "general_action";
+  label: string;
+  responsibleParty: ProcessResponsibleParty;
+  routeKey: ProcessRouteKey;
+}
+export interface ProcessBlockerDto {
+  code: string;
+  label: string;
+  effect: "action_required" | "on_hold" | "informational";
+  responsibleParty: ProcessResponsibleParty;
+  routeKey?: ProcessRouteKey;
+}
+export interface ProcessMilestoneDto {
+  label: string;
+  state: ProcessMilestoneState;
+  date?: string;
+}
+export interface ProcessTimelineItemDto {
+  eventRef: string;
+  code: string;
+  copyKey: ProcessTimelineCopyKey;
+  actorCategory: ProcessResponsibleParty;
+  occurredAt: string;
+  routeKey?: ProcessRouteKey;
+}
+export interface ProcessTimelineDto {
+  state: "fresh" | "empty" | "unconfirmed" | "unavailable";
+  items: readonly ProcessTimelineItemDto[];
+  hasMore: boolean;
+  cursor?: string;
+}
+export interface ProcessSectionItemDto {
+  label: string;
+  statusLabel?: string;
+  date?: string;
+  routeKey?: ProcessRouteKey;
+}
+export type ProcessSectionDto =
+  | { state: "fresh"; asOf: string; items: readonly ProcessSectionItemDto[] }
+  | { state: "empty"; asOf: string }
+  | { state: "stale"; asOf: string }
+  | { state: "unavailable" };
+export interface ClientProcessDetailDto {
+  schemaVersion: "m010.detail.v1";
+  availability: ProcessAvailability;
+  context: ProcessContextDto;
+  service: { serviceRef: string; label: string; instanceLabel?: string };
+  status?: ProcessStatusDto;
+  nextAction?: ProcessActionDto;
+  responsibleParty?: ProcessResponsibleParty;
+  blockers?: readonly ProcessBlockerDto[];
+  milestones?: readonly ProcessMilestoneDto[];
+  timeline?: ProcessTimelineDto;
+  sections: Partial<Record<ProcessSectionName, ProcessSectionDto>>;
+  lastConfirmedAt?: string;
+}
+export class ProcessContractError extends Error {
+  constructor() {
+    super("PROCESS_STATUS_CONTRACT_INVALID");
+    this.name = "ProcessContractError";
+  }
+}
+function obj(v: unknown) {
+  if (!v || typeof v !== "object" || Array.isArray(v)) throw new ProcessContractError();
+  return v as Record<string, unknown>;
+}
+function exact(v: Record<string, unknown>, a: readonly string[]) {
+  if (Object.keys(v).some((k) => !a.includes(k))) throw new ProcessContractError();
+}
+function hasControlCharacter(value: string): boolean {
+  return Array.from(value).some((character) => character.charCodeAt(0) <= 0x1f);
+}
+function text(v: unknown, m = 200) {
+  if (typeof v !== "string" || !v.trim() || v.length > m || hasControlCharacter(v))
+    throw new ProcessContractError();
+  return v;
+}
+function one<T extends readonly string[]>(v: unknown, a: T): T[number] {
+  if (typeof v !== "string" || !a.includes(v)) throw new ProcessContractError();
+  return v as T[number];
+}
+function date(v: unknown) {
+  const x = text(v, 40);
+  if (
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/u.test(x) ||
+    !Number.isFinite(Date.parse(x))
+  )
+    throw new ProcessContractError();
+  return x;
+}
+function arr<T>(v: unknown, m: number, p: (x: unknown) => T) {
+  if (!Array.isArray(v) || v.length > m) throw new ProcessContractError();
+  return Object.freeze(v.map(p));
+}
+const parties = ["client", "sg_solutions", "external_entity", "partner", "none"] as const,
+  actionTypes = [
+    "security_identity",
+    "blocking_payment",
+    "blocking_document",
+    "signature",
+    "due_task",
+    "immediate_appointment",
+    "missing_information",
+    "general_action",
+  ] as const,
+  effects = ["action_required", "on_hold", "informational"] as const;
+function context(v: unknown): ProcessContextDto {
+  const r = obj(v);
+  exact(r, ["type", "label"]);
+  return Object.freeze({
+    type: one(r.type, ["personal", "organization"] as const),
+    label: text(r.label, 96),
+  });
+}
+function choice(v: unknown): ProcessChoiceDto {
+  const r = obj(v);
+  exact(r, ["serviceRef", "serviceLabel", "instanceLabel", "context"]);
+  const serviceRef = text(r.serviceRef, 37);
+  if (!CLIENT_SERVICE_REF_PATTERN.test(serviceRef)) throw new ProcessContractError();
+  return Object.freeze({
+    serviceRef,
+    serviceLabel: text(r.serviceLabel, 160),
+    ...(r.instanceLabel === undefined ? {} : { instanceLabel: text(r.instanceLabel, 120) }),
+    context: context(r.context),
+  });
+}
+function availability(v: unknown): ProcessAvailability {
+  return one(v, ["fresh", "empty", "unconfirmed", "partial", "stale", "unavailable"] as const);
+}
+function route(v: unknown): ProcessRouteKey {
+  return one(v, PROCESS_ROUTE_KEYS);
+}
+function party(v: unknown): ProcessResponsibleParty {
+  return one(v, parties);
+}
+function status(v: unknown): ProcessStatusDto {
+  const r = obj(v);
+  exact(r, ["code"]);
+  return Object.freeze({ code: one(r.code, PROCESS_STATUS_CODES) });
+}
+function action(v: unknown): ProcessActionDto {
+  const r = obj(v);
+  exact(r, ["type", "label", "responsibleParty", "routeKey"]);
+  return Object.freeze({
+    type: one(r.type, actionTypes),
+    label: text(r.label, 160),
+    responsibleParty: party(r.responsibleParty),
+    routeKey: route(r.routeKey),
+  });
+}
+function blocker(v: unknown): ProcessBlockerDto {
+  const r = obj(v);
+  exact(r, ["code", "label", "effect", "responsibleParty", "routeKey"]);
+  const code = text(r.code, 64);
+  if (!/^[a-z][a-z0-9_.-]{1,63}$/u.test(code)) throw new ProcessContractError();
+  return Object.freeze({
+    code,
+    label: text(r.label, 160),
+    effect: one(r.effect, effects),
+    responsibleParty: party(r.responsibleParty),
+    ...(r.routeKey === undefined ? {} : { routeKey: route(r.routeKey) }),
+  });
+}
+function milestone(v: unknown): ProcessMilestoneDto {
+  const r = obj(v);
+  exact(r, ["label", "state", "date"]);
+  return Object.freeze({
+    label: text(r.label, 160),
+    state: one(r.state, PROCESS_MILESTONE_STATES),
+    ...(r.date === undefined ? {} : { date: date(r.date) }),
+  });
+}
+function timelineItem(v: unknown): ProcessTimelineItemDto {
+  const r = obj(v);
+  exact(r, ["eventRef", "code", "copyKey", "actorCategory", "occurredAt", "routeKey"]);
+  const eventRef = text(r.eventRef, 37),
+    code = text(r.code, 64);
+  if (!PROCESS_EVENT_REF_PATTERN.test(eventRef) || !/^[a-z][a-z0-9_.-]{1,63}$/u.test(code))
+    throw new ProcessContractError();
+  return Object.freeze({
+    eventRef,
+    code,
+    copyKey: one(r.copyKey, PROCESS_TIMELINE_COPY_KEYS),
+    actorCategory: party(r.actorCategory),
+    occurredAt: date(r.occurredAt),
+    ...(r.routeKey === undefined ? {} : { routeKey: route(r.routeKey) }),
+  });
+}
+function timeline(v: unknown): ProcessTimelineDto {
+  const r = obj(v);
+  exact(r, ["state", "items", "hasMore", "cursor"]);
+  const state = one(r.state, ["fresh", "empty", "unconfirmed", "unavailable"] as const),
+    items = arr(r.items, 20, timelineItem),
+    cursor = r.cursor === undefined ? undefined : text(r.cursor, 261);
+  if (
+    typeof r.hasMore !== "boolean" ||
+    (state !== "fresh" && (items.length || r.hasMore || cursor)) ||
+    r.hasMore !== Boolean(cursor) ||
+    (cursor && !PROCESS_TIMELINE_CURSOR_PATTERN.test(cursor))
+  )
+    throw new ProcessContractError();
+  return Object.freeze({ state, items, hasMore: r.hasMore, ...(cursor ? { cursor } : {}) });
+}
+function sectionItem(v: unknown): ProcessSectionItemDto {
+  const r = obj(v);
+  exact(r, ["label", "statusLabel", "date", "routeKey"]);
+  return Object.freeze({
+    label: text(r.label, 160),
+    ...(r.statusLabel === undefined ? {} : { statusLabel: text(r.statusLabel, 120) }),
+    ...(r.date === undefined ? {} : { date: date(r.date) }),
+    ...(r.routeKey === undefined ? {} : { routeKey: route(r.routeKey) }),
+  });
+}
+function section(v: unknown): ProcessSectionDto {
+  const r = obj(v),
+    state = one(r.state, ["fresh", "empty", "stale", "unavailable"] as const);
+  if (state === "fresh") {
+    exact(r, ["state", "asOf", "items"]);
+    const items = arr(r.items, 24, sectionItem);
+    if (!items.length) throw new ProcessContractError();
+    return Object.freeze({ state, asOf: date(r.asOf), items });
+  }
+  if (state === "empty" || state === "stale") {
+    exact(r, ["state", "asOf"]);
+    return Object.freeze({ state, asOf: date(r.asOf) });
+  }
+  exact(r, ["state"]);
+  return Object.freeze({ state });
+}
+export function parseClientProcessLandingDto(v: unknown): ClientProcessLandingDto {
+  const r = obj(v);
+  exact(r, ["schemaVersion", "availability", "context", "choices", "hasMore", "cursor"]);
+  if (r.schemaVersion !== "m010.landing.v1" || typeof r.hasMore !== "boolean")
+    throw new ProcessContractError();
+  const choices = arr(r.choices, 24, choice),
+    state = availability(r.availability),
+    cursor = r.cursor === undefined ? undefined : text(r.cursor, 261);
+  if (
+    (cursor && !PROCESS_LANDING_CURSOR_PATTERN.test(cursor)) ||
+    (state === "empty" && choices.length) ||
+    r.hasMore !== Boolean(cursor)
+  )
+    throw new ProcessContractError();
+  return Object.freeze({
+    schemaVersion: "m010.landing.v1",
+    availability: state,
+    context: context(r.context),
+    choices,
+    hasMore: r.hasMore,
+    ...(cursor ? { cursor } : {}),
+  });
+}
+export function parseClientProcessDetailDto(v: unknown): ClientProcessDetailDto {
+  const r = obj(v);
+  exact(r, [
+    "schemaVersion",
+    "availability",
+    "context",
+    "service",
+    "status",
+    "nextAction",
+    "responsibleParty",
+    "blockers",
+    "milestones",
+    "timeline",
+    "sections",
+    "lastConfirmedAt",
+  ]);
+  if (r.schemaVersion !== "m010.detail.v1") throw new ProcessContractError();
+  const s = obj(r.service);
+  exact(s, ["serviceRef", "label", "instanceLabel"]);
+  const serviceRef = text(s.serviceRef, 37);
+  if (!CLIENT_SERVICE_REF_PATTERN.test(serviceRef)) throw new ProcessContractError();
+  const sr = obj(r.sections);
+  if (Object.keys(sr).some((k) => !PROCESS_SECTION_NAMES.includes(k as ProcessSectionName)))
+    throw new ProcessContractError();
+  const sections = Object.freeze(
+    Object.fromEntries(Object.entries(sr).map(([k, x]) => [k, section(x)])),
+  ) as Partial<Record<ProcessSectionName, ProcessSectionDto>>;
+  const st = r.status === undefined ? undefined : status(r.status),
+    next = r.nextAction === undefined ? undefined : action(r.nextAction),
+    resp = r.responsibleParty === undefined ? undefined : party(r.responsibleParty),
+    blocks = r.blockers === undefined ? undefined : arr(r.blockers, 12, blocker),
+    milestones = r.milestones === undefined ? undefined : arr(r.milestones, 24, milestone),
+    tl = r.timeline === undefined ? undefined : timeline(r.timeline),
+    confirmed = r.lastConfirmedAt === undefined ? undefined : date(r.lastConfirmedAt);
+  return Object.freeze({
+    schemaVersion: "m010.detail.v1",
+    availability: availability(r.availability),
+    context: context(r.context),
+    service: Object.freeze({
+      serviceRef,
+      label: text(s.label, 160),
+      ...(s.instanceLabel === undefined ? {} : { instanceLabel: text(s.instanceLabel, 120) }),
+    }),
+    ...(st ? { status: st } : {}),
+    ...(next ? { nextAction: next } : {}),
+    ...(resp ? { responsibleParty: resp } : {}),
+    ...(blocks ? { blockers: blocks } : {}),
+    ...(milestones ? { milestones } : {}),
+    ...(tl ? { timeline: tl } : {}),
+    sections,
+    ...(confirmed ? { lastConfirmedAt: confirmed } : {}),
+  });
+}

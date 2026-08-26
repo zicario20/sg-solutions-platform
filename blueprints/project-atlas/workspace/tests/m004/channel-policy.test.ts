@@ -1,17 +1,21 @@
+import { describe, expect, it } from "vitest";
 import {
   classifyInboundOptOut,
   evaluateAuthorityChange,
   evaluateOutboundPolicy,
   type OutboundPolicyInput,
 } from "../../packages/domain/src/communications/channel-policy.ts";
-import { describe, expect, it } from "vitest";
 
 const now = new Date("2026-08-20T12:00:00.000Z");
 
 function outboundInput(overrides: Partial<OutboundPolicyInput> = {}): OutboundPolicyInput {
   return {
     purpose: "transactional",
-    binding: { bindingId: "binding_1", trustState: "reverified", freshUntil: new Date("2026-08-21T12:00:00.000Z") },
+    binding: {
+      bindingId: "binding_1",
+      trustState: "reverified",
+      freshUntil: new Date("2026-08-21T12:00:00.000Z"),
+    },
     contactPolicy: { state: "normal", version: 7, fence: 42 },
     requiredPolicyVersion: 7,
     requiredFence: 42,
@@ -56,8 +60,28 @@ describe("evaluateOutboundPolicy", () => {
   });
 
   it.each([
-    ["untrusted binding", { binding: { bindingId: "binding_1", trustState: "linked_contact", freshUntil: new Date("2026-08-21T12:00:00.000Z") } }, "binding_not_reverified"],
-    ["stale binding", { binding: { bindingId: "binding_1", trustState: "reverified", freshUntil: new Date("2026-08-19T12:00:00.000Z") } }, "binding_stale"],
+    [
+      "untrusted binding",
+      {
+        binding: {
+          bindingId: "binding_1",
+          trustState: "linked_contact",
+          freshUntil: new Date("2026-08-21T12:00:00.000Z"),
+        },
+      },
+      "binding_not_reverified",
+    ],
+    [
+      "stale binding",
+      {
+        binding: {
+          bindingId: "binding_1",
+          trustState: "reverified",
+          freshUntil: new Date("2026-08-19T12:00:00.000Z"),
+        },
+      },
+      "binding_stale",
+    ],
     ["missing consent receipt", { consent: { state: "granted" } }, "consent_receipt_missing"],
     ["policy version", { requiredPolicyVersion: 8 }, "policy_version_mismatch"],
     ["policy fence", { requiredFence: 43 }, "policy_fence_mismatch"],
@@ -76,7 +100,11 @@ describe("evaluateOutboundPolicy", () => {
     expect(
       evaluateOutboundPolicy(
         outboundInput({
-          binding: { bindingId: "binding_1", trustState: "reverified", freshUntil: new Date("invalid") },
+          binding: {
+            bindingId: "binding_1",
+            trustState: "reverified",
+            freshUntil: new Date("invalid"),
+          },
         }),
       ),
     ).toEqual({ allowed: false, code: "binding_freshness_invalid" });
@@ -91,11 +119,15 @@ describe("evaluateOutboundPolicy", () => {
 
       expect(
         evaluateOutboundPolicy(
-          outboundInput({ consent: { state: "granted", receipt: { ...consentReceipt!, receiptId } } }),
+          outboundInput({
+            consent: { state: "granted", receipt: { ...consentReceipt!, receiptId } },
+          }),
         ),
       ).toEqual({ allowed: false, code: "consent_receipt_invalid" });
       expect(
-        evaluateOutboundPolicy(outboundInput({ authorizationReceipt: { ...dispatchReceipt!, receiptId } })),
+        evaluateOutboundPolicy(
+          outboundInput({ authorizationReceipt: { ...dispatchReceipt!, receiptId } }),
+        ),
       ).toEqual({ allowed: false, code: "authority_receipt_invalid" });
       expect(
         evaluateAuthorityChange({
@@ -117,36 +149,41 @@ describe("evaluateOutboundPolicy", () => {
 });
 
 describe("authority and opt-out gates", () => {
-  it.each(["reconsent", "consent_grant", "ambiguous_opt_out_resolution", "binding_revalidation"] as const)(
-    "requires a durable typed receipt for %s",
-    (operation) => {
-      expect(evaluateAuthorityChange({ operation, bindingId: "binding_1", now })).toEqual({
-        allowed: false,
-        code: "authority_receipt_missing",
-      });
-      expect(
-        evaluateAuthorityChange({
+  it.each([
+    "reconsent",
+    "consent_grant",
+    "ambiguous_opt_out_resolution",
+    "binding_revalidation",
+  ] as const)("requires a durable typed receipt for %s", (operation) => {
+    expect(evaluateAuthorityChange({ operation, bindingId: "binding_1", now })).toEqual({
+      allowed: false,
+      code: "authority_receipt_missing",
+    });
+    expect(
+      evaluateAuthorityChange({
+        operation,
+        bindingId: "binding_1",
+        now,
+        receipt: {
+          receiptId: "authority_receipt_1",
+          owner: operation === "binding_revalidation" ? "identity" : "consent",
           operation,
           bindingId: "binding_1",
-          now,
-          receipt: {
-            receiptId: "authority_receipt_1",
-            owner: operation === "binding_revalidation" ? "identity" : "consent",
-            operation,
-            bindingId: "binding_1",
-            issuedAt: now,
-            expiresAt: new Date("2026-08-21T12:00:00.000Z"),
-          },
-        }),
-      ).toEqual({ allowed: true, code: "allowed" });
-    },
-  );
+          issuedAt: now,
+          expiresAt: new Date("2026-08-21T12:00:00.000Z"),
+        },
+      }),
+    ).toEqual({ allowed: true, code: "allowed" });
+  });
 
   it("keeps injected synthetic commands disabled without approved policy", () => {
     let called = false;
     const matcher = {
       lexiconVersion: "fixture-v1",
-      match: () => ((called = true), "matched" as const),
+      match: () => {
+        called = true;
+        return "matched" as const;
+      },
     };
     expect(Reflect.apply(classifyInboundOptOut, undefined, [{ text: "STOP", matcher }])).toEqual({
       action: "none",
@@ -163,7 +200,11 @@ describe("authority and opt-out gates", () => {
     } as const;
     expect(
       Reflect.apply(classifyInboundOptOut, undefined, [
-        { text: "STOP", policy, matcher: { lexiconVersion: "fixture-v1", match: () => "ambiguous" } },
+        {
+          text: "STOP",
+          policy,
+          matcher: { lexiconVersion: "fixture-v1", match: () => "ambiguous" },
+        },
       ]),
     ).toEqual({ action: "none", code: "opt_out_policy_disabled" });
   });

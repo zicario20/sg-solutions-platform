@@ -2,9 +2,9 @@ import { createHash } from "node:crypto";
 
 import type {
   AcceptPublicFormCommand,
+  FormConsentRequirement,
   FormDefinitionVersion,
   FormFieldDefinition,
-  FormConsentRequirement,
 } from "../../packages/domain/src/public-forms/index.ts";
 import {
   MemoryPublicFormsRepository,
@@ -13,11 +13,13 @@ import {
 
 export const REVIEW_NOW = new Date("2026-08-20T12:00:00.000Z");
 
-export function reviewDefinition(input: {
-  fields?: readonly FormFieldDefinition[];
-  consents?: readonly FormConsentRequirement[];
-  approvedActions?: FormDefinitionVersion["approvedActions"];
-} = {}): FormDefinitionVersion {
+export function reviewDefinition(
+  input: {
+    fields?: readonly FormFieldDefinition[];
+    consents?: readonly FormConsentRequirement[];
+    approvedActions?: FormDefinitionVersion["approvedActions"];
+  } = {},
+): FormDefinitionVersion {
   return Object.freeze({
     formCode: "contact",
     version: "1.0.0",
@@ -78,12 +80,14 @@ export function createReviewService(definition = reviewDefinition()) {
   return { repository, service };
 }
 
-export function reviewCommand(input: {
-  answers?: AcceptPublicFormCommand["answers"];
-  consents?: AcceptPublicFormCommand["consents"];
-  sessionBinding?: string;
-  idempotencyKey?: string;
-} = {}): AcceptPublicFormCommand {
+export function reviewCommand(
+  input: {
+    answers?: AcceptPublicFormCommand["answers"];
+    consents?: AcceptPublicFormCommand["consents"];
+    sessionBinding?: string;
+    idempotencyKey?: string;
+  } = {},
+): AcceptPublicFormCommand {
   return Object.freeze({
     formCode: "contact",
     formVersion: "1.0.0",

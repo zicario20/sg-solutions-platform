@@ -91,19 +91,21 @@ export function sameVerifiedProviderStatusRecord(
   );
 }
 
-export function createVerifiedProviderStatusReceiptAuthority(options: {
-  readonly nextReceiptId?: () => string;
-} = {}): Readonly<{
+export function createVerifiedProviderStatusReceiptAuthority(
+  options: { readonly nextReceiptId?: () => string } = {},
+): Readonly<{
   issuer: VerifiedProviderStatusReceiptIssuer;
   resolver: VerifiedProviderStatusReceiptResolver;
 }> {
   const evidenceByReceipt = new WeakMap<object, VerifiedProviderStatusEvidence>();
-  const nextReceiptId = options.nextReceiptId ?? (() => {
-    if (!globalThis.crypto || typeof globalThis.crypto.randomUUID !== "function") {
-      throw new Error("VERIFIED_PROVIDER_STATUS_RECEIPT_UNAVAILABLE");
-    }
-    return `provider_status_${globalThis.crypto.randomUUID().replaceAll("-", "")}`;
-  });
+  const nextReceiptId =
+    options.nextReceiptId ??
+    (() => {
+      if (!globalThis.crypto || typeof globalThis.crypto.randomUUID !== "function") {
+        throw new Error("VERIFIED_PROVIDER_STATUS_RECEIPT_UNAVAILABLE");
+      }
+      return `provider_status_${globalThis.crypto.randomUUID().replaceAll("-", "")}`;
+    });
 
   const issuer: VerifiedProviderStatusReceiptIssuer = Object.freeze({
     issue(input: Omit<VerifiedProviderStatusEvidence, "receiptId" | "verification">) {

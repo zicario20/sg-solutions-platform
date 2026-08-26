@@ -1,3 +1,41 @@
 import type { DashboardDto } from "@atlas/dashboard";
-import { recordDashboardEvent, type DashboardEvent } from "@atlas/observability";
-export function createDashboardAnalyticsConfig(dto: DashboardDto): readonly DashboardEvent[] { const events: DashboardEvent[] = [recordDashboardEvent("client_dashboard_viewed", { locale: dto.locale, routeCode: "home", resultCode: "ok" }), recordDashboardEvent("client_dashboard_priority_viewed", { locale: dto.locale, widgetCode: "priority", sectionState: dto.priority.kind === "action" ? "fresh" : dto.priority.kind === "none" ? "empty" : "unconfirmed", policyVersion: dto.priority.policyVersion })]; for (const [widgetCode, section] of Object.entries({ security: dto.security, services: dto.services, tasks: dto.tasks, documents: dto.documents, appointments: dto.appointments, payments: dto.payments, messages: dto.messages, notifications: dto.notifications, help: dto.help })) events.push(recordDashboardEvent("client_dashboard_widget_state", { locale: dto.locale, widgetCode, sectionState: section.state })); return Object.freeze(events); }
+import { type DashboardEvent, recordDashboardEvent } from "@atlas/observability";
+export function createDashboardAnalyticsConfig(dto: DashboardDto): readonly DashboardEvent[] {
+  const events: DashboardEvent[] = [
+    recordDashboardEvent("client_dashboard_viewed", {
+      locale: dto.locale,
+      routeCode: "home",
+      resultCode: "ok",
+    }),
+    recordDashboardEvent("client_dashboard_priority_viewed", {
+      locale: dto.locale,
+      widgetCode: "priority",
+      sectionState:
+        dto.priority.kind === "action"
+          ? "fresh"
+          : dto.priority.kind === "none"
+            ? "empty"
+            : "unconfirmed",
+      policyVersion: dto.priority.policyVersion,
+    }),
+  ];
+  for (const [widgetCode, section] of Object.entries({
+    security: dto.security,
+    services: dto.services,
+    tasks: dto.tasks,
+    documents: dto.documents,
+    appointments: dto.appointments,
+    payments: dto.payments,
+    messages: dto.messages,
+    notifications: dto.notifications,
+    help: dto.help,
+  }))
+    events.push(
+      recordDashboardEvent("client_dashboard_widget_state", {
+        locale: dto.locale,
+        widgetCode,
+        sectionState: section.state,
+      }),
+    );
+  return Object.freeze(events);
+}

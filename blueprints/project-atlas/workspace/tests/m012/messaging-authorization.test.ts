@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
 import {
   authorizeConversation,
   createDevelopmentMessageCipher,
-  SecureMessagingService,
   MemoryMessagingRepository,
+  SecureMessagingService,
 } from "@atlas/secure-messaging";
+import { describe, expect, it } from "vitest";
 
 const actor = {
   accountId: "account-a",

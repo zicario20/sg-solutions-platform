@@ -1,1 +1,84 @@
-import{existsSync,readFileSync,readdirSync,statSync}from"node:fs";import{resolve}from"node:path";import{describe,expect,it}from"vitest";import{PROCESS_STATUS_ANALYTICS_EVENTS,createProcessStatusAnalyticsEvent}from"@atlas/observability";const workspace=resolve(import.meta.dirname,"../.."),read=(path:string)=>readFileSync(resolve(workspace,path),"utf8");function walk(root:string):string[]{if(!existsSync(root))return[];return readdirSync(root).flatMap(name=>{const path=resolve(root,name);return statSync(path).isDirectory()?walk(path):[path]})}describe("M010 final architecture remediation",()=>{it("AR-002 owns the exact required critical set",()=>{const registry=read("packages/client-process-status/src/source-registry.ts"),query=read("packages/client-process-status/src/query-service.ts");expect(registry).toContain("REQUIRED_PROCESS_SOURCE_CODES");expect(registry).toContain("entry.critical!==true");expect(query).toContain("REQUIRED_PROCESS_SOURCE_CODES.map");expect(query).not.toContain("filter(e=>e.critical).every")});it("AR-005 uses watermark/keyset continuation and no offset",()=>{const source=["packages/client-process-status/src/ports.ts","packages/client-process-status/src/timeline-policy.ts","packages/client-process-status/src/query-service.ts"].map(read).join("\n");for(const token of["highWatermark","timelineSourceVersion","nextKeyset","timelineContinuation","mappingPolicyVersion"])expect(source).toContain(token);expect(source).not.toMatch(/\boffset\b/u)});it("AR-009 has one authoritative v2 contract",()=>{expect(read("packages/client-process-status/src/contracts.ts")).toContain('PROCESS_STATUS_POLICY_VERSION="m010.status.v2"');expect(read("packages/client-process-status/src/status-policy.ts")).not.toContain('"m010.status.v1"')});it("AR-013 allowlists only emitted events and removes inert markers",()=>{expect(PROCESS_STATUS_ANALYTICS_EVENTS).toEqual(["process_status_health_landing","process_status_health_detail","process_status_health_ssr","process_status_health_unavailable"]);expect(createProcessStatusAnalyticsEvent("process_status_health_ssr",{outcome:"ok"})).toEqual({event:"process_status_health_ssr",outcome:"ok"});expect(read("packages/ui/src/process-status/ProcessTimeline.tsx")).not.toContain("data-analytics-event")});it("AR-013 rejects direct schema writes and privileged storage bypasses in M010 runtime",()=>{const direct=["packages/client-process-status","apps/app/src/lib/process-status","apps/app/src/app/api/client/process-status"].flatMap(path=>walk(resolve(workspace,path))),governed=["packages/database","apps/app/src/jobs","apps/app/src/inngest","packages/jobs"].flatMap(path=>walk(resolve(workspace,path))).filter(path=>/[/\\](?:m010|client[-_]process[-_]status)[^/\\]*\.(?:ts|tsx|sql)$/iu.test(path)),source=[...direct,...governed].filter(path=>/\.(ts|tsx|sql)$/u.test(path)).map(path=>readFileSync(path,"utf8")).join("\n");expect(source).not.toMatch(/create\s+table|service_role|bypassrls/iu)})});
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { resolve } from "node:path";
+import {
+  createProcessStatusAnalyticsEvent,
+  PROCESS_STATUS_ANALYTICS_EVENTS,
+} from "@atlas/observability";
+import { describe, expect, it } from "vitest";
+
+const workspace = resolve(import.meta.dirname, "../.."),
+  read = (path: string) => readFileSync(resolve(workspace, path), "utf8");
+function walk(root: string): string[] {
+  if (!existsSync(root)) return [];
+  return readdirSync(root).flatMap((name) => {
+    const path = resolve(root, name);
+    return statSync(path).isDirectory() ? walk(path) : [path];
+  });
+}
+describe("M010 final architecture remediation", () => {
+  it("AR-002 owns the exact required critical set", () => {
+    const registry = read("packages/client-process-status/src/source-registry.ts"),
+      query = read("packages/client-process-status/src/query-service.ts");
+    expect(registry).toContain("REQUIRED_PROCESS_SOURCE_CODES");
+    expect(registry.replace(/\s+/gu, "")).toContain("entry.critical!==true");
+    expect(query).toContain("REQUIRED_PROCESS_SOURCE_CODES.map");
+    expect(query).not.toContain("filter(e=>e.critical).every");
+  });
+  it("AR-005 uses watermark/keyset continuation and no offset", () => {
+    const source = [
+      "packages/client-process-status/src/ports.ts",
+      "packages/client-process-status/src/timeline-policy.ts",
+      "packages/client-process-status/src/query-service.ts",
+    ]
+      .map(read)
+      .join("\n");
+    for (const token of [
+      "highWatermark",
+      "timelineSourceVersion",
+      "nextKeyset",
+      "timelineContinuation",
+      "mappingPolicyVersion",
+    ])
+      expect(source).toContain(token);
+    expect(source).not.toMatch(/\boffset\b/u);
+  });
+  it("AR-009 has one authoritative v2 contract", () => {
+    expect(read("packages/client-process-status/src/contracts.ts").replace(/\s+/gu, "")).toContain(
+      'PROCESS_STATUS_POLICY_VERSION="m010.status.v2"',
+    );
+    expect(read("packages/client-process-status/src/status-policy.ts")).not.toContain(
+      '"m010.status.v1"',
+    );
+  });
+  it("AR-013 allowlists only emitted events and removes inert markers", () => {
+    expect(PROCESS_STATUS_ANALYTICS_EVENTS).toEqual([
+      "process_status_health_landing",
+      "process_status_health_detail",
+      "process_status_health_ssr",
+      "process_status_health_unavailable",
+    ]);
+    expect(
+      createProcessStatusAnalyticsEvent("process_status_health_ssr", { outcome: "ok" }),
+    ).toEqual({ event: "process_status_health_ssr", outcome: "ok" });
+    expect(read("packages/ui/src/process-status/ProcessTimeline.tsx")).not.toContain(
+      "data-analytics-event",
+    );
+  });
+  it("AR-013 rejects direct schema writes and privileged storage bypasses in M010 runtime", () => {
+    const direct = [
+        "packages/client-process-status",
+        "apps/app/src/lib/process-status",
+        "apps/app/src/app/api/client/process-status",
+      ].flatMap((path) => walk(resolve(workspace, path))),
+      governed = ["packages/database", "apps/app/src/jobs", "apps/app/src/inngest", "packages/jobs"]
+        .flatMap((path) => walk(resolve(workspace, path)))
+        .filter((path) =>
+          /[/\\](?:m010|client[-_]process[-_]status)[^/\\]*\.(?:ts|tsx|sql)$/iu.test(path),
+        ),
+      source = [...direct, ...governed]
+        .filter((path) => /\.(ts|tsx|sql)$/u.test(path))
+        .map((path) => readFileSync(path, "utf8"))
+        .join("\n");
+    expect(source).not.toMatch(/create\s+table|service_role|bypassrls/iu);
+  });
+});

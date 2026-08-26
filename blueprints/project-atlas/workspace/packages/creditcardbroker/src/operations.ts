@@ -1,5 +1,35 @@
-import { type CcbIntegrationMode, type CcbOffer } from "./contracts.ts";
-export type CcbOperation = Readonly<{ id: string; type: "rule_review" | "offer_sync" | "link_review" | "conversion_review" | "commission_reconciliation" | "security_review"; idempotencyKey: string; status: "blocked"; createdAt: string }>;
-export const scheduleCcbOperation = (value: Omit<CcbOperation, "status">, existing: readonly CcbOperation[]): CcbOperation => { if (existing.some((item) => item.idempotencyKey === value.idempotencyKey)) throw new Error("CCB operation idempotency conflict."); return { ...value, status: "blocked" }; };
-export const canUseCcbIntegration = (value: CcbIntegrationMode) => ({ allowed: false as const, reason: value.authorizationStatus === "approved" ? "provider_disabled" as const : "authorization_not_active" as const });
-export const createMaterialChange = (offer: CcbOffer) => ({ offerId: offer.id, blocking: true as const, status: "open" as const, nextStep: "human_review" as const });
+import type { CcbIntegrationMode, CcbOffer } from "./contracts.ts";
+export type CcbOperation = Readonly<{
+  id: string;
+  type:
+    | "rule_review"
+    | "offer_sync"
+    | "link_review"
+    | "conversion_review"
+    | "commission_reconciliation"
+    | "security_review";
+  idempotencyKey: string;
+  status: "blocked";
+  createdAt: string;
+}>;
+export const scheduleCcbOperation = (
+  value: Omit<CcbOperation, "status">,
+  existing: readonly CcbOperation[],
+): CcbOperation => {
+  if (existing.some((item) => item.idempotencyKey === value.idempotencyKey))
+    throw new Error("CCB operation idempotency conflict.");
+  return { ...value, status: "blocked" };
+};
+export const canUseCcbIntegration = (value: CcbIntegrationMode) => ({
+  allowed: false as const,
+  reason:
+    value.authorizationStatus === "approved"
+      ? ("provider_disabled" as const)
+      : ("authorization_not_active" as const),
+});
+export const createMaterialChange = (offer: CcbOffer) => ({
+  offerId: offer.id,
+  blocking: true as const,
+  status: "open" as const,
+  nextStep: "human_review" as const,
+});

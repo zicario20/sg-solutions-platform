@@ -1,24 +1,18 @@
-import {
-  createCipheriv,
-  createDecipheriv,
-  createHmac,
-  randomBytes,
-  randomUUID,
-} from "node:crypto";
+import { createCipheriv, createDecipheriv, createHmac, randomBytes, randomUUID } from "node:crypto";
 import {
   createPublicFormsSql,
   PostgresFormOutboxStore,
   PostgresPublicFormsRepository,
 } from "@atlas/database";
 import {
-  createProviderDisabledPublicFormPorts,
-  PublicFormsLifecycleService,
-  PublicFormsService,
-  SyntheticFormOutboxStore,
   type AnswerProtectionPort,
+  createProviderDisabledPublicFormPorts,
   type DraftProtectionPort,
   type FormOutboxStore,
+  PublicFormsLifecycleService,
   type PublicFormsRepository,
+  PublicFormsService,
+  SyntheticFormOutboxStore,
 } from "@atlas/domain";
 
 import {
@@ -38,7 +32,10 @@ export type ProviderDisabledPublicFormsRuntimeConfig = Readonly<{
   outboxStore: FormOutboxStore;
   admissionScope?: "local" | "public";
   rateLimiter?: FormRateLimiter;
-  networkBucket?: (request: Request, operation: FormAdmissionOperation) => Promise<string | undefined>;
+  networkBucket?: (
+    request: Request,
+    operation: FormAdmissionOperation,
+  ) => Promise<string | undefined>;
   clock?: Clock;
   secrets: Readonly<{
     admission: string;
@@ -63,7 +60,9 @@ function encryptedValueBoundary(input: {
     const cipher = createCipheriv("aes-256-gcm", input.key, nonce);
     cipher.setAAD(Buffer.from(context, "utf8"));
     const ciphertext = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
-    return [nonce, cipher.getAuthTag(), ciphertext].map((part) => part.toString("base64url")).join(".");
+    return [nonce, cipher.getAuthTag(), ciphertext]
+      .map((part) => part.toString("base64url"))
+      .join(".");
   };
   const open = (payload: string, context: string): string => {
     const parts = payload.split(".").map((part) => Buffer.from(part, "base64url"));
@@ -99,7 +98,8 @@ function encryptedValueBoundary(input: {
           ciphertext: seal(JSON.stringify(value.value), context),
           keyReference: input.keyReference,
           encryptionContextVersion: "m006.answer.v1" as const,
-          ...(value.matchDigestRequired && (value.fieldType === "email" || value.fieldType === "tel")
+          ...(value.matchDigestRequired &&
+          (value.fieldType === "email" || value.fieldType === "tel")
             ? { matchDigest: matchDigest(value.fieldType, value.value) }
             : {}),
         };
@@ -209,7 +209,8 @@ export function createProviderDisabledPublicFormsRuntime(
       clock,
       ttlSeconds: 900,
     }),
-    rateLimiter: config.rateLimiter ?? createMemoryFormRateLimiter({ limit: 20, windowSeconds: 60 }),
+    rateLimiter:
+      config.rateLimiter ?? createMemoryFormRateLimiter({ limit: 20, windowSeconds: 60 }),
     async networkBucket(request, operation) {
       const identity = config.networkBucket
         ? await config.networkBucket(request, operation)
@@ -251,7 +252,9 @@ export function configureAttestedPublicFormsRuntime(
   return configuredRuntime;
 }
 
-function configuredProviderDisabledRuntime(): ReturnType<typeof createProviderDisabledPublicFormsRuntime> | undefined {
+function configuredProviderDisabledRuntime():
+  | ReturnType<typeof createProviderDisabledPublicFormsRuntime>
+  | undefined {
   if (import.meta.env.PUBLIC_FORMS_DATABASE_URL) {
     throw new Error("PUBLIC_FORMS_DATABASE_CREDENTIAL_MUST_BE_SERVER_ONLY");
   }

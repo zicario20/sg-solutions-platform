@@ -1,7 +1,4 @@
-import type {
-  MetaCredentialResolver,
-  MetaTemplateConnectionAuthority,
-} from "./credentials.ts";
+import type { MetaCredentialResolver, MetaTemplateConnectionAuthority } from "./credentials.ts";
 import {
   type CanonicalProviderEnvelope,
   META_SUPPORTED_INBOUND_KINDS,
@@ -54,18 +51,7 @@ const MAX_TEMPLATE_AUTHORITY_LIFETIME_MS = 24 * 60 * 60 * 1_000;
 // These statuses prove the provider rejected the request before accepting a message. Timeouts,
 // throttling, conflict, redirects, informational responses and server failures remain ambiguous.
 const PRE_ACCEPTANCE_REJECTION_STATUSES = new Set([
-  400,
-  401,
-  403,
-  404,
-  405,
-  406,
-  410,
-  411,
-  413,
-  414,
-  415,
-  422,
+  400, 401, 403, 404, 405, 406, 410, 411, 413, 414, 415, 422,
 ]);
 
 class DuplicateJsonKeyError extends Error {}
@@ -145,7 +131,8 @@ class BoundedJsonParser {
       return output;
     }
     while (true) {
-      if (output.length >= MAX_JSON_COLLECTION_ENTRIES) throw new SyntaxError("array limit exceeded");
+      if (output.length >= MAX_JSON_COLLECTION_ENTRIES)
+        throw new SyntaxError("array limit exceeded");
       output.push(this.parseValue(depth));
       this.skipWhitespace();
       const delimiter = this.source[this.index];
@@ -341,7 +328,14 @@ function normalizeMessage(
   context: ResolvedVerifiedWebhookContext,
 ): CanonicalProviderEnvelope | UnsupportedVerifiedEnvelope {
   if (
-    !hasOnlyKeys(value, ["messaging_product", "metadata", "contacts", "messages", "statuses", "errors"]) ||
+    !hasOnlyKeys(value, [
+      "messaging_product",
+      "metadata",
+      "contacts",
+      "messages",
+      "statuses",
+      "errors",
+    ]) ||
     value.messaging_product !== "whatsapp" ||
     !isRecord(value.metadata) ||
     !hasOnlyKeys(value.metadata, ["display_phone_number", "phone_number_id"]) ||
@@ -357,11 +351,20 @@ function normalizeMessage(
   if (hasMessages === hasStatuses) return unsupported(context, "ambiguous_payload");
 
   if (hasStatuses) {
-    if ((value.statuses as unknown[]).length !== 1) return unsupported(context, "ambiguous_payload");
+    if ((value.statuses as unknown[]).length !== 1)
+      return unsupported(context, "ambiguous_payload");
     const status = (value.statuses as unknown[])[0];
     if (
       !isRecord(status) ||
-      !hasOnlyKeys(status, ["id", "status", "timestamp", "recipient_id", "conversation", "pricing", "errors"]) ||
+      !hasOnlyKeys(status, [
+        "id",
+        "status",
+        "timestamp",
+        "recipient_id",
+        "conversation",
+        "pricing",
+        "errors",
+      ]) ||
       !EXTERNAL_IDENTIFIER.test(String(status.id ?? "")) ||
       !["sent", "delivered", "read", "failed"].includes(String(status.status))
     ) {
@@ -487,7 +490,15 @@ function normalizeMessage(
     }
     const media = message[kind] as JsonRecord;
     if (
-      !hasOnlyKeys(media, ["id", "mime_type", "sha256", "filename", "caption", "voice", "animated"]) ||
+      !hasOnlyKeys(media, [
+        "id",
+        "mime_type",
+        "sha256",
+        "filename",
+        "caption",
+        "voice",
+        "animated",
+      ]) ||
       !EXTERNAL_IDENTIFIER.test(String(media.id ?? "")) ||
       (media.mime_type !== undefined &&
         (typeof media.mime_type !== "string" || !MIME_TYPE.test(media.mime_type))) ||
@@ -578,10 +589,12 @@ async function normalizeTemplate(
   context: ResolvedVerifiedWebhookContext,
   credentials: MetaCredentialResolver,
 ): Promise<CanonicalProviderEnvelope | UnsupportedVerifiedEnvelope> {
-  const status = typeof value.event === "string" ? STATUS_BY_TEMPLATE_EVENT.get(value.event) : undefined;
-  const category = typeof value.message_template_category === "string"
-    ? CATEGORY_BY_PROVIDER.get(value.message_template_category)
-    : undefined;
+  const status =
+    typeof value.event === "string" ? STATUS_BY_TEMPLATE_EVENT.get(value.event) : undefined;
+  const category =
+    typeof value.message_template_category === "string"
+      ? CATEGORY_BY_PROVIDER.get(value.message_template_category)
+      : undefined;
 
   if (
     !hasOnlyKeys(value, [
@@ -614,7 +627,11 @@ async function normalizeTemplate(
   const components: { type: "body" | "footer" | "header"; format?: "text"; text: string }[] = [];
   const seenTypes = new Set<string>();
   for (const candidate of value.message_template_components) {
-    if (!isRecord(candidate) || typeof candidate.type !== "string" || seenTypes.has(candidate.type)) {
+    if (
+      !isRecord(candidate) ||
+      typeof candidate.type !== "string" ||
+      seenTypes.has(candidate.type)
+    ) {
       return unsupported(context, "template_manual_review");
     }
     seenTypes.add(candidate.type);
@@ -760,7 +777,13 @@ function validTemplateContent(content: unknown): boolean {
 function validDispatchCommand(command: unknown): command is ProviderDispatchCommand {
   if (
     !isRecord(command) ||
-    !hasOnlyKeys(command, ["connectionId", "recipientEndpoint", "correlationId", "idempotencyKey", "content"]) ||
+    !hasOnlyKeys(command, [
+      "connectionId",
+      "recipientEndpoint",
+      "correlationId",
+      "idempotencyKey",
+      "content",
+    ]) ||
     !IDENTIFIER.test(String(command.connectionId ?? "")) ||
     !ENDPOINT.test(String(command.recipientEndpoint ?? "")) ||
     !IDENTIFIER.test(String(command.correlationId ?? "")) ||
@@ -770,7 +793,9 @@ function validDispatchCommand(command: unknown): command is ProviderDispatchComm
     return false;
   }
   if (command.content.kind === "text") {
-    return hasOnlyKeys(command.content, ["kind", "body"]) && isString(command.content.body, 1, 4_096);
+    return (
+      hasOnlyKeys(command.content, ["kind", "body"]) && isString(command.content.body, 1, 4_096)
+    );
   }
   return validTemplateContent(command.content);
 }
@@ -816,7 +841,10 @@ function dispatchBody(command: ProviderDispatchCommand): JsonRecord {
           : {}),
         parameters:
           component.type === "button"
-            ? component.parameters.map((parameter) => ({ type: "payload", payload: parameter.payload }))
+            ? component.parameters.map((parameter) => ({
+                type: "payload",
+                payload: parameter.payload,
+              }))
             : component.parameters.map((parameter) => ({ type: "text", text: parameter.text })),
       })),
     },
@@ -997,7 +1025,11 @@ export function createMetaCloudAdapter(options: MetaCloudAdapterOptions): WhatsA
           statusCode: status,
         };
       }
-      const rawResponse = await readBoundedResponse(response, options.maxProviderResponseBytes, signal);
+      const rawResponse = await readBoundedResponse(
+        response,
+        options.maxProviderResponseBytes,
+        signal,
+      );
       if (!rawResponse) return { status: "dispatch_unknown", reason: "acceptance_ambiguous" };
       const externalMessageReference = acceptedReference(rawResponse);
       if (!externalMessageReference) {

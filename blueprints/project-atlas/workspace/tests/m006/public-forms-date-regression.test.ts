@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { createReviewService, reviewCommand, reviewDefinition } from "./public-forms-review-fixtures.ts";
+import {
+  createReviewService,
+  reviewCommand,
+  reviewDefinition,
+} from "./public-forms-review-fixtures.ts";
 
 const definition = reviewDefinition({
   fields: Object.freeze([

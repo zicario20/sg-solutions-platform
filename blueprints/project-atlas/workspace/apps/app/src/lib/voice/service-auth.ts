@@ -29,10 +29,7 @@ export type VoiceCredentialRepositoryResult =
   | "replay"
   | "capacity"
   | "unavailable";
-export type VoiceCredentialRepositoryDurability =
-  | "shared_durable"
-  | "bounded_test"
-  | "unavailable";
+export type VoiceCredentialRepositoryDurability = "shared_durable" | "bounded_test" | "unavailable";
 
 type VoiceCredentialRepositoryInput = Readonly<{
   namespace: string;
@@ -45,7 +42,9 @@ export interface VoiceCredentialRepository {
   readonly durability: VoiceCredentialRepositoryDurability;
   consumeNonce(input: VoiceCredentialRepositoryInput): Promise<VoiceCredentialRepositoryResult>;
   issueCredential(input: VoiceCredentialRepositoryInput): Promise<VoiceCredentialRepositoryResult>;
-  consumeCredential(input: VoiceCredentialRepositoryInput): Promise<VoiceCredentialRepositoryResult>;
+  consumeCredential(
+    input: VoiceCredentialRepositoryInput,
+  ): Promise<VoiceCredentialRepositoryResult>;
 }
 
 type MemoryCredentialEntry = {
@@ -69,14 +68,10 @@ function validRepositoryInput(input: VoiceCredentialRepositoryInput): boolean {
 }
 
 function repositoryKey(input: VoiceCredentialRepositoryInput): string {
-  return createHash("sha256")
-    .update(`${input.namespace}\u0000${input.token}`)
-    .digest("hex");
+  return createHash("sha256").update(`${input.namespace}\u0000${input.token}`).digest("hex");
 }
 
-export class UnavailableVoiceCredentialRepository
-  implements VoiceCredentialRepository
-{
+export class UnavailableVoiceCredentialRepository implements VoiceCredentialRepository {
   readonly durability = "unavailable" as const;
 
   async consumeNonce(): Promise<VoiceCredentialRepositoryResult> {
@@ -90,9 +85,7 @@ export class UnavailableVoiceCredentialRepository
   }
 }
 
-export class BoundedMemoryVoiceCredentialRepository
-  implements VoiceCredentialRepository
-{
+export class BoundedMemoryVoiceCredentialRepository implements VoiceCredentialRepository {
   readonly durability = "bounded_test" as const;
   private readonly entries = new Map<string, MemoryCredentialEntry>();
   private readonly capacity: number;
@@ -300,7 +293,15 @@ export class VoiceServiceAuthenticator {
     ) {
       return false;
     }
-    if ((await this.canonicalVerifier.verify({ audience: AUDIENCE, scopes: ["voice.execute"] }, { audience: AUDIENCE, scopes: ["voice.execute"] })).kind !== "allowed") return false;
+    if (
+      (
+        await this.canonicalVerifier.verify(
+          { audience: AUDIENCE, scopes: ["voice.execute"] },
+          { audience: AUDIENCE, scopes: ["voice.execute"] },
+        )
+      ).kind !== "allowed"
+    )
+      return false;
     try {
       return (
         (await this.repository.consumeNonce({

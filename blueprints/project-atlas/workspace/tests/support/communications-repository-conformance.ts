@@ -361,7 +361,10 @@ export function runCommunicationsRepositoryConformance(
           leaseExpiresAt: CONFORMANCE_LEASE_END,
           now: CONFORMANCE_NOW,
         });
-        expect(claimed).toMatchObject({ status: "claimed", attempt: { ordinal: 1, leaseVersion: 1 } });
+        expect(claimed).toMatchObject({
+          status: "claimed",
+          attempt: { ordinal: 1, leaseVersion: 1 },
+        });
         if (claimed.status !== "claimed") throw new Error("CONFORMANCE_OUTBOUND_NOT_CLAIMED");
         await expect(
           repository.markDispatchOutcome({
@@ -508,13 +511,15 @@ export function runCommunicationsRepositoryConformance(
         second.envelope.event.eventId = `event_${suffix(`${scenario}-second`)}`;
         second.envelope.event.messageId = `message_${suffix(`${scenario}-second`)}`;
         second.envelope.message.id = second.envelope.event.messageId;
-        await expect(Promise.all([repository.acceptInbound(first), repository.acceptInbound(second)]))
-          .resolves.toEqual([
-            expect.objectContaining({ status: "accepted" }),
-            expect.objectContaining({ status: "accepted" }),
-          ]);
+        await expect(
+          Promise.all([repository.acceptInbound(first), repository.acceptInbound(second)]),
+        ).resolves.toEqual([
+          expect.objectContaining({ status: "accepted" }),
+          expect.objectContaining({ status: "accepted" }),
+        ]);
         const crossBinding = structuredClone(first);
-        crossBinding.envelope.event.bindingId = communicationsConformanceIds(scenario).secondaryBindingId;
+        crossBinding.envelope.event.bindingId =
+          communicationsConformanceIds(scenario).secondaryBindingId;
         crossBinding.envelope.participant.bindingId = crossBinding.envelope.event.bindingId;
         await expect(repository.acceptInbound(crossBinding)).resolves.toEqual({
           status: "replay_mismatch",
@@ -528,31 +533,41 @@ export function runCommunicationsRepositoryConformance(
     });
 
     it("uses zero-based persisted inbound versions and increments every lease claim", async () => {
-      await withHarness(factory, `${label}-inbound-versions`, async ({ repository, inspectState }) => {
-        const scenario = `${label}-inbound-versions`;
-        const command = inbound(scenario);
-        await expect(repository.acceptInbound(command)).resolves.toMatchObject({ status: "accepted" });
-        if (inspectState) {
-          expect((await inspectState()).inbound).toContainEqual(
-            expect.objectContaining({ eventId: command.envelope.event.eventId, leaseVersion: 0 }),
-          );
-        }
-        await expect(repository.claimInbound({
-          eventId: command.envelope.event.eventId,
-          leaseOwner: "first-owner",
-          leaseExpiresAt: CONFORMANCE_LEASE_END,
-          now: CONFORMANCE_NOW,
-          requiredPolicyVersion: 7,
-        })).resolves.toMatchObject({ status: "claimed", leaseVersion: 1 });
-        const reclaimNow = new Date(CONFORMANCE_LEASE_END.getTime() + 1);
-        await expect(repository.claimInbound({
-          eventId: command.envelope.event.eventId,
-          leaseOwner: "second-owner",
-          leaseExpiresAt: new Date(reclaimNow.getTime() + 60_000),
-          now: reclaimNow,
-          requiredPolicyVersion: 7,
-        })).resolves.toMatchObject({ status: "claimed", leaseVersion: 2 });
-      });
+      await withHarness(
+        factory,
+        `${label}-inbound-versions`,
+        async ({ repository, inspectState }) => {
+          const scenario = `${label}-inbound-versions`;
+          const command = inbound(scenario);
+          await expect(repository.acceptInbound(command)).resolves.toMatchObject({
+            status: "accepted",
+          });
+          if (inspectState) {
+            expect((await inspectState()).inbound).toContainEqual(
+              expect.objectContaining({ eventId: command.envelope.event.eventId, leaseVersion: 0 }),
+            );
+          }
+          await expect(
+            repository.claimInbound({
+              eventId: command.envelope.event.eventId,
+              leaseOwner: "first-owner",
+              leaseExpiresAt: CONFORMANCE_LEASE_END,
+              now: CONFORMANCE_NOW,
+              requiredPolicyVersion: 7,
+            }),
+          ).resolves.toMatchObject({ status: "claimed", leaseVersion: 1 });
+          const reclaimNow = new Date(CONFORMANCE_LEASE_END.getTime() + 1);
+          await expect(
+            repository.claimInbound({
+              eventId: command.envelope.event.eventId,
+              leaseOwner: "second-owner",
+              leaseExpiresAt: new Date(reclaimNow.getTime() + 60_000),
+              now: reclaimNow,
+              requiredPolicyVersion: 7,
+            }),
+          ).resolves.toMatchObject({ status: "claimed", leaseVersion: 2 });
+        },
+      );
     });
 
     it("rejects opposite cross-binding provider replays without binding-lock inversion", async () => {
@@ -577,10 +592,12 @@ export function runCommunicationsRepositoryConformance(
         const secondaryAsPrimary = structuredClone(secondary);
         secondaryAsPrimary.envelope.event.bindingId = value.bindingId;
         secondaryAsPrimary.envelope.participant.bindingId = value.bindingId;
-        await expect(Promise.all([
-          repository.acceptInbound(primaryAsSecondary),
-          repository.acceptInbound(secondaryAsPrimary),
-        ])).resolves.toEqual([
+        await expect(
+          Promise.all([
+            repository.acceptInbound(primaryAsSecondary),
+            repository.acceptInbound(secondaryAsPrimary),
+          ]),
+        ).resolves.toEqual([
           { status: "replay_mismatch", code: "provider_replay_mismatch" },
           { status: "replay_mismatch", code: "provider_replay_mismatch" },
         ]);
@@ -620,36 +637,45 @@ export function runCommunicationsRepositoryConformance(
           purpose: "transactional" as const,
           templateId: `template_${suffix(scenario)}`,
         };
-        await expect(repository.createOutbound(draft)).resolves.toMatchObject({ status: "created" });
+        await expect(repository.createOutbound(draft)).resolves.toMatchObject({
+          status: "created",
+        });
         await expect(repository.createOutbound(draft)).resolves.toMatchObject({
           status: "duplicate",
           reason: "outbound_draft_unresolved",
         });
         await expect(
-          repository.createOutbound({ ...draft, message: { ...draft.message, body: "ALTERED-BODY" } }),
+          repository.createOutbound({
+            ...draft,
+            message: { ...draft.message, body: "ALTERED-BODY" },
+          }),
         ).resolves.toEqual({ status: "conflict", code: "idempotency_mismatch" });
-        await expect(repository.createOutbound({
-          ...draft,
-          command: { ...draft.command, locale: "es" },
-          message: { ...draft.message, locale: "es" },
-        })).resolves.toEqual({ status: "conflict", code: "idempotency_mismatch" });
-        await expect(repository.finalizeOutbound({
-          commandId: value.commandId,
-          fingerprint: "c".repeat(64),
-          requiredPolicyVersion: 7,
-          requiredFence: 42,
-          endpointDigests: [{ version: "endpoint.v1", digest: "b".repeat(64) }],
-          authorizationReceipt: {
-            receiptId: `dispatch_${suffix(scenario)}`,
-            owner: "communications",
-            operation: "outbound_dispatch",
-            bindingId: value.bindingId,
-            destinationKey: `endpoint_ref:${"b".repeat(64)}`,
-            issuedAt: CONFORMANCE_NOW,
-            expiresAt: CONFORMANCE_TOMORROW,
-          },
-          now: CONFORMANCE_NOW,
-        })).resolves.toMatchObject({ status: "created" });
+        await expect(
+          repository.createOutbound({
+            ...draft,
+            command: { ...draft.command, locale: "es" },
+            message: { ...draft.message, locale: "es" },
+          }),
+        ).resolves.toEqual({ status: "conflict", code: "idempotency_mismatch" });
+        await expect(
+          repository.finalizeOutbound({
+            commandId: value.commandId,
+            fingerprint: "c".repeat(64),
+            requiredPolicyVersion: 7,
+            requiredFence: 42,
+            endpointDigests: [{ version: "endpoint.v1", digest: "b".repeat(64) }],
+            authorizationReceipt: {
+              receiptId: `dispatch_${suffix(scenario)}`,
+              owner: "communications",
+              operation: "outbound_dispatch",
+              bindingId: value.bindingId,
+              destinationKey: `endpoint_ref:${"b".repeat(64)}`,
+              issuedAt: CONFORMANCE_NOW,
+              expiresAt: CONFORMANCE_TOMORROW,
+            },
+            now: CONFORMANCE_NOW,
+          }),
+        ).resolves.toMatchObject({ status: "created" });
         await expect(repository.createOutbound(draft)).resolves.toEqual({
           status: "duplicate",
           commandId: value.commandId,
@@ -668,7 +694,9 @@ export function runCommunicationsRepositoryConformance(
             id: `message_secondary_${suffix(scenario)}`,
           },
         };
-        await expect(repository.createOutbound(secondary)).resolves.toMatchObject({ status: "created" });
+        await expect(repository.createOutbound(secondary)).resolves.toMatchObject({
+          status: "created",
+        });
       });
     });
 
@@ -705,259 +733,364 @@ export function runCommunicationsRepositoryConformance(
           templateId: `template_${suffix(scenario)}`,
         };
       };
-      await withHarness(factory, `${label}-outbound-race-same`, async ({ repository, inspectState }) => {
-        const scenario = `${label}-outbound-race-same`;
-        await repository.acceptInbound(inbound(scenario));
-        const draft = draftFor(scenario, "same", "SAME-BODY");
-        const results = await Promise.all([
-          repository.createOutbound(draft),
-          repository.createOutbound(structuredClone(draft)),
-        ]);
-        expect(results.map((result) => result.status).sort()).toEqual(["created", "duplicate"]);
-        if (inspectState) {
-          expect((await inspectState()).outbound).toEqual([
-            expect.objectContaining({ commandId: draft.command.commandId, state: "draft" }),
+      await withHarness(
+        factory,
+        `${label}-outbound-race-same`,
+        async ({ repository, inspectState }) => {
+          const scenario = `${label}-outbound-race-same`;
+          await repository.acceptInbound(inbound(scenario));
+          const draft = draftFor(scenario, "same", "SAME-BODY");
+          const results = await Promise.all([
+            repository.createOutbound(draft),
+            repository.createOutbound(structuredClone(draft)),
           ]);
-        }
-      });
-      await withHarness(factory, `${label}-outbound-race-altered`, async ({ repository, inspectState }) => {
-        const scenario = `${label}-outbound-race-altered`;
-        await repository.acceptInbound(inbound(scenario));
-        const first = draftFor(scenario, "first", "FIRST-BODY");
-        const second = draftFor(scenario, "second", "SECOND-BODY");
-        const results = await Promise.all([
-          repository.createOutbound(first),
-          repository.createOutbound(second),
-        ]);
-        expect(results.map((result) => result.status).sort()).toEqual(["conflict", "created"]);
-        if (inspectState) {
-          const state = await inspectState();
-          expect(state.outbound).toHaveLength(1);
-          expect([first.command.commandId, second.command.commandId]).toContain(
-            state.outbound[0]?.commandId,
-          );
-        }
-      });
+          expect(results.map((result) => result.status).sort()).toEqual(["created", "duplicate"]);
+          if (inspectState) {
+            expect((await inspectState()).outbound).toEqual([
+              expect.objectContaining({ commandId: draft.command.commandId, state: "draft" }),
+            ]);
+          }
+        },
+      );
+      await withHarness(
+        factory,
+        `${label}-outbound-race-altered`,
+        async ({ repository, inspectState }) => {
+          const scenario = `${label}-outbound-race-altered`;
+          await repository.acceptInbound(inbound(scenario));
+          const first = draftFor(scenario, "first", "FIRST-BODY");
+          const second = draftFor(scenario, "second", "SECOND-BODY");
+          const results = await Promise.all([
+            repository.createOutbound(first),
+            repository.createOutbound(second),
+          ]);
+          expect(results.map((result) => result.status).sort()).toEqual(["conflict", "created"]);
+          if (inspectState) {
+            const state = await inspectState();
+            expect(state.outbound).toHaveLength(1);
+            expect([first.command.commandId, second.command.commandId]).toContain(
+              state.outbound[0]?.commandId,
+            );
+          }
+        },
+      );
     });
 
     it("round-trips failure and unknown outcomes and applies provider statuses idempotently", async () => {
       for (const outcome of ["known_failure", "unknown"] as const) {
-        await withHarness(factory, `${label}-outcome-${outcome}`, async ({ repository, inspectState }) => {
-          const scenario = `${label}-outcome-${outcome}`;
+        await withHarness(
+          factory,
+          `${label}-outcome-${outcome}`,
+          async ({ repository, inspectState }) => {
+            const scenario = `${label}-outcome-${outcome}`;
+            const value = await queueOutbound(repository, scenario);
+            const attemptId = `attempt_${suffix(scenario)}`;
+            const claimed = await repository.claimOutbound({
+              commandId: value.commandId,
+              attemptId,
+              leaseOwner: "outcome-owner",
+              leaseExpiresAt: CONFORMANCE_LEASE_END,
+              now: CONFORMANCE_NOW,
+            });
+            if (claimed.status !== "claimed") throw new Error("CONFORMANCE_OUTBOUND_NOT_CLAIMED");
+            await expect(
+              repository.markDispatchOutcome({
+                commandId: value.commandId,
+                attemptId,
+                leaseOwner: "outcome-owner",
+                leaseVersion: claimed.attempt.leaseVersion,
+                outcome,
+                now: CONFORMANCE_NOW,
+              }),
+            ).resolves.toBe("completed");
+            if (inspectState) {
+              const attempt = (await inspectState()).attempts.find(
+                (row) => row.attemptId === attemptId,
+              );
+              expect(attempt?.resultCode).toBe(outcome);
+            }
+          },
+        );
+      }
+      await withHarness(
+        factory,
+        `${label}-provider-status`,
+        async ({ repository, inspectState, providerStatusReceiptIssuer }) => {
+          const scenario = `${label}-provider-status`;
           const value = await queueOutbound(repository, scenario);
           const attemptId = `attempt_${suffix(scenario)}`;
           const claimed = await repository.claimOutbound({
             commandId: value.commandId,
             attemptId,
-            leaseOwner: "outcome-owner",
+            leaseOwner: "status-owner",
             leaseExpiresAt: CONFORMANCE_LEASE_END,
             now: CONFORMANCE_NOW,
           });
           if (claimed.status !== "claimed") throw new Error("CONFORMANCE_OUTBOUND_NOT_CLAIMED");
-          await expect(repository.markDispatchOutcome({
+          await repository.markDispatchOutcome({
             commandId: value.commandId,
             attemptId,
-            leaseOwner: "outcome-owner",
+            leaseOwner: "status-owner",
             leaseVersion: claimed.attempt.leaseVersion,
-            outcome,
+            outcome: "accepted",
+            providerReference: `provider_ref_${suffix(scenario)}`,
             now: CONFORMANCE_NOW,
-          })).resolves.toBe("completed");
-          if (inspectState) {
-            const attempt = (await inspectState()).attempts.find((row) => row.attemptId === attemptId);
-            expect(attempt?.resultCode).toBe(outcome);
-          }
-        });
-      }
-      await withHarness(factory, `${label}-provider-status`, async ({ repository, inspectState, providerStatusReceiptIssuer }) => {
-        const scenario = `${label}-provider-status`;
-        const value = await queueOutbound(repository, scenario);
-        const attemptId = `attempt_${suffix(scenario)}`;
-        const claimed = await repository.claimOutbound({ commandId: value.commandId, attemptId,
-          leaseOwner: "status-owner", leaseExpiresAt: CONFORMANCE_LEASE_END, now: CONFORMANCE_NOW });
-        if (claimed.status !== "claimed") throw new Error("CONFORMANCE_OUTBOUND_NOT_CLAIMED");
-        await repository.markDispatchOutcome({ commandId: value.commandId, attemptId,
-          leaseOwner: "status-owner", leaseVersion: claimed.attempt.leaseVersion,
-          outcome: "accepted", providerReference: `provider_ref_${suffix(scenario)}`, now: CONFORMANCE_NOW });
-        const status = {
-          commandId: value.commandId,
-          attemptId,
-          receipt: providerStatusReceiptIssuer.issue({
-            connectionId: value.connectionId,
-            externalMessageReference: `provider_ref_${suffix(scenario)}`,
-            providerEventId: `status_${suffix(scenario)}`,
-            status: "delivered",
-            occurredAt: CONFORMANCE_NOW,
-            verifiedAt: CONFORMANCE_NOW,
-            bodyDigest: "a".repeat(64),
-            correlationId: `correlation_out_${suffix(scenario)}`,
-          }),
-        };
-        const crossConnectionStatus = {
-          commandId: value.commandId,
-          attemptId,
-          receipt: providerStatusReceiptIssuer.issue({
-            connectionId: `connection_other_${suffix(scenario)}`,
-            externalMessageReference: `provider_ref_${suffix(scenario)}`,
-            providerEventId: `status_other_${suffix(scenario)}`,
-            status: "delivered",
-            occurredAt: CONFORMANCE_NOW,
-            verifiedAt: CONFORMANCE_NOW,
-            bodyDigest: "a".repeat(64),
-            correlationId: `correlation_out_${suffix(scenario)}`,
-          }),
-        };
-        await expect(repository.applyProviderStatus(crossConnectionStatus)).resolves.toEqual({
-          status: "denied",
-          code: "provider_status_binding_mismatch",
-        });
-        await expect(repository.applyProviderStatus(status)).resolves.toMatchObject({ status: "applied" });
-        await expect(repository.applyProviderStatus(status)).resolves.toMatchObject({ status: "duplicate" });
-        if (inspectState) {
-          expect((await inspectState()).providerStatuses).toContainEqual(
-            expect.objectContaining({
-              commandId: value.commandId,
-              attemptId,
+          });
+          const status = {
+            commandId: value.commandId,
+            attemptId,
+            receipt: providerStatusReceiptIssuer.issue({
+              connectionId: value.connectionId,
+              externalMessageReference: `provider_ref_${suffix(scenario)}`,
               providerEventId: `status_${suffix(scenario)}`,
               status: "delivered",
+              occurredAt: CONFORMANCE_NOW,
+              verifiedAt: CONFORMANCE_NOW,
+              bodyDigest: "a".repeat(64),
+              correlationId: `correlation_out_${suffix(scenario)}`,
             }),
-          );
-        }
-      });
+          };
+          const crossConnectionStatus = {
+            commandId: value.commandId,
+            attemptId,
+            receipt: providerStatusReceiptIssuer.issue({
+              connectionId: `connection_other_${suffix(scenario)}`,
+              externalMessageReference: `provider_ref_${suffix(scenario)}`,
+              providerEventId: `status_other_${suffix(scenario)}`,
+              status: "delivered",
+              occurredAt: CONFORMANCE_NOW,
+              verifiedAt: CONFORMANCE_NOW,
+              bodyDigest: "a".repeat(64),
+              correlationId: `correlation_out_${suffix(scenario)}`,
+            }),
+          };
+          await expect(repository.applyProviderStatus(crossConnectionStatus)).resolves.toEqual({
+            status: "denied",
+            code: "provider_status_binding_mismatch",
+          });
+          await expect(repository.applyProviderStatus(status)).resolves.toMatchObject({
+            status: "applied",
+          });
+          await expect(repository.applyProviderStatus(status)).resolves.toMatchObject({
+            status: "duplicate",
+          });
+          if (inspectState) {
+            expect((await inspectState()).providerStatuses).toContainEqual(
+              expect.objectContaining({
+                commandId: value.commandId,
+                attemptId,
+                providerEventId: `status_${suffix(scenario)}`,
+                status: "delivered",
+              }),
+            );
+          }
+        },
+      );
     });
 
     it("advances consent provenance, persists withdrawal history, and binds template definitions", async () => {
-      await withHarness(factory, `${label}-authority-history`, async ({ repository, inspectState }) => {
-        const scenario = `${label}-authority-history`;
-        const value = communicationsConformanceIds(scenario);
-        const nextReceipt = {
-          receiptId: `consent_next_${suffix(scenario)}`,
-          owner: "consent" as const,
-          operation: "consent_grant" as const,
-          bindingId: value.bindingId,
-          issuedAt: CONFORMANCE_NOW,
-          expiresAt: CONFORMANCE_TOMORROW,
-        };
-        await expect(repository.grantConsentFromReceipt({ bindingId: value.bindingId,
-          purpose: "transactional", operation: "consent_grant", receipt: nextReceipt,
-          now: CONFORMANCE_NOW })).resolves.toMatchObject({ status: "changed", version: 2 });
-        await expect(repository.grantConsentFromReceipt({ bindingId: value.bindingId,
-          purpose: "transactional", operation: "consent_grant", receipt: nextReceipt,
-          now: CONFORMANCE_NOW })).resolves.toMatchObject({ status: "duplicate", version: 2 });
-        const accepted = inbound(scenario);
-        await repository.acceptInbound(accepted);
-        const inboundReceipt = { receiptId: `withdraw_${suffix(scenario)}`,
-          owner: "communications" as const, operation: "inbound_opt_out" as const,
-          bindingId: value.bindingId, eventId: accepted.envelope.event.eventId,
-          issuedAt: CONFORMANCE_NOW, expiresAt: CONFORMANCE_TOMORROW,
-          correlationId: accepted.envelope.event.correlationId };
-        await expect(repository.withdrawContact({ bindingId: value.bindingId,
-          evidence: { source: "inbound_event", receipt: { ...inboundReceipt, owner: "consent" as never } },
-          now: CONFORMANCE_NOW })).resolves.toMatchObject({ status: "denied" });
-        await expect(repository.withdrawContact({ bindingId: value.bindingId,
-          evidence: { source: "inbound_event", receipt: inboundReceipt }, now: CONFORMANCE_NOW }))
-          .resolves.toMatchObject({ status: "changed" });
-        const templateId = `template_${suffix(scenario)}`;
-        await expect(repository.reconcileTemplate({ templateId, locale: "en",
-          providerState: "provider_approved", providerVersion: 2,
-          correlationId: `template_${suffix(scenario)}`,
-          receipt: { receiptId: `template_receipt_${suffix(scenario)}`,
-            owner: "communications", operation: "template_provider_reconciliation",
-            templateId, locale: "en", definitionVersion: 99, providerVersion: 2,
-            providerState: "provider_approved", issuedAt: CONFORMANCE_NOW,
-            expiresAt: CONFORMANCE_TOMORROW, correlationId: `template_${suffix(scenario)}` },
-          now: CONFORMANCE_NOW })).resolves.toEqual({ status: "denied", code: "provider_receipt_invalid" });
-        if (inspectState) {
-          const state = await inspectState();
-          expect(state.consentHistory
-            .filter((record) => record.bindingId === value.bindingId && record.purpose === "transactional")
-            .slice(-2)
-            .map(({ state, version, authorityReceiptId }) => ({ state, version, authorityReceiptId })))
-            .toEqual([
-              { state: "granted", version: 2, authorityReceiptId: nextReceipt.receiptId },
-              { state: "withdrawn", version: 3, authorityReceiptId: undefined },
-            ]);
-          expect(state.withdrawalHistory.at(-1)).toMatchObject({
-            bindingId: value.bindingId,
-            source: "inbound_event",
-            receiptId: inboundReceipt.receiptId,
-            eventId: inboundReceipt.eventId,
-          });
-        }
-      });
-    });
-
-    it("atomically withdraws multiple purpose histories from one contact evidence receipt", async () => {
-      await withHarness(factory, `${label}-contact-withdrawal`, async ({ repository, inspectState }) => {
-        const scenario = `${label}-contact-withdrawal`;
-        const value = communicationsConformanceIds(scenario);
-        for (const purpose of ["transactional", "service"] as const) {
-          await expect(repository.grantConsentFromReceipt({
-            bindingId: value.bindingId,
-            purpose,
-            operation: "consent_grant",
-            receipt: {
-              receiptId: `grant_${purpose}_${suffix(scenario)}`,
-              owner: "consent",
-              operation: "consent_grant",
-              bindingId: value.bindingId,
-              issuedAt: CONFORMANCE_NOW,
-              expiresAt: CONFORMANCE_TOMORROW,
-            },
-            now: CONFORMANCE_NOW,
-          })).resolves.toMatchObject({ status: "changed", version: 2 });
-        }
-        await expect(repository.grantConsentFromReceipt({
-          bindingId: value.bindingId,
-          purpose: "transactional",
-          operation: "consent_grant",
-          receipt: {
-            receiptId: `grant_transactional_next_${suffix(scenario)}`,
-            owner: "consent",
-            operation: "consent_grant",
+      await withHarness(
+        factory,
+        `${label}-authority-history`,
+        async ({ repository, inspectState }) => {
+          const scenario = `${label}-authority-history`;
+          const value = communicationsConformanceIds(scenario);
+          const nextReceipt = {
+            receiptId: `consent_next_${suffix(scenario)}`,
+            owner: "consent" as const,
+            operation: "consent_grant" as const,
             bindingId: value.bindingId,
             issuedAt: CONFORMANCE_NOW,
             expiresAt: CONFORMANCE_TOMORROW,
-          },
-          now: CONFORMANCE_NOW,
-        })).resolves.toMatchObject({ status: "changed", version: 3 });
-        const preQueue = await repository.referenceState();
-        const policy = preQueue.policies
-          .filter((record) => record.bindingId === value.bindingId)
-          .reduce((latest, record) => record.version > latest.version ? record : latest);
-        const queued = await queueOutbound(repository, scenario, {
-          version: policy.version,
-          fence: policy.fence,
-        });
-        const receipt = {
-          receiptId: `contact_withdrawal_${suffix(scenario)}`,
-          owner: "consent" as const,
-          operation: "contact_withdrawal" as const,
-          bindingId: value.bindingId,
-          issuedAt: CONFORMANCE_NOW,
-          expiresAt: CONFORMANCE_TOMORROW,
-          correlationId: `withdrawal_${suffix(scenario)}`,
-        };
-        await expect(repository.withdrawContact({
-          bindingId: value.bindingId,
-          evidence: { source: "authority", receipt },
-          now: CONFORMANCE_NOW,
-        })).resolves.toMatchObject({
-          status: "changed",
-          cancelledCommandIds: [queued.commandId],
-        });
-        const after = inspectState ? await inspectState() : await repository.referenceState();
-        for (const [purpose, version] of [["transactional", 4], ["service", 3]] as const) {
-          expect(after.consentHistory
-            .filter((record) => record.bindingId === value.bindingId && record.purpose === purpose)
-            .at(-1))
-            .toMatchObject({
+          };
+          await expect(
+            repository.grantConsentFromReceipt({
+              bindingId: value.bindingId,
+              purpose: "transactional",
+              operation: "consent_grant",
+              receipt: nextReceipt,
+              now: CONFORMANCE_NOW,
+            }),
+          ).resolves.toMatchObject({ status: "changed", version: 2 });
+          await expect(
+            repository.grantConsentFromReceipt({
+              bindingId: value.bindingId,
+              purpose: "transactional",
+              operation: "consent_grant",
+              receipt: nextReceipt,
+              now: CONFORMANCE_NOW,
+            }),
+          ).resolves.toMatchObject({ status: "duplicate", version: 2 });
+          const accepted = inbound(scenario);
+          await repository.acceptInbound(accepted);
+          const inboundReceipt = {
+            receiptId: `withdraw_${suffix(scenario)}`,
+            owner: "communications" as const,
+            operation: "inbound_opt_out" as const,
+            bindingId: value.bindingId,
+            eventId: accepted.envelope.event.eventId,
+            issuedAt: CONFORMANCE_NOW,
+            expiresAt: CONFORMANCE_TOMORROW,
+            correlationId: accepted.envelope.event.correlationId,
+          };
+          await expect(
+            repository.withdrawContact({
+              bindingId: value.bindingId,
+              evidence: {
+                source: "inbound_event",
+                receipt: { ...inboundReceipt, owner: "consent" as never },
+              },
+              now: CONFORMANCE_NOW,
+            }),
+          ).resolves.toMatchObject({ status: "denied" });
+          await expect(
+            repository.withdrawContact({
+              bindingId: value.bindingId,
+              evidence: { source: "inbound_event", receipt: inboundReceipt },
+              now: CONFORMANCE_NOW,
+            }),
+          ).resolves.toMatchObject({ status: "changed" });
+          const templateId = `template_${suffix(scenario)}`;
+          await expect(
+            repository.reconcileTemplate({
+              templateId,
+              locale: "en",
+              providerState: "provider_approved",
+              providerVersion: 2,
+              correlationId: `template_${suffix(scenario)}`,
+              receipt: {
+                receiptId: `template_receipt_${suffix(scenario)}`,
+                owner: "communications",
+                operation: "template_provider_reconciliation",
+                templateId,
+                locale: "en",
+                definitionVersion: 99,
+                providerVersion: 2,
+                providerState: "provider_approved",
+                issuedAt: CONFORMANCE_NOW,
+                expiresAt: CONFORMANCE_TOMORROW,
+                correlationId: `template_${suffix(scenario)}`,
+              },
+              now: CONFORMANCE_NOW,
+            }),
+          ).resolves.toEqual({ status: "denied", code: "provider_receipt_invalid" });
+          if (inspectState) {
+            const state = await inspectState();
+            expect(
+              state.consentHistory
+                .filter(
+                  (record) =>
+                    record.bindingId === value.bindingId && record.purpose === "transactional",
+                )
+                .slice(-2)
+                .map(({ state, version, authorityReceiptId }) => ({
+                  state,
+                  version,
+                  authorityReceiptId,
+                })),
+            ).toEqual([
+              { state: "granted", version: 2, authorityReceiptId: nextReceipt.receiptId },
+              { state: "withdrawn", version: 3, authorityReceiptId: undefined },
+            ]);
+            expect(state.withdrawalHistory.at(-1)).toMatchObject({
+              bindingId: value.bindingId,
+              source: "inbound_event",
+              receiptId: inboundReceipt.receiptId,
+              eventId: inboundReceipt.eventId,
+            });
+          }
+        },
+      );
+    });
+
+    it("atomically withdraws multiple purpose histories from one contact evidence receipt", async () => {
+      await withHarness(
+        factory,
+        `${label}-contact-withdrawal`,
+        async ({ repository, inspectState }) => {
+          const scenario = `${label}-contact-withdrawal`;
+          const value = communicationsConformanceIds(scenario);
+          for (const purpose of ["transactional", "service"] as const) {
+            await expect(
+              repository.grantConsentFromReceipt({
+                bindingId: value.bindingId,
+                purpose,
+                operation: "consent_grant",
+                receipt: {
+                  receiptId: `grant_${purpose}_${suffix(scenario)}`,
+                  owner: "consent",
+                  operation: "consent_grant",
+                  bindingId: value.bindingId,
+                  issuedAt: CONFORMANCE_NOW,
+                  expiresAt: CONFORMANCE_TOMORROW,
+                },
+                now: CONFORMANCE_NOW,
+              }),
+            ).resolves.toMatchObject({ status: "changed", version: 2 });
+          }
+          await expect(
+            repository.grantConsentFromReceipt({
+              bindingId: value.bindingId,
+              purpose: "transactional",
+              operation: "consent_grant",
+              receipt: {
+                receiptId: `grant_transactional_next_${suffix(scenario)}`,
+                owner: "consent",
+                operation: "consent_grant",
+                bindingId: value.bindingId,
+                issuedAt: CONFORMANCE_NOW,
+                expiresAt: CONFORMANCE_TOMORROW,
+              },
+              now: CONFORMANCE_NOW,
+            }),
+          ).resolves.toMatchObject({ status: "changed", version: 3 });
+          const preQueue = await repository.referenceState();
+          const policy = preQueue.policies
+            .filter((record) => record.bindingId === value.bindingId)
+            .reduce((latest, record) => (record.version > latest.version ? record : latest));
+          const queued = await queueOutbound(repository, scenario, {
+            version: policy.version,
+            fence: policy.fence,
+          });
+          const receipt = {
+            receiptId: `contact_withdrawal_${suffix(scenario)}`,
+            owner: "consent" as const,
+            operation: "contact_withdrawal" as const,
+            bindingId: value.bindingId,
+            issuedAt: CONFORMANCE_NOW,
+            expiresAt: CONFORMANCE_TOMORROW,
+            correlationId: `withdrawal_${suffix(scenario)}`,
+          };
+          await expect(
+            repository.withdrawContact({
+              bindingId: value.bindingId,
+              evidence: { source: "authority", receipt },
+              now: CONFORMANCE_NOW,
+            }),
+          ).resolves.toMatchObject({
+            status: "changed",
+            cancelledCommandIds: [queued.commandId],
+          });
+          const after = inspectState ? await inspectState() : await repository.referenceState();
+          for (const [purpose, version] of [
+            ["transactional", 4],
+            ["service", 3],
+          ] as const) {
+            expect(
+              after.consentHistory
+                .filter(
+                  (record) => record.bindingId === value.bindingId && record.purpose === purpose,
+                )
+                .at(-1),
+            ).toMatchObject({
               state: "withdrawn",
               version,
               authorityReceiptId: undefined,
             });
-        }
-        expect(after.withdrawalHistory.filter((record) => record.receiptId === receipt.receiptId))
-          .toEqual([
+          }
+          expect(
+            after.withdrawalHistory.filter((record) => record.receiptId === receipt.receiptId),
+          ).toEqual([
             expect.objectContaining({
               bindingId: value.bindingId,
               source: "authority",
@@ -965,65 +1098,76 @@ export function runCommunicationsRepositoryConformance(
               correlationId: receipt.correlationId,
             }),
           ]);
-        expect(after.policies
-          .filter((record) => record.bindingId === value.bindingId)
-          .every((record) => record.state === "withdrawn"))
-          .toBe(true);
-        expect(after.outbound).toContainEqual(expect.objectContaining({
-          commandId: queued.commandId,
-          state: "cancelled",
-        }));
-        await expect(repository.withdrawContact({
-          bindingId: value.bindingId,
-          evidence: { source: "authority", receipt },
-          now: CONFORMANCE_NOW,
-        })).resolves.toMatchObject({ status: "duplicate", cancelledCommandIds: [] });
-        const alteredWindowResults = await Promise.all([
-          repository.withdrawContact({
-            bindingId: value.bindingId,
-            evidence: {
-              source: "authority",
-              receipt: {
-                ...receipt,
-                issuedAt: new Date(receipt.issuedAt.getTime() - 1),
+          expect(
+            after.policies
+              .filter((record) => record.bindingId === value.bindingId)
+              .every((record) => record.state === "withdrawn"),
+          ).toBe(true);
+          expect(after.outbound).toContainEqual(
+            expect.objectContaining({
+              commandId: queued.commandId,
+              state: "cancelled",
+            }),
+          );
+          await expect(
+            repository.withdrawContact({
+              bindingId: value.bindingId,
+              evidence: { source: "authority", receipt },
+              now: CONFORMANCE_NOW,
+            }),
+          ).resolves.toMatchObject({ status: "duplicate", cancelledCommandIds: [] });
+          const alteredWindowResults = await Promise.all([
+            repository.withdrawContact({
+              bindingId: value.bindingId,
+              evidence: {
+                source: "authority",
+                receipt: {
+                  ...receipt,
+                  issuedAt: new Date(receipt.issuedAt.getTime() - 1),
+                },
               },
-            },
-            now: CONFORMANCE_NOW,
-          }),
-          repository.withdrawContact({
-            bindingId: value.bindingId,
-            evidence: {
-              source: "authority",
-              receipt: {
-                ...receipt,
-                expiresAt: new Date(receipt.expiresAt.getTime() + 1),
+              now: CONFORMANCE_NOW,
+            }),
+            repository.withdrawContact({
+              bindingId: value.bindingId,
+              evidence: {
+                source: "authority",
+                receipt: {
+                  ...receipt,
+                  expiresAt: new Date(receipt.expiresAt.getTime() + 1),
+                },
               },
-            },
-            now: CONFORMANCE_NOW,
-          }),
-        ]);
-        expect(alteredWindowResults).toEqual([
-          { status: "denied", code: "withdrawal_evidence_invalid" },
-          { status: "denied", code: "withdrawal_evidence_invalid" },
-        ]);
-        await expect(repository.withdrawContact({
-          bindingId: value.bindingId,
-          evidence: {
-            source: "authority",
-            receipt: { ...receipt, correlationId: `${receipt.correlationId}_mismatch` },
-          },
-          now: CONFORMANCE_NOW,
-        })).resolves.toEqual({ status: "denied", code: "withdrawal_evidence_invalid" });
-        const finalState = inspectState ? await inspectState() : await repository.referenceState();
-        expect(finalState.withdrawalHistory.filter((record) => record.receiptId === receipt.receiptId))
-          .toHaveLength(1);
-        expect(finalState.withdrawalHistory.at(-1)).toMatchObject({
-          owner: receipt.owner,
-          operation: receipt.operation,
-          issuedAt: receipt.issuedAt,
-          expiresAt: receipt.expiresAt,
-        });
-      });
+              now: CONFORMANCE_NOW,
+            }),
+          ]);
+          expect(alteredWindowResults).toEqual([
+            { status: "denied", code: "withdrawal_evidence_invalid" },
+            { status: "denied", code: "withdrawal_evidence_invalid" },
+          ]);
+          await expect(
+            repository.withdrawContact({
+              bindingId: value.bindingId,
+              evidence: {
+                source: "authority",
+                receipt: { ...receipt, correlationId: `${receipt.correlationId}_mismatch` },
+              },
+              now: CONFORMANCE_NOW,
+            }),
+          ).resolves.toEqual({ status: "denied", code: "withdrawal_evidence_invalid" });
+          const finalState = inspectState
+            ? await inspectState()
+            : await repository.referenceState();
+          expect(
+            finalState.withdrawalHistory.filter((record) => record.receiptId === receipt.receiptId),
+          ).toHaveLength(1);
+          expect(finalState.withdrawalHistory.at(-1)).toMatchObject({
+            owner: receipt.owner,
+            operation: receipt.operation,
+            issuedAt: receipt.issuedAt,
+            expiresAt: receipt.expiresAt,
+          });
+        },
+      );
     });
 
     it("owns withdrawal receipt timestamps after persistence", async () => {
@@ -1041,27 +1185,31 @@ export function runCommunicationsRepositoryConformance(
           expiresAt: new Date(expiresAt.getTime()),
           correlationId: `withdrawal_date_ownership_${suffix(scenario)}`,
         };
-        await expect(repository.withdrawContact({
-          bindingId: value.bindingId,
-          evidence: { source: "authority", receipt },
-          now: CONFORMANCE_NOW,
-        })).resolves.toMatchObject({ status: "changed" });
+        await expect(
+          repository.withdrawContact({
+            bindingId: value.bindingId,
+            evidence: { source: "authority", receipt },
+            now: CONFORMANCE_NOW,
+          }),
+        ).resolves.toMatchObject({ status: "changed" });
 
         receipt.issuedAt.setTime(receipt.issuedAt.getTime() - 1);
         receipt.expiresAt.setTime(receipt.expiresAt.getTime() + 1);
 
-        await expect(repository.withdrawContact({
-          bindingId: value.bindingId,
-          evidence: {
-            source: "authority",
-            receipt: {
-              ...receipt,
-              issuedAt,
-              expiresAt,
+        await expect(
+          repository.withdrawContact({
+            bindingId: value.bindingId,
+            evidence: {
+              source: "authority",
+              receipt: {
+                ...receipt,
+                issuedAt,
+                expiresAt,
+              },
             },
-          },
-          now: CONFORMANCE_NOW,
-        })).resolves.toMatchObject({ status: "duplicate" });
+            now: CONFORMANCE_NOW,
+          }),
+        ).resolves.toMatchObject({ status: "duplicate" });
         const storedState = await repository.referenceState();
         expect(storedState).toMatchObject({
           withdrawalHistory: [

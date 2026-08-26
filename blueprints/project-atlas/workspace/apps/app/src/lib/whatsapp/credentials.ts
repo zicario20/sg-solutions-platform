@@ -7,7 +7,9 @@ export interface MetaCredentialResolver {
     phoneNumberId: string;
     graphApiVersion: string;
   }>;
-  resolveTemplateConnectionAuthority(input: MetaTemplateAuthorityRequest): Promise<MetaTemplateConnectionAuthority>;
+  resolveTemplateConnectionAuthority(
+    input: MetaTemplateAuthorityRequest,
+  ): Promise<MetaTemplateConnectionAuthority>;
 }
 
 export interface MetaTemplateAuthorityRequest {

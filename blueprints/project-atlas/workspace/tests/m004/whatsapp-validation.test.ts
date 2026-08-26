@@ -4,8 +4,8 @@ import {
   parseWhatsAppText,
   resolveChannelCopy,
 } from "@atlas/validation";
-import { validateSyntheticChannelCopyCatalog } from "../../packages/validation/src/whatsapp.ts";
 import { describe, expect, it } from "vitest";
+import { validateSyntheticChannelCopyCatalog } from "../../packages/validation/src/whatsapp.ts";
 
 describe("WhatsApp validation", () => {
   it("accepts bounded canonical, provider-neutral input", () => {
@@ -54,13 +54,21 @@ describe("WhatsApp validation", () => {
   it.each([
     ["canonical identifier", () => parseWhatsAppInboundInput({ eventId: "bad id" })],
     ["timestamp", () => parseWhatsAppInboundInput({ eventId: "event_1", receivedAt: "tomorrow" })],
-    ["interactive reply identifier", () => parseWhatsAppInboundInput({ eventId: "event_1", interactiveReplyId: "reply id" })],
+    [
+      "interactive reply identifier",
+      () => parseWhatsAppInboundInput({ eventId: "event_1", interactiveReplyId: "reply id" }),
+    ],
     [
       "provider-neutral media metadata",
       () =>
         parseWhatsAppInboundInput({
           eventId: "event_1",
-          media: { mediaReferenceId: "media_1", contentType: "image/jpeg", byteLength: 0, checksum: "a".repeat(64) },
+          media: {
+            mediaReferenceId: "media_1",
+            contentType: "image/jpeg",
+            byteLength: 0,
+            checksum: "a".repeat(64),
+          },
         }),
     ],
   ])("rejects malformed %s without echoing protected input", (_label, parse) => {
@@ -116,7 +124,9 @@ describe("channel safe-copy contracts", () => {
       reconsent_guidance: { es: "Solicite consentimiento", en: "Request consent" },
     } as const;
 
-    expect(Reflect.apply(resolveChannelCopy, undefined, [catalog, "en", "provider_unavailable"])).toEqual({
+    expect(
+      Reflect.apply(resolveChannelCopy, undefined, [catalog, "en", "provider_unavailable"]),
+    ).toEqual({
       available: false,
       code: "copy_unavailable",
     });

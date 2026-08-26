@@ -1,20 +1,20 @@
-import { describe, expect, it } from "vitest";
 import {
-  INITIAL_PROVIDER_INTERFACES,
-  PROVIDER_RUNTIME_DISABLED,
-  ProviderAbstractionError,
   assertExternalProviderCallDisabled,
   classifyRetry,
   createInterface,
   createProvider,
   createProviderAiDraft,
   createRequest,
+  INITIAL_PROVIDER_INTERFACES,
   normalizeResponse,
+  PROVIDER_RUNTIME_DISABLED,
+  ProviderAbstractionError,
   selectProviderRoute,
   validateAdapter,
   validateConfiguration,
   validateEndpoint,
 } from "@atlas/provider-abstraction";
+import { describe, expect, it } from "vitest";
 
 const now = "2026-08-26T00:00:00.000Z";
 
@@ -165,9 +165,9 @@ describe("M041 provider abstraction controlled foundation", () => {
 
   it("validates canonical capability requests, rejects sensitive fields, and records idempotency", () => {
     expect(createRequest(request, capability, [], ["ssn", "ein"])).toEqual(request);
-    expect(() => createRequest({ ...request, id: "request-duplicate" }, capability, [request], ["ssn"])).toThrow(
-      "idempotency",
-    );
+    expect(() =>
+      createRequest({ ...request, id: "request-duplicate" }, capability, [request], ["ssn"]),
+    ).toThrow("idempotency");
     expect(() =>
       createRequest(
         {

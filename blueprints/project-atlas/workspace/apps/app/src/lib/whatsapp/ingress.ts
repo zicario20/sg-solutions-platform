@@ -221,13 +221,7 @@ function failureResponse(
   correlationId: string,
   failure: IngressFailure,
 ): Response {
-  return response(
-    dependencies,
-    correlationId,
-    failure.status,
-    failure.responseBody,
-    failure.code,
-  );
+  return response(dependencies, correlationId, failure.status, failure.responseBody, failure.code);
 }
 
 function validateAuthority(
@@ -273,12 +267,7 @@ async function withTimeout<T>(
       completeCleanup = resolve;
     });
     return {
-      failure: new IngressFailure(
-        failure.code,
-        failure.status,
-        failure.responseBody,
-        cleanup,
-      ),
+      failure: new IngressFailure(failure.code, failure.status, failure.responseBody, cleanup),
       completeCleanup,
     };
   };
@@ -288,9 +277,15 @@ async function withTimeout<T>(
     try {
       cleanup = cleanupOnTimeout
         ? cleanupOnTimeout(operation)
-        : operation.then(() => undefined, () => undefined);
+        : operation.then(
+            () => undefined,
+            () => undefined,
+          );
     } catch {
-      cleanup = operation.then(() => undefined, () => undefined);
+      cleanup = operation.then(
+        () => undefined,
+        () => undefined,
+      );
     }
     void cleanup.then(completeCleanup, completeCleanup);
   };
@@ -396,10 +391,7 @@ async function readRawBody(
   try {
     while (true) {
       const totalRemaining = remainingMilliseconds(deadline, dependencies.clock);
-      const readTimeout = Math.min(
-        dependencies.limits.readTimeoutMilliseconds,
-        totalRemaining,
-      );
+      const readTimeout = Math.min(dependencies.limits.readTimeoutMilliseconds, totalRemaining);
       const timeoutFailure =
         totalRemaining <= dependencies.limits.readTimeoutMilliseconds
           ? new IngressFailure("total_timeout", 504, "unavailable")
@@ -579,7 +571,10 @@ export function createWhatsAppIngressHandler(
         );
 
         if (request.method === "GET") {
-          const challenge = verifyMetaChallenge(new URL(request.url).searchParams, secret.verifyToken);
+          const challenge = verifyMetaChallenge(
+            new URL(request.url).searchParams,
+            secret.verifyToken,
+          );
           if (!challenge.accepted) {
             throw new IngressFailure("verification_rejected", 403, "invalid");
           }

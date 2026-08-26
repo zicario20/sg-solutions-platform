@@ -48,12 +48,12 @@ function expectLifecycle<T extends string>(input: {
       const expectedCode =
         from === to
           ? "duplicate"
-          : input.forbiddenCode?.(from, to) ??
+          : (input.forbiddenCode?.(from, to) ??
             (input.terminal.includes(from)
               ? "terminal"
               : input.allowed[from].includes(to)
                 ? "transitioned"
-                : "invalid_transition");
+                : "invalid_transition"));
       const expectedState = expectedCode === "transitioned" ? to : from;
 
       expect(input.transition(from, to), `${input.name}: ${from} -> ${to}`).toEqual({
@@ -164,7 +164,9 @@ describe("canonical communications state machines", () => {
       transition: transitionOutboundCommand,
       forbiddenCode: (from, to) => {
         const deliveryPrecedence = ["sent", "delivered", "read"] as const;
-        const fromPrecedence = deliveryPrecedence.indexOf(from as (typeof deliveryPrecedence)[number]);
+        const fromPrecedence = deliveryPrecedence.indexOf(
+          from as (typeof deliveryPrecedence)[number],
+        );
         const toPrecedence = deliveryPrecedence.indexOf(to as (typeof deliveryPrecedence)[number]);
         return fromPrecedence > toPrecedence && toPrecedence >= 0 ? "regressive" : undefined;
       },
@@ -488,6 +490,8 @@ describe("canonical communications contracts", () => {
       audit,
     });
 
-    expect(serialized).not.toMatch(/meta|waba|graph|phone|authorization|credential|url|case|payment/iu);
+    expect(serialized).not.toMatch(
+      /meta|waba|graph|phone|authorization|credential|url|case|payment/iu,
+    );
   });
 });

@@ -9,9 +9,9 @@ describe("M006 accessible progressive public form UI", () => {
   it("renders semantic steps, progress, live status and a focused error summary", () => {
     const experience = read("apps/www/src/components/forms/PublicFormExperience.astro");
     const step = read("apps/www/src/components/forms/FormStep.astro");
-    expect(experience).toContain('data-public-form-root');
+    expect(experience).toContain("data-public-form-root");
     expect(experience).toContain('aria-live="polite"');
-    expect(experience).toContain('data-form-error-summary');
+    expect(experience).toContain("data-form-error-summary");
     expect(experience).toContain('tabindex="-1"');
     expect(experience).toContain('role="progressbar"');
     expect(step).toContain("<fieldset");
@@ -24,7 +24,7 @@ describe("M006 accessible progressive public form UI", () => {
     expect(script).not.toMatch(/localStorage|sessionStorage|innerHTML|document\.cookie/u);
     expect(script).toContain("textContent");
     expect(script).toContain("focus()");
-    expect(script).toContain("credentials: \"same-origin\"");
+    expect(script).toContain('credentials: "same-origin"');
   });
 
   it("uses existing brand tokens with mobile reflow and reduced motion", () => {

@@ -1,13 +1,15 @@
 import {
-  DisabledDashboardCache,
   buildDashboardCacheKey,
-  isDashboardSectionCacheable,
   type DashboardAuthorizationSnapshot,
+  DisabledDashboardCache,
+  isDashboardSectionCacheable,
 } from "@atlas/dashboard";
 import { recordDashboardEvent } from "@atlas/observability";
 import { describe, expect, it } from "vitest";
 
-const snapshot = (changes: Partial<DashboardAuthorizationSnapshot> = {}): DashboardAuthorizationSnapshot => ({
+const snapshot = (
+  changes: Partial<DashboardAuthorizationSnapshot> = {},
+): DashboardAuthorizationSnapshot => ({
   schemaVersion: "m008.auth.v2",
   accountId: "account-private-a",
   sessionId: "session-private-a",
@@ -33,7 +35,14 @@ const snapshot = (changes: Partial<DashboardAuthorizationSnapshot> = {}): Dashbo
 
 describe("M008 cache and observability privacy", () => {
   it("always bypasses critical dashboard sections", () => {
-    for (const section of ["security", "priority", "payments", "tasks", "documents", "appointments"] as const) {
+    for (const section of [
+      "security",
+      "priority",
+      "payments",
+      "tasks",
+      "documents",
+      "appointments",
+    ] as const) {
       expect(isDashboardSectionCacheable(section)).toBe(false);
     }
     expect(isDashboardSectionCacheable("help")).toBe(true);
@@ -50,7 +59,8 @@ describe("M008 cache and observability privacy", () => {
       snapshot({ entitlementFence: "entitlement-2" }),
       snapshot({ policyVersion: "policy-2" }),
       snapshot({ locale: "en" }),
-    ]) expect(buildDashboardCacheKey(changed, "help")).not.toBe(first);
+    ])
+      expect(buildDashboardCacheKey(changed, "help")).not.toBe(first);
     expect(first).not.toMatch(/account-private|family-private|user-private|context-private/);
   });
 
@@ -61,11 +71,13 @@ describe("M008 cache and observability privacy", () => {
   });
 
   it("drops PII, amounts and unapproved analytics fields", () => {
-    expect(recordDashboardEvent("client_dashboard_viewed", {
-      locale: "es",
-      email: "x@example.com",
-      amount: 500,
-      organizationName: "Private org",
-    })).toEqual({ event: "client_dashboard_viewed", properties: { locale: "es" } });
+    expect(
+      recordDashboardEvent("client_dashboard_viewed", {
+        locale: "es",
+        email: "x@example.com",
+        amount: 500,
+        organizationName: "Private org",
+      }),
+    ).toEqual({ event: "client_dashboard_viewed", properties: { locale: "es" } });
   });
 });

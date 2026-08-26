@@ -5,5 +5,9 @@ import { AUTH_LOCALE_COOKIE } from "../../lib/auth/locale.ts";
 
 export default async function Loading() {
   const store = await cookies();
-  return <DashboardLoadingView locale={resolveAuthPageLocale(undefined, store.get(AUTH_LOCALE_COOKIE)?.value)} />;
+  return (
+    <DashboardLoadingView
+      locale={resolveAuthPageLocale(undefined, store.get(AUTH_LOCALE_COOKIE)?.value)}
+    />
+  );
 }

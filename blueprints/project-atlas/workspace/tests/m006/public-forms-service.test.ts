@@ -1,11 +1,11 @@
 import { createHash } from "node:crypto";
-import { describe, expect, it } from "vitest";
 import {
+  type FormDefinitionVersion,
   MemoryPublicFormsRepository,
   PublicFormsService,
-  type FormDefinitionVersion,
   type PublicFormsServiceDependencies,
 } from "@atlas/domain";
+import { describe, expect, it } from "vitest";
 
 function definition(locale: "es" | "en"): FormDefinitionVersion {
   return {
@@ -110,14 +110,25 @@ describe("M006 authoritative submission service", () => {
     const accepted = repository.acceptedSubmissions[0];
     expect(accepted?.answers).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ fieldCode: "email", ciphertext: expect.stringContaining("ciphertext") }),
+        expect.objectContaining({
+          fieldCode: "email",
+          ciphertext: expect.stringContaining("ciphertext"),
+        }),
       ]),
     );
     expect(JSON.stringify(accepted)).not.toContain("PERSON@Example.com");
     expect(accepted?.consents).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ consentType: "service_contact", granted: true, version: "1.0.0" }),
-        expect.objectContaining({ consentType: "email_marketing", granted: false, version: "1.0.0" }),
+        expect.objectContaining({
+          consentType: "service_contact",
+          granted: true,
+          version: "1.0.0",
+        }),
+        expect.objectContaining({
+          consentType: "email_marketing",
+          granted: false,
+          version: "1.0.0",
+        }),
       ]),
     );
     expect(accepted?.outbox.filter((entry) => entry.owner === "lead")).toHaveLength(1);

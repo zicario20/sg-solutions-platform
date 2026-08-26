@@ -5,7 +5,8 @@ export const DASHBOARD_CONTEXT_COOKIE = "__Host-atlas_context";
 export const DASHBOARD_CSRF_COOKIE = "__Host-atlas_csrf";
 
 export function readDashboardCookie(request: Request, name: string): string | undefined {
-  const raw = request.headers.get("cookie")
+  const raw = request.headers
+    .get("cookie")
     ?.split(";")
     .map((part) => part.trim())
     .find((part) => part.startsWith(`${name}=`))
@@ -20,7 +21,8 @@ export function readDashboardCookie(request: Request, name: string): string | un
 }
 
 export function createDashboardContextCookie(handle: string): string {
-  if (!handle || handle.length > 256 || /[\r\n;]/u.test(handle)) throw new Error("DASHBOARD_CONTEXT_HANDLE_INVALID");
+  if (!handle || handle.length > 256 || /[\r\n;]/u.test(handle))
+    throw new Error("DASHBOARD_CONTEXT_HANDLE_INVALID");
   return `${DASHBOARD_CONTEXT_COOKIE}=${encodeURIComponent(handle)}; Path=/; HttpOnly; Secure; SameSite=Lax`;
 }
 

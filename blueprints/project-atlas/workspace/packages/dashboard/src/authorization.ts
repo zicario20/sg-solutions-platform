@@ -1,11 +1,173 @@
-import { DASHBOARD_AUTH_SCHEMA_VERSION, type DashboardAuthorizationSnapshot, type DashboardContextOption, type DashboardContextType, type DashboardLocale } from "./contracts.ts";
-export type DashboardAuthorizationEvidence = Readonly<{ accountId: string; sessionId: string; sessionFamilyId: string; userId: string; accountStatus: "active"; sessionStatus: "active"; sessionExpiresAt: string; assurance: "aal1" | "aal2"; authenticationEpoch: string; authorizationEpoch: string; policyEpoch: string; context: Readonly<{ type: DashboardContextType; opaqueRef: string }>; contextOptions: readonly DashboardContextOption[]; membershipFence: string; resourceGrantFence: string; entitlementFence: string; policyVersion: string }>;
-type AuthorizationDecision = Readonly<{ kind: "authorized"; evidence: DashboardAuthorizationEvidence }> | Readonly<{ kind: "denied" }>;
-export type DashboardAuthPort = Readonly<{ authorize(input: Readonly<{ sessionHandle: string; requestedContext?: string; locale: DashboardLocale; now: Date }>): Promise<AuthorizationDecision>; revalidate(snapshot: DashboardAuthorizationSnapshot): Promise<AuthorizationDecision>; selectContext(input: Readonly<{ sessionHandle: string; requestedContext: string; now: Date }>): Promise<Readonly<{ kind: "selected"; contextHandle: string }> | Readonly<{ kind: "denied" }>> }>;
-export type CreateDashboardAuthorizationInput = Readonly<{ sessionHandle: string; requestedContext?: string; locale: DashboardLocale }>;
-const present = (value: string): boolean => value.length > 0 && value.length <= 256 && !/[\r\n;]/u.test(value);
-function validEvidence(value: DashboardAuthorizationEvidence, now: Date): boolean { return [value.accountId, value.sessionId, value.sessionFamilyId, value.userId, value.context.opaqueRef, value.membershipFence, value.resourceGrantFence, value.entitlementFence, value.policyVersion, value.authenticationEpoch, value.authorizationEpoch, value.policyEpoch].every(present) && value.accountStatus === "active" && value.sessionStatus === "active" && Date.parse(value.sessionExpiresAt) > now.getTime() && (value.assurance === "aal1" || value.assurance === "aal2") && (value.context.type === "personal" || value.context.type === "organization") && value.contextOptions.length <= 10 && value.contextOptions.some((option) => option.opaqueRef === value.context.opaqueRef && option.type === value.context.type) && value.contextOptions.every((option) => present(option.opaqueRef) && present(option.label) && (option.type === "personal" || option.type === "organization")); }
-export async function createDashboardAuthorizationSnapshot(input: CreateDashboardAuthorizationInput, port: DashboardAuthPort): Promise<Readonly<{ kind: "authorized"; snapshot: DashboardAuthorizationSnapshot }> | Readonly<{ kind: "denied" }>> { if (!present(input.sessionHandle) || (input.requestedContext !== undefined && !present(input.requestedContext))) return { kind: "denied" }; try { const capturedAt = new Date(); const decision = await port.authorize({ sessionHandle: input.sessionHandle, ...(input.requestedContext === undefined ? {} : { requestedContext: input.requestedContext }), locale: input.locale, now: capturedAt }); if (decision.kind !== "authorized" || !validEvidence(decision.evidence, capturedAt)) return { kind: "denied" }; return { kind: "authorized", snapshot: Object.freeze({ schemaVersion: DASHBOARD_AUTH_SCHEMA_VERSION, ...decision.evidence, context: Object.freeze({ ...decision.evidence.context }), contextOptions: Object.freeze(decision.evidence.contextOptions.map((option) => Object.freeze({ ...option }))), locale: input.locale, capturedAt }) }; } catch { return { kind: "denied" }; } }
-const sameSnapshot = (snapshot: DashboardAuthorizationSnapshot, evidence: DashboardAuthorizationEvidence): boolean => snapshot.accountId === evidence.accountId && snapshot.sessionId === evidence.sessionId && snapshot.sessionFamilyId === evidence.sessionFamilyId && snapshot.userId === evidence.userId && snapshot.accountStatus === evidence.accountStatus && snapshot.sessionStatus === evidence.sessionStatus && snapshot.sessionExpiresAt === evidence.sessionExpiresAt && snapshot.assurance === evidence.assurance && snapshot.authenticationEpoch === evidence.authenticationEpoch && snapshot.authorizationEpoch === evidence.authorizationEpoch && snapshot.policyEpoch === evidence.policyEpoch && snapshot.context.type === evidence.context.type && snapshot.context.opaqueRef === evidence.context.opaqueRef && snapshot.membershipFence === evidence.membershipFence && snapshot.resourceGrantFence === evidence.resourceGrantFence && snapshot.entitlementFence === evidence.entitlementFence && snapshot.policyVersion === evidence.policyVersion;
-export async function revalidateDashboardAuthorization(snapshot: DashboardAuthorizationSnapshot, port: DashboardAuthPort): Promise<Readonly<{ kind: "authorized" }> | Readonly<{ kind: "retry_required" }>> { try { const decision = await port.revalidate(snapshot); return decision.kind === "authorized" && validEvidence(decision.evidence, new Date()) && sameSnapshot(snapshot, decision.evidence) ? { kind: "authorized" } : { kind: "retry_required" }; } catch { return { kind: "retry_required" }; } }
-export async function selectDashboardContext(input: Readonly<{ sessionHandle: string; requestedContext: string }>, port: DashboardAuthPort): Promise<Readonly<{ kind: "selected"; contextHandle: string }> | Readonly<{ kind: "denied" }>> { if (!present(input.sessionHandle) || !present(input.requestedContext)) return { kind: "denied" }; try { const result = await port.selectContext({ ...input, now: new Date() }); return result.kind === "selected" && present(result.contextHandle) ? result : { kind: "denied" }; } catch { return { kind: "denied" }; } }
+import {
+  DASHBOARD_AUTH_SCHEMA_VERSION,
+  type DashboardAuthorizationSnapshot,
+  type DashboardContextOption,
+  type DashboardContextType,
+  type DashboardLocale,
+} from "./contracts.ts";
+export type DashboardAuthorizationEvidence = Readonly<{
+  accountId: string;
+  sessionId: string;
+  sessionFamilyId: string;
+  userId: string;
+  accountStatus: "active";
+  sessionStatus: "active";
+  sessionExpiresAt: string;
+  assurance: "aal1" | "aal2";
+  authenticationEpoch: string;
+  authorizationEpoch: string;
+  policyEpoch: string;
+  context: Readonly<{ type: DashboardContextType; opaqueRef: string }>;
+  contextOptions: readonly DashboardContextOption[];
+  membershipFence: string;
+  resourceGrantFence: string;
+  entitlementFence: string;
+  policyVersion: string;
+}>;
+type AuthorizationDecision =
+  | Readonly<{ kind: "authorized"; evidence: DashboardAuthorizationEvidence }>
+  | Readonly<{ kind: "denied" }>;
+export type DashboardAuthPort = Readonly<{
+  authorize(
+    input: Readonly<{
+      sessionHandle: string;
+      requestedContext?: string;
+      locale: DashboardLocale;
+      now: Date;
+    }>,
+  ): Promise<AuthorizationDecision>;
+  revalidate(snapshot: DashboardAuthorizationSnapshot): Promise<AuthorizationDecision>;
+  selectContext(
+    input: Readonly<{ sessionHandle: string; requestedContext: string; now: Date }>,
+  ): Promise<Readonly<{ kind: "selected"; contextHandle: string }> | Readonly<{ kind: "denied" }>>;
+}>;
+export type CreateDashboardAuthorizationInput = Readonly<{
+  sessionHandle: string;
+  requestedContext?: string;
+  locale: DashboardLocale;
+}>;
+const present = (value: string): boolean =>
+  value.length > 0 && value.length <= 256 && !/[\r\n;]/u.test(value);
+function validEvidence(value: DashboardAuthorizationEvidence, now: Date): boolean {
+  return (
+    [
+      value.accountId,
+      value.sessionId,
+      value.sessionFamilyId,
+      value.userId,
+      value.context.opaqueRef,
+      value.membershipFence,
+      value.resourceGrantFence,
+      value.entitlementFence,
+      value.policyVersion,
+      value.authenticationEpoch,
+      value.authorizationEpoch,
+      value.policyEpoch,
+    ].every(present) &&
+    value.accountStatus === "active" &&
+    value.sessionStatus === "active" &&
+    Date.parse(value.sessionExpiresAt) > now.getTime() &&
+    (value.assurance === "aal1" || value.assurance === "aal2") &&
+    (value.context.type === "personal" || value.context.type === "organization") &&
+    value.contextOptions.length <= 10 &&
+    value.contextOptions.some(
+      (option) =>
+        option.opaqueRef === value.context.opaqueRef && option.type === value.context.type,
+    ) &&
+    value.contextOptions.every(
+      (option) =>
+        present(option.opaqueRef) &&
+        present(option.label) &&
+        (option.type === "personal" || option.type === "organization"),
+    )
+  );
+}
+export async function createDashboardAuthorizationSnapshot(
+  input: CreateDashboardAuthorizationInput,
+  port: DashboardAuthPort,
+): Promise<
+  | Readonly<{ kind: "authorized"; snapshot: DashboardAuthorizationSnapshot }>
+  | Readonly<{ kind: "denied" }>
+> {
+  if (
+    !present(input.sessionHandle) ||
+    (input.requestedContext !== undefined && !present(input.requestedContext))
+  )
+    return { kind: "denied" };
+  try {
+    const capturedAt = new Date();
+    const decision = await port.authorize({
+      sessionHandle: input.sessionHandle,
+      ...(input.requestedContext === undefined ? {} : { requestedContext: input.requestedContext }),
+      locale: input.locale,
+      now: capturedAt,
+    });
+    if (decision.kind !== "authorized" || !validEvidence(decision.evidence, capturedAt))
+      return { kind: "denied" };
+    return {
+      kind: "authorized",
+      snapshot: Object.freeze({
+        schemaVersion: DASHBOARD_AUTH_SCHEMA_VERSION,
+        ...decision.evidence,
+        context: Object.freeze({ ...decision.evidence.context }),
+        contextOptions: Object.freeze(
+          decision.evidence.contextOptions.map((option) => Object.freeze({ ...option })),
+        ),
+        locale: input.locale,
+        capturedAt,
+      }),
+    };
+  } catch {
+    return { kind: "denied" };
+  }
+}
+const sameSnapshot = (
+  snapshot: DashboardAuthorizationSnapshot,
+  evidence: DashboardAuthorizationEvidence,
+): boolean =>
+  snapshot.accountId === evidence.accountId &&
+  snapshot.sessionId === evidence.sessionId &&
+  snapshot.sessionFamilyId === evidence.sessionFamilyId &&
+  snapshot.userId === evidence.userId &&
+  snapshot.accountStatus === evidence.accountStatus &&
+  snapshot.sessionStatus === evidence.sessionStatus &&
+  snapshot.sessionExpiresAt === evidence.sessionExpiresAt &&
+  snapshot.assurance === evidence.assurance &&
+  snapshot.authenticationEpoch === evidence.authenticationEpoch &&
+  snapshot.authorizationEpoch === evidence.authorizationEpoch &&
+  snapshot.policyEpoch === evidence.policyEpoch &&
+  snapshot.context.type === evidence.context.type &&
+  snapshot.context.opaqueRef === evidence.context.opaqueRef &&
+  snapshot.membershipFence === evidence.membershipFence &&
+  snapshot.resourceGrantFence === evidence.resourceGrantFence &&
+  snapshot.entitlementFence === evidence.entitlementFence &&
+  snapshot.policyVersion === evidence.policyVersion;
+export async function revalidateDashboardAuthorization(
+  snapshot: DashboardAuthorizationSnapshot,
+  port: DashboardAuthPort,
+): Promise<Readonly<{ kind: "authorized" }> | Readonly<{ kind: "retry_required" }>> {
+  try {
+    const decision = await port.revalidate(snapshot);
+    return decision.kind === "authorized" &&
+      validEvidence(decision.evidence, new Date()) &&
+      sameSnapshot(snapshot, decision.evidence)
+      ? { kind: "authorized" }
+      : { kind: "retry_required" };
+  } catch {
+    return { kind: "retry_required" };
+  }
+}
+export async function selectDashboardContext(
+  input: Readonly<{ sessionHandle: string; requestedContext: string }>,
+  port: DashboardAuthPort,
+): Promise<Readonly<{ kind: "selected"; contextHandle: string }> | Readonly<{ kind: "denied" }>> {
+  if (!present(input.sessionHandle) || !present(input.requestedContext)) return { kind: "denied" };
+  try {
+    const result = await port.selectContext({ ...input, now: new Date() });
+    return result.kind === "selected" && present(result.contextHandle)
+      ? result
+      : { kind: "denied" };
+  } catch {
+    return { kind: "denied" };
+  }
+}

@@ -1,6 +1,7 @@
 type Answer = string | number | boolean;
 
 export {};
+
 type Condition =
   | { operator: "equals"; fieldCode: string; value: Answer }
   | { operator: "present"; fieldCode: string }
@@ -23,7 +24,8 @@ function conditionValue(form: HTMLFormElement, fieldCode: string): Answer | unde
   }
   if (controls instanceof HTMLInputElement) {
     if (controls.type === "checkbox") return controls.checked;
-    if (controls.type === "number") return controls.value === "" ? undefined : Number(controls.value);
+    if (controls.type === "number")
+      return controls.value === "" ? undefined : Number(controls.value);
     return controls.value;
   }
   if (controls instanceof HTMLSelectElement || controls instanceof HTMLTextAreaElement) {
@@ -33,13 +35,15 @@ function conditionValue(form: HTMLFormElement, fieldCode: string): Answer | unde
 }
 
 function evaluate(condition: Condition, form: HTMLFormElement): boolean {
-  if (condition.operator === "equals") return conditionValue(form, condition.fieldCode) === condition.value;
+  if (condition.operator === "equals")
+    return conditionValue(form, condition.fieldCode) === condition.value;
   if (condition.operator === "present") {
     const value = conditionValue(form, condition.fieldCode);
     return value !== undefined && (typeof value !== "string" || value.trim().length > 0);
   }
   if (condition.operator === "not") return !evaluate(condition.condition, form);
-  if (condition.operator === "all") return condition.conditions.every((child) => evaluate(child, form));
+  if (condition.operator === "all")
+    return condition.conditions.every((child) => evaluate(child, form));
   return condition.conditions.some((child) => evaluate(child, form));
 }
 
@@ -96,7 +100,9 @@ function initialize(root: HTMLElement): void {
       const visible = condition ? evaluate(condition, form) : false;
       wrapper.hidden = !visible;
       wrapper.setAttribute("aria-hidden", visible ? "false" : "true");
-      for (const control of wrapper.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea")) {
+      for (const control of wrapper.querySelectorAll<
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      >("input, select, textarea")) {
         control.disabled = !visible;
       }
     }
@@ -116,28 +122,40 @@ function initialize(root: HTMLElement): void {
     progressBar.style.setProperty("--form-progress", `${(position / steps.length) * 100}%`);
     summary.hidden = true;
     updateConditionalFields();
-    steps[currentStep]?.querySelector<HTMLElement>("legend, label, input, select, textarea")?.focus();
+    steps[currentStep]
+      ?.querySelector<HTMLElement>("legend, label, input, select, textarea")
+      ?.focus();
   }
 
   function clearErrors(scope: ParentNode): void {
-    for (const message of scope.querySelectorAll<HTMLElement>("[data-field-error]")) message.textContent = "";
-    for (const control of scope.querySelectorAll<HTMLElement>("[aria-invalid='true']")) control.removeAttribute("aria-invalid");
+    for (const message of scope.querySelectorAll<HTMLElement>("[data-field-error]"))
+      message.textContent = "";
+    for (const control of scope.querySelectorAll<HTMLElement>("[aria-invalid='true']"))
+      control.removeAttribute("aria-invalid");
   }
 
   function validateStep(step: HTMLFieldSetElement): boolean {
     clearErrors(step);
     errorList.replaceChildren();
-    const invalidControls = [...step.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea")]
-      .filter((control) => !control.disabled && !control.checkValidity());
+    const invalidControls = [
+      ...step.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+        "input, select, textarea",
+      ),
+    ].filter((control) => !control.disabled && !control.checkValidity());
     for (const control of invalidControls) {
       control.setAttribute("aria-invalid", "true");
       const message = control.validity.valueMissing ? copy.required : copy.invalid;
-      const error = control.closest<HTMLElement>("[data-form-field], [data-form-consent]")?.querySelector<HTMLElement>("[data-field-error]");
+      const error = control
+        .closest<HTMLElement>("[data-form-field], [data-form-consent]")
+        ?.querySelector<HTMLElement>("[data-field-error]");
       if (error) error.textContent = message;
       const item = document.createElement("li");
       const button = document.createElement("button");
       button.type = "button";
-      const label = control.closest<HTMLElement>("[data-form-field], [data-form-consent]")?.querySelector("label, legend")?.textContent?.trim();
+      const label = control
+        .closest<HTMLElement>("[data-form-field], [data-form-consent]")
+        ?.querySelector("label, legend")
+        ?.textContent?.trim();
       button.textContent = `${label ?? control.name}: ${message}`;
       button.addEventListener("click", () => control.focus());
       item.append(button);
@@ -163,8 +181,10 @@ function initialize(root: HTMLElement): void {
     if (controls instanceof HTMLInputElement && controls.type === "checkbox") {
       return controls.checked ? "✓" : "";
     }
-    if (controls instanceof HTMLSelectElement) return controls.selectedOptions[0]?.textContent?.trim() ?? "";
-    if (controls instanceof HTMLInputElement || controls instanceof HTMLTextAreaElement) return controls.value;
+    if (controls instanceof HTMLSelectElement)
+      return controls.selectedOptions[0]?.textContent?.trim() ?? "";
+    if (controls instanceof HTMLInputElement || controls instanceof HTMLTextAreaElement)
+      return controls.value;
     return "";
   }
 
@@ -186,7 +206,9 @@ function initialize(root: HTMLElement): void {
       value.textContent = input.checked ? "✓" : "--";
       reviewList.append(term, value);
     }
-    steps.forEach((step) => { step.hidden = true; });
+    steps.forEach((step) => {
+      step.hidden = true;
+    });
     navigation.hidden = true;
     review.hidden = false;
     progress.setAttribute("aria-valuenow", String(steps.length));
@@ -200,7 +222,8 @@ function initialize(root: HTMLElement): void {
       const fieldCode = wrapper.dataset.formField;
       if (!fieldCode) continue;
       const value = conditionValue(form, fieldCode);
-      if (value !== undefined && (typeof value !== "string" || value.trim().length > 0)) answers[fieldCode] = value;
+      if (value !== undefined && (typeof value !== "string" || value.trim().length > 0))
+        answers[fieldCode] = value;
     }
     return answers;
   }
@@ -231,7 +254,7 @@ function initialize(root: HTMLElement): void {
         }),
       });
       if (!bootstrap.ok) throw new Error("bootstrap unavailable");
-      const grant = await bootstrap.json() as { nonce: string; csrfToken: string };
+      const grant = (await bootstrap.json()) as { nonce: string; csrfToken: string };
       idempotencyKey ??= `idem_${globalThis.crypto.randomUUID().replaceAll("-", "")}`;
       const honeypot = requiredElement<HTMLInputElement>(form, "[name='company_website']").value;
       const response = await fetch("/api/public/forms/submit", {
@@ -250,7 +273,7 @@ function initialize(root: HTMLElement): void {
           honeypot,
         }),
       });
-      const result = await response.json() as { ok?: boolean; receiptId?: string };
+      const result = (await response.json()) as { ok?: boolean; receiptId?: string };
       if (!response.ok || !result.ok) throw new Error("submission unavailable");
       form.hidden = true;
       review.hidden = true;

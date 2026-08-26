@@ -1,20 +1,22 @@
 import { describe, expect, it } from "vitest";
-
-import type { AcceptedFormSubmission, FormConsentEvidence } from "../../packages/domain/src/public-forms/repository.ts";
-import type { FormOutboxCommand } from "../../packages/domain/src/public-forms/ports.ts";
 import {
   dispatchFormOutbox,
   KnownNoEffectFormOwnerError,
   reconcileFormOutbox,
   reconcileUnknownPersistedFormOutbox,
 } from "../../packages/domain/src/public-forms/jobs.ts";
+import type { FormOutboxCommand } from "../../packages/domain/src/public-forms/ports.ts";
+import type {
+  AcceptedFormSubmission,
+  FormConsentEvidence,
+} from "../../packages/domain/src/public-forms/repository.ts";
 import {
-  SyntheticFormOutboxStore,
   createProviderDisabledPublicFormPorts,
+  SyntheticFormOutboxStore,
 } from "../../packages/domain/src/public-forms/synthetic-ports.ts";
 import {
-  recordPublicFormTelemetry,
   type PublicFormTelemetryEvent,
+  recordPublicFormTelemetry,
 } from "../../packages/observability/src/public-forms.ts";
 
 const NOW = new Date("2026-08-20T12:00:00.000Z");
@@ -287,10 +289,14 @@ describe("M006 synthetic owner integration flow", () => {
       { store, ports, now: () => NOW, correlationId: CORRELATION_ID },
     );
 
-    expect(ports.receipts.filter((receipt) => receipt.owner === "channel").map((receipt) => receipt.operation)).toEqual([
-      "apply_consent_revocation",
-    ]);
-    expect(result.commandReceipts.find((receipt) => receipt.operation === "queue_handoff")?.status).toBe("blocked");
+    expect(
+      ports.receipts
+        .filter((receipt) => receipt.owner === "channel")
+        .map((receipt) => receipt.operation),
+    ).toEqual(["apply_consent_revocation"]);
+    expect(
+      result.commandReceipts.find((receipt) => receipt.operation === "queue_handoff")?.status,
+    ).toBe("blocked");
   });
 
   it("claims unknown work only to query the owner and never blind-redispatches it", async () => {
@@ -305,14 +311,28 @@ describe("M006 synthetic owner integration flow", () => {
           throw new Error("ambiguous");
         },
         async queryByIdempotency(commandValue: FormOutboxCommand) {
-          return Object.freeze({ status: "linked" as const, receiptId: `query_${commandValue.idempotencyKey}` });
+          return Object.freeze({
+            status: "linked" as const,
+            receiptId: `query_${commandValue.idempotencyKey}`,
+          });
         },
       },
     };
-    const submission = acceptedSubmission({ outbox: [command("lead", "accept_candidate", "unknown_query")] });
-    await dispatchFormOutbox(submission, { store, ports, now: () => NOW, correlationId: CORRELATION_ID });
+    const submission = acceptedSubmission({
+      outbox: [command("lead", "accept_candidate", "unknown_query")],
+    });
+    await dispatchFormOutbox(submission, {
+      store,
+      ports,
+      now: () => NOW,
+      correlationId: CORRELATION_ID,
+    });
     const reconciled = await reconcileUnknownPersistedFormOutbox(
-      { submissionRef: submission.submissionId, formCode: submission.formCode, locale: submission.locale },
+      {
+        submissionRef: submission.submissionId,
+        formCode: submission.formCode,
+        locale: submission.locale,
+      },
       { store, ports, now: () => NOW, correlationId: CORRELATION_ID },
     );
 

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  recordPublicFormTelemetry,
   type PublicFormTelemetryEvent,
+  recordPublicFormTelemetry,
 } from "../../packages/observability/src/public-forms.ts";
 
 const VALID_EVENT = {

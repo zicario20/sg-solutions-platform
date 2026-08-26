@@ -1,1 +1,35 @@
-import type{DashboardAuthorizationSnapshot}from"@atlas/dashboard";import type{ProcessEligibilityPolicySnapshot}from"./ports.ts";export function isProcessEligible(binding:{definitionVersion:string;workflowVersion:string;tombstoned:boolean},policy:Pick<ProcessEligibilityPolicySnapshot,"version"|"acceptedDefinitionVersions"|"acceptedWorkflowVersions">):boolean{return!binding.tombstoned&&policy.version.length>0&&policy.acceptedDefinitionVersions.includes(binding.definitionVersion)&&policy.acceptedWorkflowVersions.includes(binding.workflowVersion)}export function isFreshAuthoritativeEligibility(policy:ProcessEligibilityPolicySnapshot,snapshot:DashboardAuthorizationSnapshot,now:Date):boolean{return policy.permission==="client.service.read"&&policy.entitlementState==="active"&&String(policy.authorizationEpoch)===String(snapshot.authorizationEpoch)&&String(policy.policyEpoch)===String(snapshot.policyEpoch)&&Number.isFinite(Date.parse(policy.issuedAt))&&Date.parse(policy.issuedAt)<=now.getTime()&&Number.isFinite(Date.parse(policy.expiresAt))&&Date.parse(policy.expiresAt)>now.getTime()&&Boolean(policy.sourceVersion.trim())&&Boolean(policy.registryVersion.trim())&&Boolean(policy.entitlementVersion.trim())}
+import type { DashboardAuthorizationSnapshot } from "@atlas/dashboard";
+import type { ProcessEligibilityPolicySnapshot } from "./ports.ts";
+export function isProcessEligible(
+  binding: { definitionVersion: string; workflowVersion: string; tombstoned: boolean },
+  policy: Pick<
+    ProcessEligibilityPolicySnapshot,
+    "version" | "acceptedDefinitionVersions" | "acceptedWorkflowVersions"
+  >,
+): boolean {
+  return (
+    !binding.tombstoned &&
+    policy.version.length > 0 &&
+    policy.acceptedDefinitionVersions.includes(binding.definitionVersion) &&
+    policy.acceptedWorkflowVersions.includes(binding.workflowVersion)
+  );
+}
+export function isFreshAuthoritativeEligibility(
+  policy: ProcessEligibilityPolicySnapshot,
+  snapshot: DashboardAuthorizationSnapshot,
+  now: Date,
+): boolean {
+  return (
+    policy.permission === "client.service.read" &&
+    policy.entitlementState === "active" &&
+    String(policy.authorizationEpoch) === String(snapshot.authorizationEpoch) &&
+    String(policy.policyEpoch) === String(snapshot.policyEpoch) &&
+    Number.isFinite(Date.parse(policy.issuedAt)) &&
+    Date.parse(policy.issuedAt) <= now.getTime() &&
+    Number.isFinite(Date.parse(policy.expiresAt)) &&
+    Date.parse(policy.expiresAt) > now.getTime() &&
+    Boolean(policy.sourceVersion.trim()) &&
+    Boolean(policy.registryVersion.trim()) &&
+    Boolean(policy.entitlementVersion.trim())
+  );
+}

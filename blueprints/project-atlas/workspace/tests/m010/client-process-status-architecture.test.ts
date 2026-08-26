@@ -1,1 +1,16 @@
-import{readFileSync}from"node:fs";import{resolve}from"node:path";import{describe,expect,it}from"vitest";const read=(path:string)=>readFileSync(resolve(import.meta.dirname,"../..",path),"utf8");describe("M010 architecture",()=>{it("depends one-way on narrow M009 ports and owns no timeline persistence",()=>{const adapter=read("apps/app/src/lib/process-status/client-services-adapter.ts"),pkg=read("packages/client-process-status/package.json");expect(adapter).toContain("AuthorizedServiceChoicePort");expect(adapter).toContain("AuthorizedServiceRootPort");expect(adapter).not.toContain("ClientServicesQueryService");expect(pkg).toContain("@atlas/client-services");expect(pkg).not.toContain("@atlas/database")})});
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+
+const read = (path: string) => readFileSync(resolve(import.meta.dirname, "../..", path), "utf8");
+describe("M010 architecture", () => {
+  it("depends one-way on narrow M009 ports and owns no timeline persistence", () => {
+    const adapter = read("apps/app/src/lib/process-status/client-services-adapter.ts"),
+      pkg = read("packages/client-process-status/package.json");
+    expect(adapter).toContain("AuthorizedServiceChoicePort");
+    expect(adapter).toContain("AuthorizedServiceRootPort");
+    expect(adapter).not.toContain("ClientServicesQueryService");
+    expect(pkg).toContain("@atlas/client-services");
+    expect(pkg).not.toContain("@atlas/database");
+  });
+});

@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
 import {
   evaluateVisibility,
   type FormDefinitionVersion,
   validatePublishedDefinition,
 } from "@atlas/domain";
 import { parsePublicSubmissionEnvelope } from "@atlas/validation";
+import { describe, expect, it } from "vitest";
 
 const fields: FormDefinitionVersion["fields"] = [
   {
@@ -35,7 +35,10 @@ const fields: FormDefinitionVersion["fields"] = [
   },
 ];
 
-function version(locale: "es" | "en", overrides: Partial<FormDefinitionVersion> = {}): FormDefinitionVersion {
+function version(
+  locale: "es" | "en",
+  overrides: Partial<FormDefinitionVersion> = {},
+): FormDefinitionVersion {
   return {
     formCode: "contact",
     version: "1.0.0",

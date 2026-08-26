@@ -92,7 +92,8 @@ function hasUnsafeControl(value: string): boolean {
           (codePoint >= 14 && codePoint <= 31) ||
           (codePoint >= 127 && codePoint <= 159) ||
           (codePoint >= 0x202a && codePoint <= 0x202e) ||
-          (codePoint >= 0x2066 && codePoint <= 0x2069))));
+          (codePoint >= 0x2066 && codePoint <= 0x2069)))
+    );
   });
 }
 
@@ -146,7 +147,8 @@ export function parseWhatsAppInboundInput(input: unknown): WhatsAppInboundInput 
 
   const result: WhatsAppInboundInput = { eventId: parseCanonicalId(input.eventId) };
   if (input.bindingId !== undefined) result.bindingId = parseCanonicalId(input.bindingId);
-  if (input.conversationId !== undefined) result.conversationId = parseCanonicalId(input.conversationId);
+  if (input.conversationId !== undefined)
+    result.conversationId = parseCanonicalId(input.conversationId);
   if (input.messageId !== undefined) result.messageId = parseCanonicalId(input.messageId);
   if (input.locale !== undefined) {
     if (input.locale !== "es" && input.locale !== "en") invalidInput();

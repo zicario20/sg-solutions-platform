@@ -1,20 +1,17 @@
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { createVoiceCorrelationId, recordVoiceTelemetry } from "@atlas/observability";
 import { describe, expect, it } from "vitest";
-import {
-  createVoiceCorrelationId,
-  recordVoiceTelemetry,
-} from "@atlas/observability";
-import { MemoryVoiceCommandReceiptRepository } from "../../packages/database/src/voice-command-repository.ts";
-import type { VoiceCommand } from "../../packages/domain/src/voice/index.ts";
 import { VoiceOperationsFacade } from "../../apps/app/src/lib/voice/operations-facade.ts";
 import { createFailClosedOwnerPorts } from "../../apps/app/src/lib/voice/owner-ports.ts";
 import { recoverVoiceCall } from "../../apps/app/src/lib/voice/recovery-jobs.ts";
 import {
-  issueVoiceServiceCredential,
   BoundedMemoryVoiceCredentialRepository,
+  issueVoiceServiceCredential,
   VoiceServiceAuthenticator,
 } from "../../apps/app/src/lib/voice/service-auth.ts";
+import { MemoryVoiceCommandReceiptRepository } from "../../packages/database/src/voice-command-repository.ts";
+import type { VoiceCommand } from "../../packages/domain/src/voice/index.ts";
 
 const now = new Date("2026-08-20T12:00:00.000Z");
 const secret = Buffer.from("m005-integration-secret-000000000000000000000000000000000");
@@ -127,15 +124,13 @@ describe("M005 provider-disabled synthetic journeys", () => {
   it("denies personalized status without platform verification", async () => {
     const runtime = setup();
     const input = command("en", "safe_status", "status_denied");
-    await expect(
-      runtime.facade.execute(input, runtime.credentialFor(input)),
-    ).resolves.toEqual({ kind: "verification_required" });
+    await expect(runtime.facade.execute(input, runtime.credentialFor(input))).resolves.toEqual({
+      kind: "verification_required",
+    });
   });
 
   it("rejects external provider admission in the real Python proof boundary", () => {
-    const gateway = fileURLToPath(
-      new URL("../../services/voice-gateway/", import.meta.url),
-    );
+    const gateway = fileURLToPath(new URL("../../services/voice-gateway/", import.meta.url));
     const script = [
       "from app.security.provider_proof import ProviderProofVerifier, ProviderRequest",
       "v=ProviderProofVerifier(secret=b'x'*32, connections={})",
@@ -150,9 +145,7 @@ describe("M005 provider-disabled synthetic journeys", () => {
   });
 
   it("composes authenticated Python admission through the TypeScript durable owner", () => {
-    const gateway = fileURLToPath(
-      new URL("../../services/voice-gateway/", import.meta.url),
-    );
+    const gateway = fileURLToPath(new URL("../../services/voice-gateway/", import.meta.url));
     const script = [
       "from tests.test_synthetic_composition import test_default_synthetic_admission_is_disabled as disabled",
       "from tests.test_synthetic_composition import test_authenticated_composition_persists_handoff_in_typescript as composed",

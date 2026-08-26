@@ -13,7 +13,9 @@ export class MemoryAuthRepository implements AuthRepository {
     return { kind: "consumed" };
   }
 
-  async consumeProofTwice(proofDigest: string): Promise<readonly [ProofConsumeResult, ProofConsumeResult]> {
+  async consumeProofTwice(
+    proofDigest: string,
+  ): Promise<readonly [ProofConsumeResult, ProofConsumeResult]> {
     return [await this.consumeProof(proofDigest), await this.consumeProof(proofDigest)];
   }
 }
@@ -33,16 +35,16 @@ export async function withAuthTransaction<T>(
 ): Promise<T> {
   if (!activeSessionId) throw new Error("AUTH_SESSION_REQUIRED");
   return sql.begin(async (transaction) => {
-    await transaction.unsafe(
-      "select atlas_auth_initialize_session_context($1)",
-      [activeSessionId],
-    );
+    await transaction.unsafe("select atlas_auth_initialize_session_context($1)", [activeSessionId]);
     return operation(transaction);
   });
 }
 
 export class PostgresAuthRepository implements AuthRepository {
-  constructor(private readonly sql: AuthSql, private readonly activeSessionId: string) {}
+  constructor(
+    private readonly sql: AuthSql,
+    private readonly activeSessionId: string,
+  ) {}
 
   async consumeProof(proofDigest: string): Promise<ProofConsumeResult> {
     if (!proofDigest) return { kind: "replay_denied" };

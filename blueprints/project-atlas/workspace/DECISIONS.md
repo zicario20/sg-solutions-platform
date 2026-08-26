@@ -956,3 +956,12 @@ The Product Owner authorized M041 as a provider-disabled technical foundation. P
 ## 2026-08-26 - M042 Service Catalog controlled foundation
 
 The Product Owner authorized implementation of M042 from the approved four-part specification. M042 extends the canonical commercial-catalog bounded context with versioned service definitions, commercial/document/intake/workflow references, discovery/publication readiness, surface projections and governance controls. It does not activate service publication, checkout, pricing, forms, workflows, documents, appointments, providers, partners, RLS deployment or production behavior. AI remains unable to approve, publish, retire, change prices, workflows or disclosures.
+
+## 2026-08-26 - Audit remediation and RLS hardening
+
+The Product Owner authorized correction of the repository-audit findings. A forward-only migration
+may enable RLS and restrictive deny-all policies on the previously omitted M040 Partner and M041
+Provider tables. The migration remains authored only and may not be applied without the required
+backup evidence, independent security review, migration plan and deployment approval. M042 public
+discovery must expose only published, public, readiness-complete content and must preserve locale
+specificity. The canonical module catalog must remain exactly one distinct entry per M001-M110.

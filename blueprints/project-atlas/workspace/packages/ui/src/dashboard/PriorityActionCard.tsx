@@ -1,5 +1,63 @@
 import type { PriorityResult } from "@atlas/dashboard";
-import { dashboardCopy, type DashboardLocale } from "@atlas/i18n";
+import { type DashboardLocale, dashboardCopy } from "@atlas/i18n";
 import { DASHBOARD_ROUTE_HREFS } from "./ClientPortalShell.tsx";
 import { DashboardStateNotice } from "./DashboardStates.tsx";
-export function PriorityActionCard({ locale, priority }: Readonly<{ locale: DashboardLocale; priority: PriorityResult }>) { const copy = dashboardCopy[locale]; return <section className="priority-card" data-widget="priority" data-section-state={priority.kind === "action" ? "fresh" : priority.kind === "none" ? "empty" : "unconfirmed"} aria-labelledby="priority-title"><header><span aria-hidden="true">01</span><h2 id="priority-title">{copy.priority.title}</h2></header>{priority.kind === "action" ? <div className="priority-action"><h3>{priority.action.title}</h3>{priority.action.description ? <p>{priority.action.description}</p> : null}<a className="portal-cta" href={DASHBOARD_ROUTE_HREFS[priority.action.routeKey]} data-dashboard-event="client_dashboard_priority_clicked" data-dashboard-widget="priority">{copy.actions.view}<span aria-hidden="true">-&gt;</span></a></div> : null}{priority.kind === "none" ? <p className="priority-none"><span aria-hidden="true">OK</span>{copy.priority.none}</p> : null}{priority.kind === "unconfirmed" ? <><DashboardStateNotice locale={locale} state="unconfirmed" /><p>{copy.priority.unconfirmed}</p><a className="portal-secondary-cta" href={DASHBOARD_ROUTE_HREFS.support} data-dashboard-event="client_dashboard_help_resource_clicked" data-dashboard-widget="support">{copy.actions.support}</a></> : null}<small>{copy.priority.policy}: {priority.policyVersion}</small></section>; }
+export function PriorityActionCard({
+  locale,
+  priority,
+}: Readonly<{ locale: DashboardLocale; priority: PriorityResult }>) {
+  const copy = dashboardCopy[locale];
+  return (
+    <section
+      className="priority-card"
+      data-widget="priority"
+      data-section-state={
+        priority.kind === "action" ? "fresh" : priority.kind === "none" ? "empty" : "unconfirmed"
+      }
+      aria-labelledby="priority-title"
+    >
+      <header>
+        <span aria-hidden="true">01</span>
+        <h2 id="priority-title">{copy.priority.title}</h2>
+      </header>
+      {priority.kind === "action" ? (
+        <div className="priority-action">
+          <h3>{priority.action.title}</h3>
+          {priority.action.description ? <p>{priority.action.description}</p> : null}
+          <a
+            className="portal-cta"
+            href={DASHBOARD_ROUTE_HREFS[priority.action.routeKey]}
+            data-dashboard-event="client_dashboard_priority_clicked"
+            data-dashboard-widget="priority"
+          >
+            {copy.actions.view}
+            <span aria-hidden="true">-&gt;</span>
+          </a>
+        </div>
+      ) : null}
+      {priority.kind === "none" ? (
+        <p className="priority-none">
+          <span aria-hidden="true">OK</span>
+          {copy.priority.none}
+        </p>
+      ) : null}
+      {priority.kind === "unconfirmed" ? (
+        <>
+          <DashboardStateNotice locale={locale} state="unconfirmed" />
+          <p>{copy.priority.unconfirmed}</p>
+          <a
+            className="portal-secondary-cta"
+            href={DASHBOARD_ROUTE_HREFS.support}
+            data-dashboard-event="client_dashboard_help_resource_clicked"
+            data-dashboard-widget="support"
+          >
+            {copy.actions.support}
+          </a>
+        </>
+      ) : null}
+      <small>
+        {copy.priority.policy}: {priority.policyVersion}
+      </small>
+    </section>
+  );
+}

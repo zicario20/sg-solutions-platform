@@ -68,13 +68,9 @@
         "public_chat_audit_events_conversation_id_public_chat_conversations_id_fk": {
           "name": "public_chat_audit_events_conversation_id_public_chat_conversations_id_fk",
           "tableFrom": "public_chat_audit_events",
-          "columnsFrom": [
-            "conversation_id"
-          ],
+          "columnsFrom": ["conversation_id"],
           "tableTo": "public_chat_conversations",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -83,10 +79,7 @@
       "uniqueConstraints": {
         "public_chat_audit_sequence_unique": {
           "name": "public_chat_audit_sequence_unique",
-          "columns": [
-            "conversation_id",
-            "sequence"
-          ],
+          "columns": ["conversation_id", "sequence"],
           "nullsNotDistinct": false
         }
       },
@@ -95,9 +88,7 @@
           "name": "public_chat_audit_events_server_gateway_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -180,13 +171,9 @@
         "public_chat_citations_message_id_public_chat_messages_id_fk": {
           "name": "public_chat_citations_message_id_public_chat_messages_id_fk",
           "tableFrom": "public_chat_citations",
-          "columnsFrom": [
-            "message_id"
-          ],
+          "columnsFrom": ["message_id"],
           "tableTo": "public_chat_messages",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -195,10 +182,7 @@
       "uniqueConstraints": {
         "public_chat_citations_message_source_unique": {
           "name": "public_chat_citations_message_source_unique",
-          "columns": [
-            "message_id",
-            "source_id"
-          ],
+          "columns": ["message_id", "source_id"],
           "nullsNotDistinct": false
         }
       },
@@ -207,9 +191,7 @@
           "name": "public_chat_citations_server_gateway_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -376,13 +358,9 @@
         "public_chat_conversations_session_id_public_chat_sessions_id_fk": {
           "name": "public_chat_conversations_session_id_public_chat_sessions_id_fk",
           "tableFrom": "public_chat_conversations",
-          "columnsFrom": [
-            "session_id"
-          ],
+          "columnsFrom": ["session_id"],
           "tableTo": "public_chat_sessions",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -391,10 +369,7 @@
       "uniqueConstraints": {
         "public_chat_conversations_session_start_key_unique": {
           "name": "public_chat_conversations_session_start_key_unique",
-          "columns": [
-            "session_id",
-            "start_idempotency_key"
-          ],
+          "columns": ["session_id", "start_idempotency_key"],
           "nullsNotDistinct": false
         }
       },
@@ -403,9 +378,7 @@
           "name": "public_chat_conversations_server_gateway_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -518,13 +491,9 @@
         "public_chat_handoffs_conversation_id_public_chat_conversations_id_fk": {
           "name": "public_chat_handoffs_conversation_id_public_chat_conversations_id_fk",
           "tableFrom": "public_chat_handoffs",
-          "columnsFrom": [
-            "conversation_id"
-          ],
+          "columnsFrom": ["conversation_id"],
           "tableTo": "public_chat_conversations",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -536,9 +505,7 @@
           "name": "public_chat_handoffs_server_gateway_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -661,13 +628,9 @@
         "public_chat_idempotency_conversation_id_public_chat_conversations_id_fk": {
           "name": "public_chat_idempotency_conversation_id_public_chat_conversations_id_fk",
           "tableFrom": "public_chat_idempotency",
-          "columnsFrom": [
-            "conversation_id"
-          ],
+          "columnsFrom": ["conversation_id"],
           "tableTo": "public_chat_conversations",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -676,10 +639,7 @@
       "uniqueConstraints": {
         "public_chat_idempotency_conversation_key_unique": {
           "name": "public_chat_idempotency_conversation_key_unique",
-          "columns": [
-            "conversation_id",
-            "idempotency_key"
-          ],
+          "columns": ["conversation_id", "idempotency_key"],
           "nullsNotDistinct": false
         }
       },
@@ -688,9 +648,7 @@
           "name": "public_chat_idempotency_server_gateway_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -805,13 +763,9 @@
         "public_chat_messages_conversation_id_public_chat_conversations_id_fk": {
           "name": "public_chat_messages_conversation_id_public_chat_conversations_id_fk",
           "tableFrom": "public_chat_messages",
-          "columnsFrom": [
-            "conversation_id"
-          ],
+          "columnsFrom": ["conversation_id"],
           "tableTo": "public_chat_conversations",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -820,10 +774,7 @@
       "uniqueConstraints": {
         "public_chat_messages_conversation_ordinal_unique": {
           "name": "public_chat_messages_conversation_ordinal_unique",
-          "columns": [
-            "conversation_id",
-            "ordinal"
-          ],
+          "columns": ["conversation_id", "ordinal"],
           "nullsNotDistinct": false
         }
       },
@@ -832,9 +783,7 @@
           "name": "public_chat_messages_server_gateway_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -915,9 +864,7 @@
           "name": "public_chat_rate_limits_server_gateway_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "true",
           "withCheck": "true"
         }
@@ -1009,9 +956,7 @@
       "uniqueConstraints": {
         "public_chat_sessions_session_hash_unique": {
           "name": "public_chat_sessions_session_hash_unique",
-          "columns": [
-            "session_hash"
-          ],
+          "columns": ["session_hash"],
           "nullsNotDistinct": false
         }
       },
@@ -1020,9 +965,7 @@
           "name": "public_chat_sessions_server_gateway_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "atlas_public_chat_gateway"
-          ],
+          "to": ["atlas_public_chat_gateway"],
           "using": "true",
           "withCheck": "true"
         }

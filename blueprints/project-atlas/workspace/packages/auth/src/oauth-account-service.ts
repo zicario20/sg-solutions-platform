@@ -37,7 +37,10 @@ export type PersistentOAuthAccountRepository = Readonly<{
       readonly absoluteExpiresAt: Date;
     };
     readonly now: Date;
-  }): Promise<{ readonly kind: "authenticated"; readonly accountId: string } | { readonly kind: "denied" | "manual_review" }>;
+  }): Promise<
+    | { readonly kind: "authenticated"; readonly accountId: string }
+    | { readonly kind: "denied" | "manual_review" }
+  >;
 }>;
 
 export function createPersistentOAuthAccountService(
@@ -45,13 +48,21 @@ export function createPersistentOAuthAccountService(
     readonly repository: PersistentOAuthAccountRepository;
     readonly issuer: string;
     readonly audience: string;
-    readonly resolveCrm: (input: { readonly subject: string; readonly supabaseEvidenceId: string }) => Promise<CrmPartyResolutionEvidence>;
+    readonly resolveCrm: (input: {
+      readonly subject: string;
+      readonly supabaseEvidenceId: string;
+    }) => Promise<CrmPartyResolutionEvidence>;
   },
   now = () => new Date(),
 ) {
   return {
     async authenticate(identity: OfficialSupabaseIdentity): Promise<
-      | { readonly kind: "authenticated"; readonly accountId: string; readonly handle: string; readonly handleDigest: string }
+      | {
+          readonly kind: "authenticated";
+          readonly accountId: string;
+          readonly handle: string;
+          readonly handleDigest: string;
+        }
       | { readonly kind: "denied" | "manual_review" }
     > {
       const verifiedAt = now();
@@ -62,10 +73,15 @@ export function createPersistentOAuthAccountService(
         !identity.subject ||
         !identity.emailVerified ||
         identity.expiresAt <= verifiedAt.getTime()
-      ) return { kind: "denied" };
+      )
+        return { kind: "denied" };
 
       const supabaseEvidenceId = createOpaqueValue();
-      await options.repository.storeSupabaseEvidence({ id: supabaseEvidenceId, identity, verifiedAt });
+      await options.repository.storeSupabaseEvidence({
+        id: supabaseEvidenceId,
+        identity,
+        verifiedAt,
+      });
       let resolution: CrmPartyResolutionEvidence;
       try {
         resolution = await options.resolveCrm({ subject: identity.subject, supabaseEvidenceId });

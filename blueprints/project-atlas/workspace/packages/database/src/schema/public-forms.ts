@@ -90,7 +90,10 @@ export const formDefinitions = pgTable(
   (table) => [
     check("form_definitions_id_valid", canonicalId(table.id)),
     check("form_definitions_code_valid", sql`${table.formCode} ~ '^[a-z][a-z0-9_]{1,63}$'`),
-    check("form_definitions_lifecycle_valid", sql`${table.lifecycle} in ('draft', 'active', 'disabled', 'archived')`),
+    check(
+      "form_definitions_lifecycle_valid",
+      sql`${table.lifecycle} in ('draft', 'active', 'disabled', 'archived')`,
+    ),
     pgPolicy("form_definitions_gateway_published_select", {
       as: "permissive",
       for: "select",
@@ -122,7 +125,9 @@ export const formDefinitionVersions = pgTable(
   "form_definition_versions",
   {
     id: text("id").primaryKey(),
-    definitionId: text("definition_id").notNull().references(() => formDefinitions.id, { onDelete: "restrict" }),
+    definitionId: text("definition_id")
+      .notNull()
+      .references(() => formDefinitions.id, { onDelete: "restrict" }),
     formCode: varchar("form_code", { length: 64 }).notNull(),
     version: varchar("version", { length: 32 }).notNull(),
     locale: varchar("locale", { length: 2 }).notNull(),
@@ -140,14 +145,35 @@ export const formDefinitionVersions = pgTable(
     ...timestamps,
   },
   (table) => [
-    unique("form_definition_versions_code_version_locale_unique").on(table.formCode, table.version, table.locale),
-    unique("form_definition_versions_id_code_version_locale_unique").on(table.id, table.formCode, table.version, table.locale),
+    unique("form_definition_versions_code_version_locale_unique").on(
+      table.formCode,
+      table.version,
+      table.locale,
+    ),
+    unique("form_definition_versions_id_code_version_locale_unique").on(
+      table.id,
+      table.formCode,
+      table.version,
+      table.locale,
+    ),
     check("form_definition_versions_id_valid", canonicalId(table.id)),
     check("form_definition_versions_locale_valid", sql`${table.locale} in ('es', 'en')`),
-    check("form_definition_versions_status_valid", sql`${table.status} in ('draft', 'published', 'disabled', 'archived')`),
-    check("form_definition_versions_audience_valid", sql`${table.audience} in ('public', 'staff_preview')`),
-    check("form_definition_versions_hashes_valid", sql`${digestCheck(table.schemaHash)} and ${digestCheck(table.uiHash)}`),
-    check("form_definition_versions_publication_valid", sql`(${table.status} = 'published' and ${table.publishedAt} is not null and ${table.audience} = 'public') or ${table.status} <> 'published'`),
+    check(
+      "form_definition_versions_status_valid",
+      sql`${table.status} in ('draft', 'published', 'disabled', 'archived')`,
+    ),
+    check(
+      "form_definition_versions_audience_valid",
+      sql`${table.audience} in ('public', 'staff_preview')`,
+    ),
+    check(
+      "form_definition_versions_hashes_valid",
+      sql`${digestCheck(table.schemaHash)} and ${digestCheck(table.uiHash)}`,
+    ),
+    check(
+      "form_definition_versions_publication_valid",
+      sql`(${table.status} = 'published' and ${table.publishedAt} is not null and ${table.audience} = 'public') or ${table.status} <> 'published'`,
+    ),
     pgPolicy("form_definition_versions_gateway_published_select", {
       as: "permissive",
       for: "select",
@@ -179,7 +205,9 @@ export const formFieldDefinitions = pgTable(
   "form_field_definitions",
   {
     id: text("id").notNull(),
-    definitionVersionId: text("definition_version_id").notNull().references(() => formDefinitionVersions.id, { onDelete: "restrict" }),
+    definitionVersionId: text("definition_version_id")
+      .notNull()
+      .references(() => formDefinitionVersions.id, { onDelete: "restrict" }),
     fieldCode: varchar("field_code", { length: 64 }).notNull(),
     fieldType: varchar("field_type", { length: 24 }).notNull(),
     step: integer("step").notNull(),
@@ -194,12 +222,21 @@ export const formFieldDefinitions = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   },
   (table) => [
-    primaryKey({ name: "form_field_definitions_pk", columns: [table.definitionVersionId, table.fieldCode] }),
-    unique("form_field_definitions_version_order_unique").on(table.definitionVersionId, table.sortOrder),
+    primaryKey({
+      name: "form_field_definitions_pk",
+      columns: [table.definitionVersionId, table.fieldCode],
+    }),
+    unique("form_field_definitions_version_order_unique").on(
+      table.definitionVersionId,
+      table.sortOrder,
+    ),
     check("form_field_definitions_code_valid", sql`${table.fieldCode} ~ '^[a-z][a-z0-9_]{1,63}$'`),
     check("form_field_definitions_step_valid", sql`${table.step} between 1 and 12`),
     check("form_field_definitions_order_valid", sql`${table.sortOrder} > 0`),
-    check("form_field_definitions_sensitivity_valid", sql`${table.sensitivity} in ('public', 'basic_personal', 'financial')`),
+    check(
+      "form_field_definitions_sensitivity_valid",
+      sql`${table.sensitivity} in ('public', 'basic_personal', 'financial')`,
+    ),
     pgPolicy("form_field_definitions_gateway_published_select", {
       as: "permissive",
       for: "select",
@@ -250,12 +287,25 @@ export const formSubmissions = pgTable(
     foreignKey({
       name: "form_submissions_definition_version_fk",
       columns: [table.formCode, table.formVersion, table.locale],
-      foreignColumns: [formDefinitionVersions.formCode, formDefinitionVersions.version, formDefinitionVersions.locale],
+      foreignColumns: [
+        formDefinitionVersions.formCode,
+        formDefinitionVersions.version,
+        formDefinitionVersions.locale,
+      ],
     }).onDelete("restrict"),
     check("form_submissions_id_valid", canonicalId(table.id)),
-    check("form_submissions_digests_valid", sql`${digestCheck(table.scopeDigest)} and ${digestCheck(table.sessionBindingDigest)} and ${digestCheck(table.nonceDigest)} and ${digestCheck(table.commandDigest)}`),
-    check("form_submissions_status_valid", sql`${table.status} in ('accepted', 'converted_to_lead', 'appointment_pending', 'expired', 'deleted')`),
-    check("form_submissions_deletion_valid", sql`${table.deletionState} in ('retained', 'deletion_due', 'deleted', 'legal_hold')`),
+    check(
+      "form_submissions_digests_valid",
+      sql`${digestCheck(table.scopeDigest)} and ${digestCheck(table.sessionBindingDigest)} and ${digestCheck(table.nonceDigest)} and ${digestCheck(table.commandDigest)}`,
+    ),
+    check(
+      "form_submissions_status_valid",
+      sql`${table.status} in ('accepted', 'converted_to_lead', 'appointment_pending', 'expired', 'deleted')`,
+    ),
+    check(
+      "form_submissions_deletion_valid",
+      sql`${table.deletionState} in ('retained', 'deletion_due', 'deleted', 'legal_hold')`,
+    ),
     check("form_submissions_expiry_valid", sql`${table.expiresAt} > ${table.acceptedAt}`),
     index("form_submissions_expiry_idx").on(table.deletionState, table.expiresAt),
     pgPolicy("form_submissions_gateway_session_revoke_select", {
@@ -276,7 +326,9 @@ export const formSubmissionReceipts = pgTable(
     commandDigest: char("command_digest", { length: 64 }).notNull(),
     reservationId: text("reservation_id").notNull(),
     state: varchar("state", { length: 24 }).notNull(),
-    submissionId: text("submission_id").references(() => formSubmissions.id, { onDelete: "restrict" }),
+    submissionId: text("submission_id").references(() => formSubmissions.id, {
+      onDelete: "restrict",
+    }),
     issuedAt: timestamp("issued_at", { withTimezone: true, mode: "date" }).notNull(),
     leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true, mode: "date" }).notNull(),
     acceptedAt: timestamp("accepted_at", { withTimezone: true, mode: "date" }),
@@ -285,10 +337,19 @@ export const formSubmissionReceipts = pgTable(
   (table) => [
     check("form_submission_receipts_id_valid", canonicalId(table.receiptId)),
     check("form_submission_receipts_reservation_valid", canonicalId(table.reservationId)),
-    check("form_submission_receipts_digests_valid", sql`${digestCheck(table.scopeDigest)} and ${digestCheck(table.commandDigest)}`),
-    check("form_submission_receipts_state_valid", sql`${table.state} in ('reserved', 'accepted', 'reconciliation_required')`),
+    check(
+      "form_submission_receipts_digests_valid",
+      sql`${digestCheck(table.scopeDigest)} and ${digestCheck(table.commandDigest)}`,
+    ),
+    check(
+      "form_submission_receipts_state_valid",
+      sql`${table.state} in ('reserved', 'accepted', 'reconciliation_required')`,
+    ),
     check("form_submission_receipts_lease_valid", sql`${table.leaseExpiresAt} > ${table.issuedAt}`),
-    check("form_submission_receipts_completion_valid", sql`(${table.state} = 'accepted' and ${table.submissionId} is not null and ${table.acceptedAt} is not null) or (${table.state} <> 'accepted' and ${table.submissionId} is null and ${table.acceptedAt} is null)`),
+    check(
+      "form_submission_receipts_completion_valid",
+      sql`(${table.state} = 'accepted' and ${table.submissionId} is not null and ${table.acceptedAt} is not null) or (${table.state} <> 'accepted' and ${table.submissionId} is null and ${table.acceptedAt} is null)`,
+    ),
     index("form_submission_receipts_lease_idx").on(table.state, table.leaseExpiresAt),
     pgPolicy("form_submission_receipts_gateway_session_revoke_select", {
       as: "permissive",
@@ -324,9 +385,18 @@ export const formResponses = pgTable(
       foreignColumns: [formSubmissions.id, formSubmissions.scopeDigest],
     }).onDelete("cascade"),
     check("form_responses_scope_valid", digestCheck(table.scopeDigest)),
-    check("form_responses_match_valid", sql`${table.matchDigest} is null or ${digestCheck(table.matchDigest)}`),
-    check("form_responses_value_type_valid", sql`${table.valueType} in ('string', 'number', 'boolean')`),
-    check("form_responses_sensitivity_valid", sql`${table.sensitivity} in ('public', 'basic_personal', 'financial')`),
+    check(
+      "form_responses_match_valid",
+      sql`${table.matchDigest} is null or ${digestCheck(table.matchDigest)}`,
+    ),
+    check(
+      "form_responses_value_type_valid",
+      sql`${table.valueType} in ('string', 'number', 'boolean')`,
+    ),
+    check(
+      "form_responses_sensitivity_valid",
+      sql`${table.sensitivity} in ('public', 'basic_personal', 'financial')`,
+    ),
     ...scopedGatewayPolicies("form_responses", table.scopeDigest),
   ],
 ).enableRLS();
@@ -348,15 +418,24 @@ export const formConsentEvidence = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   },
   (table) => [
-    primaryKey({ name: "form_consent_evidence_pk", columns: [table.submissionId, table.consentType, table.consentVersion] }),
+    primaryKey({
+      name: "form_consent_evidence_pk",
+      columns: [table.submissionId, table.consentType, table.consentVersion],
+    }),
     foreignKey({
       name: "form_consent_evidence_submission_scope_fk",
       columns: [table.submissionId, table.scopeDigest],
       foreignColumns: [formSubmissions.id, formSubmissions.scopeDigest],
     }).onDelete("restrict"),
-    check("form_consent_evidence_scope_valid", sql`${digestCheck(table.scopeDigest)} and ${digestCheck(table.sessionBindingDigest)}`),
+    check(
+      "form_consent_evidence_scope_valid",
+      sql`${digestCheck(table.scopeDigest)} and ${digestCheck(table.sessionBindingDigest)}`,
+    ),
     check("form_consent_evidence_source_valid", sql`${table.source} = 'public_form'`),
-    check("form_consent_evidence_revocation_valid", sql`${table.revokedAt} is null or (${table.granted} = true and ${table.revokedAt} >= ${table.occurredAt})`),
+    check(
+      "form_consent_evidence_revocation_valid",
+      sql`${table.revokedAt} is null or (${table.granted} = true and ${table.revokedAt} >= ${table.occurredAt})`,
+    ),
     pgPolicy("form_consent_evidence_gateway_session_revoke_select", {
       as: "permissive",
       for: "select",
@@ -398,7 +477,10 @@ export const formConsentRevocations = pgTable(
         formConsentEvidence.consentVersion,
       ],
     }).onDelete("restrict"),
-    check("form_consent_revocations_digests_valid", sql`${digestCheck(table.scopeDigest)} and ${digestCheck(table.sessionBindingDigest)} and ${digestCheck(table.idempotencyDigest)} and ${digestCheck(table.commandDigest)}`),
+    check(
+      "form_consent_revocations_digests_valid",
+      sql`${digestCheck(table.scopeDigest)} and ${digestCheck(table.sessionBindingDigest)} and ${digestCheck(table.idempotencyDigest)} and ${digestCheck(table.commandDigest)}`,
+    ),
     pgPolicy("form_consent_revocations_gateway_session_select", {
       as: "permissive",
       for: "select",
@@ -474,7 +556,10 @@ export const formDrafts = pgTable(
     ...timestamps,
   },
   (table) => [
-    check("form_drafts_scope_valid", sql`${digestCheck(table.scopeDigest)} and ${digestCheck(table.sessionBindingDigest)}`),
+    check(
+      "form_drafts_scope_valid",
+      sql`${digestCheck(table.scopeDigest)} and ${digestCheck(table.sessionBindingDigest)}`,
+    ),
     check("form_drafts_locale_valid", sql`${table.locale} in ('es', 'en')`),
     check("form_drafts_state_valid", sql`${table.state} in ('active', 'expired', 'deleted')`),
     check("form_drafts_expiry_valid", sql`${table.expiresAt} > ${table.createdAt}`),
@@ -547,11 +632,26 @@ export const formOutbox = pgTable(
       foreignColumns: [formConsentRevocations.id],
     }).onDelete("restrict"),
     check("form_outbox_scope_valid", digestCheck(table.scopeDigest)),
-    check("form_outbox_owner_valid", sql`${table.owner} in ('lead', 'consent', 'appointment', 'payment', 'channel', 'analytics', 'notification')`),
-    check("form_outbox_state_valid", sql`${table.state} in ('pending', 'dispatching', 'completed', 'unavailable', 'unknown', 'manual_review')`),
-    check("form_outbox_lease_purpose_valid", sql`${table.leasePurpose} in ('dispatch', 'reconcile')`),
-    check("form_outbox_attempt_valid", sql`${table.attemptCount} >= 0 and ${table.maxAttempts} between 1 and 12 and ${table.attemptCount} <= ${table.maxAttempts} and ${table.leaseVersion} >= 0`),
-    check("form_outbox_lease_valid", sql`(${table.state} = 'dispatching' and ${table.leaseOwner} is not null and ${table.leaseExpiresAt} is not null) or (${table.state} <> 'dispatching' and ${table.leaseOwner} is null and ${table.leaseExpiresAt} is null)`),
+    check(
+      "form_outbox_owner_valid",
+      sql`${table.owner} in ('lead', 'consent', 'appointment', 'payment', 'channel', 'analytics', 'notification')`,
+    ),
+    check(
+      "form_outbox_state_valid",
+      sql`${table.state} in ('pending', 'dispatching', 'completed', 'unavailable', 'unknown', 'manual_review')`,
+    ),
+    check(
+      "form_outbox_lease_purpose_valid",
+      sql`${table.leasePurpose} in ('dispatch', 'reconcile')`,
+    ),
+    check(
+      "form_outbox_attempt_valid",
+      sql`${table.attemptCount} >= 0 and ${table.maxAttempts} between 1 and 12 and ${table.attemptCount} <= ${table.maxAttempts} and ${table.leaseVersion} >= 0`,
+    ),
+    check(
+      "form_outbox_lease_valid",
+      sql`(${table.state} = 'dispatching' and ${table.leaseOwner} is not null and ${table.leaseExpiresAt} is not null) or (${table.state} <> 'dispatching' and ${table.leaseOwner} is null and ${table.leaseExpiresAt} is null)`,
+    ),
     index("form_outbox_dispatch_idx").on(table.state, table.availableAt),
     pgPolicy("form_outbox_worker_select", {
       as: "permissive",
@@ -592,7 +692,10 @@ export const formAuditEvents = pgTable(
     }).onDelete("restrict"),
     check("form_audit_events_scope_valid", digestCheck(table.scopeDigest)),
     check("form_audit_events_locale_valid", sql`${table.locale} in ('es', 'en')`),
-    check("form_audit_events_event_valid", sql`${table.eventName} in ('submission_accepted', 'submission_replayed', 'submission_review', 'submission_expired', 'consent_revoked')`),
+    check(
+      "form_audit_events_event_valid",
+      sql`${table.eventName} in ('submission_accepted', 'submission_replayed', 'submission_review', 'submission_expired', 'consent_revoked')`,
+    ),
     ...scopedGatewayPolicies("form_audit_events", table.scopeDigest),
   ],
 ).enableRLS();

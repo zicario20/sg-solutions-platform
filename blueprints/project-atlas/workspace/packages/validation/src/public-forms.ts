@@ -1,7 +1,16 @@
 import { z } from "zod";
 
-const safeCode = z.string().trim().toLowerCase().regex(/^[a-z][a-z0-9_]{1,63}$/u);
-const safeOpaqueToken = z.string().trim().min(20).max(180).regex(/^[A-Za-z0-9._:-]+$/u);
+const safeCode = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z][a-z0-9_]{1,63}$/u);
+const safeOpaqueToken = z
+  .string()
+  .trim()
+  .min(20)
+  .max(180)
+  .regex(/^[A-Za-z0-9._:-]+$/u);
 const answerValue = z.union([
   z.string().trim().max(2_000),
   z.number().finite().safe(),
@@ -21,7 +30,12 @@ const consents = z
   .refine((record) => Object.keys(record).every((key) => !forbiddenKeys.has(key)))
   .transform((record) => Object.freeze({ ...record }));
 
-const attributionValue = z.string().trim().min(1).max(512).refine((value) => !/[\r\n]/u.test(value));
+const attributionValue = z
+  .string()
+  .trim()
+  .min(1)
+  .max(512)
+  .refine((value) => !/[\r\n]/u.test(value));
 const attribution = z
   .object({
     landingPage: attributionValue.optional(),
@@ -40,7 +54,10 @@ const attribution = z
 export const publicSubmissionEnvelopeSchema = z
   .object({
     formCode: safeCode,
-    formVersion: z.string().trim().regex(/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/u),
+    formVersion: z
+      .string()
+      .trim()
+      .regex(/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/u),
     locale: z.preprocess(
       (value) => (typeof value === "string" ? value.trim().toLowerCase() : value),
       z.enum(["es", "en"]),

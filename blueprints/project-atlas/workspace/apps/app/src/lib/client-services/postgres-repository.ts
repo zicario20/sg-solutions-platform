@@ -2,7 +2,10 @@ import type { ClientServiceRootProjection, ClientServicesSourcePort } from "@atl
 import type { DashboardAuthorizationSnapshot } from "@atlas/dashboard";
 
 export interface ClientServicesSqlTransaction {
-  query<T extends Record<string, unknown>>(text: string, values: readonly unknown[]): Promise<readonly T[]>;
+  query<T extends Record<string, unknown>>(
+    text: string,
+    values: readonly unknown[],
+  ): Promise<readonly T[]>;
 }
 export interface ClientServicesSqlPort {
   transaction<T>(work: (tx: ClientServicesSqlTransaction) => Promise<T>): Promise<T>;
@@ -19,7 +22,8 @@ const integer = (row: Row, name: string) => {
   return value;
 };
 const object = (row: Row, name: string) => {
-  if (!row[name] || typeof row[name] !== "object" || Array.isArray(row[name])) throw new TypeError(`Invalid ${name}`);
+  if (!row[name] || typeof row[name] !== "object" || Array.isArray(row[name]))
+    throw new TypeError(`Invalid ${name}`);
   return row[name] as Record<string, unknown>;
 };
 const array = (row: Row, name: string) => {
@@ -28,7 +32,10 @@ const array = (row: Row, name: string) => {
 };
 
 function root(row: Row): ClientServiceRootProjection {
-  const display = (copy: Record<string, unknown>, milestones: readonly Record<string, unknown>[]) => ({
+  const display = (
+    copy: Record<string, unknown>,
+    milestones: readonly Record<string, unknown>[],
+  ) => ({
     contextLabel: String(copy.contextLabel),
     serviceName: String(copy.serviceName),
     categoryLabel: String(copy.categoryLabel),
@@ -36,7 +43,8 @@ function root(row: Row): ClientServiceRootProjection {
     publicStateLabels: copy.publicStateLabels as Record<string, string>,
     axisLabels: copy.axisLabels as ClientServiceRootProjection["displays"]["en"]["axisLabels"],
     ...(copy.nextStepLabel ? { nextStepLabel: String(copy.nextStepLabel) } : {}),
-    milestones: milestones as unknown as ClientServiceRootProjection["displays"]["en"]["milestones"],
+    milestones:
+      milestones as unknown as ClientServiceRootProjection["displays"]["en"]["milestones"],
   });
   return {
     serviceOrderId: text(row, "service_order_id"),
@@ -49,26 +57,55 @@ function root(row: Row): ClientServiceRootProjection {
     publicReference: text(row, "public_reference"),
     contextType: text(row, "context_type") as ClientServiceRootProjection["contextType"],
     axes: {
-      commercial: text(row, "commercial_state") as ClientServiceRootProjection["axes"]["commercial"],
+      commercial: text(
+        row,
+        "commercial_state",
+      ) as ClientServiceRootProjection["axes"]["commercial"],
       financial: text(row, "financial_state") as ClientServiceRootProjection["axes"]["financial"],
-      activation: text(row, "activation_state") as ClientServiceRootProjection["axes"]["activation"],
-      fulfillment: text(row, "fulfillment_state") as ClientServiceRootProjection["axes"]["fulfillment"],
+      activation: text(
+        row,
+        "activation_state",
+      ) as ClientServiceRootProjection["axes"]["activation"],
+      fulfillment: text(
+        row,
+        "fulfillment_state",
+      ) as ClientServiceRootProjection["axes"]["fulfillment"],
     },
     ownerFacts: {
-      financial: { sourceVersion: text(row, "financial_source_version"), resourceEpoch: integer(row, "financial_resource_epoch") },
-      activation: { sourceVersion: text(row, "activation_source_version"), resourceEpoch: integer(row, "activation_resource_epoch") },
-      fulfillment: { sourceVersion: text(row, "fulfillment_source_version"), resourceEpoch: integer(row, "fulfillment_resource_epoch") },
+      financial: {
+        sourceVersion: text(row, "financial_source_version"),
+        resourceEpoch: integer(row, "financial_resource_epoch"),
+      },
+      activation: {
+        sourceVersion: text(row, "activation_source_version"),
+        resourceEpoch: integer(row, "activation_resource_epoch"),
+      },
+      fulfillment: {
+        sourceVersion: text(row, "fulfillment_source_version"),
+        resourceEpoch: integer(row, "fulfillment_resource_epoch"),
+      },
     },
     displays: {
       es: display(object(row, "display_es"), array(row, "milestones_es")),
       en: display(object(row, "display_en"), array(row, "milestones_en")),
     },
-    ...(row.current_milestone_index === null ? {} : { currentMilestoneIndex: integer(row, "current_milestone_index") }),
+    ...(row.current_milestone_index === null
+      ? {}
+      : { currentMilestoneIndex: integer(row, "current_milestone_index") }),
     completedMilestones: integer(row, "completed_milestones"),
     criticalSources: {
-      tasks: text(row, "tasks_source_status") as ClientServiceRootProjection["criticalSources"]["tasks"],
-      documents: text(row, "documents_source_status") as ClientServiceRootProjection["criticalSources"]["documents"],
-      payments: text(row, "payments_source_status") as ClientServiceRootProjection["criticalSources"]["payments"],
+      tasks: text(
+        row,
+        "tasks_source_status",
+      ) as ClientServiceRootProjection["criticalSources"]["tasks"],
+      documents: text(
+        row,
+        "documents_source_status",
+      ) as ClientServiceRootProjection["criticalSources"]["documents"],
+      payments: text(
+        row,
+        "payments_source_status",
+      ) as ClientServiceRootProjection["criticalSources"]["payments"],
     },
     updatedAt: new Date(text(row, "updated_at")),
     grant: {
@@ -172,41 +209,87 @@ const PUBLIC_STATE_SQL = `CASE
   ELSE 'unconfirmed'
 END`;
 
-async function scoped<T>(sql: ClientServicesSqlPort, snapshot: DashboardAuthorizationSnapshot, work: (tx: ClientServicesSqlTransaction) => Promise<T>) {
+async function scoped<T>(
+  sql: ClientServicesSqlPort,
+  snapshot: DashboardAuthorizationSnapshot,
+  work: (tx: ClientServicesSqlTransaction) => Promise<T>,
+) {
   return sql.transaction(async (tx) => {
     await tx.query("SET LOCAL ROLE atlas_client_services_reader", []);
-    await tx.query("SELECT set_config('atlas.account_id',$1,true),set_config('atlas.context_opaque_ref',$2,true),set_config('atlas.authorization_epoch',$3,true),set_config('atlas.policy_epoch',$4,true)", [snapshot.accountId, snapshot.context.opaqueRef, String(snapshot.authorizationEpoch), String(snapshot.policyEpoch)]);
+    await tx.query(
+      "SELECT set_config('atlas.account_id',$1,true),set_config('atlas.context_opaque_ref',$2,true),set_config('atlas.authorization_epoch',$3,true),set_config('atlas.policy_epoch',$4,true)",
+      [
+        snapshot.accountId,
+        snapshot.context.opaqueRef,
+        String(snapshot.authorizationEpoch),
+        String(snapshot.policyEpoch),
+      ],
+    );
     return work(tx);
   });
 }
 
 function emptyContext(snapshot: DashboardAuthorizationSnapshot) {
-  const type = snapshot.context.type === "organization" ? "organization" as const : "personal" as const;
-  const selected = snapshot.contextOptions.find((option) => option.opaqueRef === snapshot.context.opaqueRef);
-  const fallback = snapshot.locale === "es" ? (type === "organization" ? "Organización" : "Personal") : (type === "organization" ? "Organization" : "Personal");
+  const type =
+    snapshot.context.type === "organization" ? ("organization" as const) : ("personal" as const);
+  const selected = snapshot.contextOptions.find(
+    (option) => option.opaqueRef === snapshot.context.opaqueRef,
+  );
+  const fallback =
+    snapshot.locale === "es"
+      ? type === "organization"
+        ? "Organización"
+        : "Personal"
+      : type === "organization"
+        ? "Organization"
+        : "Personal";
   return { type, label: selected?.label ?? fallback };
 }
 
-export function createPostgresClientServicesSource(sql: ClientServicesSqlPort): ClientServicesSourcePort {
+export function createPostgresClientServicesSource(
+  sql: ClientServicesSqlPort,
+): ClientServicesSourcePort {
   return {
     async list({ snapshot, query, status, limit }) {
       return scoped(sql, snapshot, async (tx) => {
-        const rows = await tx.query<Row>(`${SELECT}
+        const rows = await tx.query<Row>(
+          `${SELECT}
           AND ($5::text IS NULL OR p.public_reference ILIKE '%'||$5||'%' OR d.public_display_es->>'serviceName' ILIKE '%'||$5||'%' OR d.public_display_en->>'serviceName' ILIKE '%'||$5||'%')
           AND ($6::text IS NULL OR (${PUBLIC_STATE_SQL}) = $6)
-          ORDER BY p.updated_at DESC, p.id LIMIT $7`, [snapshot.accountId, snapshot.context.opaqueRef, snapshot.authorizationEpoch, snapshot.policyEpoch, query ?? null, status ?? null, limit]);
-        return rows.length ? { state: "fresh", generatedAt: new Date(), items: rows.map(root) } : { state: "empty", generatedAt: new Date(), context: emptyContext(snapshot) };
+          ORDER BY p.updated_at DESC, p.id LIMIT $7`,
+          [
+            snapshot.accountId,
+            snapshot.context.opaqueRef,
+            snapshot.authorizationEpoch,
+            snapshot.policyEpoch,
+            query ?? null,
+            status ?? null,
+            limit,
+          ],
+        );
+        return rows.length
+          ? { state: "fresh", generatedAt: new Date(), items: rows.map(root) }
+          : { state: "empty", generatedAt: new Date(), context: emptyContext(snapshot) };
       });
     },
     async detail({ snapshot, opaqueRef }) {
       return scoped(sql, snapshot, async (tx) => {
-        const rows = await tx.query<Row>(`${SELECT} AND m.opaque_ref = $5 LIMIT 1`, [snapshot.accountId, snapshot.context.opaqueRef, snapshot.authorizationEpoch, snapshot.policyEpoch, opaqueRef]);
-        return rows[0] ? { state: "fresh", generatedAt: new Date(), root: root(rows[0]) } : { state: "not_found" };
+        const rows = await tx.query<Row>(`${SELECT} AND m.opaque_ref = $5 LIMIT 1`, [
+          snapshot.accountId,
+          snapshot.context.opaqueRef,
+          snapshot.authorizationEpoch,
+          snapshot.policyEpoch,
+          opaqueRef,
+        ]);
+        return rows[0]
+          ? { state: "fresh", generatedAt: new Date(), root: root(rows[0]) }
+          : { state: "not_found" };
       });
     },
     async verifyFinalFence({ snapshot, fence }) {
       return scoped(sql, snapshot, async (tx) => {
-        const rows = await tx.query<Row>(`SELECT p.id
+        const rows = await tx.query<Row>(
+          `SELECT p.id
           FROM public.service_orders p
           JOIN public.service_definition_versions d ON d.id = p.accepted_definition_version_id
           JOIN public.service_order_financial_facts f ON f.service_order_id = p.id
@@ -238,24 +321,26 @@ export function createPostgresClientServicesSource(sql: ClientServicesSqlPort): 
                   AND c.resource_epoch = expected."resourceEpoch"
                   AND c.source_version = expected."sourceVersion"
               )
-            )`, [
-          snapshot.accountId,
-          snapshot.context.opaqueRef,
-          snapshot.authorizationEpoch,
-          snapshot.policyEpoch,
-          fence.serviceOrderId,
-          fence.rootEpoch,
-          fence.definitionVersionId,
-          fence.definitionEpoch,
-          fence.grantResourceEpoch,
-          fence.ownerFacts.financial.sourceVersion,
-          fence.ownerFacts.financial.resourceEpoch,
-          fence.ownerFacts.activation.sourceVersion,
-          fence.ownerFacts.activation.resourceEpoch,
-          fence.ownerFacts.fulfillment.sourceVersion,
-          fence.ownerFacts.fulfillment.resourceEpoch,
-          JSON.stringify(fence.childResources),
-        ]);
+            )`,
+          [
+            snapshot.accountId,
+            snapshot.context.opaqueRef,
+            snapshot.authorizationEpoch,
+            snapshot.policyEpoch,
+            fence.serviceOrderId,
+            fence.rootEpoch,
+            fence.definitionVersionId,
+            fence.definitionEpoch,
+            fence.grantResourceEpoch,
+            fence.ownerFacts.financial.sourceVersion,
+            fence.ownerFacts.financial.resourceEpoch,
+            fence.ownerFacts.activation.sourceVersion,
+            fence.ownerFacts.activation.resourceEpoch,
+            fence.ownerFacts.fulfillment.sourceVersion,
+            fence.ownerFacts.fulfillment.resourceEpoch,
+            JSON.stringify(fence.childResources),
+          ],
+        );
         return rows.length === 1;
       });
     },

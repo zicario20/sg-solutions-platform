@@ -1,3 +1,39 @@
 "use client";
-import { useEffect,useState } from "react";import { ClientPortalShell } from "../dashboard/ClientPortalShell.tsx";
-export function ClientServicesRouteError({reset,detail=false}:{reset:()=>void;detail?:boolean}){const[locale,setLocale]=useState<"es"|"en">("es");useEffect(()=>setLocale(document.documentElement.lang.toLowerCase().startsWith("en")?"en":"es"),[]);const copy=locale==="en"?{title:detail?"Service unavailable":"We cannot show your services",body:"Please try again later. Your data remains protected.",retry:"Try again"}:{title:detail?"Servicio no disponible":"No podemos mostrar tus servicios",body:"Inténtalo de nuevo más tarde. Tus datos permanecen protegidos.",retry:"Reintentar"};return <ClientPortalShell locale={locale} activeRoute="services" contextType="personal"><main className="m009-message" role="alert"><h1>{copy.title}</h1><p>{copy.body}</p><button type="button" onClick={reset}>{copy.retry}</button></main></ClientPortalShell>}
+import { useEffect, useState } from "react";
+import { ClientPortalShell } from "../dashboard/ClientPortalShell.tsx";
+export function ClientServicesRouteError({
+  reset,
+  detail = false,
+}: {
+  reset: () => void;
+  detail?: boolean;
+}) {
+  const [locale, setLocale] = useState<"es" | "en">("es");
+  useEffect(
+    () => setLocale(document.documentElement.lang.toLowerCase().startsWith("en") ? "en" : "es"),
+    [],
+  );
+  const copy =
+    locale === "en"
+      ? {
+          title: detail ? "Service unavailable" : "We cannot show your services",
+          body: "Please try again later. Your data remains protected.",
+          retry: "Try again",
+        }
+      : {
+          title: detail ? "Servicio no disponible" : "No podemos mostrar tus servicios",
+          body: "Inténtalo de nuevo más tarde. Tus datos permanecen protegidos.",
+          retry: "Reintentar",
+        };
+  return (
+    <ClientPortalShell locale={locale} activeRoute="services" contextType="personal">
+      <main className="m009-message" role="alert">
+        <h1>{copy.title}</h1>
+        <p>{copy.body}</p>
+        <button type="button" onClick={reset}>
+          {copy.retry}
+        </button>
+      </main>
+    </ClientPortalShell>
+  );
+}

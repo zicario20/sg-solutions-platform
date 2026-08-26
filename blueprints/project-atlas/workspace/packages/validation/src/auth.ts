@@ -1,10 +1,6 @@
 import { z } from "zod";
 
-const normalizedEmail = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .pipe(z.email().max(254));
+const normalizedEmail = z.string().trim().toLowerCase().pipe(z.email().max(254));
 
 const loginRequestSchema = z
   .object({

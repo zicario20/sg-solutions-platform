@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
-
+import { createProviderDisabledPublicFormsRuntime } from "../../apps/www/src/lib/public-forms/runtime.ts";
 import { MemoryPublicFormsRepository } from "../../packages/domain/src/public-forms/repository.ts";
 import { SyntheticFormOutboxStore } from "../../packages/domain/src/public-forms/synthetic-ports.ts";
-import { createProviderDisabledPublicFormsRuntime } from "../../apps/www/src/lib/public-forms/runtime.ts";
 import { REVIEW_NOW, reviewDefinition } from "./public-forms-review-fixtures.ts";
 
 const ORIGIN = "https://www.sgsllc.com";
 
-function request(path: string, body: Record<string, unknown>, input: { cookie?: string; csrf?: string } = {}) {
+function request(
+  path: string,
+  body: Record<string, unknown>,
+  input: { cookie?: string; csrf?: string } = {},
+) {
   return new Request(`${ORIGIN}${path}`, {
     method: "POST",
     headers: {
@@ -42,7 +45,10 @@ function configuredRuntime() {
   return { repository, outboxStore, runtime };
 }
 
-async function bootstrap(runtime: ReturnType<typeof createProviderDisabledPublicFormsRuntime>, cookie?: string) {
+async function bootstrap(
+  runtime: ReturnType<typeof createProviderDisabledPublicFormsRuntime>,
+  cookie?: string,
+) {
   const response = await runtime.bootstrap(
     request(
       "/api/public/forms/bootstrap",
@@ -87,9 +93,7 @@ describe("M006 configured provider-disabled runtime", () => {
     });
     expect(repository.acceptedSubmissions[0]?.answers[0]).not.toHaveProperty("matchDigest");
     expect(outboxStore.snapshot(repository.acceptedSubmissions[0]!.submissionId)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ state: "pending" }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ state: "pending" })]),
     );
   });
 

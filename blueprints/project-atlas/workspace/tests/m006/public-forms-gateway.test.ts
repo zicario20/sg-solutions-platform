@@ -1,10 +1,10 @@
+import type { AcceptPublicFormCommand } from "@atlas/domain";
 import { describe, expect, it } from "vitest";
 import {
   createFormAdmissionHandlers,
   createMemoryFormRateLimiter,
   createSignedFormAdmissionTokens,
 } from "../../apps/www/src/lib/public-forms/admission.ts";
-import type { AcceptPublicFormCommand } from "@atlas/domain";
 
 const origin = "https://www.sgsllc.com";
 
@@ -64,7 +64,7 @@ async function bootstrap(harness: ReturnType<typeof harness>) {
       }),
     ),
   );
-  const payload = await response.json() as { nonce: string; csrfToken: string };
+  const payload = (await response.json()) as { nonce: string; csrfToken: string };
   const cookie = response.headers.get("set-cookie")?.split(";")[0] ?? "";
   return { response, payload, cookie };
 }

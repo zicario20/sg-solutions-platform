@@ -1,11 +1,20 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
 import { createClientServiceOpaqueRef, isClientServiceAuthorized } from "@atlas/client-services";
+import { describe, expect, it } from "vitest";
 
-const sql = readFileSync(resolve(import.meta.dirname, "../../drizzle/0037_m009_client_services.sql"), "utf8").toLowerCase();
-const repository = readFileSync(resolve(import.meta.dirname, "../../apps/app/src/lib/client-services/postgres-repository.ts"), "utf8").toLowerCase();
-const runtime = readFileSync(resolve(import.meta.dirname, "../../apps/app/src/lib/client-services/configured-runtime.ts"), "utf8").toLowerCase();
+const sql = readFileSync(
+  resolve(import.meta.dirname, "../../drizzle/0037_m009_client_services.sql"),
+  "utf8",
+).toLowerCase();
+const repository = readFileSync(
+  resolve(import.meta.dirname, "../../apps/app/src/lib/client-services/postgres-repository.ts"),
+  "utf8",
+).toLowerCase();
+const runtime = readFileSync(
+  resolve(import.meta.dirname, "../../apps/app/src/lib/client-services/configured-runtime.ts"),
+  "utf8",
+).toLowerCase();
 
 describe("M009 authority and security remediation", () => {
   it("uses ServiceOrder owners, a rebuildable read model and scoped non-bypass RLS", () => {
@@ -41,11 +50,45 @@ describe("M009 authority and security remediation", () => {
   });
 
   it("rejects mismatched, expired and epoch-incompatible grants", () => {
-    const snapshot = { accountId: "acct-text", authorizationEpoch: 5, policyEpoch: 6, context: { opaqueRef: "ctx" }, accountStatus: "active", sessionStatus: "active", sessionExpiresAt: "2026-08-22T00:00:00.000Z" } as never;
-    const base = { ownerAccountId: "acct-text", ownerContextOpaqueRef: "ctx", resourceEpoch: 7, grant: { permission: "client.service.read", state: "active", accountId: "acct-text", contextOpaqueRef: "ctx", authorizationEpoch: 5, policyEpoch: 6, resourceEpoch: 7, expiresAt: "2026-08-22T00:00:00.000Z" } } as never;
+    const snapshot = {
+      accountId: "acct-text",
+      authorizationEpoch: 5,
+      policyEpoch: 6,
+      context: { opaqueRef: "ctx" },
+      accountStatus: "active",
+      sessionStatus: "active",
+      sessionExpiresAt: "2026-08-22T00:00:00.000Z",
+    } as never;
+    const base = {
+      ownerAccountId: "acct-text",
+      ownerContextOpaqueRef: "ctx",
+      resourceEpoch: 7,
+      grant: {
+        permission: "client.service.read",
+        state: "active",
+        accountId: "acct-text",
+        contextOpaqueRef: "ctx",
+        authorizationEpoch: 5,
+        policyEpoch: 6,
+        resourceEpoch: 7,
+        expiresAt: "2026-08-22T00:00:00.000Z",
+      },
+    } as never;
     expect(isClientServiceAuthorized(snapshot, base, new Date("2026-08-21T12:00:00Z"))).toBe(true);
-    expect(isClientServiceAuthorized(snapshot, { ...base, ownerAccountId: "other" } as never, new Date("2026-08-21T12:00:00Z"))).toBe(false);
-    expect(isClientServiceAuthorized(snapshot, { ...base, grant: { ...(base as any).grant, authorizationEpoch: 4 } } as never, new Date("2026-08-21T12:00:00Z"))).toBe(false);
+    expect(
+      isClientServiceAuthorized(
+        snapshot,
+        { ...base, ownerAccountId: "other" } as never,
+        new Date("2026-08-21T12:00:00Z"),
+      ),
+    ).toBe(false);
+    expect(
+      isClientServiceAuthorized(
+        snapshot,
+        { ...base, grant: { ...(base as any).grant, authorizationEpoch: 4 } } as never,
+        new Date("2026-08-21T12:00:00Z"),
+      ),
+    ).toBe(false);
     expect(isClientServiceAuthorized(snapshot, base, new Date("2026-08-22T00:00:00Z"))).toBe(false);
   });
 

@@ -57,19 +57,12 @@ function cloneResult(result: VoiceOperationResult): VoiceOperationResult {
 
 function rowResult(row: VoiceReceiptRow): VoiceOperationResult | undefined {
   if (row.result_kind === "completed") {
-    if (
-      !row.result_code ||
-      !row.owner_receipt_id ||
-      !completionOutcomes.has(row.result_code)
-    ) {
+    if (!row.result_code || !row.owner_receipt_id || !completionOutcomes.has(row.result_code)) {
       return undefined;
     }
     return {
       kind: "completed",
-      outcome: row.result_code as Extract<
-        VoiceOperationResult,
-        { kind: "completed" }
-      >["outcome"],
+      outcome: row.result_code as Extract<VoiceOperationResult, { kind: "completed" }>["outcome"],
       receiptId: row.owner_receipt_id,
     };
   }
@@ -102,9 +95,7 @@ function rowRecord(row: VoiceReceiptRow): StoredVoiceCommandReceipt {
   });
 }
 
-export class MemoryVoiceCommandReceiptRepository
-  implements VoiceCommandReceiptRepository
-{
+export class MemoryVoiceCommandReceiptRepository implements VoiceCommandReceiptRepository {
   private readonly byKey = new Map<string, StoredVoiceCommandReceipt>();
   private readonly keyByReceiptId = new Map<string, string>();
   private readonly leaseMilliseconds: number;
@@ -136,10 +127,7 @@ export class MemoryVoiceCommandReceiptRepository
       ) {
         return { status: "conflict" };
       }
-      if (
-        (existing.state === "completed" || existing.state === "failed") &&
-        existing.result
-      ) {
+      if ((existing.state === "completed" || existing.state === "failed") && existing.result) {
         return { status: "replay", receipt: existing, result: cloneResult(existing.result) };
       }
       if (existing.state === "reconciliation_required") {
@@ -297,9 +285,7 @@ export function createVoiceSql(databaseUrl: string): VoiceSql {
   });
 }
 
-export class PostgresVoiceCommandReceiptRepository
-  implements VoiceCommandReceiptRepository
-{
+export class PostgresVoiceCommandReceiptRepository implements VoiceCommandReceiptRepository {
   private readonly leaseMilliseconds: number;
 
   constructor(
@@ -323,9 +309,7 @@ export class PostgresVoiceCommandReceiptRepository
     now: Date;
   }): Promise<VoiceReceiptReservation> {
     return withVoiceTransaction(this.sql, input.receipt.callId, async (tx) => {
-      const leaseExpiresAt = new Date(
-        input.now.getTime() + this.leaseMilliseconds,
-      );
+      const leaseExpiresAt = new Date(input.now.getTime() + this.leaseMilliseconds);
       const inserted = await query<{ receipt_id: string }>(
         tx,
         `insert into voice_command_receipts (
@@ -376,10 +360,7 @@ export class PostgresVoiceCommandReceiptRepository
         return { status: "conflict" };
       }
       const receipt = rowRecord(row);
-      if (
-        (receipt.state === "completed" || receipt.state === "failed") &&
-        receipt.result
-      ) {
+      if ((receipt.state === "completed" || receipt.state === "failed") && receipt.result) {
         return { status: "replay", receipt, result: receipt.result };
       }
       if (receipt.state === "reconciliation_required") {
@@ -395,12 +376,7 @@ export class PostgresVoiceCommandReceiptRepository
                lease_expires_at = $3, updated_at = $4
              where receipt_id = $1 and call_id = $2 and state = 'reserved'
              returning *`,
-            [
-              receipt.receiptId,
-              input.receipt.callId,
-              leaseExpiresAt,
-              input.now,
-            ],
+            [receipt.receiptId, input.receipt.callId, leaseExpiresAt, input.now],
           )
         )[0];
         if (!reconciledRow) return { status: "conflict" };

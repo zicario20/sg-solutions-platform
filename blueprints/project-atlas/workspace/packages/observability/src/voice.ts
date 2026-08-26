@@ -153,9 +153,7 @@ export function projectVoiceTelemetry(input: unknown): VoiceTelemetryEvent {
     typeof record.durationBucket !== "string" ||
     !DURATION_BUCKETS.has(record.durationBucket as VoiceDurationBucket) ||
     record.redactionMarker !== "metadata_only" ||
-    (Object.hasOwn(record, "locale") &&
-      record.locale !== "es" &&
-      record.locale !== "en") ||
+    (Object.hasOwn(record, "locale") && record.locale !== "es" && record.locale !== "en") ||
     (Object.hasOwn(record, "failureClass") &&
       (typeof record.failureClass !== "string" ||
         !FAILURE_CLASSES.has(record.failureClass as VoiceFailureClass)))

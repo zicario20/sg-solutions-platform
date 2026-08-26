@@ -51,7 +51,12 @@ export interface FormAdmissionTokens {
   }): { valid: true; sessionBinding: string } | { valid: false };
 }
 
-export type FormAdmissionOperation = "bootstrap" | "submit" | "draft_save" | "draft_resume" | "consent_revoke";
+export type FormAdmissionOperation =
+  | "bootstrap"
+  | "submit"
+  | "draft_save"
+  | "draft_resume"
+  | "consent_revoke";
 
 export interface FormRateLimiter {
   readonly scope: "local" | "shared";
@@ -143,7 +148,10 @@ export function createSignedFormAdmissionTokens(input: {
           payload.issuedAt > now + 30 ||
           payload.expiresAt <= now ||
           payload.expiresAt - payload.issuedAt !== input.ttlSeconds ||
-          !safeEqual(payload.sessionDigest, digest(input.secret, "session", candidate.sessionToken)) ||
+          !safeEqual(
+            payload.sessionDigest,
+            digest(input.secret, "session", candidate.sessionToken),
+          ) ||
           !safeEqual(payload.csrfDigest, digest(input.secret, "csrf", candidate.csrfToken))
         ) {
           return { valid: false };
@@ -161,7 +169,8 @@ export function createMemoryFormRateLimiter(input: {
   windowSeconds: number;
   maxBuckets?: number;
 }): FormRateLimiter {
-  if (input.limit < 1 || input.windowSeconds < 1) throw new Error("PUBLIC_FORMS_RATE_LIMIT_INVALID");
+  if (input.limit < 1 || input.windowSeconds < 1)
+    throw new Error("PUBLIC_FORMS_RATE_LIMIT_INVALID");
   const buckets = new Map<string, { count: number; expiresAt: number }>();
   const maxBuckets = input.maxBuckets ?? 4_096;
   return {
@@ -341,7 +350,11 @@ function cookieValue(request: Request): string | undefined {
 function json(status: number, payload: Record<string, unknown>, headers?: HeadersInit): Response {
   return new Response(JSON.stringify(payload), {
     status,
-    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...headers },
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      ...headers,
+    },
   });
 }
 
@@ -354,7 +367,10 @@ function deriveAttribution(request: Request, canonicalOrigin: string) {
     if (source.origin !== canonical.origin || !/^\/[A-Za-z0-9/_-]{0,180}$/u.test(source.pathname)) {
       return undefined;
     }
-    return Object.freeze({ referrer: `${source.origin}${source.pathname}`, landingPage: source.pathname });
+    return Object.freeze({
+      referrer: `${source.origin}${source.pathname}`,
+      landingPage: source.pathname,
+    });
   } catch {
     return undefined;
   }
@@ -370,7 +386,9 @@ function parseBootstrap(value: Record<string, unknown>): {
   purpose: string;
 } {
   if (
-    Object.keys(value).some((key) => !["formCode", "formVersion", "locale", "purpose"].includes(key)) ||
+    Object.keys(value).some(
+      (key) => !["formCode", "formVersion", "locale", "purpose"].includes(key),
+    ) ||
     typeof value.formCode !== "string" ||
     !SAFE_CODE.test(value.formCode) ||
     typeof value.formVersion !== "string" ||
@@ -409,7 +427,8 @@ export function createFormAdmissionHandlers(dependencies: {
     if (!requestIsSameOrigin(request, dependencies.canonicalOrigin)) return undefined;
     try {
       const bucket = await dependencies.networkBucket(request, operation);
-      return bucket && (await dependencies.rateLimiter.allow({ bucket, operation, now: clock.now() }))
+      return bucket &&
+        (await dependencies.rateLimiter.allow({ bucket, operation, now: clock.now() }))
         ? bucket
         : undefined;
     } catch {
@@ -539,9 +558,7 @@ export function createFormAdmissionHandlers(dependencies: {
           locale: raw.locale,
           sessionBinding: binding,
           answers: validatedAnswers,
-          ...(typeof raw.draftReference === "string"
-            ? { draftReference: raw.draftReference }
-            : {}),
+          ...(typeof raw.draftReference === "string" ? { draftReference: raw.draftReference } : {}),
         });
         if (result.status === "saved") {
           return json(200, {
@@ -566,7 +583,8 @@ export function createFormAdmissionHandlers(dependencies: {
         const raw = await readBoundedJson(request);
         if (
           Object.keys(raw).some(
-            (key) => !["formCode", "formVersion", "locale", "nonce", "draftReference"].includes(key),
+            (key) =>
+              !["formCode", "formVersion", "locale", "nonce", "draftReference"].includes(key),
           ) ||
           typeof raw.formCode !== "string" ||
           !SAFE_CODE.test(raw.formCode) ||
@@ -657,10 +675,7 @@ export function createFormAdmissionHandlers(dependencies: {
     },
   };
 
-  function verifyWorkflowGrant(
-    request: Request,
-    raw: Record<string, unknown>,
-  ): string | undefined {
+  function verifyWorkflowGrant(request: Request, raw: Record<string, unknown>): string | undefined {
     const sessionToken = cookieValue(request);
     const csrfToken = request.headers.get("x-atlas-csrf");
     if (

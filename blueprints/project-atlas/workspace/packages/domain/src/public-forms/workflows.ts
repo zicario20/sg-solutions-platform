@@ -81,7 +81,8 @@ function stable(value: unknown): string {
 function revocationChannel(consentType: string): FormOutboxCommand["channel"] | undefined {
   if (consentType === "whatsapp_contact") return "whatsapp";
   if (consentType === "sms_contact") return "sms";
-  if (consentType === "electronic_communications" || consentType === "email_marketing") return "email";
+  if (consentType === "electronic_communications" || consentType === "email_marketing")
+    return "email";
   return undefined;
 }
 
@@ -179,7 +180,8 @@ export class PublicFormsLifecycleService {
         context: scopeDigest,
       });
       const payload = JSON.parse(plaintext) as unknown;
-      if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error("invalid");
+      if (!payload || typeof payload !== "object" || Array.isArray(payload))
+        throw new Error("invalid");
       const record = payload as Record<string, unknown>;
       if (
         record.formCode !== draft.formCode ||
@@ -252,7 +254,8 @@ export class PublicFormsLifecycleService {
         );
       };
       add("consent", "record_revocation");
-      if (COMMUNICATION_CONSENTS.has(command.consentType)) add("channel", "apply_consent_revocation");
+      if (COMMUNICATION_CONSENTS.has(command.consentType))
+        add("channel", "apply_consent_revocation");
       const record: ConsentRevocationRecord = Object.freeze({
         revocationId,
         submissionReceiptId: command.submissionReceiptId,

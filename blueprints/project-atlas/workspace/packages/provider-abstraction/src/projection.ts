@@ -1,1 +1,11 @@
-export const createProviderClientProjection = (input: Readonly<{ locale: "en" | "es"; capabilityCode: string }>) => ({ capabilityCode: input.capabilityCode, available: false, providerState: "provider_disabled" as const, notice: input.locale === "es" ? "Este proveedor no está disponible actualmente." : "This provider is not currently available." });
+export const createProviderClientProjection = (
+  input: Readonly<{ locale: "en" | "es"; capabilityCode: string }>,
+) => ({
+  capabilityCode: input.capabilityCode,
+  available: false,
+  providerState: "provider_disabled" as const,
+  notice:
+    input.locale === "es"
+      ? "Este proveedor no está disponible actualmente."
+      : "This provider is not currently available.",
+});

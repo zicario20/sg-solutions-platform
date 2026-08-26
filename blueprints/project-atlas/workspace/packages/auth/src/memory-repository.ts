@@ -9,18 +9,30 @@ export type AuthAccountRecord = Readonly<{
 
 export class MemoryAuthAccountRepository {
   private readonly accounts = new Map<string, AuthAccountRecord>();
-  private readonly invitations = new Map<string, { readonly receipt: string; consumed: boolean; revoked: boolean }>();
+  private readonly invitations = new Map<
+    string,
+    { readonly receipt: string; consumed: boolean; revoked: boolean }
+  >();
 
   async createProspect(subject: string): Promise<AuthAccountRecord> {
     const existing = this.accounts.get(subject);
     if (existing) return existing;
-    const account = Object.freeze({ id: `account_${subject}`, subject, status: "pending_verification" as const, version: 1 });
+    const account = Object.freeze({
+      id: `account_${subject}`,
+      subject,
+      status: "pending_verification" as const,
+      version: 1,
+    });
     this.accounts.set(subject, account);
     return account;
   }
 
   async issueInvitation(id: string, intendedMembershipReceipt: string): Promise<void> {
-    this.invitations.set(id, { receipt: intendedMembershipReceipt, consumed: false, revoked: false });
+    this.invitations.set(id, {
+      receipt: intendedMembershipReceipt,
+      consumed: false,
+      revoked: false,
+    });
   }
 
   async consumeInvitation(id: string): Promise<"consumed" | "replay_denied"> {

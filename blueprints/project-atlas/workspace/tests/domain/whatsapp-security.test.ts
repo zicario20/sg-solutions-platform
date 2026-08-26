@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
 import {
   createCommunicationsCorrelationId,
   projectCommunicationsTelemetryEvent,
 } from "@atlas/observability";
+import { describe, expect, it } from "vitest";
 
 function safeEvent() {
   return {
@@ -34,9 +34,9 @@ describe("communications telemetry security", () => {
     };
 
     for (const [key, value] of Object.entries(prohibited)) {
-      expect(() =>
-        projectCommunicationsTelemetryEvent({ ...safeEvent(), [key]: value }),
-      ).toThrow("COMMUNICATIONS_TELEMETRY_INVALID");
+      expect(() => projectCommunicationsTelemetryEvent({ ...safeEvent(), [key]: value })).toThrow(
+        "COMMUNICATIONS_TELEMETRY_INVALID",
+      );
     }
   });
 

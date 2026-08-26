@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
 import {
   MemoryCommunicationsRepository,
-  processInboundChannelEvent,
   type ProcessInboundInput,
+  processInboundChannelEvent,
 } from "@atlas/domain";
+import { describe, expect, it } from "vitest";
 
 const NOW = new Date("2026-08-20T12:00:00.000Z");
 const LATER = new Date("2026-08-20T12:05:00.000Z");
@@ -182,29 +182,32 @@ describe("WhatsApp inbound processing job", () => {
     ["document_question", "protected_intent", "secure_portal"],
     ["preliminary_intake", "preliminary_intake_disabled", "secure_portal"],
     ["media", "media_fetch_disabled", "secure_upload_portal"],
-  ] as const)("keeps %s portal-safe with no owner or knowledge call", async (intent, code, route) => {
-    const repository = await fixture(intent);
-    let calls = 0;
-    const result = await processInboundChannelEvent(
-      input(repository, intent, {
-        intent,
-        publicOrientation: {
-          answer: async () => {
-            calls += 1;
-            return { status: "unavailable" };
+  ] as const)(
+    "keeps %s portal-safe with no owner or knowledge call",
+    async (intent, code, route) => {
+      const repository = await fixture(intent);
+      let calls = 0;
+      const result = await processInboundChannelEvent(
+        input(repository, intent, {
+          intent,
+          publicOrientation: {
+            answer: async () => {
+              calls += 1;
+              return { status: "unavailable" };
+            },
           },
-        },
-        owningAction: {
-          execute: async () => {
-            calls += 1;
-            return { status: "unavailable" };
+          owningAction: {
+            execute: async () => {
+              calls += 1;
+              return { status: "unavailable" };
+            },
           },
-        },
-      }),
-    );
-    expect(result).toMatchObject({ status: "portal_safe", code, route });
-    expect(calls).toBe(0);
-  });
+        }),
+      );
+      expect(result).toMatchObject({ status: "portal_safe", code, route });
+      expect(calls).toBe(0);
+    },
+  );
 
   it("requires an exact owning-domain receipt and suspends wrong-person bindings", async () => {
     const appointment = await fixture("appointment");

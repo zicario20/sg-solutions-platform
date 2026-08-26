@@ -1,27 +1,27 @@
 import {
   createDashboardAuthorizationSnapshot,
-  revalidateDashboardAuthorization,
   type DashboardAuthPort,
+  revalidateDashboardAuthorization,
 } from "./authorization.ts";
 import {
   DASHBOARD_OWNER_CODES,
   DASHBOARD_SECTION_LIMITS,
-  parseDashboardFragment,
   type DashboardDto,
   type DashboardLocale,
   type DashboardOwnerCode,
   type DashboardOwnerDataMap,
   type DashboardOwnerFragment,
   type DashboardSection,
+  parseDashboardFragment,
   type SecurityDashboardData,
 } from "./contracts.ts";
 import type { DashboardOwnerPorts } from "./ports.ts";
-import { sanitizeDashboardDtoForSerialization } from "./serialization.ts";
 import {
-  selectDashboardPriority,
   type DashboardPriorityInput,
   type PrioritySourceCode,
+  selectDashboardPriority,
 } from "./priority.ts";
+import { sanitizeDashboardDtoForSerialization } from "./serialization.ts";
 
 export type ClientDashboardQueryRequest = Readonly<{
   sessionHandle: string;
@@ -41,14 +41,15 @@ type ServiceOptions = Readonly<{
   maxConcurrency?: number;
 }>;
 
-const unavailable = (owner: DashboardOwnerCode, snapshotId: string): DashboardOwnerFragment => Object.freeze({
-  owner,
-  snapshotId,
-  sourceVersion: `${owner}.unavailable.v1`,
-  classification: "client_safe",
-  state: "unavailable",
-  safeReason: "source_unavailable",
-});
+const unavailable = (owner: DashboardOwnerCode, snapshotId: string): DashboardOwnerFragment =>
+  Object.freeze({
+    owner,
+    snapshotId,
+    sourceVersion: `${owner}.unavailable.v1`,
+    classification: "client_safe",
+    state: "unavailable",
+    safeReason: "source_unavailable",
+  });
 
 function snapshotId(parts: readonly string[]): string {
   return parts.map((part) => `${part.length}:${part}`).join("|");
@@ -71,11 +72,21 @@ async function queryOwner(
       }, timeoutMs);
     });
     const raw = await Promise.race([
-      ports[owner].query({ snapshot, snapshotId: frozenSnapshotId, limit: DASHBOARD_SECTION_LIMITS[owner], signal: controller.signal }),
+      ports[owner].query({
+        snapshot,
+        snapshotId: frozenSnapshotId,
+        limit: DASHBOARD_SECTION_LIMITS[owner],
+        signal: controller.signal,
+      }),
       timeout,
     ]);
     const parsed = parseDashboardFragment(raw);
-    if (parsed.owner !== owner || parsed.snapshotId !== frozenSnapshotId || !parsed.sourceVersion.startsWith(`${owner}.`)) throw new Error("DASHBOARD_OWNER_MISMATCH");
+    if (
+      parsed.owner !== owner ||
+      parsed.snapshotId !== frozenSnapshotId ||
+      !parsed.sourceVersion.startsWith(`${owner}.`)
+    )
+      throw new Error("DASHBOARD_OWNER_MISMATCH");
     return parsed;
   } catch {
     return unavailable(owner, frozenSnapshotId);
@@ -96,36 +107,67 @@ async function boundedOwners(
   const worker = async () => {
     while (cursor < DASHBOARD_OWNER_CODES.length) {
       const owner = DASHBOARD_OWNER_CODES[cursor++];
-      if (owner) results.set(owner, await queryOwner(owner, ports, snapshot, frozenSnapshotId, timeoutMs));
+      if (owner)
+        results.set(owner, await queryOwner(owner, ports, snapshot, frozenSnapshotId, timeoutMs));
     }
   };
-  await Promise.all(Array.from({ length: Math.min(maxConcurrency, DASHBOARD_OWNER_CODES.length) }, worker));
-  return Object.fromEntries(DASHBOARD_OWNER_CODES.map((owner) => [owner, results.get(owner) ?? unavailable(owner, frozenSnapshotId)])) as Record<DashboardOwnerCode, DashboardOwnerFragment>;
+  await Promise.all(
+    Array.from({ length: Math.min(maxConcurrency, DASHBOARD_OWNER_CODES.length) }, worker),
+  );
+  return Object.fromEntries(
+    DASHBOARD_OWNER_CODES.map((owner) => [
+      owner,
+      results.get(owner) ?? unavailable(owner, frozenSnapshotId),
+    ]),
+  ) as Record<DashboardOwnerCode, DashboardOwnerFragment>;
 }
 
-function section<K extends DashboardOwnerCode>(fragment: DashboardOwnerFragment): DashboardSection<DashboardOwnerDataMap[K]> {
+function section<K extends DashboardOwnerCode>(
+  fragment: DashboardOwnerFragment,
+): DashboardSection<DashboardOwnerDataMap[K]> {
   return Object.freeze({
     state: fragment.state,
     ...(fragment.asOf === undefined ? {} : { asOf: fragment.asOf }),
     ...(fragment.safeReason === undefined ? {} : { safeReason: fragment.safeReason }),
-    ...(fragment.state !== "fresh" || fragment.data === undefined ? {} : { data: fragment.data as DashboardOwnerDataMap[K] }),
+    ...(fragment.state !== "fresh" || fragment.data === undefined
+      ? {}
+      : { data: fragment.data as DashboardOwnerDataMap[K] }),
   });
 }
 
-const prioritySources: readonly PrioritySourceCode[] = ["security", "payments", "documents", "tasks", "appointments", "services", "notifications"];
+const prioritySources: readonly PrioritySourceCode[] = [
+  "security",
+  "payments",
+  "documents",
+  "tasks",
+  "appointments",
+  "services",
+  "notifications",
+];
 
-function candidates(owner: PrioritySourceCode, fragment: DashboardOwnerFragment): DashboardPriorityInput[PrioritySourceCode]["candidates"] {
+function candidates(
+  owner: PrioritySourceCode,
+  fragment: DashboardOwnerFragment,
+): DashboardPriorityInput[PrioritySourceCode]["candidates"] {
   if (fragment.data === undefined) return [];
-  if (owner === "security" && !Array.isArray(fragment.data)) return (fragment.data as SecurityDashboardData).actions;
+  if (owner === "security" && !Array.isArray(fragment.data))
+    return (fragment.data as SecurityDashboardData).actions;
   if (!Array.isArray(fragment.data)) return [];
-  return fragment.data.flatMap((item) => "action" in item && item.action ? [item.action] : []);
+  return fragment.data.flatMap((item) => ("action" in item && item.action ? [item.action] : []));
 }
 
-function priorityInput(fragments: Readonly<Record<DashboardOwnerCode, DashboardOwnerFragment>>): DashboardPriorityInput {
-  return Object.fromEntries(prioritySources.map((owner) => [owner, {
-    state: fragments[owner].state,
-    candidates: candidates(owner, fragments[owner]),
-  }])) as DashboardPriorityInput;
+function priorityInput(
+  fragments: Readonly<Record<DashboardOwnerCode, DashboardOwnerFragment>>,
+): DashboardPriorityInput {
+  return Object.fromEntries(
+    prioritySources.map((owner) => [
+      owner,
+      {
+        state: fragments[owner].state,
+        candidates: candidates(owner, fragments[owner]),
+      },
+    ]),
+  ) as DashboardPriorityInput;
 }
 
 export class ClientDashboardQueryService {
@@ -162,13 +204,23 @@ export class ClientDashboardQueryService {
       snapshot.locale,
       snapshot.capturedAt.toISOString(),
     ]);
-    const fragments = await boundedOwners(this.#ownerPorts, snapshot, frozenSnapshotId, this.#timeoutMs, this.#maxConcurrency);
+    const fragments = await boundedOwners(
+      this.#ownerPorts,
+      snapshot,
+      frozenSnapshotId,
+      this.#timeoutMs,
+      this.#maxConcurrency,
+    );
     const priority = selectDashboardPriority(priorityInput(fragments));
     const revalidated = await revalidateDashboardAuthorization(snapshot, this.#authPort);
     if (revalidated.kind !== "authorized") return { kind: "retry_required" };
     const dto: DashboardDto = Object.freeze({
       locale: snapshot.locale,
-      context: Object.freeze({ type: snapshot.context.type, selectedOpaqueRef: snapshot.context.opaqueRef, options: snapshot.contextOptions }),
+      context: Object.freeze({
+        type: snapshot.context.type,
+        selectedOpaqueRef: snapshot.context.opaqueRef,
+        options: snapshot.contextOptions,
+      }),
       priority,
       importantAlerts: section<"notifications">(fragments.notifications),
       security: section<"security">(fragments.security),

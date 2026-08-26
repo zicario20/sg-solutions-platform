@@ -1,9 +1,8 @@
-import { describe, expect, it } from "vitest";
 import {
-  CatalogControlError,
   assertPublishedVersionImmutable,
   assertServiceDependencyGraph,
   buildServiceDiscoveryIndex,
+  CatalogControlError,
   createServiceDefinition,
   createServiceOrderCatalogSnapshot,
   createServiceVersion,
@@ -11,6 +10,7 @@ import {
   projectServiceForSurface,
   validateServicePublication,
 } from "@atlas/commercial-catalog";
+import { describe, expect, it } from "vitest";
 
 const now = "2026-08-26T00:00:00.000Z";
 
@@ -98,9 +98,9 @@ const version = {
 describe("M042 Service Catalog", () => {
   it("owns stable service definitions and creates versioned, bilingual commercial configuration", () => {
     expect(createServiceDefinition(definition, [])).toEqual(definition);
-    expect(() => createServiceDefinition({ ...definition, id: "other-service" }, [definition])).toThrow(
-      "unique",
-    );
+    expect(() =>
+      createServiceDefinition({ ...definition, id: "other-service" }, [definition]),
+    ).toThrow("unique");
 
     expect(createServiceVersion(version, [])).toEqual(version);
     expect(() => createServiceVersion({ ...version, id: "duplicate-version" }, [version])).toThrow(
@@ -153,36 +153,86 @@ describe("M042 Service Catalog", () => {
   });
 
   it("indexes only publishable public services and never invents availability", () => {
-    expect(
-      buildServiceDiscoveryIndex([
-        { definition, version: { ...version, publicationStatus: "published" } },
-        {
-          definition: {
-            ...definition,
-            code: "PAUSED_PRIVATE_SERVICE",
-            availability: { ...definition.availability, status: "unknown" },
-            surfaces: ["admin"],
-          },
-          version: { ...version, id: "version-private", publicationStatus: "published" },
+    const documents = buildServiceDiscoveryIndex([
+      { definition, version: { ...version, publicationStatus: "published" } },
+      {
+        definition,
+        version: {
+          ...version,
+          id: "incomplete-published-version",
+          publicationStatus: "published",
+          disclosureSetReference: null,
         },
-      ]),
-    ).toEqual([
+      },
+      {
+        definition: {
+          ...definition,
+          code: "PAUSED_PRIVATE_SERVICE",
+          availability: { ...definition.availability, status: "unknown" },
+          surfaces: ["admin"],
+        },
+        version: { ...version, id: "version-private", publicationStatus: "published" },
+      },
+    ]);
+
+    expect(documents).toEqual([
       expect.objectContaining({
         code: "BUSINESS_FUNDING_READINESS",
         availability: "available",
         canonicalPath: "/services/business-funding-readiness",
+        locale: "es",
+        title: version.translations.es.name,
+        description: version.translations.es.summary,
+      }),
+      expect.objectContaining({
+        code: "BUSINESS_FUNDING_READINESS",
+        availability: "available",
+        canonicalPath: "/services/business-funding-readiness",
+        locale: "en",
+        title: version.seo.title,
+        description: version.seo.description,
       }),
     ]);
   });
 
+  it("does not project unpublished or not-public services onto the public surface", () => {
+    expect(() =>
+      projectServiceForSurface(definition, version, {
+        surface: "public",
+        locale: "es",
+        authorized: true,
+        purpose: "public_discovery",
+        clientHasServiceGrant: false,
+      }),
+    ).toThrow("public service is not discoverable");
+
+    expect(() =>
+      projectServiceForSurface(
+        { ...definition, surfaces: ["client", "admin"] },
+        { ...version, publicationStatus: "published" },
+        {
+          surface: "public",
+          locale: "es",
+          authorized: true,
+          purpose: "public_discovery",
+          clientHasServiceGrant: false,
+        },
+      ),
+    ).toThrow("public service is not discoverable");
+  });
+
   it("uses one definition with purpose-bound public, client and admin projections", () => {
-    const publicProjection = projectServiceForSurface(definition, version, {
-      surface: "public",
-      locale: "es",
-      authorized: true,
-      purpose: "public_discovery",
-      clientHasServiceGrant: false,
-    });
+    const publicProjection = projectServiceForSurface(
+      definition,
+      { ...version, publicationStatus: "published" },
+      {
+        surface: "public",
+        locale: "es",
+        authorized: true,
+        purpose: "public_discovery",
+        clientHasServiceGrant: false,
+      },
+    );
     expect(publicProjection).toMatchObject({
       code: definition.code,
       name: version.translations.es.name,

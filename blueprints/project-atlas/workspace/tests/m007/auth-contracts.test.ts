@@ -1,7 +1,4 @@
-import {
-  createDisabledIdentityProvider,
-  type PasswordSignInCommand,
-} from "@atlas/auth";
+import { createDisabledIdentityProvider, type PasswordSignInCommand } from "@atlas/auth";
 import { readAuthRuntimeConfig } from "@atlas/config";
 import { parseLoginRequest } from "@atlas/validation";
 import { describe, expect, it } from "vitest";

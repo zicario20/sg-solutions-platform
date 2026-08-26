@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
 import {
   createCommunicationsCorrelationId,
   projectCommunicationsTelemetryEvent,
   recordCommunicationsTelemetryEvent,
 } from "@atlas/observability";
+import { describe, expect, it } from "vitest";
 
 function baseEvent(correlationId: unknown = createCommunicationsCorrelationId()) {
   return {
@@ -56,9 +56,9 @@ describe("communications observability contract", () => {
       "correlation_746f6b656e5f70726f76696465725f31",
       first.correlationId,
     ]) {
-      expect(() =>
-        projectCommunicationsTelemetryEvent(baseEvent(correlationId)),
-      ).toThrow("COMMUNICATIONS_TELEMETRY_INVALID");
+      expect(() => projectCommunicationsTelemetryEvent(baseEvent(correlationId))).toThrow(
+        "COMMUNICATIONS_TELEMETRY_INVALID",
+      );
     }
   });
 

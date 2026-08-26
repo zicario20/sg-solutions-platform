@@ -1,11 +1,133 @@
-import type { DashboardAuthorizationSnapshot, DashboardOwnerCode, DashboardSectionState } from "./contracts.ts";
+import type {
+  DashboardAuthorizationSnapshot,
+  DashboardOwnerCode,
+  DashboardSectionState,
+} from "./contracts.ts";
 export type DashboardCacheSection = DashboardOwnerCode | "priority" | "preferences";
 export const DASHBOARD_CACHE_SCHEMA_VERSION = "m008.cache.v2" as const;
-const cacheable = new Set<DashboardCacheSection>(["help", "preferences"]); const critical = new Set<DashboardCacheSection>(["security", "payments", "tasks", "documents", "appointments", "priority"]);
-export function isDashboardSectionCacheable(section: DashboardCacheSection): boolean { return cacheable.has(section) && !critical.has(section); }
-function digest(input: string, seed: bigint): string { let hash = seed; const prime = 0x100000001b3n; const mask = 0xffffffffffffffffn; for (let index = 0; index < input.length; index += 1) { hash ^= BigInt(input.charCodeAt(index)); hash = (hash * prime) & mask; } return hash.toString(16).padStart(16, "0"); }
-export function buildDashboardCacheKey(snapshot: DashboardAuthorizationSnapshot, section: DashboardCacheSection, sourceVersion = "unbound"): string { const fields = [snapshot.schemaVersion, snapshot.accountId, snapshot.sessionFamilyId, snapshot.userId, snapshot.context.type, snapshot.context.opaqueRef, snapshot.locale, snapshot.authenticationEpoch, snapshot.authorizationEpoch, snapshot.policyEpoch, snapshot.membershipFence, snapshot.resourceGrantFence, snapshot.entitlementFence, snapshot.policyVersion, sourceVersion, section]; const serialized = fields.map((value) => `${value.length}:${value}`).join("|"); return `dashboard:${DASHBOARD_CACHE_SCHEMA_VERSION}:${section}:${digest(serialized, 0xcbf29ce484222325n)}${digest(serialized, 0x84222325cbf29ce4n)}`; }
-export type DashboardCacheEnvelope<T> = Readonly<{ schemaVersion: typeof DASHBOARD_CACHE_SCHEMA_VERSION; key: string; section: DashboardCacheSection; sourceVersion: string; sourceStatus: DashboardSectionState; generatedAt: string; expiresAt: string; ttlSeconds: number; authenticationEpoch: string; authorizationEpoch: string; policyEpoch: string; value: T }>;
-export function buildDashboardCacheEnvelope<T>(input: Readonly<{ snapshot: DashboardAuthorizationSnapshot; section: DashboardCacheSection; sourceVersion: string; sourceStatus: DashboardSectionState; generatedAt: string; ttlSeconds: number; value: T }>): DashboardCacheEnvelope<T> { const generated = Date.parse(input.generatedAt); if (!isDashboardSectionCacheable(input.section) || input.sourceStatus !== "fresh" || !Number.isFinite(generated) || !Number.isInteger(input.ttlSeconds) || input.ttlSeconds < 1 || input.ttlSeconds > 300) throw new Error("DASHBOARD_CACHE_ENVELOPE_DENIED"); return Object.freeze({ schemaVersion: DASHBOARD_CACHE_SCHEMA_VERSION, key: buildDashboardCacheKey(input.snapshot, input.section, input.sourceVersion), section: input.section, sourceVersion: input.sourceVersion, sourceStatus: input.sourceStatus, generatedAt: new Date(generated).toISOString(), expiresAt: new Date(generated + input.ttlSeconds * 1_000).toISOString(), ttlSeconds: input.ttlSeconds, authenticationEpoch: input.snapshot.authenticationEpoch, authorizationEpoch: input.snapshot.authorizationEpoch, policyEpoch: input.snapshot.policyEpoch, value: input.value }); }
-export function canServeDashboardCacheEnvelope<T>(envelope: DashboardCacheEnvelope<T>, snapshot: DashboardAuthorizationSnapshot, section: DashboardCacheSection, now = new Date()): boolean { return isDashboardSectionCacheable(section) && envelope.schemaVersion === DASHBOARD_CACHE_SCHEMA_VERSION && envelope.section === section && envelope.sourceStatus === "fresh" && envelope.authenticationEpoch === snapshot.authenticationEpoch && envelope.authorizationEpoch === snapshot.authorizationEpoch && envelope.policyEpoch === snapshot.policyEpoch && envelope.key === buildDashboardCacheKey(snapshot, section, envelope.sourceVersion) && Date.parse(envelope.generatedAt) <= now.getTime() && Date.parse(envelope.expiresAt) > now.getTime() && Date.parse(envelope.expiresAt) - Date.parse(envelope.generatedAt) === envelope.ttlSeconds * 1_000; }
-export class DisabledDashboardCache { async get<T>(_key: string): Promise<T | undefined> { return undefined; } async set(_key: string, _value: unknown): Promise<void> {} async delete(_key: string): Promise<void> {} }
+const cacheable = new Set<DashboardCacheSection>(["help", "preferences"]);
+const critical = new Set<DashboardCacheSection>([
+  "security",
+  "payments",
+  "tasks",
+  "documents",
+  "appointments",
+  "priority",
+]);
+export function isDashboardSectionCacheable(section: DashboardCacheSection): boolean {
+  return cacheable.has(section) && !critical.has(section);
+}
+function digest(input: string, seed: bigint): string {
+  let hash = seed;
+  const prime = 0x100000001b3n;
+  const mask = 0xffffffffffffffffn;
+  for (let index = 0; index < input.length; index += 1) {
+    hash ^= BigInt(input.charCodeAt(index));
+    hash = (hash * prime) & mask;
+  }
+  return hash.toString(16).padStart(16, "0");
+}
+export function buildDashboardCacheKey(
+  snapshot: DashboardAuthorizationSnapshot,
+  section: DashboardCacheSection,
+  sourceVersion = "unbound",
+): string {
+  const fields = [
+    snapshot.schemaVersion,
+    snapshot.accountId,
+    snapshot.sessionFamilyId,
+    snapshot.userId,
+    snapshot.context.type,
+    snapshot.context.opaqueRef,
+    snapshot.locale,
+    snapshot.authenticationEpoch,
+    snapshot.authorizationEpoch,
+    snapshot.policyEpoch,
+    snapshot.membershipFence,
+    snapshot.resourceGrantFence,
+    snapshot.entitlementFence,
+    snapshot.policyVersion,
+    sourceVersion,
+    section,
+  ];
+  const serialized = fields.map((value) => `${value.length}:${value}`).join("|");
+  return `dashboard:${DASHBOARD_CACHE_SCHEMA_VERSION}:${section}:${digest(serialized, 0xcbf29ce484222325n)}${digest(serialized, 0x84222325cbf29ce4n)}`;
+}
+export type DashboardCacheEnvelope<T> = Readonly<{
+  schemaVersion: typeof DASHBOARD_CACHE_SCHEMA_VERSION;
+  key: string;
+  section: DashboardCacheSection;
+  sourceVersion: string;
+  sourceStatus: DashboardSectionState;
+  generatedAt: string;
+  expiresAt: string;
+  ttlSeconds: number;
+  authenticationEpoch: string;
+  authorizationEpoch: string;
+  policyEpoch: string;
+  value: T;
+}>;
+export function buildDashboardCacheEnvelope<T>(
+  input: Readonly<{
+    snapshot: DashboardAuthorizationSnapshot;
+    section: DashboardCacheSection;
+    sourceVersion: string;
+    sourceStatus: DashboardSectionState;
+    generatedAt: string;
+    ttlSeconds: number;
+    value: T;
+  }>,
+): DashboardCacheEnvelope<T> {
+  const generated = Date.parse(input.generatedAt);
+  if (
+    !isDashboardSectionCacheable(input.section) ||
+    input.sourceStatus !== "fresh" ||
+    !Number.isFinite(generated) ||
+    !Number.isInteger(input.ttlSeconds) ||
+    input.ttlSeconds < 1 ||
+    input.ttlSeconds > 300
+  )
+    throw new Error("DASHBOARD_CACHE_ENVELOPE_DENIED");
+  return Object.freeze({
+    schemaVersion: DASHBOARD_CACHE_SCHEMA_VERSION,
+    key: buildDashboardCacheKey(input.snapshot, input.section, input.sourceVersion),
+    section: input.section,
+    sourceVersion: input.sourceVersion,
+    sourceStatus: input.sourceStatus,
+    generatedAt: new Date(generated).toISOString(),
+    expiresAt: new Date(generated + input.ttlSeconds * 1_000).toISOString(),
+    ttlSeconds: input.ttlSeconds,
+    authenticationEpoch: input.snapshot.authenticationEpoch,
+    authorizationEpoch: input.snapshot.authorizationEpoch,
+    policyEpoch: input.snapshot.policyEpoch,
+    value: input.value,
+  });
+}
+export function canServeDashboardCacheEnvelope<T>(
+  envelope: DashboardCacheEnvelope<T>,
+  snapshot: DashboardAuthorizationSnapshot,
+  section: DashboardCacheSection,
+  now = new Date(),
+): boolean {
+  return (
+    isDashboardSectionCacheable(section) &&
+    envelope.schemaVersion === DASHBOARD_CACHE_SCHEMA_VERSION &&
+    envelope.section === section &&
+    envelope.sourceStatus === "fresh" &&
+    envelope.authenticationEpoch === snapshot.authenticationEpoch &&
+    envelope.authorizationEpoch === snapshot.authorizationEpoch &&
+    envelope.policyEpoch === snapshot.policyEpoch &&
+    envelope.key === buildDashboardCacheKey(snapshot, section, envelope.sourceVersion) &&
+    Date.parse(envelope.generatedAt) <= now.getTime() &&
+    Date.parse(envelope.expiresAt) > now.getTime() &&
+    Date.parse(envelope.expiresAt) - Date.parse(envelope.generatedAt) ===
+      envelope.ttlSeconds * 1_000
+  );
+}
+export class DisabledDashboardCache {
+  async get<T>(_key: string): Promise<T | undefined> {
+    return undefined;
+  }
+  async set(_key: string, _value: unknown): Promise<void> {}
+  async delete(_key: string): Promise<void> {}
+}

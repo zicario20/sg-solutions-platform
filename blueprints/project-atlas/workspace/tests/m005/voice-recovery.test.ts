@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { MemoryVoiceCommandReceiptRepository } from "../../packages/database/src/voice-command-repository.ts";
-import {
-  recoverVoiceCall,
-  type RecoverVoiceCallInput,
-} from "../../apps/app/src/lib/voice/recovery-jobs.ts";
 import { VoiceOperationsFacade } from "../../apps/app/src/lib/voice/operations-facade.ts";
 import { createFailClosedOwnerPorts } from "../../apps/app/src/lib/voice/owner-ports.ts";
 import {
-  issueVoiceServiceCredential,
+  type RecoverVoiceCallInput,
+  recoverVoiceCall,
+} from "../../apps/app/src/lib/voice/recovery-jobs.ts";
+import {
   BoundedMemoryVoiceCredentialRepository,
+  issueVoiceServiceCredential,
   VoiceServiceAuthenticator,
 } from "../../apps/app/src/lib/voice/service-auth.ts";
+import { MemoryVoiceCommandReceiptRepository } from "../../packages/database/src/voice-command-repository.ts";
 
 const now = new Date("2026-08-20T12:00:00.000Z");
 const secret = Buffer.from("m005-recovery-secret-000000000000000000000000000000000000");

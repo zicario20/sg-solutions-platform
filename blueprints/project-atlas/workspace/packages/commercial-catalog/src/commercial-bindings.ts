@@ -15,7 +15,13 @@ export type ServiceDocumentRequirement = Readonly<{
 
 export type ServiceDisclosure = Readonly<{
   code: string;
-  type: "no_guarantee" | "provider_boundary" | "external_fee" | "consent" | "professional_scope" | "other";
+  type:
+    | "no_guarantee"
+    | "provider_boundary"
+    | "external_fee"
+    | "consent"
+    | "professional_scope"
+    | "other";
   placement: "public_page" | "intake" | "quote" | "checkout" | "before_start";
   version: string;
   required: boolean;
@@ -44,8 +50,14 @@ function reference(value: string | null, label: string, required: boolean): void
   if (value.trim().length === 0 || value.length > 180) throw new TypeError(label + " invalid");
 }
 
-export function validateCommercialProfile(value: ServiceCommercialProfile): ServiceCommercialProfile {
-  if (!["direct_checkout", "quote_required", "consultation_required", "no_payment"].includes(value.billingMode))
+export function validateCommercialProfile(
+  value: ServiceCommercialProfile,
+): ServiceCommercialProfile {
+  if (
+    !["direct_checkout", "quote_required", "consultation_required", "no_payment"].includes(
+      value.billingMode,
+    )
+  )
     throw new TypeError("billing mode invalid");
   reference(value.pricingReference, "pricing reference", value.billingMode !== "no_payment");
   reference(value.depositPolicyReference, "deposit policy reference", false);
@@ -54,7 +66,9 @@ export function validateCommercialProfile(value: ServiceCommercialProfile): Serv
   return Object.freeze(structuredClone(value));
 }
 
-export function validateDurationProfile(value: ServiceDurationProfile | null): ServiceDurationProfile {
+export function validateDurationProfile(
+  value: ServiceDurationProfile | null,
+): ServiceDurationProfile {
   if (value === null || value.type === "unknown") throw new TypeError("duration profile required");
   if (!["business_days", "calendar_days", "weeks", "months"].includes(value.unit))
     throw new TypeError("duration unit invalid");
@@ -94,7 +108,9 @@ export function validateDocumentRequirements(
   return Object.freeze(structuredClone(value));
 }
 
-export function validateDisclosureSet(value: readonly ServiceDisclosure[]): readonly ServiceDisclosure[] {
+export function validateDisclosureSet(
+  value: readonly ServiceDisclosure[],
+): readonly ServiceDisclosure[] {
   if (value.length === 0) throw new TypeError("disclosures required");
   for (const item of value) {
     if (item.code.trim().length === 0 || item.version.trim().length === 0)

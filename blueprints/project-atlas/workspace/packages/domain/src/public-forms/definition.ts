@@ -149,10 +149,14 @@ function validateVersion(definition: FormDefinitionVersion, expectedLocale: "es"
       !CONTENT_ID.test(field.labelId) ||
       (field.helpTextId !== undefined && !CONTENT_ID.test(field.helpTextId)) ||
       (field.maxLength !== undefined &&
-        (!Number.isSafeInteger(field.maxLength) || field.maxLength < 1 || field.maxLength > 2_000)) ||
+        (!Number.isSafeInteger(field.maxLength) ||
+          field.maxLength < 1 ||
+          field.maxLength > 2_000)) ||
       (field.minimum !== undefined && !Number.isFinite(field.minimum)) ||
       (field.maximum !== undefined && !Number.isFinite(field.maximum)) ||
-      (field.minimum !== undefined && field.maximum !== undefined && field.minimum > field.maximum) ||
+      (field.minimum !== undefined &&
+        field.maximum !== undefined &&
+        field.minimum > field.maximum) ||
       (field.optionCodes !== undefined &&
         (field.optionCodes.length < 1 ||
           new Set(field.optionCodes).size !== field.optionCodes.length ||
@@ -181,7 +185,8 @@ function conditionSignature(condition: ConditionNode | undefined): unknown {
     return [condition.operator, condition.fieldCode, condition.value];
   }
   if (condition.operator === "present") return [condition.operator, condition.fieldCode];
-  if (condition.operator === "not") return [condition.operator, conditionSignature(condition.condition)];
+  if (condition.operator === "not")
+    return [condition.operator, conditionSignature(condition.condition)];
   return [condition.operator, condition.conditions.map(conditionSignature)];
 }
 

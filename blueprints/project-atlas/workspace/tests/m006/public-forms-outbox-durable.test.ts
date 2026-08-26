@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
-
-import type { FormCommandDispatchReceipt, FormOutboxLease } from "../../packages/domain/src/public-forms/jobs.ts";
-import type { FormOutboxCommand } from "../../packages/domain/src/public-forms/ports.ts";
-import { SyntheticFormOutboxStore } from "../../packages/domain/src/public-forms/synthetic-ports.ts";
 import {
   PostgresFormOutboxStore,
   type PublicFormsSql,
 } from "../../packages/database/src/public-forms-outbox-store.ts";
+import type {
+  FormCommandDispatchReceipt,
+  FormOutboxLease,
+} from "../../packages/domain/src/public-forms/jobs.ts";
+import type { FormOutboxCommand } from "../../packages/domain/src/public-forms/ports.ts";
+import { SyntheticFormOutboxStore } from "../../packages/domain/src/public-forms/synthetic-ports.ts";
 
 const NOW = new Date("2026-08-20T12:00:00.000Z");
 
@@ -32,25 +34,34 @@ describe("M006 durable form outbox", () => {
           async unsafe(statement) {
             statements.push(statement.replace(/\s+/gu, " ").trim());
             if (statement.includes("pg_has_role")) {
-              return [{ session_user_name: "atlas_public_forms_runtime", is_member: true, rolsuper: false, rolbypassrls: false }] as never;
+              return [
+                {
+                  session_user_name: "atlas_public_forms_runtime",
+                  is_member: true,
+                  rolsuper: false,
+                  rolbypassrls: false,
+                },
+              ] as never;
             }
             if (statement.includes("with candidates")) {
-              return [{
-                command_id: "form_outbox_durable_01",
-                submission_id: "form_submission_durable_01",
-                owner: "lead",
-                operation: "accept_candidate",
-                form_code: "contact",
-                locale: "es",
-                service_code: null,
-                consent_type: null,
-                channel: null,
-                idempotency_key: "form_submission_durable_01:lead:accept_candidate:default",
-                attempt_count: 2,
-                lease_owner: "worker_m006_01",
-                lease_version: 7,
-                lease_purpose: "dispatch",
-              }] as never;
+              return [
+                {
+                  command_id: "form_outbox_durable_01",
+                  submission_id: "form_submission_durable_01",
+                  owner: "lead",
+                  operation: "accept_candidate",
+                  form_code: "contact",
+                  locale: "es",
+                  service_code: null,
+                  consent_type: null,
+                  channel: null,
+                  idempotency_key: "form_submission_durable_01:lead:accept_candidate:default",
+                  attempt_count: 2,
+                  lease_owner: "worker_m006_01",
+                  lease_version: 7,
+                  lease_purpose: "dispatch",
+                },
+              ] as never;
             }
             if (statement.includes("from form_consent_evidence")) {
               return [{ consent_type: "privacy_policy" }] as never;
@@ -90,7 +101,14 @@ describe("M006 durable form outbox", () => {
         return work({
           async unsafe(statement) {
             if (statement.includes("pg_has_role")) {
-              return [{ session_user_name: "atlas_public_forms_runtime", is_member: true, rolsuper: false, rolbypassrls: false }] as never;
+              return [
+                {
+                  session_user_name: "atlas_public_forms_runtime",
+                  is_member: true,
+                  rolsuper: false,
+                  rolbypassrls: false,
+                },
+              ] as never;
             }
             return [] as never;
           },
@@ -130,12 +148,14 @@ describe("M006 durable form outbox", () => {
       grantedConsentTypes: ["privacy_policy"],
       now: NOW,
     });
-    const lease = (await store.lease({
-      submissionRef: "form_submission_durable_01",
-      now: NOW,
-      leaseMs: 1_000,
-      limit: 1,
-    }))[0];
+    const lease = (
+      await store.lease({
+        submissionRef: "form_submission_durable_01",
+        now: NOW,
+        leaseMs: 1_000,
+        limit: 1,
+      })
+    )[0];
     if (!lease) throw new Error("missing synthetic lease");
     await store.markUnknown({
       lease,
@@ -150,7 +170,11 @@ describe("M006 durable form outbox", () => {
     });
 
     expect(store.snapshot("form_submission_durable_01")).toEqual([
-      expect.objectContaining({ state: "unknown", attempts: 1, receipt: expect.objectContaining({ status: "unknown" }) }),
+      expect.objectContaining({
+        state: "unknown",
+        attempts: 1,
+        receipt: expect.objectContaining({ status: "unknown" }),
+      }),
     ]);
     expect(
       await store.lease({
@@ -170,12 +194,14 @@ describe("M006 durable form outbox", () => {
       grantedConsentTypes: ["privacy_policy"],
       now: NOW,
     });
-    const dispatchLease = (await store.lease({
-      submissionRef: "form_submission_durable_01",
-      now: NOW,
-      leaseMs: 1_000,
-      limit: 1,
-    }))[0];
+    const dispatchLease = (
+      await store.lease({
+        submissionRef: "form_submission_durable_01",
+        now: NOW,
+        leaseMs: 1_000,
+        limit: 1,
+      })
+    )[0];
     if (!dispatchLease) throw new Error("missing dispatch lease");
     await store.markUnknown({
       lease: dispatchLease,
@@ -188,32 +214,40 @@ describe("M006 durable form outbox", () => {
       }),
       now: NOW,
     });
-    const reconciliationLease = (await store.claimUnknown({
-      submissionRef: "form_submission_durable_01",
-      now: NOW,
-      leaseMs: 1_000,
-      limit: 1,
-    }))[0];
+    const reconciliationLease = (
+      await store.claimUnknown({
+        submissionRef: "form_submission_durable_01",
+        now: NOW,
+        leaseMs: 1_000,
+        limit: 1,
+      })
+    )[0];
     if (!reconciliationLease) throw new Error("missing reconciliation lease");
     expect(reconciliationLease.leasePurpose).toBe("reconcile");
 
     const afterExpiry = new Date(NOW.getTime() + 2_000);
-    await expect(store.lease({
-      submissionRef: "form_submission_durable_01",
-      now: afterExpiry,
-      leaseMs: 1_000,
-      limit: 1,
-    })).resolves.toEqual([]);
+    await expect(
+      store.lease({
+        submissionRef: "form_submission_durable_01",
+        now: afterExpiry,
+        leaseMs: 1_000,
+        limit: 1,
+      }),
+    ).resolves.toEqual([]);
 
-    const recoveredLease = (await store.claimUnknown({
-      submissionRef: "form_submission_durable_01",
-      now: afterExpiry,
-      leaseMs: 1_000,
-      limit: 1,
-    }))[0];
-    expect(recoveredLease).toEqual(expect.objectContaining({
-      leaseVersion: reconciliationLease.leaseVersion + 1,
-      leasePurpose: "reconcile",
-    }));
+    const recoveredLease = (
+      await store.claimUnknown({
+        submissionRef: "form_submission_durable_01",
+        now: afterExpiry,
+        leaseMs: 1_000,
+        limit: 1,
+      })
+    )[0];
+    expect(recoveredLease).toEqual(
+      expect.objectContaining({
+        leaseVersion: reconciliationLease.leaseVersion + 1,
+        leasePurpose: "reconcile",
+      }),
+    );
   });
 });

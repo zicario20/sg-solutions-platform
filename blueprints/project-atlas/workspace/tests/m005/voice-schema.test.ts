@@ -29,7 +29,8 @@ describe("M005 metadata-only voice schema", () => {
   });
 
   it("stores metadata without caller, audio, transcript or arbitrary content columns", () => {
-    const forbidden = /phone|caller_number|audio|transcript|recording_url|body|content|payload|prompt/iu;
+    const forbidden =
+      /phone|caller_number|audio|transcript|recording_url|body|content|payload|prompt/iu;
     for (const exportName of VOICE_TABLE_EXPORTS) {
       const columns = tableConfig(exportName).columns.map((column) => column.name);
       expect(columns.join(" ")).not.toMatch(forbidden);
@@ -59,11 +60,7 @@ describe("M005 metadata-only voice schema", () => {
   });
 
   it("models finite receipt leases and optimistic reconciliation metadata", () => {
-    const columns = tableConfig("voiceCommandReceipts").columns.map(
-      (column) => column.name,
-    );
-    expect(columns).toEqual(
-      expect.arrayContaining(["lease_expires_at", "reservation_version"]),
-    );
+    const columns = tableConfig("voiceCommandReceipts").columns.map((column) => column.name);
+    expect(columns).toEqual(expect.arrayContaining(["lease_expires_at", "reservation_version"]));
   });
 });

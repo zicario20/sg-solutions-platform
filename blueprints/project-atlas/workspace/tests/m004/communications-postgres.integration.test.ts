@@ -1,3 +1,4 @@
+import { createVerifiedProviderStatusReceiptAuthority } from "@atlas/domain";
 import { afterAll } from "vitest";
 import {
   assertRestrictedCommunicationsPrincipal,
@@ -10,7 +11,6 @@ import {
   communicationsConformanceSeed,
   runCommunicationsRepositoryConformance,
 } from "../support/communications-repository-conformance.ts";
-import { createVerifiedProviderStatusReceiptAuthority } from "@atlas/domain";
 
 const integrationUrl = process.env.M004_POSTGRES_INTEGRATION_URL;
 const sql = integrationUrl ? createCommunicationsSql(integrationUrl) : null;
@@ -44,7 +44,7 @@ async function seedScenario(scenario: string): Promise<void> {
     for (const [index, binding] of seed.bindings!.entries()) {
       const policy = seed.policies![index]!;
       const consents = seed.consents!.filter((consent) => consent.bindingId === binding.bindingId);
-    await tx`
+      await tx`
       insert into communication_contact_bindings (
         id, connection_id, channel_kind, endpoint_digest, endpoint_digest_key_version,
         trust_state, locale, contact_policy_version, version, verification_receipt_id,

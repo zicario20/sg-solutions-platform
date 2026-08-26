@@ -1,8 +1,4 @@
-import type {
-  VoiceCommand,
-  VoiceCompletionOutcome,
-  VoiceVerificationStatus,
-} from "@atlas/domain";
+import type { VoiceCommand, VoiceCompletionOutcome, VoiceVerificationStatus } from "@atlas/domain";
 
 export type OwnerCommandInput = Readonly<{
   callId: string;

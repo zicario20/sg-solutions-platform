@@ -4,16 +4,26 @@ import {
   type DashboardOwnerPorts,
 } from "@atlas/dashboard";
 
-export function createUnavailableDashboardOwnerPorts(servicesOwner?: DashboardOwnerPorts["services"]): DashboardOwnerPorts {
-  return Object.fromEntries(DASHBOARD_OWNER_CODES.map((owner: DashboardOwnerCode) => [owner, owner === "services" && servicesOwner ? servicesOwner : Object.freeze({
-    owner,
-    query: async ({ snapshotId }: { readonly snapshotId: string }) => Object.freeze({
+export function createUnavailableDashboardOwnerPorts(
+  servicesOwner?: DashboardOwnerPorts["services"],
+): DashboardOwnerPorts {
+  return Object.fromEntries(
+    DASHBOARD_OWNER_CODES.map((owner: DashboardOwnerCode) => [
       owner,
-      snapshotId,
-      sourceVersion: `${owner}.provider-disabled.v1`,
-      classification: "client_safe" as const,
-      state: "unavailable" as const,
-      safeReason: "provider_disabled" as const,
-    }),
-  })])) as unknown as DashboardOwnerPorts;
+      owner === "services" && servicesOwner
+        ? servicesOwner
+        : Object.freeze({
+            owner,
+            query: async ({ snapshotId }: { readonly snapshotId: string }) =>
+              Object.freeze({
+                owner,
+                snapshotId,
+                sourceVersion: `${owner}.provider-disabled.v1`,
+                classification: "client_safe" as const,
+                state: "unavailable" as const,
+                safeReason: "provider_disabled" as const,
+              }),
+          }),
+    ]),
+  ) as unknown as DashboardOwnerPorts;
 }

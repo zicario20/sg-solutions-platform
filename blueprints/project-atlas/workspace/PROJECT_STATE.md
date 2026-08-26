@@ -209,6 +209,7 @@ M031 Bookkeeping has an authorized controlled-internal Build Gate following its 
 - Status: controlled foundation implemented; runtime disabled.
 - External provider activation: not started.
 - Migration: authored only; not applied.
+- Audit remediation: forward-only migration 0051 closes the M040/M041 RLS declaration gaps; it is authored only and not applied.
 - Pending: Product Owner activation workflow, provider-specific contracts, security and commercial approval.
 
 ## M042 - Service Catalog
@@ -216,5 +217,6 @@ M031 Bookkeeping has an authorized controlled-internal Build Gate following its 
 - Status: controlled technical foundation implemented; Product Owner acceptance pending.
 - Catalog source: @atlas/commercial-catalog extended; no parallel catalog.
 - Migration: 0050 authored only; not applied.
+- Audit remediation: public discovery requires published, public, readiness-complete versions and emits locale-specific documents.
 - Publication, checkout, workflow execution, providers and partner actions: disabled.
 - Pending: real service content, authorization/RLS integration, owner-module bindings, activation and deployment gates.

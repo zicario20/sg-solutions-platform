@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
 import {
   secureMessageAuditEvents,
   secureMessageConversations,
   secureMessageDocumentReferences,
   secureMessageEntries,
 } from "@atlas/database";
+import { describe, expect, it } from "vitest";
 
 describe("M012 persistence schema", () => {
   it("keeps client, internal, document and audit records as separate server-only tables", () => {

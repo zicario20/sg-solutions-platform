@@ -1,3 +1,4 @@
+import type { OutboundAuthorizationReceipt, OwningAuthorityReceipt } from "./channel-policy.ts";
 import type {
   ChannelConnectionState,
   ChannelContactPolicy,
@@ -16,10 +17,6 @@ import type {
   OutboundMessageCommand,
   TemplateLifecycleState,
 } from "./contracts.ts";
-import type {
-  OutboundAuthorizationReceipt,
-  OwningAuthorityReceipt,
-} from "./channel-policy.ts";
 import type {
   VerifiedProviderStatusReceipt,
   VerifiedProviderStatusReceiptRecord,
@@ -73,11 +70,7 @@ export type InboundClaimResult =
     }
   | {
       status: "not_claimed";
-      code:
-        | "not_found"
-        | "already_completed"
-        | "lease_conflict"
-        | "policy_version_mismatch";
+      code: "not_found" | "already_completed" | "lease_conflict" | "policy_version_mismatch";
     };
 
 export type CompleteInboundCommand = {
@@ -422,10 +415,7 @@ export type TemplateResult =
   | TemplateReconciliationResult
   | {
       status: "denied";
-      code:
-        | "approval_receipt_missing"
-        | "approval_receipt_invalid"
-        | "definition_conflict";
+      code: "approval_receipt_missing" | "approval_receipt_invalid" | "definition_conflict";
     }
   | { status: "unavailable"; code: "runtime_registration_disabled" };
 
@@ -522,9 +512,7 @@ export interface CommunicationsRepository {
   finalizeOutbound(input: FinalizeOutboundCommand): Promise<CreateOutboundResult>;
   failOutboundDraft(input: FailOutboundDraftCommand): Promise<"completed" | "conflict">;
   claimOutbound(input: ClaimOutboundCommand): Promise<OutboundClaimResult>;
-  markDispatchOutcome(
-    input: MarkDispatchOutcomeCommand,
-  ): Promise<"completed" | "conflict">;
+  markDispatchOutcome(input: MarkDispatchOutcomeCommand): Promise<"completed" | "conflict">;
   applyProviderStatus(input: ApplyProviderStatusCommand): Promise<ProviderStatusResult>;
   grantConsentFromReceipt(input: GrantConsentCommand): Promise<ConsentChangeResult>;
   withdrawContact(input: WithdrawContactCommand): Promise<WithdrawContactResult>;
@@ -539,7 +527,9 @@ export interface CommunicationsRepository {
   deadLetterExpiredInbound(
     input: DeadLetterExpiredInboundCommand,
   ): Promise<DeadLetterExpiredInboundResult>;
-  registerTemplateDefinition(input: RegisterTemplateDefinition & { now: Date }): Promise<TemplateResult>;
+  registerTemplateDefinition(
+    input: RegisterTemplateDefinition & { now: Date },
+  ): Promise<TemplateResult>;
   approveTemplateDefinition(
     input: ApproveTemplateDefinition & { now: Date },
   ): Promise<TemplateResult>;
@@ -552,9 +542,7 @@ export interface MessageTemplateService {
   registerInternalDefinition(input: RegisterTemplateDefinition): Promise<TemplateResult>;
   recordInternalApproval(input: ApproveTemplateDefinition): Promise<TemplateResult>;
   applyProviderProjection(input: ReconcileTemplateCommand): Promise<TemplateResult>;
-  evaluateEligibility(
-    input: EvaluateTemplateEligibility,
-  ): Promise<TemplateEligibilityResult>;
+  evaluateEligibility(input: EvaluateTemplateEligibility): Promise<TemplateEligibilityResult>;
 }
 
 export type CommunicationsReferenceState = {

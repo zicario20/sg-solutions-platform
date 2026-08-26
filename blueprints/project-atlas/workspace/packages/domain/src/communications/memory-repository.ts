@@ -4,9 +4,23 @@ import {
   evaluateOutboundPolicy,
 } from "./channel-policy.ts";
 import type {
+  ChannelConnectionState,
+  ChannelContactPolicy,
+  ChannelKind,
+  ContactChannelBinding,
+  OutboundCommandState,
+  OutboundDispatchAttempt,
+} from "./contracts.ts";
+import {
+  sameVerifiedProviderStatusRecord,
+  type VerifiedProviderStatusReceiptRecord,
+  type VerifiedProviderStatusReceiptResolver,
+} from "./provider-status.ts";
+import type {
   AcceptInboundCommand,
   AcceptInboundResult,
   ApplyProviderStatusCommand,
+  ApproveTemplateDefinition,
   BindingChangeResult,
   ClaimInboundCommand,
   ClaimOutboundCommand,
@@ -28,37 +42,23 @@ import type {
   MarkDispatchOutcomeCommand,
   OutboundClaimResult,
   ProviderStatusResult,
-  RecoveryCandidate,
-  RecoveryQuery,
   ReconcileOutboundCommand,
   ReconcileOutboundResult,
   ReconcileTemplateCommand,
+  RecoveryCandidate,
+  RecoveryQuery,
   RegisterTemplateDefinition,
-  ApproveTemplateDefinition,
   ResolveOptOutCommand,
   RevalidateBindingCommand,
   SuspendBindingCommand,
   TemplateEligibilityResult,
-  TemplateRecord,
   TemplateReconciliationResult,
+  TemplateRecord,
   TemplateResult,
+  WithdrawalHistoryRecord,
   WithdrawContactCommand,
   WithdrawContactResult,
-  WithdrawalHistoryRecord,
 } from "./repository.ts";
-import {
-  sameVerifiedProviderStatusRecord,
-  type VerifiedProviderStatusReceiptRecord,
-  type VerifiedProviderStatusReceiptResolver,
-} from "./provider-status.ts";
-import type {
-  ChannelConnectionState,
-  ChannelContactPolicy,
-  ChannelKind,
-  ContactChannelBinding,
-  OutboundCommandState,
-  OutboundDispatchAttempt,
-} from "./contracts.ts";
 
 type InboundRecord = {
   replayKey: string;
@@ -140,9 +140,7 @@ const MAX_LEASE_MILLISECONDS = 15 * 60_000;
 
 async function sha256(value: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  return [...new Uint8Array(digest)]
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function validClaimLease(now: Date, expiresAt: Date): boolean {
@@ -170,10 +168,13 @@ function clone<T>(value: T): T {
   return structuredClone(value);
 }
 
-function currentReceipt(input: {
-  issuedAt: Date;
-  expiresAt: Date;
-}, now: Date): boolean {
+function currentReceipt(
+  input: {
+    issuedAt: Date;
+    expiresAt: Date;
+  },
+  now: Date,
+): boolean {
   return (
     Number.isFinite(input.issuedAt.getTime()) &&
     Number.isFinite(input.expiresAt.getTime()) &&
@@ -189,10 +190,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
   private readonly outboundByIdempotency = new Map<string, OutboundRecord>();
   private readonly attempts = new Map<string, AttemptRecord>();
   private readonly policies = new Map<string, ChannelContactPolicy & { fence: number }>();
-  private readonly bindings = new Map<
-    string,
-    ContactChannelBinding & { freshUntil: Date }
-  >();
+  private readonly bindings = new Map<string, ContactChannelBinding & { freshUntil: Date }>();
   private readonly consents = new Map<string, ConsentRecord>();
   private readonly consentHistory: ConsentRecord[] = [];
   private readonly connections = new Map<
@@ -257,7 +255,10 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
         return { status: "replay_mismatch", code: "provider_replay_mismatch" };
       }
       if (input.optOutSignal === "pending") {
-        const policy = this.requirePolicy(input.envelope.event.bindingId, input.envelope.event.receivedAt);
+        const policy = this.requirePolicy(
+          input.envelope.event.bindingId,
+          input.envelope.event.receivedAt,
+        );
         if (policy.state !== "opt_out_pending" && policy.state !== "withdrawn") {
           policy.state = "opt_out_pending";
           policy.version += 1;
@@ -273,7 +274,8 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
         envelope: metadataOnlyEnvelope(input.envelope),
         ordinal:
           [...this.inboundById.values()].filter(
-            (candidate) => candidate.envelope.event.conversationId === input.envelope.event.conversationId,
+            (candidate) =>
+              candidate.envelope.event.conversationId === input.envelope.event.conversationId,
           ).length + 1,
         state: "persisted",
         leaseVersion: 0,
@@ -345,29 +347,29 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       found.envelope.event.bindingId,
       "dead_letter_inbound",
       async () => {
-      const record = this.inboundById.get(input.eventId);
-      if (!record) return { status: "conflict", code: "not_found" };
-      if (record.state === "dead_letter") return { status: "already_terminal" };
-      if (record.state !== "persisted") return { status: "conflict", code: "state_changed" };
-      if (
-        !Number.isSafeInteger(input.expectedAttempts) ||
-        input.expectedAttempts < 1 ||
-        record.leaseVersion !== input.expectedAttempts
-      ) {
-        return { status: "conflict", code: "version_mismatch" };
-      }
-      if (
-        input.reason !== "retry_exhausted" ||
-        !Number.isFinite(input.now.getTime()) ||
-        !record.leaseExpiresAt ||
-        record.leaseExpiresAt > input.now
-      ) {
-        return { status: "conflict", code: "lease_not_expired" };
-      }
-      record.state = "dead_letter";
-      record.leaseVersion += 1;
-      record.leaseOwnerHash = undefined;
-      record.leaseExpiresAt = undefined;
+        const record = this.inboundById.get(input.eventId);
+        if (!record) return { status: "conflict", code: "not_found" };
+        if (record.state === "dead_letter") return { status: "already_terminal" };
+        if (record.state !== "persisted") return { status: "conflict", code: "state_changed" };
+        if (
+          !Number.isSafeInteger(input.expectedAttempts) ||
+          input.expectedAttempts < 1 ||
+          record.leaseVersion !== input.expectedAttempts
+        ) {
+          return { status: "conflict", code: "version_mismatch" };
+        }
+        if (
+          input.reason !== "retry_exhausted" ||
+          !Number.isFinite(input.now.getTime()) ||
+          !record.leaseExpiresAt ||
+          record.leaseExpiresAt > input.now
+        ) {
+          return { status: "conflict", code: "lease_not_expired" };
+        }
+        record.state = "dead_letter";
+        record.leaseVersion += 1;
+        record.leaseOwnerHash = undefined;
+        record.leaseExpiresAt = undefined;
         return { status: "dead_lettered" };
       },
     );
@@ -466,9 +468,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     };
   }
 
-  async failOutboundDraft(
-    input: FailOutboundDraftCommand,
-  ): Promise<"completed" | "conflict"> {
+  async failOutboundDraft(input: FailOutboundDraftCommand): Promise<"completed" | "conflict"> {
     const record = this.outboundById.get(input.commandId);
     if (!record || record.state !== "draft") return "conflict";
     record.state = "failed";
@@ -505,7 +505,9 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       const consent = this.consents.get(this.consentKey(record.command.bindingId, record.purpose));
       if (!consent) return { status: "not_claimed", code: "consent_not_found" };
       const connection = this.connections.get(record.command.channel);
-      const template = this.templates.get(this.templateKey(record.templateId, record.command.locale));
+      const template = this.templates.get(
+        this.templateKey(record.templateId, record.command.locale),
+      );
       const activeDigest = record.endpointDigests?.[0];
       if (!activeDigest) return { status: "not_claimed", code: "destination_mismatch" };
       const decision = evaluateOutboundPolicy({
@@ -544,9 +546,9 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       const attempt: AttemptRecord = {
         attemptId: input.attemptId,
         commandId: input.commandId,
-        ordinal: [...this.attempts.values()].filter(
-          (candidate) => candidate.commandId === input.commandId,
-        ).length + 1,
+        ordinal:
+          [...this.attempts.values()].filter((candidate) => candidate.commandId === input.commandId)
+            .length + 1,
         state: "dispatching",
         startedAt: input.now,
         correlationId: record.command.correlationId,
@@ -565,9 +567,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     });
   }
 
-  async markDispatchOutcome(
-    input: MarkDispatchOutcomeCommand,
-  ): Promise<"completed" | "conflict"> {
+  async markDispatchOutcome(input: MarkDispatchOutcomeCommand): Promise<"completed" | "conflict"> {
     const found = this.outboundById.get(input.commandId);
     if (!found) return "conflict";
     return this.withBindingLock(found.command.bindingId, "complete_outbound", async () => {
@@ -629,7 +629,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       if (
         !record.connectionId ||
         record.connectionId !== evidence.connectionId ||
-        attempt.externalMessageReferenceDigest !== await sha256(evidence.externalMessageReference)
+        attempt.externalMessageReferenceDigest !== (await sha256(evidence.externalMessageReference))
       ) {
         return { status: "denied", code: "provider_status_binding_mismatch" };
       }
@@ -882,9 +882,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     return { status: "approved", ...clone(template) };
   }
 
-  async reconcileTemplate(
-    input: ReconcileTemplateCommand,
-  ): Promise<TemplateReconciliationResult> {
+  async reconcileTemplate(input: ReconcileTemplateCommand): Promise<TemplateReconciliationResult> {
     if (!input.receipt) return { status: "denied", code: "provider_receipt_missing" };
     const template = this.templates.get(this.templateKey(input.templateId, input.locale));
     if (!template) return { status: "not_found", code: "template_not_found" };
@@ -1094,10 +1092,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     return `${templateId}\u0000${locale}`;
   }
 
-  private requirePolicy(
-    bindingId: string,
-    now: Date,
-  ): ChannelContactPolicy & { fence: number } {
+  private requirePolicy(bindingId: string, now: Date): ChannelContactPolicy & { fence: number } {
     const existing = this.policies.get(bindingId);
     if (existing) return existing;
     const created: ChannelContactPolicy & { fence: number } = {
@@ -1145,7 +1140,8 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     record.state = state;
     record.command.state = state;
     const attempt = [...this.attempts.values()].find(
-      (candidate) => candidate.commandId === record.command.commandId && candidate.state === "dispatching",
+      (candidate) =>
+        candidate.commandId === record.command.commandId && candidate.state === "dispatching",
     );
     if (attempt) {
       attempt.state = state;
@@ -1155,7 +1151,9 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     record.leaseExpiresAt = undefined;
   }
 
-  private validateWithdrawalEvidence(input: WithdrawContactCommand):
+  private validateWithdrawalEvidence(
+    input: WithdrawContactCommand,
+  ):
     | { status: "allowed"; record: WithdrawalHistoryRecord }
     | { status: "denied"; code: "withdrawal_evidence_missing" | "withdrawal_evidence_invalid" } {
     const evidence = input.evidence;
@@ -1191,7 +1189,8 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
         prior.owner !== receipt.owner ||
         prior.operation !== receipt.operation ||
         prior.correlationId !== receipt.correlationId ||
-        prior.eventId !== (evidence.source === "inbound_event" ? evidence.receipt.eventId : undefined) ||
+        prior.eventId !==
+          (evidence.source === "inbound_event" ? evidence.receipt.eventId : undefined) ||
         prior.issuedAt.getTime() !== receipt.issuedAt.getTime() ||
         prior.expiresAt.getTime() !== receipt.expiresAt.getTime())
     ) {

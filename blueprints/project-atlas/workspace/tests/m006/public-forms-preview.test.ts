@@ -1,8 +1,5 @@
+import { getPublishedProjection, renderSyntheticPreview } from "@atlas/domain";
 import { describe, expect, it } from "vitest";
-import {
-  getPublishedProjection,
-  renderSyntheticPreview,
-} from "@atlas/domain";
 
 describe("M006 staff-only synthetic preview", () => {
   it("fails closed without the exact preview permission", () => {

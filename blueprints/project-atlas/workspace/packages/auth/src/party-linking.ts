@@ -15,11 +15,16 @@ export interface PartyResolutionPort {
 
 /** CRM evidence is issued and looked up server-side; browser requests carry only this opaque ID. */
 export interface CrmEvidenceStore {
-  loadCrmReceipt(evidenceId: string): Promise<{ readonly evidenceId: string; readonly verifiedAt: number } | undefined>;
+  loadCrmReceipt(
+    evidenceId: string,
+  ): Promise<{ readonly evidenceId: string; readonly verifiedAt: number } | undefined>;
 }
 
 export class PartyLinkingService {
-  constructor(private readonly owner?: PartyResolutionPort, private readonly evidence?: CrmEvidenceStore) {}
+  constructor(
+    private readonly owner?: PartyResolutionPort,
+    private readonly evidence?: CrmEvidenceStore,
+  ) {}
   async resolve(resolution: PartyResolution): Promise<AccountPartyLinkDecision> {
     if (resolution.kind === "linked") return resolution;
     if (resolution.kind === "unavailable") return { kind: "limited" };
@@ -27,7 +32,8 @@ export class PartyLinkingService {
   }
 
   async link(input: { accountId: string; evidenceId: string }): Promise<AccountPartyLinkDecision> {
-    if (!this.owner || !this.evidence || !input.accountId || !input.evidenceId) return { kind: "manual_review" };
+    if (!this.owner || !this.evidence || !input.accountId || !input.evidenceId)
+      return { kind: "manual_review" };
     const receipt = await this.evidence.loadCrmReceipt(input.evidenceId);
     if (!receipt) return { kind: "manual_review" };
     return this.resolve(await this.owner.resolve(receipt));

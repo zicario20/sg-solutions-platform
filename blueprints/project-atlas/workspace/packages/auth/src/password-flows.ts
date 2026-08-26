@@ -9,7 +9,10 @@ export class PasswordFlowService {
     return { kind: "accepted" };
   }
 
-  async completeRecovery(): Promise<{ readonly kind: "unavailable"; readonly reason: "provider_disabled" }> {
+  async completeRecovery(): Promise<{
+    readonly kind: "unavailable";
+    readonly reason: "provider_disabled";
+  }> {
     return { kind: "unavailable", reason: "provider_disabled" };
   }
 }

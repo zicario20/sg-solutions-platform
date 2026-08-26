@@ -1,14 +1,11 @@
 import type {
   FormCommandDispatchReceipt,
+  FormOutboxCommand,
   FormOutboxLease,
   FormOutboxStore,
 } from "@atlas/domain";
-import type { FormOutboxCommand } from "@atlas/domain";
 
-import type {
-  PublicFormsSql,
-  PublicFormsTransaction,
-} from "./public-forms-repository.ts";
+import type { PublicFormsSql, PublicFormsTransaction } from "./public-forms-repository.ts";
 
 export type { PublicFormsSql } from "./public-forms-repository.ts";
 
@@ -122,7 +119,13 @@ export class PostgresFormOutboxStore implements FormOutboxStore {
           item.form_code, item.locale, item.service_code, item.consent_type,
           item.channel, item.revocation_id, item.idempotency_key, item.attempt_count,
           item.lease_owner, item.lease_version, item.lease_purpose`,
-        [input.now, this.options.workerId, leaseExpiresAt, input.submissionRef ?? null, input.limit],
+        [
+          input.now,
+          this.options.workerId,
+          leaseExpiresAt,
+          input.submissionRef ?? null,
+          input.limit,
+        ],
       );
       return Object.freeze(await Promise.all(rows.map((row) => this.toLease(tx, row))));
     });
@@ -152,7 +155,13 @@ export class PostgresFormOutboxStore implements FormOutboxStore {
           item.form_code, item.locale, item.service_code, item.consent_type,
           item.channel, item.revocation_id, item.idempotency_key, item.attempt_count,
           item.lease_owner, item.lease_version, item.lease_purpose`,
-        [input.now, this.options.workerId, leaseExpiresAt, input.submissionRef ?? null, input.limit],
+        [
+          input.now,
+          this.options.workerId,
+          leaseExpiresAt,
+          input.submissionRef ?? null,
+          input.limit,
+        ],
       );
       return Object.freeze(await Promise.all(rows.map((row) => this.toLease(tx, row))));
     });
@@ -217,7 +226,9 @@ export class PostgresFormOutboxStore implements FormOutboxStore {
          where submission_id = $1 and owner_receipt is not null order by created_at, command_id`,
         [submissionRef],
       );
-      return Object.freeze(rows.flatMap((row) => (row.owner_receipt ? [Object.freeze(row.owner_receipt)] : [])));
+      return Object.freeze(
+        rows.flatMap((row) => (row.owner_receipt ? [Object.freeze(row.owner_receipt)] : [])),
+      );
     });
   }
 
@@ -266,15 +277,17 @@ export class PostgresFormOutboxStore implements FormOutboxStore {
       [row.submission_id],
     );
     const verified = row.revocation_id
-      ? (await query<{ verified: boolean }>(
-          tx,
-          `select exists (
+      ? (
+          await query<{ verified: boolean }>(
+            tx,
+            `select exists (
              select 1 from form_consent_revocations revocation
              where revocation.id = $1 and revocation.submission_id = $2
                and revocation.consent_type = $3
            ) as verified`,
-          [row.revocation_id, row.submission_id, row.consent_type],
-        ))[0]?.verified === true
+            [row.revocation_id, row.submission_id, row.consent_type],
+          )
+        )[0]?.verified === true
       : false;
     const command: FormOutboxCommand = Object.freeze({
       commandId: row.command_id,

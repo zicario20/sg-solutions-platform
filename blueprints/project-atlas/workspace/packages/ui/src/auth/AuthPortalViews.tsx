@@ -1,18 +1,95 @@
+import type { ReactNode } from "react";
 import { AuthErrorSummary } from "./AuthErrorSummary.tsx";
 import { AuthField, authFormAttributes } from "./AuthField.tsx";
 import { AuthShell } from "./AuthShell.tsx";
-import type { ReactNode } from "react";
 
 export type AuthPortalLocale = "es" | "en";
-export type AuthPortalOutcome = "accepted" | "authenticated" | "denied" | "manual_review" | "unavailable";
-export type AuthPortalCopy = Readonly<Record<"brand" | "tagline" | "title" | "signIn" | "signInIntro" | "email" | "password" | "confirmPassword" | "passwordHint" | "continue" | "register" | "registerIntro" | "haveAccount" | "forgotPassword" | "recovery" | "recoveryIntro" | "reset" | "resetIntro" | "verify" | "verifyIntro" | "invitation" | "invitationIntro" | "security" | "account" | "accountIntro" | "sessions" | "activeSessions" | "currentSession" | "created" | "revokeCurrent" | "closeOtherSessions" | "noSessions" | "oauthGoogle" | "oauthResult" | "oauthAuthenticated" | "oauthManualReview" | "oauthDenied" | "unavailable" | "neutralRecovery" | "neutralReset" | "providerDisabled" | "accepted" | "denied" | "backToSignIn" | "language" | "switchToSpanish" | "switchToEnglish" | "skipToContent" | "submit" | "status" | "session" | "csrfError", string>>;
-type ViewProps = { readonly locale: AuthPortalLocale; readonly copy: AuthPortalCopy; readonly csrf: string; readonly outcome?: AuthPortalOutcome; readonly returnTo?: string };
+export type AuthPortalOutcome =
+  | "accepted"
+  | "authenticated"
+  | "denied"
+  | "manual_review"
+  | "unavailable";
+export type AuthPortalCopy = Readonly<
+  Record<
+    | "brand"
+    | "tagline"
+    | "title"
+    | "signIn"
+    | "signInIntro"
+    | "email"
+    | "password"
+    | "confirmPassword"
+    | "passwordHint"
+    | "continue"
+    | "register"
+    | "registerIntro"
+    | "haveAccount"
+    | "forgotPassword"
+    | "recovery"
+    | "recoveryIntro"
+    | "reset"
+    | "resetIntro"
+    | "verify"
+    | "verifyIntro"
+    | "invitation"
+    | "invitationIntro"
+    | "security"
+    | "account"
+    | "accountIntro"
+    | "sessions"
+    | "activeSessions"
+    | "currentSession"
+    | "created"
+    | "revokeCurrent"
+    | "closeOtherSessions"
+    | "noSessions"
+    | "oauthGoogle"
+    | "oauthResult"
+    | "oauthAuthenticated"
+    | "oauthManualReview"
+    | "oauthDenied"
+    | "unavailable"
+    | "neutralRecovery"
+    | "neutralReset"
+    | "providerDisabled"
+    | "accepted"
+    | "denied"
+    | "backToSignIn"
+    | "language"
+    | "switchToSpanish"
+    | "switchToEnglish"
+    | "skipToContent"
+    | "submit"
+    | "status"
+    | "session"
+    | "csrfError",
+    string
+  >
+>;
+type ViewProps = {
+  readonly locale: AuthPortalLocale;
+  readonly copy: AuthPortalCopy;
+  readonly csrf: string;
+  readonly outcome?: AuthPortalOutcome;
+  readonly returnTo?: string;
+};
 
 const Csrf = ({ value }: { value: string }) => <input type="hidden" name="csrf" value={value} />;
-const Hidden = ({ name, value }: { name: string; value: string }) => <input type="hidden" name={name} value={value} />;
-const Submit = ({ label, value = "submit" }: { label: string; value?: string }) => <button className="auth-primary" type="submit" name="intent" value={value}>{label}<span aria-hidden="true">→</span></button>;
+const Hidden = ({ name, value }: { name: string; value: string }) => (
+  <input type="hidden" name={name} value={value} />
+);
+const Submit = ({ label, value = "submit" }: { label: string; value?: string }) => (
+  <button className="auth-primary" type="submit" name="intent" value={value}>
+    {label}
+    <span aria-hidden="true">→</span>
+  </button>
+);
 
-function outcomeMessage(copy: AuthPortalCopy, outcome?: AuthPortalOutcome): { text?: string; role: "alert" | "status" } {
+function outcomeMessage(
+  copy: AuthPortalCopy,
+  outcome?: AuthPortalOutcome,
+): { text?: string; role: "alert" | "status" } {
   if (outcome === "unavailable") return { text: copy.unavailable, role: "alert" };
   if (outcome === "denied") return { text: copy.denied, role: "alert" };
   if (outcome === "manual_review") return { text: copy.oauthManualReview, role: "status" };
@@ -21,22 +98,296 @@ function outcomeMessage(copy: AuthPortalCopy, outcome?: AuthPortalOutcome): { te
   return { role: "status" };
 }
 
-export function AuthLocaleSelector({ locale, copy, csrf, returnTo = "/client/sign-in" }: ViewProps) {
-  return <form className="locale-selector" action="/api/auth/locale" method="post" aria-label={copy.language}><Csrf value={csrf} /><Hidden name="return_to" value={returnTo} /><button type="submit" name="locale" value="es" aria-label={copy.switchToSpanish} aria-current={locale === "es" ? "true" : undefined}>ES</button><span aria-hidden="true">/</span><button type="submit" name="locale" value="en" aria-label={copy.switchToEnglish} aria-current={locale === "en" ? "true" : undefined}>EN</button></form>;
+export function AuthLocaleSelector({
+  locale,
+  copy,
+  csrf,
+  returnTo = "/client/sign-in",
+}: ViewProps) {
+  return (
+    <form
+      className="locale-selector"
+      action="/api/auth/locale"
+      method="post"
+      aria-label={copy.language}
+    >
+      <Csrf value={csrf} />
+      <Hidden name="return_to" value={returnTo} />
+      <button
+        type="submit"
+        name="locale"
+        value="es"
+        aria-label={copy.switchToSpanish}
+        aria-current={locale === "es" ? "true" : undefined}
+      >
+        ES
+      </button>
+      <span aria-hidden="true">/</span>
+      <button
+        type="submit"
+        name="locale"
+        value="en"
+        aria-label={copy.switchToEnglish}
+        aria-current={locale === "en" ? "true" : undefined}
+      >
+        EN
+      </button>
+    </form>
+  );
 }
 
-function Frame({ title, intro, children, ...props }: ViewProps & { title: string; intro: string; children: ReactNode }) {
-  return <AuthShell title={title} intro={intro} brand={props.copy.brand} tagline={props.copy.tagline} skipLabel={props.copy.skipToContent} languageSelector={<AuthLocaleSelector {...props} />} >{children}</AuthShell>;
+function Frame({
+  title,
+  intro,
+  children,
+  ...props
+}: ViewProps & { title: string; intro: string; children: ReactNode }) {
+  return (
+    <AuthShell
+      title={title}
+      intro={intro}
+      brand={props.copy.brand}
+      tagline={props.copy.tagline}
+      skipLabel={props.copy.skipToContent}
+      languageSelector={<AuthLocaleSelector {...props} />}
+    >
+      {children}
+    </AuthShell>
+  );
 }
 
-const Feedback = ({ copy, outcome }: Pick<ViewProps, "copy" | "outcome">) => { const message = outcomeMessage(copy, outcome); return message.role === "alert" ? <AuthErrorSummary message={message.text} /> : message.text ? <p className="auth-status" role="status" aria-live="polite">{message.text}</p> : null; };
+const Feedback = ({ copy, outcome }: Pick<ViewProps, "copy" | "outcome">) => {
+  const message = outcomeMessage(copy, outcome);
+  return message.role === "alert" ? (
+    <AuthErrorSummary message={message.text} />
+  ) : message.text ? (
+    <p className="auth-status" role="status" aria-live="polite">
+      {message.text}
+    </p>
+  ) : null;
+};
 
-export function SignInView(props: ViewProps) { return <Frame {...props} title={props.copy.signIn} intro={props.copy.signInIntro}><Feedback {...props} /><form className="auth-form" {...authFormAttributes("sign-in")}><Csrf value={props.csrf} /><AuthField label={props.copy.email} type="email" name="email" autoComplete="email" /><AuthField label={props.copy.password} type="password" name="password" autoComplete="current-password" /><a className="auth-link" href="/client/recovery">{props.copy.forgotPassword}</a><Submit label={props.copy.signIn} value="sign_in" /></form><div className="auth-divider"><span>{props.copy.continue}</span></div><form className="auth-form" action="/api/auth/oauth/google/start" method="post"><Csrf value={props.csrf} /><button className="auth-secondary" type="submit" name="provider" value="google">{props.copy.oauthGoogle}</button></form><p className="auth-neutral" aria-live="polite">{props.copy.providerDisabled}</p><p className="auth-footnote">{props.copy.register} <a href="/client/register">{props.copy.continue}</a></p></Frame>; }
-export function RegisterView(props: ViewProps) { return <Frame {...props} title={props.copy.register} intro={props.copy.registerIntro}><Feedback {...props} /><form className="auth-form" {...authFormAttributes("register")}><Csrf value={props.csrf} /><AuthField label={props.copy.email} type="email" name="email" autoComplete="email" /><AuthField label={props.copy.password} type="password" name="password" autoComplete="new-password" minLength={12} hint={props.copy.passwordHint} /><AuthField label={props.copy.confirmPassword} type="password" name="password_confirmation" autoComplete="new-password" minLength={12} /><Submit label={props.copy.register} value="register" /></form><p className="auth-footnote">{props.copy.haveAccount} <a href="/client/sign-in">{props.copy.signIn}</a></p></Frame>; }
-export function RecoveryView(props: ViewProps) { return <Frame {...props} title={props.copy.recovery} intro={props.copy.recoveryIntro}><Feedback {...props} /><form className="auth-form" {...authFormAttributes("recovery")}><Csrf value={props.csrf} /><AuthField label={props.copy.email} type="email" name="email" autoComplete="email" /><Submit label={props.copy.recovery} value="recover" /></form><p className="auth-neutral" aria-live="polite">{props.copy.neutralRecovery}</p><a className="auth-link" href="/client/sign-in">{props.copy.backToSignIn}</a></Frame>; }
-export function ResetPasswordView(props: ViewProps) { return <Frame {...props} title={props.copy.reset} intro={props.copy.resetIntro}><Feedback {...props} /><form className="auth-form" {...authFormAttributes("reset")}><Csrf value={props.csrf} /><AuthField label={props.copy.verify} type="text" name="code" autoComplete="one-time-code" /><AuthField label={props.copy.password} type="password" name="new_password" autoComplete="new-password" minLength={12} hint={props.copy.passwordHint} /><AuthField label={props.copy.confirmPassword} type="password" name="password_confirmation" autoComplete="new-password" minLength={12} /><Submit label={props.copy.reset} value="reset" /></form><p className="auth-neutral" aria-live="polite">{props.copy.neutralReset}</p></Frame>; }
-export function VerifyEmailView(props: ViewProps) { return <Frame {...props} title={props.copy.verify} intro={props.copy.verifyIntro}><Feedback {...props} /><form className="auth-form" action="/api/auth/verify" method="post"><Csrf value={props.csrf} /><AuthField label={props.copy.verify} type="text" name="code" autoComplete="one-time-code" /><Submit label={props.copy.verify} value="verify" /></form><p className="auth-neutral" aria-live="polite">{props.copy.providerDisabled}</p></Frame>; }
-export function InvitationAcceptView(props: ViewProps) { return <Frame {...props} title={props.copy.invitation} intro={props.copy.invitationIntro}><Feedback {...props} /><form className="auth-form" action="/api/auth/invitations/accept" method="post"><Csrf value={props.csrf} /><AuthField label={props.copy.invitation} type="text" name="id" autoComplete="off" /><AuthField label={props.copy.verify} type="text" name="code" autoComplete="one-time-code" /><Submit label={props.copy.invitation} value="accept_invitation" /></form></Frame>; }
-export function OAuthOutcomeView(props: ViewProps & { outcome: AuthPortalOutcome }) { const message = outcomeMessage(props.copy, props.outcome); return <Frame {...props} title={props.copy.oauthResult} intro={props.copy.signInIntro}><p className="auth-status" role={message.role} tabIndex={-1} autoFocus aria-live="polite">{message.text}</p><a className="auth-primary auth-button-link" href="/client/sign-in">{props.copy.backToSignIn}</a></Frame>; }
-export function AccountView(props: ViewProps) { return <Frame {...props} title={props.copy.account} intro={props.copy.accountIntro}><nav className="auth-account-nav" aria-label={props.copy.account}><a href="/client/security">{props.copy.security}</a><a href="/client/sign-in">{props.copy.backToSignIn}</a></nav></Frame>; }
-export function AccountSecurityView(props: ViewProps & { sessions: readonly { key: string; label: string; current: boolean; createdAtLabel: string }[] }) { return <Frame {...props} title={props.copy.security} intro={props.copy.accountIntro}><Feedback {...props} /><section aria-labelledby="sessions-title"><div className="auth-section-heading"><div><p className="auth-kicker">{props.copy.security}</p><h2 id="sessions-title">{props.copy.activeSessions}</h2></div><span className="auth-count">{props.sessions.length}</span></div><div className="session-table-wrap"><table aria-label={props.copy.activeSessions}><thead><tr><th scope="col">{props.copy.session}</th><th scope="col">{props.copy.created}</th><th scope="col">{props.copy.status}</th></tr></thead><tbody>{props.sessions.length ? props.sessions.map((session) => <tr key={session.key}><td>{session.label}</td><td>{session.createdAtLabel}</td><td>{session.current ? props.copy.currentSession : props.copy.sessions}</td></tr>) : <tr><td colSpan={3}>{props.copy.noSessions}</td></tr>}</tbody></table></div></section><div className="security-actions"><form action="/api/auth/logout" method="post"><Csrf value={props.csrf} /><Submit label={props.copy.revokeCurrent} value="revoke_current" /></form><form action="/api/auth/sessions" method="post"><Csrf value={props.csrf} /><Submit label={props.copy.closeOtherSessions} value="revoke_others" /></form></div><p className="auth-neutral" aria-live="polite">{props.copy.providerDisabled}</p></Frame>; }
+export function SignInView(props: ViewProps) {
+  return (
+    <Frame {...props} title={props.copy.signIn} intro={props.copy.signInIntro}>
+      <Feedback {...props} />
+      <form className="auth-form" {...authFormAttributes("sign-in")}>
+        <Csrf value={props.csrf} />
+        <AuthField label={props.copy.email} type="email" name="email" autoComplete="email" />
+        <AuthField
+          label={props.copy.password}
+          type="password"
+          name="password"
+          autoComplete="current-password"
+        />
+        <a className="auth-link" href="/client/recovery">
+          {props.copy.forgotPassword}
+        </a>
+        <Submit label={props.copy.signIn} value="sign_in" />
+      </form>
+      <div className="auth-divider">
+        <span>{props.copy.continue}</span>
+      </div>
+      <form className="auth-form" action="/api/auth/oauth/google/start" method="post">
+        <Csrf value={props.csrf} />
+        <button className="auth-secondary" type="submit" name="provider" value="google">
+          {props.copy.oauthGoogle}
+        </button>
+      </form>
+      <p className="auth-neutral" aria-live="polite">
+        {props.copy.providerDisabled}
+      </p>
+      <p className="auth-footnote">
+        {props.copy.register} <a href="/client/register">{props.copy.continue}</a>
+      </p>
+    </Frame>
+  );
+}
+export function RegisterView(props: ViewProps) {
+  return (
+    <Frame {...props} title={props.copy.register} intro={props.copy.registerIntro}>
+      <Feedback {...props} />
+      <form className="auth-form" {...authFormAttributes("register")}>
+        <Csrf value={props.csrf} />
+        <AuthField label={props.copy.email} type="email" name="email" autoComplete="email" />
+        <AuthField
+          label={props.copy.password}
+          type="password"
+          name="password"
+          autoComplete="new-password"
+          minLength={12}
+          hint={props.copy.passwordHint}
+        />
+        <AuthField
+          label={props.copy.confirmPassword}
+          type="password"
+          name="password_confirmation"
+          autoComplete="new-password"
+          minLength={12}
+        />
+        <Submit label={props.copy.register} value="register" />
+      </form>
+      <p className="auth-footnote">
+        {props.copy.haveAccount} <a href="/client/sign-in">{props.copy.signIn}</a>
+      </p>
+    </Frame>
+  );
+}
+export function RecoveryView(props: ViewProps) {
+  return (
+    <Frame {...props} title={props.copy.recovery} intro={props.copy.recoveryIntro}>
+      <Feedback {...props} />
+      <form className="auth-form" {...authFormAttributes("recovery")}>
+        <Csrf value={props.csrf} />
+        <AuthField label={props.copy.email} type="email" name="email" autoComplete="email" />
+        <Submit label={props.copy.recovery} value="recover" />
+      </form>
+      <p className="auth-neutral" aria-live="polite">
+        {props.copy.neutralRecovery}
+      </p>
+      <a className="auth-link" href="/client/sign-in">
+        {props.copy.backToSignIn}
+      </a>
+    </Frame>
+  );
+}
+export function ResetPasswordView(props: ViewProps) {
+  return (
+    <Frame {...props} title={props.copy.reset} intro={props.copy.resetIntro}>
+      <Feedback {...props} />
+      <form className="auth-form" {...authFormAttributes("reset")}>
+        <Csrf value={props.csrf} />
+        <AuthField label={props.copy.verify} type="text" name="code" autoComplete="one-time-code" />
+        <AuthField
+          label={props.copy.password}
+          type="password"
+          name="new_password"
+          autoComplete="new-password"
+          minLength={12}
+          hint={props.copy.passwordHint}
+        />
+        <AuthField
+          label={props.copy.confirmPassword}
+          type="password"
+          name="password_confirmation"
+          autoComplete="new-password"
+          minLength={12}
+        />
+        <Submit label={props.copy.reset} value="reset" />
+      </form>
+      <p className="auth-neutral" aria-live="polite">
+        {props.copy.neutralReset}
+      </p>
+    </Frame>
+  );
+}
+export function VerifyEmailView(props: ViewProps) {
+  return (
+    <Frame {...props} title={props.copy.verify} intro={props.copy.verifyIntro}>
+      <Feedback {...props} />
+      <form className="auth-form" action="/api/auth/verify" method="post">
+        <Csrf value={props.csrf} />
+        <AuthField label={props.copy.verify} type="text" name="code" autoComplete="one-time-code" />
+        <Submit label={props.copy.verify} value="verify" />
+      </form>
+      <p className="auth-neutral" aria-live="polite">
+        {props.copy.providerDisabled}
+      </p>
+    </Frame>
+  );
+}
+export function InvitationAcceptView(props: ViewProps) {
+  return (
+    <Frame {...props} title={props.copy.invitation} intro={props.copy.invitationIntro}>
+      <Feedback {...props} />
+      <form className="auth-form" action="/api/auth/invitations/accept" method="post">
+        <Csrf value={props.csrf} />
+        <AuthField label={props.copy.invitation} type="text" name="id" autoComplete="off" />
+        <AuthField label={props.copy.verify} type="text" name="code" autoComplete="one-time-code" />
+        <Submit label={props.copy.invitation} value="accept_invitation" />
+      </form>
+    </Frame>
+  );
+}
+export function OAuthOutcomeView(props: ViewProps & { outcome: AuthPortalOutcome }) {
+  const message = outcomeMessage(props.copy, props.outcome);
+  return (
+    <Frame {...props} title={props.copy.oauthResult} intro={props.copy.signInIntro}>
+      <p className="auth-status" role={message.role} tabIndex={-1} aria-live="polite">
+        {message.text}
+      </p>
+      <a className="auth-primary auth-button-link" href="/client/sign-in">
+        {props.copy.backToSignIn}
+      </a>
+    </Frame>
+  );
+}
+export function AccountView(props: ViewProps) {
+  return (
+    <Frame {...props} title={props.copy.account} intro={props.copy.accountIntro}>
+      <nav className="auth-account-nav" aria-label={props.copy.account}>
+        <a href="/client/security">{props.copy.security}</a>
+        <a href="/client/sign-in">{props.copy.backToSignIn}</a>
+      </nav>
+    </Frame>
+  );
+}
+export function AccountSecurityView(
+  props: ViewProps & {
+    sessions: readonly { key: string; label: string; current: boolean; createdAtLabel: string }[];
+  },
+) {
+  return (
+    <Frame {...props} title={props.copy.security} intro={props.copy.accountIntro}>
+      <Feedback {...props} />
+      <section aria-labelledby="sessions-title">
+        <div className="auth-section-heading">
+          <div>
+            <p className="auth-kicker">{props.copy.security}</p>
+            <h2 id="sessions-title">{props.copy.activeSessions}</h2>
+          </div>
+          <span className="auth-count">{props.sessions.length}</span>
+        </div>
+        <div className="session-table-wrap">
+          <table aria-label={props.copy.activeSessions}>
+            <thead>
+              <tr>
+                <th scope="col">{props.copy.session}</th>
+                <th scope="col">{props.copy.created}</th>
+                <th scope="col">{props.copy.status}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {props.sessions.length ? (
+                props.sessions.map((session) => (
+                  <tr key={session.key}>
+                    <td>{session.label}</td>
+                    <td>{session.createdAtLabel}</td>
+                    <td>{session.current ? props.copy.currentSession : props.copy.sessions}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={3}>{props.copy.noSessions}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <div className="security-actions">
+        <form action="/api/auth/logout" method="post">
+          <Csrf value={props.csrf} />
+          <Submit label={props.copy.revokeCurrent} value="revoke_current" />
+        </form>
+        <form action="/api/auth/sessions" method="post">
+          <Csrf value={props.csrf} />
+          <Submit label={props.copy.closeOtherSessions} value="revoke_others" />
+        </form>
+      </div>
+      <p className="auth-neutral" aria-live="polite">
+        {props.copy.providerDisabled}
+      </p>
+    </Frame>
+  );
+}

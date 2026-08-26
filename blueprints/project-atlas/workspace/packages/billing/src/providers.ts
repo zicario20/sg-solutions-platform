@@ -1,7 +1,62 @@
-export type ProviderCheckoutRequest=Readonly<{operationRef:string;paymentOrderRef:string;amountMinor:number;currency:"USD";description:string;successUrl:string;cancelUrl:string;idempotencyKey:string}>;
-export type ProviderCheckoutResult=Readonly<{checkoutRef:string;destination:string;expiresAt:Date}>;
-export type ProviderTransaction=Readonly<{providerTransactionRef:string;checkoutRef?:string;status:"processing"|"succeeded"|"failed"|"cancelled";amountMinor:number;currency:"USD";occurredAt:Date}>;
-export interface PaymentProvider { createCheckout(input:ProviderCheckoutRequest):Promise<ProviderCheckoutResult>; retrieveTransaction(providerTransactionRef:string):Promise<ProviderTransaction|undefined>; requestRefund(input:Readonly<{providerTransactionRef:string;amountMinor:number;currency:"USD";idempotencyKey:string}>):Promise<Readonly<{refundRef:string;status:"submitted"}>>; }
-export interface BillingProvider { createInvoice(input:Readonly<{paymentOrderRef:string}>):Promise<Readonly<{invoiceRef:string}>>; receiptDestination(input:Readonly<{paymentOrderRef:string;transactionRef:string}>):Promise<string|undefined>; }
-export class DisabledPaymentProvider implements PaymentProvider { async createCheckout():Promise<ProviderCheckoutResult>{throw new Error("BILLING_PROVIDER_DISABLED")} async retrieveTransaction():Promise<undefined>{return undefined} async requestRefund():Promise<never>{throw new Error("BILLING_PROVIDER_DISABLED")} }
-export class DisabledBillingProvider implements BillingProvider { async createInvoice():Promise<never>{throw new Error("BILLING_PROVIDER_DISABLED")} async receiptDestination():Promise<undefined>{return undefined} }
+export type ProviderCheckoutRequest = Readonly<{
+  operationRef: string;
+  paymentOrderRef: string;
+  amountMinor: number;
+  currency: "USD";
+  description: string;
+  successUrl: string;
+  cancelUrl: string;
+  idempotencyKey: string;
+}>;
+export type ProviderCheckoutResult = Readonly<{
+  checkoutRef: string;
+  destination: string;
+  expiresAt: Date;
+}>;
+export type ProviderTransaction = Readonly<{
+  providerTransactionRef: string;
+  checkoutRef?: string;
+  status: "processing" | "succeeded" | "failed" | "cancelled";
+  amountMinor: number;
+  currency: "USD";
+  occurredAt: Date;
+}>;
+export interface PaymentProvider {
+  createCheckout(input: ProviderCheckoutRequest): Promise<ProviderCheckoutResult>;
+  retrieveTransaction(providerTransactionRef: string): Promise<ProviderTransaction | undefined>;
+  requestRefund(
+    input: Readonly<{
+      providerTransactionRef: string;
+      amountMinor: number;
+      currency: "USD";
+      idempotencyKey: string;
+    }>,
+  ): Promise<Readonly<{ refundRef: string; status: "submitted" }>>;
+}
+export interface BillingProvider {
+  createInvoice(
+    input: Readonly<{ paymentOrderRef: string }>,
+  ): Promise<Readonly<{ invoiceRef: string }>>;
+  receiptDestination(
+    input: Readonly<{ paymentOrderRef: string; transactionRef: string }>,
+  ): Promise<string | undefined>;
+}
+export class DisabledPaymentProvider implements PaymentProvider {
+  async createCheckout(): Promise<ProviderCheckoutResult> {
+    throw new Error("BILLING_PROVIDER_DISABLED");
+  }
+  async retrieveTransaction(): Promise<undefined> {
+    return undefined;
+  }
+  async requestRefund(): Promise<never> {
+    throw new Error("BILLING_PROVIDER_DISABLED");
+  }
+}
+export class DisabledBillingProvider implements BillingProvider {
+  async createInvoice(): Promise<never> {
+    throw new Error("BILLING_PROVIDER_DISABLED");
+  }
+  async receiptDestination(): Promise<undefined> {
+    return undefined;
+  }
+}

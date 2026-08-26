@@ -60,9 +60,12 @@ const AI_PROHIBITED_ACTIONS: readonly CatalogCommandAction[] = [
 ];
 
 export function evaluateCatalogCommand(command: CatalogCommand): Readonly<{ allowed: true }> {
-  if (command.sourceIds.length === 0) throw new CatalogControlError("catalog command requires sources");
+  if (command.sourceIds.length === 0)
+    throw new CatalogControlError("catalog command requires sources");
   if (command.actorType === "ai" && AI_PROHIBITED_ACTIONS.includes(command.action))
-    throw new CatalogControlError("AI cannot make catalog approval, publication, price, workflow, disclosure or retirement decisions");
+    throw new CatalogControlError(
+      "AI cannot make catalog approval, publication, price, workflow, disclosure or retirement decisions",
+    );
   return Object.freeze({ allowed: true });
 }
 

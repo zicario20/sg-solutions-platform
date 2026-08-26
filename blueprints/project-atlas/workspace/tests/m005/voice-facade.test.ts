@@ -1,10 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { MemoryVoiceCommandReceiptRepository } from "../../packages/database/src/voice-command-repository.ts";
-import type {
-  StoredVoiceCommandReceipt,
-  VoiceCommand,
-  VoiceOperationResult,
-} from "../../packages/domain/src/voice/index.ts";
 import {
   VoiceOperationsFacade,
   type VoiceServiceContext,
@@ -14,10 +8,16 @@ import {
   type OwnerPorts,
 } from "../../apps/app/src/lib/voice/owner-ports.ts";
 import {
-  issueVoiceServiceCredential,
   BoundedMemoryVoiceCredentialRepository,
+  issueVoiceServiceCredential,
   VoiceServiceAuthenticator,
 } from "../../apps/app/src/lib/voice/service-auth.ts";
+import { MemoryVoiceCommandReceiptRepository } from "../../packages/database/src/voice-command-repository.ts";
+import type {
+  StoredVoiceCommandReceipt,
+  VoiceCommand,
+  VoiceOperationResult,
+} from "../../packages/domain/src/voice/index.ts";
 
 const secret = Buffer.from("m005-synthetic-service-secret-00000000000000000000000000000000");
 const now = new Date("2026-08-20T12:00:00.000Z");
@@ -40,11 +40,7 @@ function contextFor(input: VoiceCommand, nonce: string): VoiceServiceContext {
   return contextForAt(input, nonce, now);
 }
 
-function contextForAt(
-  input: VoiceCommand,
-  nonce: string,
-  activeNow: Date,
-): VoiceServiceContext {
+function contextForAt(input: VoiceCommand, nonce: string, activeNow: Date): VoiceServiceContext {
   return {
     now: activeNow,
     credential: issueVoiceServiceCredential(
@@ -76,21 +72,13 @@ class CrashBeforeReceiptCompletionRepository extends MemoryVoiceCommandReceiptRe
       this.shouldCrash = false;
       throw new Error("SYNTHETIC_RECEIPT_COMPLETION_CRASH");
     }
-    return super.complete(
-      callId,
-      receiptId,
-      reservationVersion,
-      result,
-      completedAt,
-    );
+    return super.complete(callId, receiptId, reservationVersion, result, completedAt);
   }
 }
 
 function setupCompletionCrash() {
   let ownerCalls = 0;
-  let authoritativeReceipt:
-    | { receiptId: string; outcome: "appointment_requested" }
-    | undefined;
+  let authoritativeReceipt: { receiptId: string; outcome: "appointment_requested" } | undefined;
   const receipts = new CrashBeforeReceiptCompletionRepository({
     leaseMilliseconds: 30_000,
   });
@@ -140,7 +128,9 @@ describe("M005 scoped voice operations facade", () => {
   it("requires verification before any personalized status projection", async () => {
     const input = command({ operation: "safe_status", confirmed: false });
     const { facade } = setup();
-    await expect(facade.execute(input, contextFor(input, "nonce_safe_status_00000001"))).resolves.toEqual({
+    await expect(
+      facade.execute(input, contextFor(input, "nonce_safe_status_00000001")),
+    ).resolves.toEqual({
       kind: "verification_required",
     });
   });
@@ -187,9 +177,7 @@ describe("M005 scoped voice operations facade", () => {
       ...createFailClosedOwnerPorts(),
       requestAppointment: async () => {
         ownerCalls += 1;
-        observedState = (
-          await receipts.find(input.callId, input.idempotencyKey)
-        )?.state;
+        observedState = (await receipts.find(input.callId, input.idempotencyKey))?.state;
         return { receiptId: "appointment_receipt_001", outcome: "appointment_requested" } as const;
       },
     };
@@ -285,10 +273,7 @@ describe("M005 scoped voice operations facade", () => {
 
     const afterLease = new Date(now.getTime() + 30_001);
     await expect(
-      facade.execute(
-        input,
-        contextForAt(input, "nonce_completion_reconcile_001", afterLease),
-      ),
+      facade.execute(input, contextForAt(input, "nonce_completion_reconcile_001", afterLease)),
     ).resolves.toEqual({
       kind: "completed",
       outcome: "appointment_requested",
@@ -305,20 +290,11 @@ describe("M005 scoped voice operations facade", () => {
   it("optimistically reconciles concurrent expired retries without repeating ambiguous work", async () => {
     const input = command({ commandId: "voice_command_concurrent_001" });
     const { facade, ownerCalls } = setupCompletionCrash();
-    await facade.execute(
-      input,
-      contextForAt(input, "nonce_concurrent_crash_000001", now),
-    );
+    await facade.execute(input, contextForAt(input, "nonce_concurrent_crash_000001", now));
     const afterLease = new Date(now.getTime() + 30_001);
     const results = await Promise.all([
-      facade.execute(
-        input,
-        contextForAt(input, "nonce_concurrent_retry_000001", afterLease),
-      ),
-      facade.execute(
-        input,
-        contextForAt(input, "nonce_concurrent_retry_000002", afterLease),
-      ),
+      facade.execute(input, contextForAt(input, "nonce_concurrent_retry_000001", afterLease)),
+      facade.execute(input, contextForAt(input, "nonce_concurrent_retry_000002", afterLease)),
     ]);
 
     expect(results).toEqual([

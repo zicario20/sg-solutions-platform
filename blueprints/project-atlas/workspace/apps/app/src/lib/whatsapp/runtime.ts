@@ -31,9 +31,7 @@ export type WhatsAppRouteHandler = (
   context: WhatsAppRouteContext,
 ) => Promise<Response>;
 
-export function createWhatsAppRouteHandler(
-  handler: WhatsAppIngressHandler,
-): WhatsAppRouteHandler {
+export function createWhatsAppRouteHandler(handler: WhatsAppIngressHandler): WhatsAppRouteHandler {
   return async (request, context) => {
     const { connectionId } = await context.params;
     return handler(request, { connectionId });

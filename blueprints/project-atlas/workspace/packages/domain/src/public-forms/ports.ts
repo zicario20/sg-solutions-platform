@@ -33,27 +33,48 @@ export type OwnerPortResult = Readonly<{
 
 export interface LeadCandidatePort {
   accept(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult>;
-  queryByIdempotency?(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult | undefined>;
+  queryByIdempotency?(
+    command: FormOutboxCommand,
+    options: FormOwnerInvocationOptions,
+  ): Promise<OwnerPortResult | undefined>;
 }
 
 export interface ConsentEvidencePort {
   record(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult>;
-  queryByIdempotency?(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult | undefined>;
+  queryByIdempotency?(
+    command: FormOutboxCommand,
+    options: FormOwnerInvocationOptions,
+  ): Promise<OwnerPortResult | undefined>;
 }
 
 export interface AppointmentIntentPort {
-  request(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult>;
-  queryByIdempotency?(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult | undefined>;
+  request(
+    command: FormOutboxCommand,
+    options: FormOwnerInvocationOptions,
+  ): Promise<OwnerPortResult>;
+  queryByIdempotency?(
+    command: FormOutboxCommand,
+    options: FormOwnerInvocationOptions,
+  ): Promise<OwnerPortResult | undefined>;
 }
 
 export interface PaymentHandoffPort {
-  request(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult>;
-  queryByIdempotency?(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult | undefined>;
+  request(
+    command: FormOutboxCommand,
+    options: FormOwnerInvocationOptions,
+  ): Promise<OwnerPortResult>;
+  queryByIdempotency?(
+    command: FormOutboxCommand,
+    options: FormOwnerInvocationOptions,
+  ): Promise<OwnerPortResult | undefined>;
 }
 
 export interface ChannelHandoffPort {
   queue(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult>;
-  queryByIdempotency?(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult | undefined>;
+  queryByIdempotency?(
+    command: FormOutboxCommand,
+    options: FormOwnerInvocationOptions,
+  ): Promise<OwnerPortResult | undefined>;
 }
 
 export interface AnalyticsPort {
@@ -61,6 +82,12 @@ export interface AnalyticsPort {
 }
 
 export interface NotificationPort {
-  request(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult>;
-  queryByIdempotency?(command: FormOutboxCommand, options: FormOwnerInvocationOptions): Promise<OwnerPortResult | undefined>;
+  request(
+    command: FormOutboxCommand,
+    options: FormOwnerInvocationOptions,
+  ): Promise<OwnerPortResult>;
+  queryByIdempotency?(
+    command: FormOutboxCommand,
+    options: FormOwnerInvocationOptions,
+  ): Promise<OwnerPortResult | undefined>;
 }

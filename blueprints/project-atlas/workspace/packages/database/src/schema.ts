@@ -20,15 +20,15 @@ import {
 } from "drizzle-orm/pg-core";
 
 export * from "./schema/appointments.ts";
-export * from "./schema/business-formation.ts";
+export * from "./schema/bookkeeping.ts";
 export * from "./schema/business-compliance.ts";
+export * from "./schema/business-formation.ts";
 export * from "./schema/business-funding.ts";
+export * from "./schema/documents.ts";
+export * from "./schema/ein-business-documents.ts";
 export * from "./schema/home-buying-assistance.ts";
 export * from "./schema/marketplace.ts";
 export * from "./schema/recommendation-engine.ts";
-export * from "./schema/ein-business-documents.ts";
-export * from "./schema/bookkeeping.ts";
-export * from "./schema/documents.ts";
 export * from "./schema/secure-messaging.ts";
 
 const gatewayAccess = (name: string) =>
@@ -1624,11 +1624,10 @@ export const communicationAuditEvents = pgTable(
 
 export const getPublicChatTableConfig = getTableConfig;
 
+export * from "./schema/creditcardbroker.ts";
 export * from "./schema/index.ts";
 
-export * from './schema/creditcardbroker.ts';
+export * from "./schema/partner-management.ts";
 
-export * from './schema/partner-management.ts';
-
-export * from './schema/provider-abstraction.ts';
+export * from "./schema/provider-abstraction.ts";
 export * from "./schema/service-catalog.ts";

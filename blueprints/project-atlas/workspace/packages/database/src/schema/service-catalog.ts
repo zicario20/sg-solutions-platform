@@ -88,7 +88,10 @@ export const serviceCatalogTranslations = pgTable(
     createdAt: catalogTimestamp("created_at").notNull(),
   },
   (table) => [
-    uniqueIndex("service_catalog_translations_version_locale_key").on(table.serviceVersionId, table.locale),
+    uniqueIndex("service_catalog_translations_version_locale_key").on(
+      table.serviceVersionId,
+      table.locale,
+    ),
     index("service_catalog_translations_locale_idx").on(table.locale),
   ],
 );
@@ -160,7 +163,10 @@ export const serviceCatalogDocumentRequirements = pgTable(
     createdAt: catalogTimestamp("created_at").notNull(),
   },
   (table) => [
-    uniqueIndex("service_catalog_document_requirements_set_code_key").on(table.requirementSetId, table.code),
+    uniqueIndex("service_catalog_document_requirements_set_code_key").on(
+      table.requirementSetId,
+      table.code,
+    ),
     index("service_catalog_document_requirements_set_idx").on(table.requirementSetId),
   ],
 );
@@ -178,7 +184,9 @@ export const serviceCatalogDurationProfiles = pgTable(
     sourceReference: text("source_reference"),
     createdAt: catalogTimestamp("created_at").notNull(),
   },
-  (table) => [uniqueIndex("service_catalog_duration_profiles_version_key").on(table.serviceVersionId)],
+  (table) => [
+    uniqueIndex("service_catalog_duration_profiles_version_key").on(table.serviceVersionId),
+  ],
 );
 
 export const serviceCatalogDisclosureSets = pgTable(
@@ -209,7 +217,9 @@ export const serviceCatalogIntakeDefinitions = pgTable(
     dataClasses: jsonb("data_classes").notNull(),
     createdAt: catalogTimestamp("created_at").notNull(),
   },
-  (table) => [uniqueIndex("service_catalog_intake_definitions_version_key").on(table.serviceVersionId)],
+  (table) => [
+    uniqueIndex("service_catalog_intake_definitions_version_key").on(table.serviceVersionId),
+  ],
 );
 
 export const serviceCatalogWorkflowBindings = pgTable(
@@ -223,7 +233,9 @@ export const serviceCatalogWorkflowBindings = pgTable(
     requiresHumanAuthorization: boolean("requires_human_authorization").notNull(),
     createdAt: catalogTimestamp("created_at").notNull(),
   },
-  (table) => [uniqueIndex("service_catalog_workflow_bindings_version_key").on(table.serviceVersionId)],
+  (table) => [
+    uniqueIndex("service_catalog_workflow_bindings_version_key").on(table.serviceVersionId),
+  ],
 );
 
 export const serviceCatalogPublications = pgTable(
@@ -260,7 +272,10 @@ export const serviceCatalogDiscoveryDocuments = pgTable(
     invalidatedAt: catalogTimestamp("invalidated_at"),
   },
   (table) => [
-    uniqueIndex("service_catalog_discovery_documents_path_locale_key").on(table.canonicalPath, table.locale),
+    uniqueIndex("service_catalog_discovery_documents_path_locale_key").on(
+      table.canonicalPath,
+      table.locale,
+    ),
     index("service_catalog_discovery_documents_version_idx").on(table.serviceVersionId),
   ],
 );
@@ -348,7 +363,9 @@ export const serviceCatalogGovernanceRecords = pgTable(
     correlationId: text("correlation_id").notNull(),
     createdAt: catalogTimestamp("created_at").notNull(),
   },
-  (table) => [index("service_catalog_governance_records_definition_idx").on(table.serviceDefinitionId)],
+  (table) => [
+    index("service_catalog_governance_records_definition_idx").on(table.serviceDefinitionId),
+  ],
 );
 
 export const serviceCatalogDataQualityFindings = pgTable(
@@ -382,5 +399,10 @@ export const serviceCatalogMigrationRecords = pgTable(
     createdAt: catalogTimestamp("created_at").notNull(),
     completedAt: catalogTimestamp("completed_at"),
   },
-  (table) => [uniqueIndex("service_catalog_migration_records_source_key").on(table.sourceType, table.sourceReference)],
+  (table) => [
+    uniqueIndex("service_catalog_migration_records_source_key").on(
+      table.sourceType,
+      table.sourceReference,
+    ),
+  ],
 );

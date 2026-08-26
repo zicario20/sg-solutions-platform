@@ -1,1 +1,31 @@
-import{describe,expect,it}from"vitest";import{selectProcessPriority}from"@atlas/client-process-status";const empty={state:"empty",candidates:[]}as const;describe("M010 process priority",()=>{it("blocks a lower action when a higher source is unavailable",()=>{const result=selectProcessPriority({security:{state:"unavailable",candidates:[]},payments:empty,documents:empty,tasks:{state:"fresh",candidates:[{opaqueRef:"a",type:"due_task",title:"Task",blocking:false,workflowPriority:1,createdAt:"2026-08-23T00:00:00Z",routeKey:"status"}]},appointments:empty,services:empty,notifications:empty});expect(result.kind).toBe("unconfirmed")})});
+import { selectProcessPriority } from "@atlas/client-process-status";
+import { describe, expect, it } from "vitest";
+
+const empty = { state: "empty", candidates: [] } as const;
+describe("M010 process priority", () => {
+  it("blocks a lower action when a higher source is unavailable", () => {
+    const result = selectProcessPriority({
+      security: { state: "unavailable", candidates: [] },
+      payments: empty,
+      documents: empty,
+      tasks: {
+        state: "fresh",
+        candidates: [
+          {
+            opaqueRef: "a",
+            type: "due_task",
+            title: "Task",
+            blocking: false,
+            workflowPriority: 1,
+            createdAt: "2026-08-23T00:00:00Z",
+            routeKey: "status",
+          },
+        ],
+      },
+      appointments: empty,
+      services: empty,
+      notifications: empty,
+    });
+    expect(result.kind).toBe("unconfirmed");
+  });
+});

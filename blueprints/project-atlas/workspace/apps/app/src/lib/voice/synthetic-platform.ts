@@ -1,11 +1,8 @@
+import type { VoiceLifecycleRepository } from "@atlas/database";
 import type { VoiceCommand, VoiceOperationResult } from "@atlas/domain";
 import { VOICE_COMMAND_OPERATIONS } from "@atlas/domain";
-import type { VoiceLifecycleRepository } from "@atlas/database";
 import type { VoiceOperationsFacade } from "./operations-facade.ts";
-import {
-  issueVoiceServiceCredential,
-  type VoiceCredentialRepository,
-} from "./service-auth.ts";
+import { issueVoiceServiceCredential, type VoiceCredentialRepository } from "./service-auth.ts";
 
 const canonicalId = /^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$/u;
 const digest = /^[0-9a-f]{64}$/u;
@@ -156,10 +153,7 @@ export class SyntheticVoicePlatform {
 
   async execute(value: unknown, credential: unknown): Promise<VoiceOperationResult> {
     const command = parseCommand(value);
-    if (
-      typeof credential !== "string" ||
-      !this.credentialRepositoryReady
-    ) {
+    if (typeof credential !== "string" || !this.credentialRepositoryReady) {
       return { kind: "denied" };
     }
     const consumed = await this.dependencies.credentials.consumeCredential({

@@ -6,6 +6,8 @@ describe("M007 auth outbox", () => {
     const outbox = new AuthOutbox();
     await outbox.enqueue({ id: "email-1", purpose: "recovery" });
     await expect(dispatchAuthOutbox(outbox)).resolves.toEqual({ kind: "pending" });
-    await expect(reconcileAuthOutbox(outbox, "unknown")).resolves.toEqual({ kind: "manual_review" });
+    await expect(reconcileAuthOutbox(outbox, "unknown")).resolves.toEqual({
+      kind: "manual_review",
+    });
   });
 });

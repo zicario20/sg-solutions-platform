@@ -2,7 +2,12 @@ import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import { PublicFormsLifecycleService } from "../../packages/domain/src/public-forms/workflows.ts";
-import { REVIEW_NOW, createReviewService, reviewCommand, reviewDefinition } from "./public-forms-review-fixtures.ts";
+import {
+  createReviewService,
+  REVIEW_NOW,
+  reviewCommand,
+  reviewDefinition,
+} from "./public-forms-review-fixtures.ts";
 
 describe("M006 draft and consent lifecycle", () => {
   it("expires encrypted drafts and denies cross-session access", async () => {
@@ -36,15 +41,24 @@ describe("M006 draft and consent lifecycle", () => {
     expect(repository.drafts[0]?.ciphertext).not.toContain("Sami");
 
     expect(
-      await lifecycle.resumeDraft({ draftReference: saved.draftReference, sessionBinding: "session-b" }),
+      await lifecycle.resumeDraft({
+        draftReference: saved.draftReference,
+        sessionBinding: "session-b",
+      }),
     ).toEqual({ status: "denied" });
     expect(
-      await lifecycle.resumeDraft({ draftReference: saved.draftReference, sessionBinding: "session-a" }),
+      await lifecycle.resumeDraft({
+        draftReference: saved.draftReference,
+        sessionBinding: "session-a",
+      }),
     ).toMatchObject({ status: "resumed", answers: { name: "Sami" } });
 
     now = new Date(REVIEW_NOW.getTime() + 60_001);
     expect(
-      await lifecycle.resumeDraft({ draftReference: saved.draftReference, sessionBinding: "session-a" }),
+      await lifecycle.resumeDraft({
+        draftReference: saved.draftReference,
+        sessionBinding: "session-a",
+      }),
     ).toEqual({ status: "expired" });
     expect(repository.drafts[0]?.state).toBe("expired");
   });
@@ -100,9 +114,17 @@ describe("M006 draft and consent lifecycle", () => {
       "consent",
       "channel",
     ]);
-    expect(repository.acceptedSubmissions[0]?.consents.find((item) => item.consentType === "whatsapp_contact")?.granted).toBe(true);
     expect(
-      await lifecycle.revokeConsent({ ...command, sessionBinding: "session-other", idempotencyKey: "revoke_other" }),
+      repository.acceptedSubmissions[0]?.consents.find(
+        (item) => item.consentType === "whatsapp_contact",
+      )?.granted,
+    ).toBe(true);
+    expect(
+      await lifecycle.revokeConsent({
+        ...command,
+        sessionBinding: "session-other",
+        idempotencyKey: "revoke_other",
+      }),
     ).toEqual({ status: "denied" });
   });
 });

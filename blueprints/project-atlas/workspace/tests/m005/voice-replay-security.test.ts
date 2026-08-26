@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { VoiceCommand } from "../../packages/domain/src/voice/index.ts";
 import {
   BoundedMemoryVoiceCredentialRepository,
-  VoiceServiceAuthenticator,
   issueVoiceServiceCredential,
+  VoiceServiceAuthenticator,
 } from "../../apps/app/src/lib/voice/service-auth.ts";
+import type { VoiceCommand } from "../../packages/domain/src/voice/index.ts";
 
 const secret = Buffer.from("m005-replay-security-secret-0000000000000000000000000000");
 const now = new Date("2026-08-20T12:00:00.000Z");

@@ -1,6 +1,6 @@
 import {
-  ClientServicesQueryService,
   type ClientServiceSectionPorts,
+  ClientServicesQueryService,
   type ClientServicesSourcePort,
 } from "@atlas/client-services";
 import type { DashboardAuthPort } from "@atlas/dashboard";
@@ -10,15 +10,12 @@ import {
   type M007DashboardAuthRepository,
 } from "../dashboard/m007-auth-adapter.ts";
 import { createPostgresM007DashboardAuthRepository } from "../dashboard/m007-dashboard-repository.ts";
+import type { ClientServicesAdmissionAction, ClientServicesAdmissionPort } from "./admission.ts";
 import { createM007M008ClientServicesAuthAdapter } from "./auth-adapter.ts";
-import type {
-  ClientServicesAdmissionAction,
-  ClientServicesAdmissionPort,
-} from "./admission.ts";
 import type { ClientServicesHttpDependencies } from "./http.ts";
 import {
-  createPostgresClientServicesSource,
   type ClientServicesSqlPort,
+  createPostgresClientServicesSource,
 } from "./postgres-repository.ts";
 
 export interface ClientServicesRuntimeConfiguration {
@@ -91,8 +88,8 @@ export async function createEnvironmentClientServicesRuntime(
   const enabled =
     environment.M009_CLIENT_SERVICES_ENABLED === "true" &&
     databaseRole === "atlas_client_services_reader" &&
-    /^postgres(?:ql)?:///u.test(url) &&
-    contextSecret.length >= 32;
+    /^postgres(?:ql)?:/; //u.test(url) &&
+  contextSecret.length >= 32;
 
   if (!enabled || !dependencies.admission) return createConfiguredClientServicesRuntime();
 

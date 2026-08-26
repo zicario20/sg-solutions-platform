@@ -1,55 +1,608 @@
-export const DASHBOARD_OWNER_CODES = ["security", "services", "tasks", "documents", "appointments", "payments", "messages", "notifications", "help"] as const;
+export const DASHBOARD_OWNER_CODES = [
+  "security",
+  "services",
+  "tasks",
+  "documents",
+  "appointments",
+  "payments",
+  "messages",
+  "notifications",
+  "help",
+] as const;
 export type DashboardOwnerCode = (typeof DASHBOARD_OWNER_CODES)[number];
-export const DASHBOARD_SECTION_LIMITS = Object.freeze({ security: 1, services: 4, tasks: 5, documents: 3, appointments: 1, payments: 1, messages: 3, notifications: 3, help: 3 } satisfies Readonly<Record<DashboardOwnerCode, number>>);
-export const DASHBOARD_ROUTE_KEYS = ["home", "services", "status", "documents", "appointments", "messages", "payments", "help", "settings", "security", "support"] as const;
+export const DASHBOARD_SECTION_LIMITS = Object.freeze({
+  security: 1,
+  services: 4,
+  tasks: 5,
+  documents: 3,
+  appointments: 1,
+  payments: 1,
+  messages: 3,
+  notifications: 3,
+  help: 3,
+} satisfies Readonly<Record<DashboardOwnerCode, number>>);
+export const DASHBOARD_ROUTE_KEYS = [
+  "home",
+  "services",
+  "status",
+  "documents",
+  "appointments",
+  "messages",
+  "payments",
+  "help",
+  "settings",
+  "security",
+  "support",
+] as const;
 export type DashboardRouteKey = (typeof DASHBOARD_ROUTE_KEYS)[number];
 export type DashboardLocale = "es" | "en";
 export type DashboardContextType = "personal" | "organization";
 export type DashboardSectionState = "fresh" | "empty" | "stale" | "unavailable" | "suppressed";
-export type DashboardSafeReason = "provider_disabled" | "source_unavailable" | "stale_projection" | "policy_suppressed";
+export type DashboardSafeReason =
+  | "provider_disabled"
+  | "source_unavailable"
+  | "stale_projection"
+  | "policy_suppressed";
 export const DASHBOARD_AUTH_SCHEMA_VERSION = "m008.auth.v2" as const;
-export type DashboardContextOption = Readonly<{ opaqueRef: string; label: string; type: DashboardContextType }>;
-export type DashboardAuthorizationSnapshot = Readonly<{ schemaVersion: typeof DASHBOARD_AUTH_SCHEMA_VERSION; accountId: string; sessionId: string; sessionFamilyId: string; userId: string; accountStatus: "active"; sessionStatus: "active"; sessionExpiresAt: string; assurance: "aal1" | "aal2"; authenticationEpoch: string; authorizationEpoch: string; policyEpoch: string; context: Readonly<{ type: DashboardContextType; opaqueRef: string }>; contextOptions: readonly DashboardContextOption[]; membershipFence: string; resourceGrantFence: string; entitlementFence: string; policyVersion: string; locale: DashboardLocale; capturedAt: Date }>;
-export type DashboardSection<T> = Readonly<{ state: DashboardSectionState; asOf?: string; safeReason?: DashboardSafeReason; data?: T }>;
-export type ClientActionType = "security_identity" | "blocking_payment" | "expired_document" | "pending_signature" | "due_task" | "imminent_appointment" | "missing_information" | "general_action";
-export type ClientActionDto = Readonly<{ opaqueRef: string; type: ClientActionType; title: string; description?: string; blocking: boolean; dueAt?: string; workflowPriority: number; createdAt: string; routeKey: DashboardRouteKey }>;
+export type DashboardContextOption = Readonly<{
+  opaqueRef: string;
+  label: string;
+  type: DashboardContextType;
+}>;
+export type DashboardAuthorizationSnapshot = Readonly<{
+  schemaVersion: typeof DASHBOARD_AUTH_SCHEMA_VERSION;
+  accountId: string;
+  sessionId: string;
+  sessionFamilyId: string;
+  userId: string;
+  accountStatus: "active";
+  sessionStatus: "active";
+  sessionExpiresAt: string;
+  assurance: "aal1" | "aal2";
+  authenticationEpoch: string;
+  authorizationEpoch: string;
+  policyEpoch: string;
+  context: Readonly<{ type: DashboardContextType; opaqueRef: string }>;
+  contextOptions: readonly DashboardContextOption[];
+  membershipFence: string;
+  resourceGrantFence: string;
+  entitlementFence: string;
+  policyVersion: string;
+  locale: DashboardLocale;
+  capturedAt: Date;
+}>;
+export type DashboardSection<T> = Readonly<{
+  state: DashboardSectionState;
+  asOf?: string;
+  safeReason?: DashboardSafeReason;
+  data?: T;
+}>;
+export type ClientActionType =
+  | "security_identity"
+  | "blocking_payment"
+  | "expired_document"
+  | "pending_signature"
+  | "due_task"
+  | "imminent_appointment"
+  | "missing_information"
+  | "general_action";
+export type ClientActionDto = Readonly<{
+  opaqueRef: string;
+  type: ClientActionType;
+  title: string;
+  description?: string;
+  blocking: boolean;
+  dueAt?: string;
+  workflowPriority: number;
+  createdAt: string;
+  routeKey: DashboardRouteKey;
+}>;
 export type DashboardCta = Readonly<{ label: string; routeKey: DashboardRouteKey }>;
 export type SecurityDashboardData = Readonly<{ actions: readonly ClientActionDto[] }>;
-export type ServiceDashboardItem = Readonly<{ opaqueRef: string; title: string; statusLabel: string; publicState?: string; milestoneLabels?: readonly string[]; nextStepLabel?: string; startDate?: string; pendingTaskCount?: number; documentSummaryLabel?: string; paymentSummaryLabel?: string; cta?: DashboardCta; routeKey: "services" | "status" }>;
-export type TaskDashboardItem = Readonly<{ opaqueRef: string; title: string; statusLabel?: string; publicState?: string; priorityLabel?: string; dueAt?: string; dueLabel?: string; cta?: DashboardCta; routeKey: DashboardRouteKey; action?: ClientActionDto }>;
-export type DocumentDashboardItem = Readonly<{ opaqueRef: string; title: string; statusLabel: string; reasonLabel?: string; dueAt?: string; dueLabel?: string; cta?: DashboardCta; routeKey: "documents"; action?: ClientActionDto }>;
-export type AppointmentDashboardItem = Readonly<{ opaqueRef: string; startsAt?: string; dateLabel: string; timeZoneLabel?: string; typeLabel?: string; specialistLabel?: string; modalityLabel?: string; instructionsLabel?: string; statusLabel: string; cta?: DashboardCta; routeKey: "appointments"; action?: ClientActionDto }>;
-export type PaymentDashboardItem = Readonly<{ opaqueRef: string; orderLabel?: string; statusLabel: string; publicState?: string; amountLabel?: string; currencyCode?: string; dateLabel?: string; balanceLabel?: string; receiptCta?: DashboardCta; cta?: DashboardCta; routeKey: "payments"; action?: ClientActionDto }>;
-export type MessageDashboardItem = Readonly<{ opaqueRef: string; subject: string; receivedLabel: string; unread: boolean; cta?: DashboardCta; routeKey: "messages" }>;
-export type NotificationDashboardItem = Readonly<{ opaqueRef: string; title: string; statusLabel: string; cta?: DashboardCta; routeKey: DashboardRouteKey }>;
-export type HelpDashboardItem = Readonly<{ opaqueRef: string; title: string; description?: string; cta?: DashboardCta; routeKey: "help" | "support" }>;
-export type DashboardOwnerDataMap = Readonly<{ security: SecurityDashboardData; services: readonly ServiceDashboardItem[]; tasks: readonly TaskDashboardItem[]; documents: readonly DocumentDashboardItem[]; appointments: readonly AppointmentDashboardItem[]; payments: readonly PaymentDashboardItem[]; messages: readonly MessageDashboardItem[]; notifications: readonly NotificationDashboardItem[]; help: readonly HelpDashboardItem[] }>;
-export type DashboardOwnerFragment<K extends DashboardOwnerCode = DashboardOwnerCode> = Readonly<{ owner: K; snapshotId: string; sourceVersion: string; classification: "client_safe"; state: Exclude<DashboardSectionState, "suppressed">; asOf?: string; safeReason?: DashboardSafeReason; data?: DashboardOwnerDataMap[K] }>;
-export type PriorityResult = Readonly<{ kind: "action"; action: ClientActionDto; policyVersion: string }> | Readonly<{ kind: "none"; policyVersion: string }> | Readonly<{ kind: "unconfirmed"; safeReason: "required_source_unavailable"; policyVersion: string }>;
-export type DashboardDto = Readonly<{ locale: DashboardLocale; greetingName?: string; context: Readonly<{ type: DashboardContextType; selectedOpaqueRef: string; options: readonly DashboardContextOption[] }>; priority: PriorityResult; importantAlerts: DashboardSection<readonly NotificationDashboardItem[]>; security: DashboardSection<SecurityDashboardData>; services: DashboardSection<readonly ServiceDashboardItem[]>; tasks: DashboardSection<readonly TaskDashboardItem[]>; documents: DashboardSection<readonly DocumentDashboardItem[]>; appointments: DashboardSection<readonly AppointmentDashboardItem[]>; payments: DashboardSection<readonly PaymentDashboardItem[]>; messages: DashboardSection<readonly MessageDashboardItem[]>; notifications: DashboardSection<readonly NotificationDashboardItem[]>; help: DashboardSection<readonly HelpDashboardItem[]> }>;
-export class DashboardContractError extends Error { constructor() { super("DASHBOARD_CONTRACT_INVALID"); this.name = "DashboardContractError"; } }
-const ownerCodes = new Set<string>(DASHBOARD_OWNER_CODES); const routeKeys = new Set<string>(DASHBOARD_ROUTE_KEYS); const states = new Set<string>(["fresh", "empty", "stale", "unavailable"]); const safeReasons = new Set<string>(["provider_disabled", "source_unavailable", "stale_projection"]); const actionTypes = new Set<string>(["security_identity", "blocking_payment", "expired_document", "pending_signature", "due_task", "imminent_appointment", "missing_information", "general_action"]);
-function object(value: unknown): Record<string, unknown> { if (!value || typeof value !== "object" || Array.isArray(value)) throw new DashboardContractError(); return value as Record<string, unknown>; }
-function exact(value: Record<string, unknown>, allowed: readonly string[]): void { if (Object.keys(value).some((key) => !allowed.includes(key))) throw new DashboardContractError(); }
-function text(value: unknown, max = 256): string { if (typeof value !== "string" || value.length === 0 || value.length > max || /[\u0000-\u001f]/u.test(value)) throw new DashboardContractError(); return value; }
-function instant(value: unknown): string { const candidate = text(value); if (!Number.isFinite(Date.parse(candidate))) throw new DashboardContractError(); return candidate; }
-function date(value: unknown): string { const candidate = text(value, 10); if (!/^\d{4}-\d{2}-\d{2}$/u.test(candidate) || !Number.isFinite(Date.parse(`${candidate}T00:00:00Z`))) throw new DashboardContractError(); return candidate; }
-function route(value: unknown): DashboardRouteKey { const candidate = text(value); if (!routeKeys.has(candidate)) throw new DashboardContractError(); return candidate as DashboardRouteKey; }
-function count(value: unknown): number { if (!Number.isInteger(value) || (value as number) < 0 || (value as number) > 99) throw new DashboardContractError(); return value as number; }
-function cta(value: unknown): DashboardCta { const row = object(value); exact(row, ["label", "routeKey"]); return Object.freeze({ label: text(row.label, 80), routeKey: route(row.routeKey) }); }
-function action(value: unknown): ClientActionDto { const row = object(value); exact(row, ["opaqueRef", "type", "title", "description", "blocking", "dueAt", "workflowPriority", "createdAt", "routeKey"]); const type = text(row.type); if (!actionTypes.has(type) || typeof row.blocking !== "boolean" || !Number.isInteger(row.workflowPriority)) throw new DashboardContractError(); return Object.freeze({ opaqueRef: text(row.opaqueRef), type: type as ClientActionType, title: text(row.title), ...(row.description === undefined ? {} : { description: text(row.description) }), blocking: row.blocking, ...(row.dueAt === undefined ? {} : { dueAt: instant(row.dueAt) }), workflowPriority: row.workflowPriority as number, createdAt: instant(row.createdAt), routeKey: route(row.routeKey) }); }
-function list<T>(value: unknown, limit: number, parse: (item: unknown) => T): readonly T[] { if (!Array.isArray(value) || value.length > limit) throw new DashboardContractError(); return Object.freeze(value.map(parse)); }
-const optionalText = (row: Record<string, unknown>, key: string) => row[key] === undefined ? {} : { [key]: text(row[key]) }; const optionalInstant = (row: Record<string, unknown>, key: string) => row[key] === undefined ? {} : { [key]: instant(row[key]) }; const optionalCta = (row: Record<string, unknown>, key: string) => row[key] === undefined ? {} : { [key]: cta(row[key]) }; const optionalAction = (row: Record<string, unknown>) => row.action === undefined ? {} : { action: action(row.action) };
-function parseData(owner: DashboardOwnerCode, value: unknown): DashboardOwnerDataMap[DashboardOwnerCode] {
-  if (owner === "security") { const row = object(value); exact(row, ["actions"]); return Object.freeze({ actions: list(row.actions, 1, action) }); }
-  if (owner === "services") return list(value, 4, (item) => { const row = object(item); exact(row, ["opaqueRef", "title", "statusLabel", "publicState", "milestoneLabels", "nextStepLabel", "startDate", "pendingTaskCount", "documentSummaryLabel", "paymentSummaryLabel", "cta", "routeKey"]); const routeKey = route(row.routeKey); if (routeKey !== "services" && routeKey !== "status") throw new DashboardContractError(); return Object.freeze({ opaqueRef: text(row.opaqueRef), title: text(row.title), statusLabel: text(row.statusLabel), ...optionalText(row, "publicState"), ...(row.milestoneLabels === undefined ? {} : { milestoneLabels: list(row.milestoneLabels, 8, (label) => text(label, 80)) }), ...optionalText(row, "nextStepLabel"), ...(row.startDate === undefined ? {} : { startDate: date(row.startDate) }), ...(row.pendingTaskCount === undefined ? {} : { pendingTaskCount: count(row.pendingTaskCount) }), ...optionalText(row, "documentSummaryLabel"), ...optionalText(row, "paymentSummaryLabel"), ...optionalCta(row, "cta"), routeKey }); });
-  if (owner === "tasks") return list(value, 5, (item) => { const row = object(item); exact(row, ["opaqueRef", "title", "statusLabel", "publicState", "priorityLabel", "dueAt", "dueLabel", "cta", "routeKey", "action"]); return Object.freeze({ opaqueRef: text(row.opaqueRef), title: text(row.title), ...optionalText(row, "statusLabel"), ...optionalText(row, "publicState"), ...optionalText(row, "priorityLabel"), ...optionalInstant(row, "dueAt"), ...optionalText(row, "dueLabel"), ...optionalCta(row, "cta"), routeKey: route(row.routeKey), ...optionalAction(row) }); });
-  if (owner === "documents") return list(value, 3, (item) => { const row = object(item); exact(row, ["opaqueRef", "title", "statusLabel", "reasonLabel", "dueAt", "dueLabel", "cta", "routeKey", "action"]); if (route(row.routeKey) !== "documents") throw new DashboardContractError(); return Object.freeze({ opaqueRef: text(row.opaqueRef), title: text(row.title), statusLabel: text(row.statusLabel), ...optionalText(row, "reasonLabel"), ...optionalInstant(row, "dueAt"), ...optionalText(row, "dueLabel"), ...optionalCta(row, "cta"), routeKey: "documents" as const, ...optionalAction(row) }); });
-  if (owner === "appointments") return list(value, 1, (item) => { const row = object(item); exact(row, ["opaqueRef", "startsAt", "dateLabel", "timeZoneLabel", "typeLabel", "specialistLabel", "modalityLabel", "instructionsLabel", "statusLabel", "cta", "routeKey", "action"]); if (route(row.routeKey) !== "appointments") throw new DashboardContractError(); return Object.freeze({ opaqueRef: text(row.opaqueRef), ...optionalInstant(row, "startsAt"), dateLabel: text(row.dateLabel), ...optionalText(row, "timeZoneLabel"), ...optionalText(row, "typeLabel"), ...optionalText(row, "specialistLabel"), ...optionalText(row, "modalityLabel"), ...optionalText(row, "instructionsLabel"), statusLabel: text(row.statusLabel), ...optionalCta(row, "cta"), routeKey: "appointments" as const, ...optionalAction(row) }); });
-  if (owner === "payments") return list(value, 1, (item) => { const row = object(item); exact(row, ["opaqueRef", "orderLabel", "statusLabel", "publicState", "amountLabel", "currencyCode", "dateLabel", "balanceLabel", "receiptCta", "cta", "routeKey", "action"]); if (route(row.routeKey) !== "payments") throw new DashboardContractError(); return Object.freeze({ opaqueRef: text(row.opaqueRef), ...optionalText(row, "orderLabel"), statusLabel: text(row.statusLabel), ...optionalText(row, "publicState"), ...optionalText(row, "amountLabel"), ...(row.currencyCode === undefined ? {} : { currencyCode: text(row.currencyCode, 3) }), ...optionalText(row, "dateLabel"), ...optionalText(row, "balanceLabel"), ...optionalCta(row, "receiptCta"), ...optionalCta(row, "cta"), routeKey: "payments" as const, ...optionalAction(row) }); });
-  if (owner === "messages") return list(value, 3, (item) => { const row = object(item); exact(row, ["opaqueRef", "subject", "receivedLabel", "unread", "cta", "routeKey"]); if (route(row.routeKey) !== "messages" || typeof row.unread !== "boolean") throw new DashboardContractError(); return Object.freeze({ opaqueRef: text(row.opaqueRef), subject: text(row.subject), receivedLabel: text(row.receivedLabel), unread: row.unread, ...optionalCta(row, "cta"), routeKey: "messages" as const }); });
-  if (owner === "notifications") return list(value, 3, (item) => { const row = object(item); exact(row, ["opaqueRef", "title", "statusLabel", "cta", "routeKey"]); return Object.freeze({ opaqueRef: text(row.opaqueRef), title: text(row.title), statusLabel: text(row.statusLabel), ...optionalCta(row, "cta"), routeKey: route(row.routeKey) }); });
-  return list(value, 3, (item) => { const row = object(item); exact(row, ["opaqueRef", "title", "description", "cta", "routeKey"]); const routeKey = route(row.routeKey); if (routeKey !== "help" && routeKey !== "support") throw new DashboardContractError(); return Object.freeze({ opaqueRef: text(row.opaqueRef), title: text(row.title), ...optionalText(row, "description"), ...optionalCta(row, "cta"), routeKey }); });
+export type ServiceDashboardItem = Readonly<{
+  opaqueRef: string;
+  title: string;
+  statusLabel: string;
+  publicState?: string;
+  milestoneLabels?: readonly string[];
+  nextStepLabel?: string;
+  startDate?: string;
+  pendingTaskCount?: number;
+  documentSummaryLabel?: string;
+  paymentSummaryLabel?: string;
+  cta?: DashboardCta;
+  routeKey: "services" | "status";
+}>;
+export type TaskDashboardItem = Readonly<{
+  opaqueRef: string;
+  title: string;
+  statusLabel?: string;
+  publicState?: string;
+  priorityLabel?: string;
+  dueAt?: string;
+  dueLabel?: string;
+  cta?: DashboardCta;
+  routeKey: DashboardRouteKey;
+  action?: ClientActionDto;
+}>;
+export type DocumentDashboardItem = Readonly<{
+  opaqueRef: string;
+  title: string;
+  statusLabel: string;
+  reasonLabel?: string;
+  dueAt?: string;
+  dueLabel?: string;
+  cta?: DashboardCta;
+  routeKey: "documents";
+  action?: ClientActionDto;
+}>;
+export type AppointmentDashboardItem = Readonly<{
+  opaqueRef: string;
+  startsAt?: string;
+  dateLabel: string;
+  timeZoneLabel?: string;
+  typeLabel?: string;
+  specialistLabel?: string;
+  modalityLabel?: string;
+  instructionsLabel?: string;
+  statusLabel: string;
+  cta?: DashboardCta;
+  routeKey: "appointments";
+  action?: ClientActionDto;
+}>;
+export type PaymentDashboardItem = Readonly<{
+  opaqueRef: string;
+  orderLabel?: string;
+  statusLabel: string;
+  publicState?: string;
+  amountLabel?: string;
+  currencyCode?: string;
+  dateLabel?: string;
+  balanceLabel?: string;
+  receiptCta?: DashboardCta;
+  cta?: DashboardCta;
+  routeKey: "payments";
+  action?: ClientActionDto;
+}>;
+export type MessageDashboardItem = Readonly<{
+  opaqueRef: string;
+  subject: string;
+  receivedLabel: string;
+  unread: boolean;
+  cta?: DashboardCta;
+  routeKey: "messages";
+}>;
+export type NotificationDashboardItem = Readonly<{
+  opaqueRef: string;
+  title: string;
+  statusLabel: string;
+  cta?: DashboardCta;
+  routeKey: DashboardRouteKey;
+}>;
+export type HelpDashboardItem = Readonly<{
+  opaqueRef: string;
+  title: string;
+  description?: string;
+  cta?: DashboardCta;
+  routeKey: "help" | "support";
+}>;
+export type DashboardOwnerDataMap = Readonly<{
+  security: SecurityDashboardData;
+  services: readonly ServiceDashboardItem[];
+  tasks: readonly TaskDashboardItem[];
+  documents: readonly DocumentDashboardItem[];
+  appointments: readonly AppointmentDashboardItem[];
+  payments: readonly PaymentDashboardItem[];
+  messages: readonly MessageDashboardItem[];
+  notifications: readonly NotificationDashboardItem[];
+  help: readonly HelpDashboardItem[];
+}>;
+export type DashboardOwnerFragment<K extends DashboardOwnerCode = DashboardOwnerCode> = Readonly<{
+  owner: K;
+  snapshotId: string;
+  sourceVersion: string;
+  classification: "client_safe";
+  state: Exclude<DashboardSectionState, "suppressed">;
+  asOf?: string;
+  safeReason?: DashboardSafeReason;
+  data?: DashboardOwnerDataMap[K];
+}>;
+export type PriorityResult =
+  | Readonly<{ kind: "action"; action: ClientActionDto; policyVersion: string }>
+  | Readonly<{ kind: "none"; policyVersion: string }>
+  | Readonly<{
+      kind: "unconfirmed";
+      safeReason: "required_source_unavailable";
+      policyVersion: string;
+    }>;
+export type DashboardDto = Readonly<{
+  locale: DashboardLocale;
+  greetingName?: string;
+  context: Readonly<{
+    type: DashboardContextType;
+    selectedOpaqueRef: string;
+    options: readonly DashboardContextOption[];
+  }>;
+  priority: PriorityResult;
+  importantAlerts: DashboardSection<readonly NotificationDashboardItem[]>;
+  security: DashboardSection<SecurityDashboardData>;
+  services: DashboardSection<readonly ServiceDashboardItem[]>;
+  tasks: DashboardSection<readonly TaskDashboardItem[]>;
+  documents: DashboardSection<readonly DocumentDashboardItem[]>;
+  appointments: DashboardSection<readonly AppointmentDashboardItem[]>;
+  payments: DashboardSection<readonly PaymentDashboardItem[]>;
+  messages: DashboardSection<readonly MessageDashboardItem[]>;
+  notifications: DashboardSection<readonly NotificationDashboardItem[]>;
+  help: DashboardSection<readonly HelpDashboardItem[]>;
+}>;
+export class DashboardContractError extends Error {
+  constructor() {
+    super("DASHBOARD_CONTRACT_INVALID");
+    this.name = "DashboardContractError";
+  }
 }
-export function parseDashboardFragment(value: unknown): DashboardOwnerFragment { const row = object(value); exact(row, ["owner", "snapshotId", "sourceVersion", "classification", "state", "asOf", "safeReason", "data"]); const owner = text(row.owner); const state = text(row.state); if (!ownerCodes.has(owner) || !states.has(state) || row.classification !== "client_safe") throw new DashboardContractError(); if ((state === "fresh" || state === "empty") && row.asOf === undefined) throw new DashboardContractError(); if (state === "empty" && row.data !== undefined && (!Array.isArray(row.data) || row.data.length !== 0)) throw new DashboardContractError(); if ((state === "unavailable" || state === "stale") && row.safeReason === undefined) throw new DashboardContractError(); if (row.safeReason !== undefined && !safeReasons.has(text(row.safeReason))) throw new DashboardContractError(); return Object.freeze({ owner: owner as DashboardOwnerCode, snapshotId: text(row.snapshotId), sourceVersion: text(row.sourceVersion), classification: "client_safe", state: state as DashboardOwnerFragment["state"], ...(row.asOf === undefined ? {} : { asOf: instant(row.asOf) }), ...(row.safeReason === undefined ? {} : { safeReason: row.safeReason as DashboardSafeReason }), ...(row.data === undefined || state === "empty" ? {} : { data: parseData(owner as DashboardOwnerCode, row.data) }) }); }
-export function isDashboardRouteKey(value: string): value is DashboardRouteKey { return routeKeys.has(value); }
+const ownerCodes = new Set<string>(DASHBOARD_OWNER_CODES);
+const routeKeys = new Set<string>(DASHBOARD_ROUTE_KEYS);
+const states = new Set<string>(["fresh", "empty", "stale", "unavailable"]);
+const safeReasons = new Set<string>([
+  "provider_disabled",
+  "source_unavailable",
+  "stale_projection",
+]);
+const actionTypes = new Set<string>([
+  "security_identity",
+  "blocking_payment",
+  "expired_document",
+  "pending_signature",
+  "due_task",
+  "imminent_appointment",
+  "missing_information",
+  "general_action",
+]);
+function object(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new DashboardContractError();
+  return value as Record<string, unknown>;
+}
+function exact(value: Record<string, unknown>, allowed: readonly string[]): void {
+  if (Object.keys(value).some((key) => !allowed.includes(key))) throw new DashboardContractError();
+}
+function hasControlCharacter(value: string): boolean {
+  return Array.from(value).some((character) => character.charCodeAt(0) <= 0x1f);
+}
+function text(value: unknown, max = 256): string {
+  if (
+    typeof value !== "string" ||
+    value.length === 0 ||
+    value.length > max ||
+    hasControlCharacter(value)
+  )
+    throw new DashboardContractError();
+  return value;
+}
+function instant(value: unknown): string {
+  const candidate = text(value);
+  if (!Number.isFinite(Date.parse(candidate))) throw new DashboardContractError();
+  return candidate;
+}
+function date(value: unknown): string {
+  const candidate = text(value, 10);
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/u.test(candidate) ||
+    !Number.isFinite(Date.parse(`${candidate}T00:00:00Z`))
+  )
+    throw new DashboardContractError();
+  return candidate;
+}
+function route(value: unknown): DashboardRouteKey {
+  const candidate = text(value);
+  if (!routeKeys.has(candidate)) throw new DashboardContractError();
+  return candidate as DashboardRouteKey;
+}
+function count(value: unknown): number {
+  if (!Number.isInteger(value) || (value as number) < 0 || (value as number) > 99)
+    throw new DashboardContractError();
+  return value as number;
+}
+function cta(value: unknown): DashboardCta {
+  const row = object(value);
+  exact(row, ["label", "routeKey"]);
+  return Object.freeze({ label: text(row.label, 80), routeKey: route(row.routeKey) });
+}
+function action(value: unknown): ClientActionDto {
+  const row = object(value);
+  exact(row, [
+    "opaqueRef",
+    "type",
+    "title",
+    "description",
+    "blocking",
+    "dueAt",
+    "workflowPriority",
+    "createdAt",
+    "routeKey",
+  ]);
+  const type = text(row.type);
+  if (
+    !actionTypes.has(type) ||
+    typeof row.blocking !== "boolean" ||
+    !Number.isInteger(row.workflowPriority)
+  )
+    throw new DashboardContractError();
+  return Object.freeze({
+    opaqueRef: text(row.opaqueRef),
+    type: type as ClientActionType,
+    title: text(row.title),
+    ...(row.description === undefined ? {} : { description: text(row.description) }),
+    blocking: row.blocking,
+    ...(row.dueAt === undefined ? {} : { dueAt: instant(row.dueAt) }),
+    workflowPriority: row.workflowPriority as number,
+    createdAt: instant(row.createdAt),
+    routeKey: route(row.routeKey),
+  });
+}
+function list<T>(value: unknown, limit: number, parse: (item: unknown) => T): readonly T[] {
+  if (!Array.isArray(value) || value.length > limit) throw new DashboardContractError();
+  return Object.freeze(value.map(parse));
+}
+const optionalText = (row: Record<string, unknown>, key: string) =>
+  row[key] === undefined ? {} : { [key]: text(row[key]) };
+const optionalInstant = (row: Record<string, unknown>, key: string) =>
+  row[key] === undefined ? {} : { [key]: instant(row[key]) };
+const optionalCta = (row: Record<string, unknown>, key: string) =>
+  row[key] === undefined ? {} : { [key]: cta(row[key]) };
+const optionalAction = (row: Record<string, unknown>) =>
+  row.action === undefined ? {} : { action: action(row.action) };
+function parseData(
+  owner: DashboardOwnerCode,
+  value: unknown,
+): DashboardOwnerDataMap[DashboardOwnerCode] {
+  if (owner === "security") {
+    const row = object(value);
+    exact(row, ["actions"]);
+    return Object.freeze({ actions: list(row.actions, 1, action) });
+  }
+  if (owner === "services")
+    return list(value, 4, (item) => {
+      const row = object(item);
+      exact(row, [
+        "opaqueRef",
+        "title",
+        "statusLabel",
+        "publicState",
+        "milestoneLabels",
+        "nextStepLabel",
+        "startDate",
+        "pendingTaskCount",
+        "documentSummaryLabel",
+        "paymentSummaryLabel",
+        "cta",
+        "routeKey",
+      ]);
+      const routeKey = route(row.routeKey);
+      if (routeKey !== "services" && routeKey !== "status") throw new DashboardContractError();
+      return Object.freeze({
+        opaqueRef: text(row.opaqueRef),
+        title: text(row.title),
+        statusLabel: text(row.statusLabel),
+        ...optionalText(row, "publicState"),
+        ...(row.milestoneLabels === undefined
+          ? {}
+          : { milestoneLabels: list(row.milestoneLabels, 8, (label) => text(label, 80)) }),
+        ...optionalText(row, "nextStepLabel"),
+        ...(row.startDate === undefined ? {} : { startDate: date(row.startDate) }),
+        ...(row.pendingTaskCount === undefined
+          ? {}
+          : { pendingTaskCount: count(row.pendingTaskCount) }),
+        ...optionalText(row, "documentSummaryLabel"),
+        ...optionalText(row, "paymentSummaryLabel"),
+        ...optionalCta(row, "cta"),
+        routeKey,
+      });
+    });
+  if (owner === "tasks")
+    return list(value, 5, (item) => {
+      const row = object(item);
+      exact(row, [
+        "opaqueRef",
+        "title",
+        "statusLabel",
+        "publicState",
+        "priorityLabel",
+        "dueAt",
+        "dueLabel",
+        "cta",
+        "routeKey",
+        "action",
+      ]);
+      return Object.freeze({
+        opaqueRef: text(row.opaqueRef),
+        title: text(row.title),
+        ...optionalText(row, "statusLabel"),
+        ...optionalText(row, "publicState"),
+        ...optionalText(row, "priorityLabel"),
+        ...optionalInstant(row, "dueAt"),
+        ...optionalText(row, "dueLabel"),
+        ...optionalCta(row, "cta"),
+        routeKey: route(row.routeKey),
+        ...optionalAction(row),
+      });
+    });
+  if (owner === "documents")
+    return list(value, 3, (item) => {
+      const row = object(item);
+      exact(row, [
+        "opaqueRef",
+        "title",
+        "statusLabel",
+        "reasonLabel",
+        "dueAt",
+        "dueLabel",
+        "cta",
+        "routeKey",
+        "action",
+      ]);
+      if (route(row.routeKey) !== "documents") throw new DashboardContractError();
+      return Object.freeze({
+        opaqueRef: text(row.opaqueRef),
+        title: text(row.title),
+        statusLabel: text(row.statusLabel),
+        ...optionalText(row, "reasonLabel"),
+        ...optionalInstant(row, "dueAt"),
+        ...optionalText(row, "dueLabel"),
+        ...optionalCta(row, "cta"),
+        routeKey: "documents" as const,
+        ...optionalAction(row),
+      });
+    });
+  if (owner === "appointments")
+    return list(value, 1, (item) => {
+      const row = object(item);
+      exact(row, [
+        "opaqueRef",
+        "startsAt",
+        "dateLabel",
+        "timeZoneLabel",
+        "typeLabel",
+        "specialistLabel",
+        "modalityLabel",
+        "instructionsLabel",
+        "statusLabel",
+        "cta",
+        "routeKey",
+        "action",
+      ]);
+      if (route(row.routeKey) !== "appointments") throw new DashboardContractError();
+      return Object.freeze({
+        opaqueRef: text(row.opaqueRef),
+        ...optionalInstant(row, "startsAt"),
+        dateLabel: text(row.dateLabel),
+        ...optionalText(row, "timeZoneLabel"),
+        ...optionalText(row, "typeLabel"),
+        ...optionalText(row, "specialistLabel"),
+        ...optionalText(row, "modalityLabel"),
+        ...optionalText(row, "instructionsLabel"),
+        statusLabel: text(row.statusLabel),
+        ...optionalCta(row, "cta"),
+        routeKey: "appointments" as const,
+        ...optionalAction(row),
+      });
+    });
+  if (owner === "payments")
+    return list(value, 1, (item) => {
+      const row = object(item);
+      exact(row, [
+        "opaqueRef",
+        "orderLabel",
+        "statusLabel",
+        "publicState",
+        "amountLabel",
+        "currencyCode",
+        "dateLabel",
+        "balanceLabel",
+        "receiptCta",
+        "cta",
+        "routeKey",
+        "action",
+      ]);
+      if (route(row.routeKey) !== "payments") throw new DashboardContractError();
+      return Object.freeze({
+        opaqueRef: text(row.opaqueRef),
+        ...optionalText(row, "orderLabel"),
+        statusLabel: text(row.statusLabel),
+        ...optionalText(row, "publicState"),
+        ...optionalText(row, "amountLabel"),
+        ...(row.currencyCode === undefined ? {} : { currencyCode: text(row.currencyCode, 3) }),
+        ...optionalText(row, "dateLabel"),
+        ...optionalText(row, "balanceLabel"),
+        ...optionalCta(row, "receiptCta"),
+        ...optionalCta(row, "cta"),
+        routeKey: "payments" as const,
+        ...optionalAction(row),
+      });
+    });
+  if (owner === "messages")
+    return list(value, 3, (item) => {
+      const row = object(item);
+      exact(row, ["opaqueRef", "subject", "receivedLabel", "unread", "cta", "routeKey"]);
+      if (route(row.routeKey) !== "messages" || typeof row.unread !== "boolean")
+        throw new DashboardContractError();
+      return Object.freeze({
+        opaqueRef: text(row.opaqueRef),
+        subject: text(row.subject),
+        receivedLabel: text(row.receivedLabel),
+        unread: row.unread,
+        ...optionalCta(row, "cta"),
+        routeKey: "messages" as const,
+      });
+    });
+  if (owner === "notifications")
+    return list(value, 3, (item) => {
+      const row = object(item);
+      exact(row, ["opaqueRef", "title", "statusLabel", "cta", "routeKey"]);
+      return Object.freeze({
+        opaqueRef: text(row.opaqueRef),
+        title: text(row.title),
+        statusLabel: text(row.statusLabel),
+        ...optionalCta(row, "cta"),
+        routeKey: route(row.routeKey),
+      });
+    });
+  return list(value, 3, (item) => {
+    const row = object(item);
+    exact(row, ["opaqueRef", "title", "description", "cta", "routeKey"]);
+    const routeKey = route(row.routeKey);
+    if (routeKey !== "help" && routeKey !== "support") throw new DashboardContractError();
+    return Object.freeze({
+      opaqueRef: text(row.opaqueRef),
+      title: text(row.title),
+      ...optionalText(row, "description"),
+      ...optionalCta(row, "cta"),
+      routeKey,
+    });
+  });
+}
+export function parseDashboardFragment(value: unknown): DashboardOwnerFragment {
+  const row = object(value);
+  exact(row, [
+    "owner",
+    "snapshotId",
+    "sourceVersion",
+    "classification",
+    "state",
+    "asOf",
+    "safeReason",
+    "data",
+  ]);
+  const owner = text(row.owner);
+  const state = text(row.state);
+  if (!ownerCodes.has(owner) || !states.has(state) || row.classification !== "client_safe")
+    throw new DashboardContractError();
+  if ((state === "fresh" || state === "empty") && row.asOf === undefined)
+    throw new DashboardContractError();
+  if (
+    state === "empty" &&
+    row.data !== undefined &&
+    (!Array.isArray(row.data) || row.data.length !== 0)
+  )
+    throw new DashboardContractError();
+  if ((state === "unavailable" || state === "stale") && row.safeReason === undefined)
+    throw new DashboardContractError();
+  if (row.safeReason !== undefined && !safeReasons.has(text(row.safeReason)))
+    throw new DashboardContractError();
+  return Object.freeze({
+    owner: owner as DashboardOwnerCode,
+    snapshotId: text(row.snapshotId),
+    sourceVersion: text(row.sourceVersion),
+    classification: "client_safe",
+    state: state as DashboardOwnerFragment["state"],
+    ...(row.asOf === undefined ? {} : { asOf: instant(row.asOf) }),
+    ...(row.safeReason === undefined ? {} : { safeReason: row.safeReason as DashboardSafeReason }),
+    ...(row.data === undefined || state === "empty"
+      ? {}
+      : { data: parseData(owner as DashboardOwnerCode, row.data) }),
+  });
+}
+export function isDashboardRouteKey(value: string): value is DashboardRouteKey {
+  return routeKeys.has(value);
+}

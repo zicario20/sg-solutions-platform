@@ -1,15 +1,15 @@
 import {
-  dispatchOutboundMessage as dispatchDomainOutboundMessage,
-  expireChannelRecoveryState as expireDomainChannelRecoveryState,
-  processInboundChannelEvent as processDomainInboundChannelEvent,
-  reconcileMessageTemplate as reconcileDomainMessageTemplate,
-  reconcileUnknownDispatch as reconcileDomainUnknownDispatch,
   type DispatchOutboundInput,
+  dispatchOutboundMessage as dispatchDomainOutboundMessage,
   type ExpireRecoveryInput,
+  expireChannelRecoveryState as expireDomainChannelRecoveryState,
   type JobResult,
   type ProcessInboundInput,
+  processInboundChannelEvent as processDomainInboundChannelEvent,
   type ReconcileDispatchInput,
   type ReconcileTemplateInput,
+  reconcileMessageTemplate as reconcileDomainMessageTemplate,
+  reconcileUnknownDispatch as reconcileDomainUnknownDispatch,
 } from "@atlas/domain";
 
 export function processInboundChannelEvent(input: ProcessInboundInput): Promise<JobResult> {

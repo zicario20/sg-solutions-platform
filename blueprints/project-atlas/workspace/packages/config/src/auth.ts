@@ -10,7 +10,9 @@ function requireEnabledSetting(environment: AuthEnvironment, name: string): stri
   return value;
 }
 
-export function readAuthRuntimeConfig(environment: AuthEnvironment = process.env): AuthRuntimeConfig {
+export function readAuthRuntimeConfig(
+  environment: AuthEnvironment = process.env,
+): AuthRuntimeConfig {
   const runtimeState = (environment.AUTH_RUNTIME_STATE ?? "disabled").trim() as AuthRuntimeState;
   if (runtimeState === "disabled") {
     return {

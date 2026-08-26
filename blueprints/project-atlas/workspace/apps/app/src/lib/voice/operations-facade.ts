@@ -4,9 +4,9 @@ import {
   makeVoiceCallReceipt,
   type ReceptionContext,
   type StoredVoiceCommandReceipt,
-  type VoiceCompletionOutcome,
   type VoiceCommand,
   type VoiceCommandReceiptRepository,
+  type VoiceCompletionOutcome,
   type VoiceOperationResult,
 } from "@atlas/domain";
 import type { OwnerCommandInput, OwnerPorts, OwnerReceipt } from "./owner-ports.ts";
@@ -19,20 +19,19 @@ export type VoiceServiceContext = Readonly<{
 
 const canonicalReceiptId = /^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$/u;
 
-const ownerOutcomeByOperation: Partial<
-  Record<VoiceCommand["operation"], VoiceCompletionOutcome>
-> = {
-  lookup_caller_hint: "contact_hint_processed",
-  provide_public_information: "public_information_ready",
-  request_availability: "availability_ready",
-  create_lead: "lead_created",
-  request_appointment: "appointment_requested",
-  request_callback: "callback_requested",
-  take_message: "message_recorded",
-  request_transfer: "transfer_requested",
-  request_voicemail: "voicemail_requested",
-  send_approved_link: "approved_link_requested",
-};
+const ownerOutcomeByOperation: Partial<Record<VoiceCommand["operation"], VoiceCompletionOutcome>> =
+  {
+    lookup_caller_hint: "contact_hint_processed",
+    provide_public_information: "public_information_ready",
+    request_availability: "availability_ready",
+    create_lead: "lead_created",
+    request_appointment: "appointment_requested",
+    request_callback: "callback_requested",
+    take_message: "message_recorded",
+    request_transfer: "transfer_requested",
+    request_voicemail: "voicemail_requested",
+    send_approved_link: "approved_link_requested",
+  };
 
 function commandDigest(command: VoiceCommand): string {
   return createHash("sha256")
@@ -157,10 +156,7 @@ export class VoiceOperationsFacade {
 
     let result: VoiceOperationResult;
     if (decision.kind !== "allow") {
-      result =
-        decision.kind === "deny"
-          ? { kind: "denied" }
-          : decision;
+      result = decision.kind === "deny" ? { kind: "denied" } : decision;
     } else {
       result = await this.executeAllowed(command, receipt.receiptId);
     }

@@ -1,1 +1,79 @@
-import{CLIENT_SERVICE_SECTION_NAMES,type ClientServiceDetailDto,type ClientServiceLocale}from"@atlas/client-services";import{getClientServicesCopy}from"@atlas/i18n";import{ClientServiceCard}from"./ClientServiceCard.tsx";const routes={status:"/client/status",documents:"/client/documents",appointments:"/client/appointments",messages:"/client/messages",payments:"/client/payments",help:"/client/help"}as const;export function ClientServiceDetail({locale,detail}:{locale:ClientServiceLocale;detail:ClientServiceDetailDto}){const copy=getClientServicesCopy(locale);return<main className="m009-services m009-detail"><a className="m009-back" href="/client/services">← {copy.back}</a><ClientServiceCard item={detail.service} locale={locale}/><a href={"/client/status/"+encodeURIComponent(detail.service.opaqueRef)}>{copy.open}</a><p>{detail.scopeLabel}</p><ol className="m009-milestones">{detail.milestones.map((milestone,index)=><li key={index}><strong>{milestone.label}</strong><span>{milestone.stateLabel}</span></li>)}</ol><div className="m009-detail-grid">{CLIENT_SERVICE_SECTION_NAMES.map(name=>{const section=detail.sections[name];return<section className="m009-detail-section" key={name} aria-labelledby={"m009-"+name}><h2 id={"m009-"+name}>{copy.sections[name]}</h2>{section.state==="fresh"?<ul>{section.data.map((item,index)=><li key={index}><span>{item.label}</span>{item.stateLabel?<small>{item.stateLabel}</small>:null}{item.date?<time dateTime={item.date}>{new Intl.DateTimeFormat(locale,{dateStyle:"medium"}).format(new Date(item.date))}</time>:null}{item.routeKey?<a href={routes[item.routeKey]}>{copy.open}</a>:null}</li>)}</ul>:<p role="status">{section.state==="empty"?copy.sectionEmpty:section.state==="stale"?copy.sectionStale:copy.sectionUnavailable}</p>}</section>})}</div></main>}
+import {
+  CLIENT_SERVICE_SECTION_NAMES,
+  type ClientServiceDetailDto,
+  type ClientServiceLocale,
+} from "@atlas/client-services";
+import { getClientServicesCopy } from "@atlas/i18n";
+import { ClientServiceCard } from "./ClientServiceCard.tsx";
+
+const routes = {
+  status: "/client/status",
+  documents: "/client/documents",
+  appointments: "/client/appointments",
+  messages: "/client/messages",
+  payments: "/client/payments",
+  help: "/client/help",
+} as const;
+export function ClientServiceDetail({
+  locale,
+  detail,
+}: {
+  locale: ClientServiceLocale;
+  detail: ClientServiceDetailDto;
+}) {
+  const copy = getClientServicesCopy(locale);
+  return (
+    <main className="m009-services m009-detail">
+      <a className="m009-back" href="/client/services">
+        ← {copy.back}
+      </a>
+      <ClientServiceCard item={detail.service} locale={locale} />
+      <a href={"/client/status/" + encodeURIComponent(detail.service.opaqueRef)}>{copy.open}</a>
+      <p>{detail.scopeLabel}</p>
+      <ol className="m009-milestones">
+        {detail.milestones.map((milestone) => (
+          <li key={`${milestone.label}:${milestone.stateLabel}`}>
+            <strong>{milestone.label}</strong>
+            <span>{milestone.stateLabel}</span>
+          </li>
+        ))}
+      </ol>
+      <div className="m009-detail-grid">
+        {CLIENT_SERVICE_SECTION_NAMES.map((name) => {
+          const section = detail.sections[name];
+          return (
+            <section className="m009-detail-section" key={name} aria-labelledby={"m009-" + name}>
+              <h2 id={"m009-" + name}>{copy.sections[name]}</h2>
+              {section.state === "fresh" ? (
+                <ul>
+                  {section.data.map((item) => (
+                    <li key={`${item.label}:${item.stateLabel ?? ""}:${item.date ?? ""}`}>
+                      <span>{item.label}</span>
+                      {item.stateLabel ? <small>{item.stateLabel}</small> : null}
+                      {item.date ? (
+                        <time dateTime={item.date}>
+                          {new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
+                            new Date(item.date),
+                          )}
+                        </time>
+                      ) : null}
+                      {item.routeKey ? <a href={routes[item.routeKey]}>{copy.open}</a> : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p role="status">
+                  {section.state === "empty"
+                    ? copy.sectionEmpty
+                    : section.state === "stale"
+                      ? copy.sectionStale
+                      : copy.sectionUnavailable}
+                </p>
+              )}
+            </section>
+          );
+        })}
+      </div>
+    </main>
+  );
+}

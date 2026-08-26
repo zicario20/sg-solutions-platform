@@ -36,6 +36,14 @@
       "trailingCommas": "all"
     }
   },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
   "linter": {
     "enabled": true,
     "rules": {
@@ -50,6 +58,16 @@
           "correctness": {
             "noUnusedImports": "off",
             "noUnusedVariables": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.module.css"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnknownPseudoClass": "off"
           }
         }
       }

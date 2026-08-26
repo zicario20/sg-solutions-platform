@@ -8,7 +8,12 @@ export const SERVICE_CATALOG_CODE_PATTERN = /^[A-Z][A-Z0-9_]{2,63}$/u;
 export const SERVICE_CATALOG_VERSION_PATTERN = /^\d+\.\d+\.\d+$/u;
 
 export type ServiceCatalogLocale = "es" | "en";
-export type ServiceAvailabilityStatus = "available" | "limited" | "waitlist" | "unavailable" | "unknown";
+export type ServiceAvailabilityStatus =
+  | "available"
+  | "limited"
+  | "waitlist"
+  | "unavailable"
+  | "unknown";
 export type ServiceLifecycleStatus =
   | "draft"
   | "under_review"
@@ -18,7 +23,13 @@ export type ServiceLifecycleStatus =
   | "deprecated"
   | "retired"
   | "archived";
-export type ServicePublicationStatus = "draft" | "under_review" | "approved" | "published" | "unpublished" | "retired";
+export type ServicePublicationStatus =
+  | "draft"
+  | "under_review"
+  | "approved"
+  | "published"
+  | "unpublished"
+  | "retired";
 export type ServiceSurface = "public" | "client" | "admin";
 export type ServiceFulfillmentMode =
   | "internal_guidance"
@@ -142,13 +153,18 @@ export type ServiceOrderCatalogSnapshot = Readonly<{
   capturedAt: string;
 }>;
 
+function hasControlCharacter(value: string): boolean {
+  return Array.from(value).some((character) => character.charCodeAt(0) <= 0x1f);
+}
+
 function assertText(value: string, label: string): void {
-  if (value.trim().length === 0 || value.length > 500 || /[\u0000-\u001f]/u.test(value))
+  if (value.trim().length === 0 || value.length > 500 || hasControlCharacter(value))
     throw new TypeError(label + " invalid");
 }
 
 function assertIso(value: string, label: string): void {
-  if (!Number.isFinite(Date.parse(value)) || !value.endsWith("Z")) throw new TypeError(label + " invalid");
+  if (!Number.isFinite(Date.parse(value)) || !value.endsWith("Z"))
+    throw new TypeError(label + " invalid");
 }
 
 function deepFreeze<T>(value: T): T {
@@ -169,7 +185,8 @@ function validateTranslation(value: ServiceTranslation, locale: ServiceCatalogLo
   assertText(value.ctaLabel, "translations." + locale + ".ctaLabel");
   if (value.benefits.length === 0 || value.limitations.length === 0)
     throw new TypeError("translations." + locale + " content incomplete");
-  for (const item of [...value.benefits, ...value.limitations]) assertText(item, "translation item");
+  for (const item of [...value.benefits, ...value.limitations])
+    assertText(item, "translation item");
 }
 
 export function createServiceDefinition(
@@ -177,15 +194,18 @@ export function createServiceDefinition(
   existing: readonly ServiceDefinition[],
 ): ServiceDefinition {
   if (!SERVICE_CATALOG_CODE_PATTERN.test(value.code)) throw new TypeError("service code invalid");
-  if (!SERVICE_CATALOG_CODE_PATTERN.test(value.categoryCode)) throw new TypeError("category code invalid");
-  if (existing.some((item) => item.code === value.code)) throw new TypeError("service code must be unique");
+  if (!SERVICE_CATALOG_CODE_PATTERN.test(value.categoryCode))
+    throw new TypeError("category code invalid");
+  if (existing.some((item) => item.code === value.code))
+    throw new TypeError("service code must be unique");
   assertText(value.serviceType, "serviceType");
   assertText(value.primaryDomain, "primaryDomain");
   assertIso(value.createdAt, "createdAt");
   assertIso(value.updatedAt, "updatedAt");
   if (value.audiences.length === 0 || value.surfaces.length === 0)
     throw new TypeError("audience and surface required");
-  if (value.availability.jurisdictions.length === 0) throw new TypeError("availability jurisdiction required");
+  if (value.availability.jurisdictions.length === 0)
+    throw new TypeError("availability jurisdiction required");
   return deepFreeze(structuredClone(value));
 }
 
@@ -193,10 +213,12 @@ export function createServiceVersion(
   value: ServiceVersion,
   existing: readonly ServiceVersion[],
 ): ServiceVersion {
-  if (!SERVICE_CATALOG_VERSION_PATTERN.test(value.version)) throw new TypeError("service version invalid");
+  if (!SERVICE_CATALOG_VERSION_PATTERN.test(value.version))
+    throw new TypeError("service version invalid");
   if (
     existing.some(
-      (item) => item.serviceDefinitionId === value.serviceDefinitionId && item.version === value.version,
+      (item) =>
+        item.serviceDefinitionId === value.serviceDefinitionId && item.version === value.version,
     )
   )
     throw new TypeError("service version must be unique");
@@ -221,10 +243,14 @@ export function validateServicePublication(
   definition: ServiceDefinition,
   version: ServiceVersion,
 ): ServicePublicationReadiness {
-  const reasons: NonNullable<Extract<ServicePublicationReadiness, { kind: "blocked" }>["reasons"]>[number][] = [];
+  const reasons: NonNullable<
+    Extract<ServicePublicationReadiness, { kind: "blocked" }>["reasons"]
+  >[number][] = [];
 
-  if (!["approved", "published"].includes(definition.lifecycleStatus)) reasons.push("service_not_approved");
-  if (!["approved", "published"].includes(version.publicationStatus)) reasons.push("version_not_approved");
+  if (!["approved", "published"].includes(definition.lifecycleStatus))
+    reasons.push("service_not_approved");
+  if (!["approved", "published"].includes(version.publicationStatus))
+    reasons.push("version_not_approved");
   try {
     validateTranslation(version.translations.es, "es");
     validateTranslation(version.translations.en, "en");
@@ -237,7 +263,8 @@ export function validateServicePublication(
   } catch {
     reasons.push("commercial_profile_required");
   }
-  if (version.documentRequirementSetReference === null) reasons.push("document_requirements_required");
+  if (version.documentRequirementSetReference === null)
+    reasons.push("document_requirements_required");
   try {
     validateDurationProfile(version.durationProfile);
   } catch {

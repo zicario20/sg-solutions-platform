@@ -40,11 +40,7 @@ export type OutboundCommandState =
   | "cancelled"
   | "manual_review";
 
-export type ContactPolicyState =
-  | "normal"
-  | "opt_out_pending"
-  | "withdrawn"
-  | "normal_after_review";
+export type ContactPolicyState = "normal" | "opt_out_pending" | "withdrawn" | "normal_after_review";
 
 export type ContactPurpose = "conversational" | "transactional" | "service" | "marketing";
 

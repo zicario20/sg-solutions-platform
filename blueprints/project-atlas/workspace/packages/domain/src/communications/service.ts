@@ -1,10 +1,7 @@
-import type {
-  ChannelKind,
-  ChannelLocale,
-  ChannelMessage,
-} from "./contracts.ts";
+import type { ChannelKind, ChannelLocale, ChannelMessage } from "./contracts.ts";
 import type {
   AcceptInboundResult,
+  ApproveTemplateDefinition,
   CanonicalInboundEnvelope,
   CommunicationsRepository,
   EndpointDigest,
@@ -14,7 +11,6 @@ import type {
   ReconcileOutboundResult,
   ReconcileTemplateCommand,
   RegisterTemplateDefinition,
-  ApproveTemplateDefinition,
   TemplateEligibilityResult,
   TemplateResult,
 } from "./repository.ts";
@@ -41,10 +37,9 @@ export interface KeyedDigestPort {
 }
 
 export interface DestinationResolutionPort {
-  resolve(input: { bindingId: string }): Promise<
-    | { status: "resolved"; endpoint: string }
-    | { status: "unavailable" }
-  >;
+  resolve(input: {
+    bindingId: string;
+  }): Promise<{ status: "resolved"; endpoint: string } | { status: "unavailable" }>;
 }
 
 export interface BoundedExecutor {
@@ -65,9 +60,9 @@ export interface OutboundProviderPort {
 }
 
 export interface ContentPolicyPort {
-  evaluate(input: { text: string }):
-    | { allowed: true; code: "allowed" }
-    | { allowed: false; code: string };
+  evaluate(input: {
+    text: string;
+  }): { allowed: true; code: "allowed" } | { allowed: false; code: string };
 }
 
 export type CommunicationsServiceDependencies = {
@@ -125,9 +120,7 @@ const MAX_PRIOR_ENDPOINT_KEYS = 3;
 export class CommunicationsService {
   constructor(private readonly dependencies: CommunicationsServiceDependencies) {}
 
-  async acceptInbound(
-    input: AcceptInboundApplicationCommand,
-  ): Promise<
+  async acceptInbound(input: AcceptInboundApplicationCommand): Promise<
     | AcceptInboundResult
     | {
         status: "unavailable";
@@ -279,7 +272,8 @@ export class CommunicationsService {
         outcome: "known_failure",
         now: this.dependencies.clock.now(),
       });
-      if (completion === "conflict") return this.dispatchCompletionConflict(input.commandId, attemptId);
+      if (completion === "conflict")
+        return this.dispatchCompletionConflict(input.commandId, attemptId);
       return { status: "not_dispatched", code: resolved.code, attemptId };
     }
     const matchingDigest = resolved.digests.some(
@@ -294,7 +288,8 @@ export class CommunicationsService {
         outcome: "known_failure",
         now: this.dependencies.clock.now(),
       });
-      if (completion === "conflict") return this.dispatchCompletionConflict(input.commandId, attemptId);
+      if (completion === "conflict")
+        return this.dispatchCompletionConflict(input.commandId, attemptId);
       return { status: "not_dispatched", code: "destination_mismatch", attemptId };
     }
 
@@ -320,7 +315,8 @@ export class CommunicationsService {
           providerReference: providerResult.providerReference,
           now: this.dependencies.clock.now(),
         });
-        if (completion === "conflict") return this.dispatchCompletionConflict(input.commandId, attemptId);
+        if (completion === "conflict")
+          return this.dispatchCompletionConflict(input.commandId, attemptId);
         return { status: "accepted", attemptId };
       }
       const completion = await this.dependencies.repository.markDispatchOutcome({
@@ -331,10 +327,12 @@ export class CommunicationsService {
         outcome: "known_failure",
         now: this.dependencies.clock.now(),
       });
-      if (completion === "conflict") return this.dispatchCompletionConflict(input.commandId, attemptId);
+      if (completion === "conflict")
+        return this.dispatchCompletionConflict(input.commandId, attemptId);
       return {
         status: "not_dispatched",
-        code: providerResult.status === "unavailable" ? "provider_unavailable" : "provider_rejected",
+        code:
+          providerResult.status === "unavailable" ? "provider_unavailable" : "provider_rejected",
         attemptId,
       };
     } catch {
@@ -346,7 +344,8 @@ export class CommunicationsService {
         outcome: "unknown",
         now: this.dependencies.clock.now(),
       });
-      if (completion === "conflict") return this.dispatchCompletionConflict(input.commandId, attemptId);
+      if (completion === "conflict")
+        return this.dispatchCompletionConflict(input.commandId, attemptId);
       return { status: "dispatch_unknown", code: "provider_outcome_ambiguous", attemptId };
     }
   }

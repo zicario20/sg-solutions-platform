@@ -1,17 +1,266 @@
-export type ProviderCategory = "credit_monitoring" | "tradeline" | "financial_marketplace" | "tax_filing" | "payment" | "telephony" | "messaging" | "identity" | "storage" | "AI_model" | "e_signature" | "calendar" | "email" | "document_intelligence" | "address_validation" | "fraud_prevention" | "other";
-export type Provider = Readonly<{ id: string; code: string; displayName: string; category: ProviderCategory; organizationId: string | null; partnerId: string | null; ownershipType: "external_vendor" | "external_partner" | "internal_service" | "open_source_self_hosted" | "hybrid"; status: "draft" | "configuration" | "testing" | "active" | "limited" | "degraded" | "paused" | "suspended" | "deprecated" | "retired" | "unknown"; createdAt: string; updatedAt: string }>;
-export type ProviderInterface = Readonly<{ id: string; code: "CreditMonitoringProvider" | "TradelineProvider" | "FinancialMarketplaceProvider" | "TaxFilingProvider" | "PaymentProvider" | "TelephonyProvider" | "MessagingProvider" | "IdentityProvider" | "StorageProvider" | "ModelProvider" | "ESignatureProvider" | "CalendarProvider" | "EmailProvider" | "DocumentIntelligenceProvider" | "AddressValidationProvider" | "FraudPreventionProvider"; version: number; domain: string; status: "draft" | "experimental" | "stable" | "deprecated" | "retired"; schemaVersion: string }>;
-export type ProviderCapabilityDefinition = Readonly<{ id: string; code: string; interfaceId: string; requestSchemaId: string; responseSchemaId: string; status: "draft" | "active" | "deprecated" | "retired"; requiredFields: readonly string[]; optionalFields: readonly string[]; prohibitedFields: readonly string[] }>;
-export type ProviderCapability = Readonly<{ id: string; providerId: string; capabilityCode: string; supportStatus: "unsupported" | "planned" | "partial" | "supported" | "restricted" | "deprecated" | "unknown"; adapterVersion: string; constraints: Readonly<Record<string, string | number | boolean>>; effectiveFrom: string | null; effectiveTo: string | null }>;
-export type ProviderSchema = Readonly<{ id: string; providerId: string | null; interfaceId: string; type: "canonical_request" | "canonical_response" | "provider_request" | "provider_response" | "webhook_event" | "error_payload" | "file_format"; version: string; contentHash: string; compatibility: "backward_compatible" | "forward_compatible" | "breaking" | "unknown"; status: "draft" | "active" | "deprecated" | "retired" }>;
-export type ProviderAdapter = Readonly<{ id: string; providerId: string; interfaceId: string; adapterCode: string; adapterVersion: string; runtime: "local_mock" | "sandbox" | "test" | "staging" | "production"; status: "draft" | "tested" | "provider_disabled" | "retired"; configurationProfileId: string | null }>;
-export type ProviderConfiguration = Readonly<{ id: string; providerId: string; environment: "local_mock" | "sandbox" | "test" | "staging" | "production"; region: string | null; configuration: Readonly<Record<string, string | number | boolean>>; secretReferences: readonly string[]; status: "draft" | "validated" | "disabled" | "retired"; effectiveFrom: string | null; effectiveTo: string | null }>;
-export type ProviderEndpoint = Readonly<{ id: string; providerId: string; environment: ProviderConfiguration["environment"]; endpointType: "api" | "webhook" | "file_exchange" | "oauth"; baseUrl: string; status: "draft" | "verified" | "disabled" | "retired"; verifiedAt: string | null }>;
-export type CanonicalProviderRequest = Readonly<{ id: string; providerId: string; capabilityCode: string; sourceModule: "m028" | "m029" | "m037" | "m039" | "m040" | "other"; sourceResourceId: string; environment: ProviderConfiguration["environment"]; purpose: string; fields: Readonly<Record<string, unknown>>; idempotencyKey: string; correlationId: string; createdAt: string }>;
-export type CanonicalProviderResponse = Readonly<{ requestId: string; providerReference: string | null; canonicalStatus: "created" | "requires_client_action" | "processing" | "succeeded" | "failed" | "cancelled" | "refunded" | "unknown"; rawStatus: string | null; rawCode: string | null; payloadReference: string | null; receivedAt: string }>;
-export type ProviderError = Readonly<{ category: "authentication" | "authorization" | "validation" | "not_found" | "conflict" | "rate_limited" | "timeout" | "provider_unavailable" | "network" | "schema_mismatch" | "unknown_outcome" | "provider_business_rule" | "unknown"; retryable: boolean; providerCode: string | null; safeUserMessage: string; correlationId: string; detailsReference: string | null }>;
-export type ProviderHealth = Readonly<{ providerId: string; capabilityCode: string; environment: ProviderConfiguration["environment"]; status: "healthy" | "degraded" | "unhealthy" | "unknown"; observedAt: string; source: "mock" | "probe" | "manual_review" }>;
-export type ProviderRoute = Readonly<{ id: string; capabilityCode: string; environment: ProviderConfiguration["environment"]; providerId: string; priority: number; status: "draft" | "approved" | "disabled" | "retired"; sticky: boolean }>;
-export type ProviderFinding = Readonly<{ id: string; providerId: string; type: "business_code_vendor_dependency" | "unsupported_capability" | "schema_mismatch" | "unknown_status_mapping" | "unapproved_endpoint" | "missing_environment_isolation" | "missing_data_minimization" | "missing_provider_authorization" | "stale_provider_policy" | "unsafe_retry" | "configuration_drift"; severity: "low" | "medium" | "high" | "critical"; blocking: boolean; status: "open" | "under_review" | "remediation" | "resolved"; createdAt: string }>;
-export type ProviderAiDraft = Readonly<{ id: string; taskType: "health_summary" | "routing_explanation" | "schema_mapping_suggestion" | "migration_summary" | "vendor_coupling_finding"; providerId: string; sourceIds: readonly string[]; summary: string; unknowns: readonly string[]; riskFlags: readonly string[]; humanReviewRequired: true; createdAt: string }>;
-export class ProviderAbstractionError extends Error { constructor(readonly code: "INVALID_PROVIDER" | "INVALID_CONFIGURATION" | "ENDPOINT_BLOCKED" | "DATA_EGRESS_BLOCKED" | "DUPLICATE" | "PROVIDER_DISABLED" | "UNSAFE_RETRY" | "UNSUPPORTED_AI_ACTION", message: string) { super(message); this.name = "ProviderAbstractionError"; } }
+export type ProviderCategory =
+  | "credit_monitoring"
+  | "tradeline"
+  | "financial_marketplace"
+  | "tax_filing"
+  | "payment"
+  | "telephony"
+  | "messaging"
+  | "identity"
+  | "storage"
+  | "AI_model"
+  | "e_signature"
+  | "calendar"
+  | "email"
+  | "document_intelligence"
+  | "address_validation"
+  | "fraud_prevention"
+  | "other";
+export type Provider = Readonly<{
+  id: string;
+  code: string;
+  displayName: string;
+  category: ProviderCategory;
+  organizationId: string | null;
+  partnerId: string | null;
+  ownershipType:
+    | "external_vendor"
+    | "external_partner"
+    | "internal_service"
+    | "open_source_self_hosted"
+    | "hybrid";
+  status:
+    | "draft"
+    | "configuration"
+    | "testing"
+    | "active"
+    | "limited"
+    | "degraded"
+    | "paused"
+    | "suspended"
+    | "deprecated"
+    | "retired"
+    | "unknown";
+  createdAt: string;
+  updatedAt: string;
+}>;
+export type ProviderInterface = Readonly<{
+  id: string;
+  code:
+    | "CreditMonitoringProvider"
+    | "TradelineProvider"
+    | "FinancialMarketplaceProvider"
+    | "TaxFilingProvider"
+    | "PaymentProvider"
+    | "TelephonyProvider"
+    | "MessagingProvider"
+    | "IdentityProvider"
+    | "StorageProvider"
+    | "ModelProvider"
+    | "ESignatureProvider"
+    | "CalendarProvider"
+    | "EmailProvider"
+    | "DocumentIntelligenceProvider"
+    | "AddressValidationProvider"
+    | "FraudPreventionProvider";
+  version: number;
+  domain: string;
+  status: "draft" | "experimental" | "stable" | "deprecated" | "retired";
+  schemaVersion: string;
+}>;
+export type ProviderCapabilityDefinition = Readonly<{
+  id: string;
+  code: string;
+  interfaceId: string;
+  requestSchemaId: string;
+  responseSchemaId: string;
+  status: "draft" | "active" | "deprecated" | "retired";
+  requiredFields: readonly string[];
+  optionalFields: readonly string[];
+  prohibitedFields: readonly string[];
+}>;
+export type ProviderCapability = Readonly<{
+  id: string;
+  providerId: string;
+  capabilityCode: string;
+  supportStatus:
+    | "unsupported"
+    | "planned"
+    | "partial"
+    | "supported"
+    | "restricted"
+    | "deprecated"
+    | "unknown";
+  adapterVersion: string;
+  constraints: Readonly<Record<string, string | number | boolean>>;
+  effectiveFrom: string | null;
+  effectiveTo: string | null;
+}>;
+export type ProviderSchema = Readonly<{
+  id: string;
+  providerId: string | null;
+  interfaceId: string;
+  type:
+    | "canonical_request"
+    | "canonical_response"
+    | "provider_request"
+    | "provider_response"
+    | "webhook_event"
+    | "error_payload"
+    | "file_format";
+  version: string;
+  contentHash: string;
+  compatibility: "backward_compatible" | "forward_compatible" | "breaking" | "unknown";
+  status: "draft" | "active" | "deprecated" | "retired";
+}>;
+export type ProviderAdapter = Readonly<{
+  id: string;
+  providerId: string;
+  interfaceId: string;
+  adapterCode: string;
+  adapterVersion: string;
+  runtime: "local_mock" | "sandbox" | "test" | "staging" | "production";
+  status: "draft" | "tested" | "provider_disabled" | "retired";
+  configurationProfileId: string | null;
+}>;
+export type ProviderConfiguration = Readonly<{
+  id: string;
+  providerId: string;
+  environment: "local_mock" | "sandbox" | "test" | "staging" | "production";
+  region: string | null;
+  configuration: Readonly<Record<string, string | number | boolean>>;
+  secretReferences: readonly string[];
+  status: "draft" | "validated" | "disabled" | "retired";
+  effectiveFrom: string | null;
+  effectiveTo: string | null;
+}>;
+export type ProviderEndpoint = Readonly<{
+  id: string;
+  providerId: string;
+  environment: ProviderConfiguration["environment"];
+  endpointType: "api" | "webhook" | "file_exchange" | "oauth";
+  baseUrl: string;
+  status: "draft" | "verified" | "disabled" | "retired";
+  verifiedAt: string | null;
+}>;
+export type CanonicalProviderRequest = Readonly<{
+  id: string;
+  providerId: string;
+  capabilityCode: string;
+  sourceModule: "m028" | "m029" | "m037" | "m039" | "m040" | "other";
+  sourceResourceId: string;
+  environment: ProviderConfiguration["environment"];
+  purpose: string;
+  fields: Readonly<Record<string, unknown>>;
+  idempotencyKey: string;
+  correlationId: string;
+  createdAt: string;
+}>;
+export type CanonicalProviderResponse = Readonly<{
+  requestId: string;
+  providerReference: string | null;
+  canonicalStatus:
+    | "created"
+    | "requires_client_action"
+    | "processing"
+    | "succeeded"
+    | "failed"
+    | "cancelled"
+    | "refunded"
+    | "unknown";
+  rawStatus: string | null;
+  rawCode: string | null;
+  payloadReference: string | null;
+  receivedAt: string;
+}>;
+export type ProviderError = Readonly<{
+  category:
+    | "authentication"
+    | "authorization"
+    | "validation"
+    | "not_found"
+    | "conflict"
+    | "rate_limited"
+    | "timeout"
+    | "provider_unavailable"
+    | "network"
+    | "schema_mismatch"
+    | "unknown_outcome"
+    | "provider_business_rule"
+    | "unknown";
+  retryable: boolean;
+  providerCode: string | null;
+  safeUserMessage: string;
+  correlationId: string;
+  detailsReference: string | null;
+}>;
+export type ProviderHealth = Readonly<{
+  providerId: string;
+  capabilityCode: string;
+  environment: ProviderConfiguration["environment"];
+  status: "healthy" | "degraded" | "unhealthy" | "unknown";
+  observedAt: string;
+  source: "mock" | "probe" | "manual_review";
+}>;
+export type ProviderRoute = Readonly<{
+  id: string;
+  capabilityCode: string;
+  environment: ProviderConfiguration["environment"];
+  providerId: string;
+  priority: number;
+  status: "draft" | "approved" | "disabled" | "retired";
+  sticky: boolean;
+}>;
+export type ProviderFinding = Readonly<{
+  id: string;
+  providerId: string;
+  type:
+    | "business_code_vendor_dependency"
+    | "unsupported_capability"
+    | "schema_mismatch"
+    | "unknown_status_mapping"
+    | "unapproved_endpoint"
+    | "missing_environment_isolation"
+    | "missing_data_minimization"
+    | "missing_provider_authorization"
+    | "stale_provider_policy"
+    | "unsafe_retry"
+    | "configuration_drift";
+  severity: "low" | "medium" | "high" | "critical";
+  blocking: boolean;
+  status: "open" | "under_review" | "remediation" | "resolved";
+  createdAt: string;
+}>;
+export type ProviderAiDraft = Readonly<{
+  id: string;
+  taskType:
+    | "health_summary"
+    | "routing_explanation"
+    | "schema_mapping_suggestion"
+    | "migration_summary"
+    | "vendor_coupling_finding";
+  providerId: string;
+  sourceIds: readonly string[];
+  summary: string;
+  unknowns: readonly string[];
+  riskFlags: readonly string[];
+  humanReviewRequired: true;
+  createdAt: string;
+}>;
+export class ProviderAbstractionError extends Error {
+  constructor(
+    readonly code:
+      | "INVALID_PROVIDER"
+      | "INVALID_CONFIGURATION"
+      | "ENDPOINT_BLOCKED"
+      | "DATA_EGRESS_BLOCKED"
+      | "DUPLICATE"
+      | "PROVIDER_DISABLED"
+      | "UNSAFE_RETRY"
+      | "UNSUPPORTED_AI_ACTION",
+    message: string,
+  ) {
+    super(message);
+    this.name = "ProviderAbstractionError";
+  }
+}

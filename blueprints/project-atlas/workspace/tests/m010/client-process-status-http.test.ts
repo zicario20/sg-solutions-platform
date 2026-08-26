@@ -1,1 +1,44 @@
-import{describe,expect,it,vi}from"vitest";import{handleProcessLandingGet,handleProcessDetailGet}from"../../apps/app/src/lib/process-status/http.ts";describe("M010 HTTP",()=>{it("admits before query and returns private no-store",async()=>{const query=vi.fn(),response=await handleProcessLandingGet(new Request("https://atlas.test/api/client/process-status"),{admit:vi.fn().mockResolvedValue(false),landing:query}as never);expect(response.status).toBe(429);expect(query).not.toHaveBeenCalled();expect(response.headers.get("cache-control")).toContain("no-store")});it("hides malformed and unauthorized refs equivalently",async()=>{const deps={admit:vi.fn().mockResolvedValue(true),detail:vi.fn().mockResolvedValue({kind:"denied"})};expect((await handleProcessDetailGet(new Request("https://atlas.test/api/client/process-status/x"),"x",deps as never)).status).toBe(404);expect((await handleProcessDetailGet(new Request("https://atlas.test/api/client/process-status/csr1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),"csr1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",deps as never)).status).toBe(404)})});
+import { describe, expect, it, vi } from "vitest";
+import {
+  handleProcessDetailGet,
+  handleProcessLandingGet,
+} from "../../apps/app/src/lib/process-status/http.ts";
+
+describe("M010 HTTP", () => {
+  it("admits before query and returns private no-store", async () => {
+    const query = vi.fn(),
+      response = await handleProcessLandingGet(
+        new Request("https://atlas.test/api/client/process-status"),
+        { admit: vi.fn().mockResolvedValue(false), landing: query } as never,
+      );
+    expect(response.status).toBe(429);
+    expect(query).not.toHaveBeenCalled();
+    expect(response.headers.get("cache-control")).toContain("no-store");
+  });
+  it("hides malformed and unauthorized refs equivalently", async () => {
+    const deps = {
+      admit: vi.fn().mockResolvedValue(true),
+      detail: vi.fn().mockResolvedValue({ kind: "denied" }),
+    };
+    expect(
+      (
+        await handleProcessDetailGet(
+          new Request("https://atlas.test/api/client/process-status/x"),
+          "x",
+          deps as never,
+        )
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await handleProcessDetailGet(
+          new Request(
+            "https://atlas.test/api/client/process-status/csr1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          ),
+          "csr1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          deps as never,
+        )
+      ).status,
+    ).toBe(404);
+  });
+});

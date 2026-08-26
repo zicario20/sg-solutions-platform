@@ -42,11 +42,30 @@ describe("Meta webhook verification", () => {
   });
 
   it.each([
-    ["wrong mode", { "hub.mode": "SUBSCRIBE", "hub.verify_token": VERIFY_TOKEN, "hub.challenge": "1" }],
-    ["wrong token", { "hub.mode": "subscribe", "hub.verify_token": "PRIVATE-TOKEN", "hub.challenge": "1" }],
-    ["empty challenge", { "hub.mode": "subscribe", "hub.verify_token": VERIFY_TOKEN, "hub.challenge": "" }],
-    ["control character", { "hub.mode": "subscribe", "hub.verify_token": VERIFY_TOKEN, "hub.challenge": "1\n2" }],
-    ["oversized challenge", { "hub.mode": "subscribe", "hub.verify_token": VERIFY_TOKEN, "hub.challenge": "1".repeat(513) }],
+    [
+      "wrong mode",
+      { "hub.mode": "SUBSCRIBE", "hub.verify_token": VERIFY_TOKEN, "hub.challenge": "1" },
+    ],
+    [
+      "wrong token",
+      { "hub.mode": "subscribe", "hub.verify_token": "PRIVATE-TOKEN", "hub.challenge": "1" },
+    ],
+    [
+      "empty challenge",
+      { "hub.mode": "subscribe", "hub.verify_token": VERIFY_TOKEN, "hub.challenge": "" },
+    ],
+    [
+      "control character",
+      { "hub.mode": "subscribe", "hub.verify_token": VERIFY_TOKEN, "hub.challenge": "1\n2" },
+    ],
+    [
+      "oversized challenge",
+      {
+        "hub.mode": "subscribe",
+        "hub.verify_token": VERIFY_TOKEN,
+        "hub.challenge": "1".repeat(513),
+      },
+    ],
   ])("rejects %s without reflecting query values", (_label, values) => {
     const result = verifyMetaChallenge(new URLSearchParams(values), VERIFY_TOKEN);
 

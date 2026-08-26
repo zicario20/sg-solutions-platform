@@ -1,13 +1,10 @@
 import type {
-  FormOutboxCommand,
-  OwnerPortResult,
-} from "./ports.ts";
-import type {
   FormCommandDispatchReceipt,
   FormOutboxLease,
   FormOutboxStore,
   PublicFormOwnerPorts,
 } from "./jobs.ts";
+import type { FormOutboxCommand, OwnerPortResult } from "./ports.ts";
 
 export type SyntheticPortBoundary =
   | "crm_lead_contact_activity"
@@ -305,21 +302,24 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
         job.state !== "unknown" ||
         job.leasePurpose !== "reconcile" ||
         leases.length >= input.limit
-      ) continue;
+      )
+        continue;
       job.leaseVersion += 1;
       job.state = "leased";
       job.leaseId = `form_reconcile_${stableToken(`${job.command.idempotencyKey}:${job.leaseVersion}`)}`;
       job.leaseExpiresAt = now + input.leaseMs;
-      leases.push(Object.freeze({
-        leaseId: job.leaseId,
-        command: job.command,
-        attempts: job.attempts,
-        leaseOwner: this.options.workerId ?? "synthetic_form_worker",
-        leaseVersion: job.leaseVersion,
-        leasePurpose: job.leasePurpose,
-        grantedConsentTypes: job.grantedConsentTypes,
-        verifiedRevocation: job.verifiedRevocation,
-      }));
+      leases.push(
+        Object.freeze({
+          leaseId: job.leaseId,
+          command: job.command,
+          attempts: job.attempts,
+          leaseOwner: this.options.workerId ?? "synthetic_form_worker",
+          leaseVersion: job.leaseVersion,
+          leasePurpose: job.leasePurpose,
+          grantedConsentTypes: job.grantedConsentTypes,
+          verifiedRevocation: job.verifiedRevocation,
+        }),
+      );
     }
     return Object.freeze(leases);
   }

@@ -1,8 +1,4 @@
-import type {
-  FormDefinitionVersion,
-  PublicAnswerValue,
-  PublicFormLocale,
-} from "./contracts.ts";
+import type { FormDefinitionVersion, PublicAnswerValue, PublicFormLocale } from "./contracts.ts";
 import type { FormOutboxCommand } from "./ports.ts";
 
 export type FormReceipt = Readonly<{
@@ -214,7 +210,11 @@ export class MemoryPublicFormsRepository implements PublicFormsRepository {
 
   async abandonReservation(input: { scope: string; reservationId: string }): Promise<void> {
     const reservation = this.reservations.get(input.scope);
-    if (reservation && !reservation.committed && reservation.reservationId === input.reservationId) {
+    if (
+      reservation &&
+      !reservation.committed &&
+      reservation.reservationId === input.reservationId
+    ) {
       this.reservations.delete(input.scope);
     }
   }

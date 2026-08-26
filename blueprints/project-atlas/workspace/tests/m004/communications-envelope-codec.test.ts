@@ -137,7 +137,11 @@ describe("M004 deterministic Meta envelope persistence codec", () => {
         event.kind === "text_message" || event.kind === "interactive_reply"
           ? { status: "not_reversible", eventKind: event.kind, reason: "metadata_only" }
           : event.kind === "message_status"
-            ? { status: "not_reversible", eventKind: "message_status", reason: "verified_context_required" }
+            ? {
+                status: "not_reversible",
+                eventKind: "message_status",
+                reason: "verified_context_required",
+              }
             : { status: "available", envelope: safeExpected[index] },
       );
       expect(JSON.stringify(record)).not.toContain("sender_endpoint_synthetic");
@@ -325,7 +329,8 @@ describe("M004 deterministic Meta envelope persistence codec", () => {
         return {
           ...fixture,
           projection: {
-            ...(fixture as Extract<CanonicalProviderEnvelope, { kind: "template_projection" }>).projection,
+            ...(fixture as Extract<CanonicalProviderEnvelope, { kind: "template_projection" }>)
+              .projection,
             providerReference: reference,
           },
         };
@@ -349,7 +354,11 @@ describe("M004 deterministic Meta envelope persistence codec", () => {
       (reference) => {
         expect(() =>
           serializeMetaCanonicalEnvelope(
-            withProviderReference(target.label, target.fixture, reference) as CanonicalProviderEnvelope,
+            withProviderReference(
+              target.label,
+              target.fixture,
+              reference,
+            ) as CanonicalProviderEnvelope,
             { schemaVersion: "meta-envelope.v1", senderBindingId: "binding_synthetic" },
           ),
         ).toThrowError("CANONICAL_PROVIDER_ENVELOPE_INVALID");
@@ -381,7 +390,12 @@ describe("M004 deterministic Meta envelope persistence codec", () => {
       schemaVersion: "meta-envelope.v1",
       senderBindingId: "binding_synthetic",
     });
-    for (const schemaVersion of ["", "meta-envelope.v2", "META-ENVELOPE.V1", " meta-envelope.v1"] as const) {
+    for (const schemaVersion of [
+      "",
+      "meta-envelope.v2",
+      "META-ENVELOPE.V1",
+      " meta-envelope.v1",
+    ] as const) {
       expect(() =>
         serializeMetaCanonicalEnvelope(providerFixtures[0], {
           schemaVersion: schemaVersion as "meta-envelope.v1",

@@ -70,7 +70,10 @@ describe("M005 provider-neutral voice domain", () => {
       evaluateReceptionCommand(command(), { ...prospectContext, providerMode: "disabled" }),
     ).toEqual({ kind: "deny" });
     expect(
-      evaluateReceptionCommand(command({ operation: "unknown_runtime_operation" as never }), prospectContext),
+      evaluateReceptionCommand(
+        command({ operation: "unknown_runtime_operation" as never }),
+        prospectContext,
+      ),
     ).toEqual({ kind: "deny" });
   });
 

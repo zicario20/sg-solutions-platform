@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { createAesGcmMessageCipher } from "@atlas/secure-messaging";
+import { describe, expect, it } from "vitest";
 
 describe("M012 message encryption", () => {
   it("authenticates encrypted message bodies and rejects tampering", () => {

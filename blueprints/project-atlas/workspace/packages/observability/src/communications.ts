@@ -108,9 +108,7 @@ function invalid(): never {
   throw new Error("COMMUNICATIONS_TELEMETRY_INVALID");
 }
 
-export function projectCommunicationsTelemetryEvent(
-  input: unknown,
-): CommunicationsTelemetryEvent {
+export function projectCommunicationsTelemetryEvent(input: unknown): CommunicationsTelemetryEvent {
   if (!input || typeof input !== "object" || Array.isArray(input)) invalid();
   const prototype = Object.getPrototypeOf(input);
   if (prototype !== Object.prototype && prototype !== null) invalid();
@@ -157,8 +155,6 @@ export function projectCommunicationsTelemetryEvent(
   });
 }
 
-export function recordCommunicationsTelemetryEvent(
-  input: unknown,
-): CommunicationsTelemetryEvent {
+export function recordCommunicationsTelemetryEvent(input: unknown): CommunicationsTelemetryEvent {
   return projectCommunicationsTelemetryEvent(input);
 }

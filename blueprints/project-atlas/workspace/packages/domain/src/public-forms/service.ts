@@ -1,10 +1,10 @@
-import { evaluateVisibility } from "./definition.ts";
 import type {
   FormDefinitionVersion,
   FormFieldDefinition,
   PublicAnswerValue,
   PublicFormLocale,
 } from "./contracts.ts";
+import { evaluateVisibility } from "./definition.ts";
 import type { FormOutboxCommand, FormOwner } from "./ports.ts";
 import type {
   AcceptedFormSubmission,
@@ -76,7 +76,8 @@ function normalizeAnswer(field: FormFieldDefinition, value: PublicAnswerValue): 
   if (typeof value !== "string") throw new Error("invalid");
   const text = value.trim();
   if (/\p{Cc}/u.test(text) || /<\/?[a-z][^>]*>/iu.test(text)) throw new Error("invalid");
-  if (field.maxLength !== undefined && [...text].length > field.maxLength) throw new Error("invalid");
+  if (field.maxLength !== undefined && [...text].length > field.maxLength)
+    throw new Error("invalid");
   if (field.fieldType === "email") {
     const normalized = text.toLowerCase();
     if (normalized.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(normalized)) {
@@ -108,7 +109,10 @@ function normalizeAnswer(field: FormFieldDefinition, value: PublicAnswerValue): 
     }
     return text;
   }
-  if ((field.fieldType === "select" || field.fieldType === "radio") && !field.optionCodes?.includes(text)) {
+  if (
+    (field.fieldType === "select" || field.fieldType === "radio") &&
+    !field.optionCodes?.includes(text)
+  ) {
     throw new Error("invalid");
   }
   return text;
@@ -146,7 +150,8 @@ function validateAndNormalizeAnswers(
   const finalVisibility = evaluateVisibility(definition, normalized);
   for (const fieldCode of finalVisibility.visible) {
     const field = fields.get(fieldCode);
-    if (requireComplete && field?.required && !present(normalized[fieldCode])) throw new Error("invalid");
+    if (requireComplete && field?.required && !present(normalized[fieldCode]))
+      throw new Error("invalid");
   }
   return Object.freeze(normalized);
 }
@@ -220,19 +225,25 @@ function buildOutbox(
   ids: PublicFormsServiceDependencies["ids"],
 ): readonly FormOutboxCommand[] {
   const commands: FormOutboxCommand[] = [];
-  const add = (owner: FormOwner, operation: string, extra: { consentType?: string; channel?: "sms" | "whatsapp" | "email" } = {}) =>
-    commands.push(outboxCommand({ ids, owner, operation, submissionId, definition, ...extra }));
+  const add = (
+    owner: FormOwner,
+    operation: string,
+    extra: { consentType?: string; channel?: "sms" | "whatsapp" | "email" } = {},
+  ) => commands.push(outboxCommand({ ids, owner, operation, submissionId, definition, ...extra }));
   if (definition.approvedActions.includes("lead_candidate")) add("lead", "accept_candidate");
   if (definition.approvedActions.includes("appointment_intent")) {
     add("appointment", "request_preference");
   }
   if (
     definition.approvedActions.includes("payment_handoff") &&
-    consents.some((consent) => consent.consentType === "financial_product_referral" && consent.granted)
+    consents.some(
+      (consent) => consent.consentType === "financial_product_referral" && consent.granted,
+    )
   ) {
     add("payment", "request_handoff");
   }
-  for (const consent of consents) add("consent", "record_evidence", { consentType: consent.consentType });
+  for (const consent of consents)
+    add("consent", "record_evidence", { consentType: consent.consentType });
   if (definition.approvedActions.includes("channel_handoff")) {
     if (consents.some((consent) => consent.consentType === "sms_contact" && consent.granted)) {
       add("channel", "queue_handoff", { channel: "sms" });
@@ -264,7 +275,9 @@ export class PublicFormsService {
       sessionBindingDigest = await this.dependencies.digest.digest(
         `public-forms:session:v1\u0000${command.sessionBinding}`,
       );
-      nonceDigest = await this.dependencies.digest.digest(`public-forms:nonce:v1\u0000${command.nonce}`);
+      nonceDigest = await this.dependencies.digest.digest(
+        `public-forms:nonce:v1\u0000${command.nonce}`,
+      );
     } catch {
       return { status: "rejected", code: "invalid_request" };
     }

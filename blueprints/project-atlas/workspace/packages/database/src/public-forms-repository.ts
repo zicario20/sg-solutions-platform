@@ -80,8 +80,12 @@ async function withGatewayTransaction<T>(
       throw new Error("PUBLIC_FORMS_DATABASE_PRINCIPAL_UNSAFE");
     }
     await query(tx, "set local role atlas_public_forms_gateway");
-    await query(tx, "select set_config('atlas.public_forms_scope_digest', $1, true)", [scopeDigest]);
-    await query(tx, "select set_config('atlas.public_forms_session_digest', $1, true)", [sessionDigest]);
+    await query(tx, "select set_config('atlas.public_forms_scope_digest', $1, true)", [
+      scopeDigest,
+    ]);
+    await query(tx, "select set_config('atlas.public_forms_session_digest', $1, true)", [
+      sessionDigest,
+    ]);
     return work(tx);
   });
 }
@@ -117,7 +121,12 @@ export async function withAttestedPublicFormsStaffRole<T>(
         [role],
       )
     )[0];
-    if (!principal?.session_user_name || !principal.is_member || principal.rolsuper || principal.rolbypassrls) {
+    if (
+      !principal?.session_user_name ||
+      !principal.is_member ||
+      principal.rolsuper ||
+      principal.rolbypassrls
+    ) {
       throw new Error("PUBLIC_FORMS_STAFF_ROLE_DENIED");
     }
     await query(tx, `set local role ${role}`);
@@ -230,10 +239,13 @@ export class PostgresPublicFormsRepository implements PublicFormsRepository {
               fieldType: field.field_type as FormDefinitionVersion["fields"][number]["fieldType"],
               step: field.step,
               required: field.required,
-              sensitivity: field.sensitivity as FormDefinitionVersion["fields"][number]["sensitivity"],
+              sensitivity:
+                field.sensitivity as FormDefinitionVersion["fields"][number]["sensitivity"],
               labelId: field.label_id,
               ...(field.help_text_id ? { helpTextId: field.help_text_id } : {}),
-              ...(field.option_codes ? { optionCodes: Object.freeze([...field.option_codes]) } : {}),
+              ...(field.option_codes
+                ? { optionCodes: Object.freeze([...field.option_codes]) }
+                : {}),
               ...field.validation_rules,
               ...(field.conditional_rules ? { visibleWhen: field.conditional_rules } : {}),
             }),
@@ -253,7 +265,9 @@ export class PostgresPublicFormsRepository implements PublicFormsRepository {
       throw new Error("PUBLIC_FORMS_RESERVATION_INVALID");
     }
     return withGatewayTransaction(this.sql, input.scope, "0".repeat(64), async (tx) => {
-      const leaseExpiresAt = new Date(input.proposedReceipt.issuedAt.getTime() + RESERVATION_LEASE_MS);
+      const leaseExpiresAt = new Date(
+        input.proposedReceipt.issuedAt.getTime() + RESERVATION_LEASE_MS,
+      );
       const inserted = await query<{ receipt_id: string }>(
         tx,
         `insert into form_submission_receipts (
@@ -326,7 +340,10 @@ export class PostgresPublicFormsRepository implements PublicFormsRepository {
           receiptRow.reservation_id !== input.reservationId ||
           receiptRow.command_digest !== input.submission.commandDigest
         ) {
-          if (receiptRow?.state === "accepted" && receiptRow.command_digest === input.submission.commandDigest) {
+          if (
+            receiptRow?.state === "accepted" &&
+            receiptRow.command_digest === input.submission.commandDigest
+          ) {
             return receiptFromRow(receiptRow);
           }
           throw new Error("FORM_RESERVATION_CONFLICT");
@@ -674,7 +691,9 @@ export class PostgresPublicFormsRepository implements PublicFormsRepository {
           )
         )[0];
         if (!grant) return { status: "denied" };
-        await query(tx, "select set_config('atlas.public_forms_scope_digest', $1, true)", [grant.scope_digest]);
+        await query(tx, "select set_config('atlas.public_forms_scope_digest', $1, true)", [
+          grant.scope_digest,
+        ]);
         const inserted = await query<{ id: string }>(
           tx,
           `insert into form_consent_revocations (

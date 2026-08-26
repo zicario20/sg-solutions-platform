@@ -1,4 +1,3 @@
-import type { AcceptedFormSubmission } from "./repository.ts";
 import type {
   AnalyticsPort,
   AppointmentIntentPort,
@@ -10,6 +9,7 @@ import type {
   OwnerPortResult,
   PaymentHandoffPort,
 } from "./ports.ts";
+import type { AcceptedFormSubmission } from "./repository.ts";
 export type PublicFormOwnerPorts = Readonly<{
   lead: LeadCandidatePort;
   consent: ConsentEvidencePort;
@@ -311,13 +311,20 @@ async function queryOwner(
   signal: AbortSignal,
 ): Promise<OwnerPortResult | undefined> {
   switch (command.owner) {
-    case "lead": return ports.lead.queryByIdempotency?.(command, { signal });
-    case "consent": return ports.consent.queryByIdempotency?.(command, { signal });
-    case "appointment": return ports.appointment.queryByIdempotency?.(command, { signal });
-    case "payment": return ports.payment.queryByIdempotency?.(command, { signal });
-    case "channel": return ports.channel.queryByIdempotency?.(command, { signal });
-    case "notification": return ports.notification.queryByIdempotency?.(command, { signal });
-    case "analytics": return undefined;
+    case "lead":
+      return ports.lead.queryByIdempotency?.(command, { signal });
+    case "consent":
+      return ports.consent.queryByIdempotency?.(command, { signal });
+    case "appointment":
+      return ports.appointment.queryByIdempotency?.(command, { signal });
+    case "payment":
+      return ports.payment.queryByIdempotency?.(command, { signal });
+    case "channel":
+      return ports.channel.queryByIdempotency?.(command, { signal });
+    case "notification":
+      return ports.notification.queryByIdempotency?.(command, { signal });
+    case "analytics":
+      return undefined;
   }
 }
 
@@ -338,10 +345,12 @@ class OwnerConcurrencyGate {
     if (this.active >= this.limit) await new Promise<void>((resolve) => this.waiting.push(resolve));
     this.active += 1;
     const pending = Promise.resolve().then(work);
-    void pending.finally(() => {
-      this.active -= 1;
-      this.waiting.shift()?.();
-    }).catch(() => undefined);
+    void pending
+      .finally(() => {
+        this.active -= 1;
+        this.waiting.shift()?.();
+      })
+      .catch(() => undefined);
     return pending;
   }
 }
@@ -380,7 +389,11 @@ async function processLease(
   gate: OwnerConcurrencyGate,
 ): Promise<void> {
   if (isVerifiedRevocationOperation(lease.command) && !lease.verifiedRevocation) {
-    await dependencies.store.complete({ lease, receipt: localReceipt(lease.command, "blocked"), now: dependencies.now() });
+    await dependencies.store.complete({
+      lease,
+      receipt: localReceipt(lease.command, "blocked"),
+      now: dependencies.now(),
+    });
     return;
   }
   const consentType = requiredConsent(lease.command);
@@ -435,7 +448,9 @@ async function processUnknownLease(
     const result = await invokeBounded(lease.command, dependencies, gate, true);
     await dependencies.store.complete({
       lease,
-      receipt: result ? receiptFromResult(lease.command, result) : localReceipt(lease.command, "manual_review"),
+      receipt: result
+        ? receiptFromResult(lease.command, result)
+        : localReceipt(lease.command, "manual_review"),
       now: dependencies.now(),
     });
   } catch {
@@ -454,7 +469,9 @@ function aggregateStatus(
   return receipts.find((receipt) => receipt.owner === owner)?.status ?? "not_requested";
 }
 
-function nextAction(receipts: readonly FormCommandDispatchReceipt[]): FormOutboxDispatchResult["nextAction"] {
+function nextAction(
+  receipts: readonly FormCommandDispatchReceipt[],
+): FormOutboxDispatchResult["nextAction"] {
   if (receipts.some((receipt) => receipt.status === "retry_scheduled")) return "retry_scheduled";
   if (
     receipts.some(

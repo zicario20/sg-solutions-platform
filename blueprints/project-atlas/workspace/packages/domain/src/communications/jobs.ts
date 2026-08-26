@@ -1,5 +1,4 @@
 import type { HandoffReason, HumanHandoffPort } from "../public-chat/providers.ts";
-import type { ContentPolicyPort } from "./service.ts";
 import type {
   CommunicationsRepository,
   ContactWithdrawalEvidence,
@@ -7,6 +6,7 @@ import type {
   ReconcileTemplateCommand,
   TemplateProviderReconciliationReceipt,
 } from "./repository.ts";
+import type { ContentPolicyPort } from "./service.ts";
 
 export type JobResult = {
   readonly status: string;
@@ -32,20 +32,19 @@ export type M002SourceReceipt = {
 };
 
 export interface PublicOrientationPort {
-  answer(input: { prompt: string; locale: "en" | "es"; correlationId: string }): Promise<
-    | { status: "available"; text: string; receipt?: M002SourceReceipt }
-    | { status: "unavailable" }
+  answer(input: {
+    prompt: string;
+    locale: "en" | "es";
+    correlationId: string;
+  }): Promise<
+    { status: "available"; text: string; receipt?: M002SourceReceipt } | { status: "unavailable" }
   >;
 }
 
 export type OwningDomainReceipt = {
   receiptId: string;
   owner: "appointments" | "documents" | "leads" | "payments";
-  operation:
-    | "book_appointment"
-    | "capture_lead"
-    | "issue_payment_link"
-    | "issue_upload_link";
+  operation: "book_appointment" | "capture_lead" | "issue_payment_link" | "issue_upload_link";
   bindingId: string;
   resourceId: string;
   idempotencyKey: string;
@@ -55,11 +54,7 @@ export type OwningDomainReceipt = {
   correlationId: string;
 };
 
-export type OwningActionIntent =
-  | "appointment"
-  | "document_upload"
-  | "lead"
-  | "payment_link";
+export type OwningActionIntent = "appointment" | "document_upload" | "lead" | "payment_link";
 
 export interface OwningDomainActionPort {
   execute(input: {
@@ -156,7 +151,10 @@ const OWNER_ACTION = {
   document_upload: ["documents", "issue_upload_link"],
   lead: ["leads", "capture_lead"],
   payment_link: ["payments", "issue_payment_link"],
-} as const satisfies Record<OwningActionIntent, readonly [OwningDomainReceipt["owner"], OwningDomainReceipt["operation"]]>;
+} as const satisfies Record<
+  OwningActionIntent,
+  readonly [OwningDomainReceipt["owner"], OwningDomainReceipt["operation"]]
+>;
 
 function currentReceipt(receipt: { issuedAt: Date; expiresAt: Date }, now: Date): boolean {
   return (
@@ -214,7 +212,10 @@ function validOwnerReceipt(
 
 async function finishInbound(
   input: ProcessInboundInput,
-  claim: Extract<Awaited<ReturnType<CommunicationsRepository["claimInbound"]>>, { status: "claimed" }>,
+  claim: Extract<
+    Awaited<ReturnType<CommunicationsRepository["claimInbound"]>>,
+    { status: "claimed" }
+  >,
   outcome: "applied" | "manual_review" | "dead_letter",
   result: JobResult,
 ): Promise<JobResult> {
@@ -342,17 +343,14 @@ export async function processInboundChannelEvent(input: ProcessInboundInput): Pr
       });
     }
     try {
-      const handoff = await input.executor.run(
-        "communications_handoff",
-        input.ownerTimeoutMs,
-        () =>
-          input.humanHandoff!.enqueue({
-            conversationId: claim.envelope.conversation.id,
-            locale: claim.envelope.event.locale,
-            reason: input.handoffReason ?? "visitor_requested",
-            correlationId: claim.envelope.event.correlationId,
-            idempotencyKey,
-          }),
+      const handoff = await input.executor.run("communications_handoff", input.ownerTimeoutMs, () =>
+        input.humanHandoff!.enqueue({
+          conversationId: claim.envelope.conversation.id,
+          locale: claim.envelope.event.locale,
+          reason: input.handoffReason ?? "visitor_requested",
+          correlationId: claim.envelope.event.correlationId,
+          idempotencyKey,
+        }),
       );
       if (
         handoff.status !== "queued" ||
@@ -470,7 +468,10 @@ export async function processInboundChannelEvent(input: ProcessInboundInput): Pr
       ) {
         return finishInbound(input, claim, "manual_review", {
           status: "manual_review",
-          code: action.status === "replay_mismatch" ? "owner_receipt_mismatch" : "owner_receipt_invalid",
+          code:
+            action.status === "replay_mismatch"
+              ? "owner_receipt_mismatch"
+              : "owner_receipt_invalid",
         });
       }
       return finishInbound(input, claim, "applied", {
@@ -536,7 +537,10 @@ export async function expireChannelRecoveryState(input: ExpireRecoveryInput): Pr
   if (!Number.isSafeInteger(input.limit) || input.limit < 1 || input.limit > 100) {
     return { status: "rejected", code: "recovery_limit_invalid" };
   }
-  const candidates = await input.repository.findRecoveryWork({ now: input.now, limit: input.limit });
+  const candidates = await input.repository.findRecoveryWork({
+    now: input.now,
+    limit: input.limit,
+  });
   if (
     candidates.length > input.limit ||
     candidates.some(

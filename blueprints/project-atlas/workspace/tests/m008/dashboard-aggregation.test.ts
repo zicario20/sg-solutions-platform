@@ -30,7 +30,7 @@ const evidence = {
 
 const authPort = (revoked = false): DashboardAuthPort => ({
   authorize: async () => ({ kind: "authorized", evidence }),
-  revalidate: async () => revoked ? { kind: "denied" } : { kind: "authorized", evidence },
+  revalidate: async () => (revoked ? { kind: "denied" } : { kind: "authorized", evidence }),
   selectContext: async () => ({ kind: "denied" }),
 });
 
@@ -44,11 +44,22 @@ const empty = (owner: DashboardOwnerCode, snapshotId: string): DashboardOwnerFra
   data: [],
 });
 
-function ownerPorts(overrides: Partial<Record<DashboardOwnerCode, DashboardOwnerPorts[DashboardOwnerCode]["query"]>> = {}): DashboardOwnerPorts {
-  return Object.fromEntries(DASHBOARD_OWNER_CODES.map((owner) => [owner, {
-    owner,
-    query: overrides[owner] ?? (async ({ snapshotId }: { snapshotId: string }) => empty(owner, snapshotId)),
-  }])) as DashboardOwnerPorts;
+function ownerPorts(
+  overrides: Partial<
+    Record<DashboardOwnerCode, DashboardOwnerPorts[DashboardOwnerCode]["query"]>
+  > = {},
+): DashboardOwnerPorts {
+  return Object.fromEntries(
+    DASHBOARD_OWNER_CODES.map((owner) => [
+      owner,
+      {
+        owner,
+        query:
+          overrides[owner] ??
+          (async ({ snapshotId }: { snapshotId: string }) => empty(owner, snapshotId)),
+      },
+    ]),
+  ) as DashboardOwnerPorts;
 }
 
 const request = { sessionHandle: "opaque-session", locale: "es" as const };
@@ -63,11 +74,23 @@ describe("M008 bounded aggregation", () => {
         classification: "client_safe",
         state: "fresh",
         asOf: "2026-08-21T12:00:00.000Z",
-        data: [{ opaqueRef: "service-a", title: "Tax filing", statusLabel: "Active", routeKey: "services" }],
+        data: [
+          {
+            opaqueRef: "service-a",
+            title: "Tax filing",
+            statusLabel: "Active",
+            routeKey: "services",
+          },
+        ],
       }),
-      messages: async () => { throw new Error("private provider detail"); },
+      messages: async () => {
+        throw new Error("private provider detail");
+      },
     });
-    const result = await new ClientDashboardQueryService({ authPort: authPort(), ownerPorts: ports }).query(request);
+    const result = await new ClientDashboardQueryService({
+      authPort: authPort(),
+      ownerPorts: ports,
+    }).query(request);
     expect(result.kind).toBe("ok");
     if (result.kind !== "ok") throw new Error("expected ok");
     expect(result.dto.services.state).toBe("fresh");
@@ -75,7 +98,10 @@ describe("M008 bounded aggregation", () => {
   });
 
   it("discards the assembled body when final authorization changes", async () => {
-    const service = new ClientDashboardQueryService({ authPort: authPort(true), ownerPorts: ownerPorts() });
+    const service = new ClientDashboardQueryService({
+      authPort: authPort(true),
+      ownerPorts: ownerPorts(),
+    });
     await expect(service.query(request)).resolves.toEqual({ kind: "retry_required" });
   });
 
@@ -91,7 +117,13 @@ describe("M008 bounded aggregation", () => {
         data: [{ opaqueRef: "help-a", title: "Guide", routeKey: "help" }],
       }),
     });
-    const result = await new ClientDashboardQueryService({ authPort: authPort(), ownerPorts: ports }).query(request);
-    expect(result.kind === "ok" && result.dto.help).toEqual({ state: "unavailable", safeReason: "source_unavailable" });
+    const result = await new ClientDashboardQueryService({
+      authPort: authPort(),
+      ownerPorts: ports,
+    }).query(request);
+    expect(result.kind === "ok" && result.dto.help).toEqual({
+      state: "unavailable",
+      safeReason: "source_unavailable",
+    });
   });
 });
