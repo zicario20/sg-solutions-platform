@@ -1634,3 +1634,4 @@ export * from "./schema/provider-abstraction.ts";
 export * from "./schema/service-catalog.ts";
 export * from "./schema/service-catalog-completion.ts";
 export * from "./schema/service-entitlements.ts";
+export * from "./schema/pricing.ts";

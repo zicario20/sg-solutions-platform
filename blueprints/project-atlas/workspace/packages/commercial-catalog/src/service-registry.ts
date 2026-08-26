@@ -114,6 +114,8 @@ export type ServiceTranslation = Readonly<{
 export type ServiceCommercialProfile = Readonly<{
   billingMode: "direct_checkout" | "quote_required" | "consultation_required" | "no_payment";
   pricingReference: string | null;
+  pricingProfileReference?: string | null;
+  pricingProfileVersion?: number | null;
   depositPolicyReference: string | null;
   paymentScheduleReference: string | null;
   cancellationPolicyReference: string | null;
@@ -355,6 +357,7 @@ export function createServiceVersion(
   assertIso(value.createdAt, "createdAt");
   validateTranslation(value.translations.es, "es");
   validateTranslation(value.translations.en, "en");
+  validateCommercialProfile(value.commercialProfile);
   assertCodeList(value.servicePrerequisites, "service prerequisites");
   assertCodeList(value.dependencyCodes, "service dependencies");
   assertCodeList(value.relatedServiceCodes, "related services");

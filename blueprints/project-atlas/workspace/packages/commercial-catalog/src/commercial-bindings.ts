@@ -84,6 +84,17 @@ export function validateCommercialProfile(
   )
     throw new TypeError("billing mode invalid");
   reference(value.pricingReference, "pricing reference", value.billingMode !== "no_payment");
+  const hasPricingProfileReference =
+    value.pricingProfileReference !== null && value.pricingProfileReference !== undefined;
+  const hasPricingProfileVersion =
+    value.pricingProfileVersion !== null && value.pricingProfileVersion !== undefined;
+  if (hasPricingProfileReference !== hasPricingProfileVersion)
+    throw new TypeError("pricing profile version required");
+  if (hasPricingProfileReference) {
+    reference(value.pricingProfileReference, "pricing profile reference", true);
+    if (!Number.isInteger(value.pricingProfileVersion) || Number(value.pricingProfileVersion) < 1)
+      throw new TypeError("pricing profile version invalid");
+  }
   reference(value.depositPolicyReference, "deposit policy reference", false);
   reference(value.paymentScheduleReference, "payment schedule reference", false);
   reference(value.cancellationPolicyReference, "cancellation policy reference", true);

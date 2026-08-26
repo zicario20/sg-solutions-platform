@@ -218,7 +218,11 @@ importers:
         specifier: workspace:*
         version: link:../dashboard
 
-  packages/commercial-catalog: {}
+  packages/commercial-catalog:
+    dependencies:
+      '@atlas/pricing':
+        specifier: workspace:*
+        version: link:../pricing
 
   packages/commercial-workflows: {}
 
@@ -322,6 +326,8 @@ importers:
       '@atlas/billing':
         specifier: workspace:*
         version: link:../billing
+
+  packages/pricing: {}
 
   packages/provider-abstraction: {}
 

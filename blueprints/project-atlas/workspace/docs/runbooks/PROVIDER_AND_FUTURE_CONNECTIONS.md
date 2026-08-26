@@ -107,3 +107,17 @@ receive raw payment processor data, invoke partners, or dispatch workflow action
 Future M044, approval, document, consent, identity, and M068 adapters require separate
 Product Owner approval, security review, durable repository evidence, and rollback
 planning before any flag can be enabled.
+
+## M046 Pricing, Discounts, and Promotions
+
+- Status: disabled controlled foundation.
+- Provider: no payment, tax, promotion, checkout, invoice, refund, or external-fee
+  provider is connected by M046.
+- Authority: `@atlas/pricing` calculates only from versioned internal configuration;
+  M043 consumes an approved snapshot later and M044 remains payment-verification owner.
+- Data: no real prices, payment data, customer quote, provider credential, or external
+  fee source is committed. Snapshot and schema contracts use references and integer
+  amounts only.
+- Activation: requires Product Owner commercial-policy approval, M042/M043/M044/M045/M068
+  integration evidence, approved authorization/RLS and migration plan, sandbox evidence,
+  reconciliation/rollback runbook, and independent finance/security review.

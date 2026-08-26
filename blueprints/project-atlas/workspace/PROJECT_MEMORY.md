@@ -1125,3 +1125,17 @@ temporary grant expiry, quota idempotency contract, client-safe views, RLS schem
 an unapplied migration. M044 is consumed only as a normalized condition; payment never
 automatically grants entitlement. No provider, workflow, database migration, or
 production activation occurred. Product Owner acceptance remains pending.
+## 2026-08-26 - M046 Pricing, Discounts, and Promotions controlled foundation
+
+The Product Owner authorized implementation of M046. The repository now has a single
+typed `@atlas/pricing` authority for versioned price definitions, profiles, price books,
+rules, promotions, quotes, schedules, immutable calculation snapshots, governed
+projections, and deny-by-default persistence contracts. M042 service versions now require
+a pricing-profile reference and version together when either is provided, and the legacy
+catalog calculator delegates to M046 to avoid a second engine.
+
+All prices remain configuration contracts only: no real customer price data was seeded.
+M046 runtime flags remain false. No provider call, Stripe checkout, payment verification,
+refund, entitlement, operational workflow, queue worker, UI activation, migration, or
+deployment occurred. Migration 0056 is authored only. Product Owner acceptance and
+operational activation remain pending.

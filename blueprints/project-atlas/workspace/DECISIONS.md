@@ -1033,3 +1033,24 @@ catalog publication, provider integrations, or operational workflow execution.
 authorization and all other current conditions remain required. Runtime ingress,
 automatic grant materialization, provider actions, and M068 handoffs remain disabled
 until a separate Product Owner-approved activation change.
+## D-2026-08-26-M046-CONTROLLED-FOUNDATION
+
+**Decision:** M046 is the sole application authority for deterministic commercial pricing
+contracts: price/profile/version selection, approved rules, discounts and promotions,
+external-fee separation, deposits, schedules, quotes, and immutable pricing snapshots.
+
+**Controls:** Amounts use integer minor units and ISO currency. Client, chat, and AI
+callers cannot submit a final amount, select a price book, apply a manual discount,
+approve/publish pricing, reserve an exception, verify payment, grant entitlement, or
+start a workflow. Unknown, pending, and quote-required states are not zero-price states.
+Snapshots preserve the calculation inputs and version provenance.
+
+**Boundaries:** M042 owns service catalog/version selection; M043 owns provider payment
+plans and evidence; M044 owns payment verification; M045 owns entitlements; M068 owns
+workflow execution. A quote acceptance is not payment, authorization, entitlement, or
+operational start. M046 provider runtime controls fail closed and migration 0056 is
+authored only.
+
+**Status:** Controlled technical foundation implemented. Real commercial policies,
+authorization/RLS integration, sandbox evidence, independent finance/security review,
+Product Owner acceptance, deployment, and operational activation remain pending.

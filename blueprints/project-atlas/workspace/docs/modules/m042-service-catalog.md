@@ -101,6 +101,8 @@ Not activated:
 
 - Catalog configuration stores references, never provider credentials, card data, tax data, identity data, document bytes or client PII.
 - Prices are references to M014/M021-approved pricing rules; a browser cannot supply the final amount.
+- An M046 pricing-profile reference and its version are validated as an atomic pair when a
+  service version is created; M042 cannot bind an ambiguous or versionless pricing profile.
 - A service version must not be edited in place after approval. Material changes create a new version and preserve prior order snapshots.
 - Client projections require a service grant. Public projections do not expose workflow, commercial or internal configuration.
 - Provider-dependent services remain blocked when their provider requirements are not activated through M041.

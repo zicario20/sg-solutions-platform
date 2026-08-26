@@ -352,6 +352,21 @@
 
 ## Unreleased
 
+### Added
+- M046 controlled pricing, discounts, and promotions foundation: versioned pricing
+  contracts, deterministic integer-minor-unit calculation, profiles/price books/rules,
+  external-fee separation, promotion reservation, quotes/schedules, immutable snapshots,
+  governed projections, fail-closed runtime controls, RLS schema, and authored-only
+  migration `0056_m046_pricing_controlled_foundation.sql`.
+
+### Changed
+- M042 commercial profiles now require an M046 pricing-profile reference and version as
+  a pair, and the legacy catalog price calculation delegates to `@atlas/pricing`.
+
+### Security
+- Kept every M046 runtime integration disabled. No live price, checkout, payment,
+  provider, refund, entitlement, workflow, migration, or deployment behavior was added.
+
 <!-- M045_SERVICE_ENTITLEMENTS_CHANGELOG -->
 ### Added
 - M045 controlled service-entitlements foundation with deterministic scoped decisions,

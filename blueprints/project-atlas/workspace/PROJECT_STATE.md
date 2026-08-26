@@ -257,3 +257,19 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
   and M068 workflow handoff: not implemented or authorized.
 - Database schema and migration: authored only; not applied.
 - Product Owner acceptance and production activation: pending.
+
+## M046 Pricing, Discounts, and Promotions
+<!-- M046_PRICING_CONTROLLED_FOUNDATION -->
+
+- Status: controlled technical foundation implemented; Product Owner acceptance pending.
+- Authority: `@atlas/pricing` owns deterministic price calculations, profiles, price books,
+  promotions, quotes, schedules, and immutable snapshots. M042 binds a profile and version;
+  no parallel catalog pricing engine remains.
+- Runtime: all M046 flags are false. Checkout, provider calls, customer quote dispatch,
+  manual pricing, refunds, payment verification, entitlement grants, workflow handoffs,
+  queues, and UI activation are disabled.
+- Migration: `0056_m046_pricing_controlled_foundation.sql` is authored only and has not
+  been applied. Its initial RLS posture is deny-by-default.
+- Pending: Product Owner commercial policy, real service/price data, authorization/RLS,
+  M043/M044/M045/M068 integration evidence, sandbox validation, independent finance/security
+  review, deployment, and production activation.
