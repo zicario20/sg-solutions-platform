@@ -372,3 +372,9 @@
 - M045 controlled service-entitlements foundation with deterministic scoped decisions,
   explicit deny precedence, temporary grants, quota/idempotency contracts, client-safe
   views, RLS schema, and provider-disabled runtime controls.
+
+### Added
+- M047 controlled Internal AI Hub foundation with versioned internal workspaces, agents/manifests, model/prompt/tool policy, scoped knowledge/context, evaluation/release gates, run/handoff/approval contracts, deny-by-default RLS schema, and authored-only migration `0057_m047_internal_ai_hub_controlled_foundation.sql`.
+
+### Security
+- Kept Ollama/Qwen, cloud providers, tools, jobs, egress, memory automation, supervisor delegation, public/client AI UI, migrations, and deployment disabled. M047 rejects mutable references, sensitive egress, private-reasoning storage, unsafe tool scope, and release with open blocking findings.

@@ -121,3 +121,11 @@ planning before any flag can be enabled.
 - Activation: requires Product Owner commercial-policy approval, M042/M043/M044/M045/M068
   integration evidence, approved authorization/RLS and migration plan, sandbox evidence,
   reconciliation/rollback runbook, and independent finance/security review.
+
+## M047 Internal AI Hub
+
+- Status: disabled controlled foundation.
+- Providers: no local Ollama/Qwen, cloud model, vector/RAG, skill, tool, node, job, or secret provider is connected by M047.
+- Local model path: `ollama_local` is a metadata-only future provider kind. It is not a configured endpoint, credential, runtime, or authorization to call a local model.
+- Data: no provider credential, raw prompt, private reasoning, document bytes, customer context, or actual model output is committed. The schema stores minimized references and policy/evidence records only.
+- Activation: requires Product Owner AI policy; M041/M061-M064/M072/M076/M083/M094/M095 owner approval; exact model/prompt/tool/knowledge policy; sandbox/red-team/privacy/evaluation evidence; approved migration/RLS/rollback; independent AI/security review; and a limited rollout plan.

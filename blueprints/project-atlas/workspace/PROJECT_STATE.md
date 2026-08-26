@@ -273,3 +273,12 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - Pending: Product Owner commercial policy, real service/price data, authorization/RLS,
   M043/M044/M045/M068 integration evidence, sandbox validation, independent finance/security
   review, deployment, and production activation.
+
+## M047 Internal AI Hub
+<!-- M047_INTERNAL_AI_HUB_CONTROLLED_FOUNDATION -->
+
+- Status: controlled internal AI control-plane foundation implemented; Product Owner acceptance pending.
+- Authority: `@atlas/ai-control-plane` owns versioned AI workspaces, manifests, model/prompt/tool policies, scoped knowledge/context, evaluations/release gates, and run/handoff contracts. It does not execute models or tools.
+- Runtime: all M047 flags are false. Ollama/Qwen, cloud models, provider calls, secrets, prompt execution, tools, egress, jobs, automatic memory, supervisor delegation, AI UI, workflow, and client/public exposure are disabled.
+- Migration: `0057_m047_internal_ai_hub_controlled_foundation.sql` is authored only and has not been applied. Its initial RLS posture is deny-by-default.
+- Pending: Product Owner AI policy, M041/M061-M064/M072/M076/M083/M094/M095 integration evidence, evaluation/red-team/sandbox evidence, independent AI/security review, migration/RLS evidence, deployment, and production activation.

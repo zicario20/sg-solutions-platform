@@ -1139,3 +1139,9 @@ M046 runtime flags remain false. No provider call, Stripe checkout, payment veri
 refund, entitlement, operational workflow, queue worker, UI activation, migration, or
 deployment occurred. Migration 0056 is authored only. Product Owner acceptance and
 operational activation remain pending.
+
+## 2026-08-26 - M047 Internal AI Hub controlled foundation
+
+The Product Owner authorized M047 implementation. The existing minimal M025 AI policy was extended rather than replaced by a second plane. `@atlas/ai-control-plane` now provides typed internal workspace, environment, asset, agent/version/manifest, capability/surface, model/prompt/tool, scoped knowledge/context, dataset/evaluation/release-gate, and run/handoff/approval contracts. Version pinning, public/client/admin/backend separation, local-first candidate routing, tool/egress restrictions, no-private-reasoning storage, release blocking, and disabled runtime adapters are enforced in the foundation.
+
+A future local Ollama/Qwen profile can be represented as disabled metadata only. No model provider, Ollama/Qwen runtime, cloud AI, secret, endpoint call, tool execution, network egress, job, automatic memory, supervisor behavior, public/client UI, migration, or deployment was activated. Migration 0057 is authored only with deny-by-default RLS. Product Owner acceptance and operational activation remain pending.

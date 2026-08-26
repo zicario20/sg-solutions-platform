@@ -1,17 +1,6 @@
 import type { AgentDefinition, AgentRunDecision, AgentRunRequest, AiTool } from "./contracts.ts";
+import { AI_HUB_PROHIBITED_ACTIONS } from "./foundation.ts";
 
-const prohibitedTools = new Set([
-  "publish_service",
-  "change_price",
-  "approve_service_start",
-  "grant_entitlement",
-  "issue_refund",
-  "submit_filing",
-  "submit_tax_return",
-  "send_credit_dispute",
-  "apply_for_loan",
-  "share_documents_without_consent",
-]);
 export function evaluateAgentRun(
   definition: AgentDefinition,
   request: AgentRunRequest,
@@ -25,7 +14,7 @@ export function evaluateAgentRun(
       status: "requires_review",
       reason: "Sensitive content requires human review before model routing.",
     };
-  if (request.requestedTool && prohibitedTools.has(request.requestedTool))
+  if (request.requestedTool && AI_HUB_PROHIBITED_ACTIONS.has(request.requestedTool))
     return { status: "blocked", reason: "The requested tool is globally prohibited." };
   if (request.requestedTool && !definition.allowedTools.includes(request.requestedTool as AiTool))
     return { status: "blocked", reason: "The requested tool is not allowlisted for this agent." };

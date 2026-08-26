@@ -1054,3 +1054,13 @@ authored only.
 **Status:** Controlled technical foundation implemented. Real commercial policies,
 authorization/RLS integration, sandbox evidence, independent finance/security review,
 Product Owner acceptance, deployment, and operational activation remain pending.
+
+## D-2026-08-26-M047-CONTROLLED-FOUNDATION
+
+**Decision:** M047 is the internal AI control-plane authority for versioned agent manifests and policy-bound AI configuration. It owns workspace/environment isolation, agent/model/prompt/tool/knowledge policy references, context provenance, evaluation/release gates, and safe run/handoff contract definitions.
+
+**Controls:** Every production-relevant reference must be exact and versioned; `latest` is invalid. Public, client, admin, and backend surfaces are separated. Agents cannot select arbitrary tools/endpoints, execute sensitive actions, obtain secrets, egress restricted data, store private reasoning, inherit permissions through a handoff, or bypass human approvals. Local-first routing may select a disabled candidate only; it never makes a model call.
+
+**Boundaries:** M041 owns provider adapters, M048 owns supervisor behavior, M061-M064 own skill/knowledge/RAG/source stores, M072 owns jobs, M076 human/compliance authority, M083 secrets, and M094/M095 node placement. M047 migration 0057 is authored only; all runtime flags fail closed.
+
+**Status:** Controlled technical foundation implemented. Product Owner AI policy, evaluation and sandbox evidence, independent AI/security review, migration/deployment approval, and all operational activation remain pending.
