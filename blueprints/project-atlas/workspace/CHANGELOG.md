@@ -378,3 +378,7 @@
 
 ### Security
 - Kept Ollama/Qwen, cloud providers, tools, jobs, egress, memory automation, supervisor delegation, public/client AI UI, migrations, and deployment disabled. M047 rejects mutable references, sensitive egress, private-reasoning storage, unsafe tool scope, and release with open blocking findings.
+
+## 2026-08-26
+
+- Added M048 Supervisor Agent controlled foundation. Routing, planning, execution controls, governance, persistence, audit chain, and tests are present; runtime execution remains disabled pending Product Owner approval.

@@ -339,6 +339,12 @@ importers:
 
   packages/service-entitlements: {}
 
+  packages/supervisor-agent:
+    dependencies:
+      '@atlas/ai-control-plane':
+        specifier: workspace:*
+        version: link:../ai-control-plane
+
   packages/task-management: {}
 
   packages/tax-operations: {}

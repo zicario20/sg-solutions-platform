@@ -1145,3 +1145,7 @@ operational activation remain pending.
 The Product Owner authorized M047 implementation. The existing minimal M025 AI policy was extended rather than replaced by a second plane. `@atlas/ai-control-plane` now provides typed internal workspace, environment, asset, agent/version/manifest, capability/surface, model/prompt/tool, scoped knowledge/context, dataset/evaluation/release-gate, and run/handoff/approval contracts. Version pinning, public/client/admin/backend separation, local-first candidate routing, tool/egress restrictions, no-private-reasoning storage, release blocking, and disabled runtime adapters are enforced in the foundation.
 
 A future local Ollama/Qwen profile can be represented as disabled metadata only. No model provider, Ollama/Qwen runtime, cloud AI, secret, endpoint call, tool execution, network egress, job, automatic memory, supervisor behavior, public/client UI, migration, or deployment was activated. Migration 0057 is authored only with deny-by-default RLS. Product Owner acceptance and operational activation remain pending.
+
+## 2026-08-26 - M048 Supervisor Agent controlled foundation
+
+Implemented the M048 deterministic supervisor foundation after M047. It prepares bounded task envelopes, specialist eligibility, candidate routing, non-executable orchestration plans, human escalation, loop guards, governance validation, audit-chain contracts, RLS schemas, tests, and documentation. Product Owner direction remains that no provider or execution is activated; all M048 flags are false.

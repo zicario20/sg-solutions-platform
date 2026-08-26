@@ -129,3 +129,12 @@ planning before any flag can be enabled.
 - Local model path: `ollama_local` is a metadata-only future provider kind. It is not a configured endpoint, credential, runtime, or authorization to call a local model.
 - Data: no provider credential, raw prompt, private reasoning, document bytes, customer context, or actual model output is committed. The schema stores minimized references and policy/evidence records only.
 - Activation: requires Product Owner AI policy; M041/M061-M064/M072/M076/M083/M094/M095 owner approval; exact model/prompt/tool/knowledge policy; sandbox/red-team/privacy/evaluation evidence; approved migration/RLS/rollback; independent AI/security review; and a limited rollout plan.
+
+## M048 Supervisor Agent
+
+| Provider or capability | Status | Connection requirement |
+| --- | --- | --- |
+| Supervisor runtime | Disabled | Product Owner release gate, routing policy, M047 asset release, security and staging evidence |
+| Specialist delegation | Disabled | Authorized specialist manifests, consent/ownership checks, human queue, and rollback plan |
+| Model provider calls | Disabled | M047 provider approval and separate provider configuration |
+| Automatic rerouting and parallel execution | Disabled | Bounded budget/SLA/fallback policy and operational approval |

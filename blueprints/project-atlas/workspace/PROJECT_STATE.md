@@ -282,3 +282,10 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - Runtime: all M047 flags are false. Ollama/Qwen, cloud models, provider calls, secrets, prompt execution, tools, egress, jobs, automatic memory, supervisor delegation, AI UI, workflow, and client/public exposure are disabled.
 - Migration: `0057_m047_internal_ai_hub_controlled_foundation.sql` is authored only and has not been applied. Its initial RLS posture is deny-by-default.
 - Pending: Product Owner AI policy, M041/M061-M064/M072/M076/M083/M094/M095 integration evidence, evaluation/red-team/sandbox evidence, independent AI/security review, migration/RLS evidence, deployment, and production activation.
+
+# M048 - Supervisor Agent
+
+- Technical control-plane foundation implemented on 2026-08-26.
+- All supervisor, delegation, provider-call, orchestration, auto-rerouting, parallel-execution, and automation flags remain disabled.
+- No provider, specialist, tool, workflow, or external action is activated by this module.
+- Product Owner acceptance, operational release, and deployment remain pending.

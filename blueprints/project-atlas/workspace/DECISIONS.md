@@ -1064,3 +1064,7 @@ Product Owner acceptance, deployment, and operational activation remain pending.
 **Boundaries:** M041 owns provider adapters, M048 owns supervisor behavior, M061-M064 own skill/knowledge/RAG/source stores, M072 owns jobs, M076 human/compliance authority, M083 secrets, and M094/M095 node placement. M047 migration 0057 is authored only; all runtime flags fail closed.
 
 **Status:** Controlled technical foundation implemented. Product Owner AI policy, evaluation and sandbox evidence, independent AI/security review, migration/deployment approval, and all operational activation remain pending.
+
+## 2026-08-26 - M048 Supervisor Agent control boundary
+
+The Supervisor Agent is a deterministic coordination boundary above M047, not an autonomous executive agent. It may classify minimized task envelopes, assess registered specialist eligibility, prepare non-executable plans, and escalate to humans. It must not call providers, dispatch specialists, alter policy, approve itself, grant entitlements, modify prices, or perform sensitive actions. Any activation requires a separately approved release gate.
