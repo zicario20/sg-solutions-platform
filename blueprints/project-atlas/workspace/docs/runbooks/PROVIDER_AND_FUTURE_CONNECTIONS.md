@@ -25,6 +25,7 @@ This document is a checklist, not activation authority. A provider remains disab
 | M012 | Secure messaging | Message persistence owner; approved delivery channels when authorized | Participant authorization, immutable audit, consent, delivery reconciliation, retention |
 | M013 | Client appointments | Google Calendar adapter or approved calendar provider | OAuth scopes, availability source, timezone, webhook/reconciliation, cancellation policy |
 | M014 | Client payments | Stripe | Server-created checkout, signed webhooks, reconciliation, PCI boundary, financial audit |
+| M043 | Stripe payment boundary | Stripe through the disabled M041-compatible adapter | M046 price snapshot, M044 verification, M045 entitlement contract, M024 refund approval, M077 audit, M078 consent, M083 secrets, sandbox/reconciliation/RLS/rollback evidence |
 | M015 | Financial/business profile | KMS, OCR, AI only after policy approval | PFL policy values, encryption/key custody, purpose checks, retention, human review |
 | M016 | Admin dashboard | M017-M026/M042-M046 owner projections | Staff authorization, count-inference controls, private cache, owner availability evidence |
 | M017 | CRM | Canonical M018-M023 owners; future import/export/channel/AI adapters | Purpose binding, dedup/merge controls, audit, retention, export authorization |
@@ -74,3 +75,14 @@ These families are expected planning areas for M020-M110. The canonical module c
 - Webhooks, polling and file exchange: not implemented.
 - Credentials: secret references only; no values committed.
 - Activation: requires separate Product Owner approval.
+
+## M043 - Stripe Payments
+
+- Status: disabled controlled foundation.
+- Provider: StripePaymentAdapter has no enabled capabilities and rejects external operations.
+- Secrets: account and credential references only; no key, webhook secret or raw card data is committed.
+- Payment boundary: M043 creates provider evidence and M044 alone verifies payment. Browser returns
+  and Stripe events do not start work or grant entitlements.
+- Activation: requires a separately approved Stripe sandbox plan, M046/M044/M045 integration,
+  M024 approval policy, M077 audit, M078 consent, M083 secret management, migration/RLS evidence,
+  reconciliation, security review and rollback plan.

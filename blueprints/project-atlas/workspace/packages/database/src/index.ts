@@ -31,6 +31,7 @@ export * from "./schema/client-profile.ts";
 export * from "./schema/client-services.ts";
 export * from "./schema/documents.ts";
 export * from "./schema/secure-messaging.ts";
+export * from "./schema/stripe-payments.ts";
 export * from "./schema.ts";
 export * from "./voice-command-repository.ts";
 export * from "./voice-lifecycle-repository.ts";

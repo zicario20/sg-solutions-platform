@@ -990,3 +990,25 @@ Decision:
 
 Status: controlled technical implementation complete. Product Owner acceptance, real catalog data,
 provider activation, migrations, operational integrations and production release remain pending.
+
+## 2026-08-26 - M043 Stripe Payments controlled foundation
+
+Decision:
+
+- M043 is the controlled Stripe payment-provider boundary. It owns Stripe account/profile
+  references, provider object evidence, inbound event durability contracts, reconciliation and
+  payment-operation audit artifacts.
+- M043 must consume M042 catalog references and M046 immutable price snapshots. It produces
+  candidates only for M044; it may not verify payment, mutate operational/service state, grant
+  entitlements, apply manual prices, or trigger sensitive execution.
+- StripePaymentAdapter is provider-disabled and fail-closed. No Stripe credential, account,
+  checkout, invoice, payment intent, refund, portal, subscription, webhook, migration or
+  deployment is activated by this decision.
+- Migration 0053 is authored only. It starts RLS deny-by-default and requires backup evidence,
+  independent security review, an approved gateway policy and Product Owner deployment approval
+  before execution.
+- Browser return pages and provider events are not payment verification. Refunds require a
+  separately authorized approval and provider confirmation remains evidence pending M044 review.
+
+Status: controlled technical foundation implemented; Product Owner acceptance and all operational
+activation gates remain pending.

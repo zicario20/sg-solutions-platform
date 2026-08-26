@@ -30,6 +30,7 @@ export * from "./schema/home-buying-assistance.ts";
 export * from "./schema/marketplace.ts";
 export * from "./schema/recommendation-engine.ts";
 export * from "./schema/secure-messaging.ts";
+export * from "./schema/stripe-payments.ts";
 
 const gatewayAccess = (name: string) =>
   pgPolicy(`${name}_server_gateway_only`, {

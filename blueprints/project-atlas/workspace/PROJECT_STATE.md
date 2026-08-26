@@ -224,3 +224,19 @@ M031 Bookkeeping has an authorized controlled-internal Build Gate following its 
   workflow, queue or administration UI is operational.
 - Publication, checkout, workflow execution, providers and partner actions: disabled.
 - Pending: real service content, authorization/RLS integration, owner-module bindings, activation and deployment gates.
+
+## M043 Stripe Payments implementation position
+
+M043 has a controlled, provider-disabled Stripe payment foundation. It models Stripe account and
+credential references, customer mappings, checkout/payment/setup intent plans, invoices, refunds,
+disputes, event evidence, dead letters, reconciliation and audit without making a provider call.
+M043 accepts only M042 catalog references and M046 price snapshots, and it can create only
+M044 verification candidates. It cannot verify a payment, start a service, grant entitlements,
+issue a refund, apply a migration, process a live webhook or activate Stripe.
+
+- The StripePaymentAdapter fails closed; all capabilities remain disabled.
+- Migration 0053 and RLS controls are authored only and have not been applied.
+- The Stripe ingress remains unavailable unless both M014 and M043 flags are explicitly enabled;
+  even then the current runtime has no event processor.
+- Product Owner acceptance, M044/M045/M046 integration, credentials, sandbox testing, independent
+  security review, migration evidence, reconciliation and production activation remain pending.

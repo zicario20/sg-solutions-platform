@@ -6,6 +6,13 @@
 
 ## Unreleased
 
+- Completed the M043 Stripe Payments controlled technical foundation: typed provider-boundary
+  contracts, fail-closed Stripe adapter, server-owned checkout planning from M042/M046 snapshots,
+  raw-byte signature verification with rotation support, M044 verification candidates, refund
+  approval staging, reconciliation/audit models, RLS deny-by-default schema and authored-only
+  migration 0053. Stripe, webhooks, checkout, refunds, subscriptions, migrations and deployment
+  remain disabled pending Product Owner acceptance and activation evidence.
+
 - Completed the provider-disabled M042 Service Catalog technical implementation across all four
   specification parts: canonical registry/version/surface contracts, commercial and workflow
   references, channel/CTA gates, service-order snapshots, change/deprecation controls,

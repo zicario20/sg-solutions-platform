@@ -1,4 +1,9 @@
 export const BILLING_PACKAGE_ID = "@atlas/billing";
+export * from "./m043-adapter.ts";
+export * from "./m043-contracts.ts";
+export * from "./m043-controls.ts";
+export * from "./m043-service.ts";
+export * from "./m043-views.ts";
 export * from "./providers.ts";
 export * from "./stripe.ts";
 export type BillingActor = Readonly<{
@@ -10,6 +15,9 @@ export type BillingActor = Readonly<{
 export type PaymentState =
   | "open"
   | "processing"
+  | "provider_succeeded_pending_verification"
+  | "provider_refund_pending_verification"
+  | "provider_dispute_pending_review"
   | "paid"
   | "failed"
   | "cancelled"
@@ -29,7 +37,11 @@ export type BillingObligation = Readonly<{
   state: PaymentState;
   version: number;
 }>;
-export type VerifiedPaymentEvent = Readonly<{
+/**
+ * Provider evidence is deliberately not a verified payment. M044 is the sole
+ * authority that may later confirm payment state after its own validation.
+ */
+export type ProviderPaymentEventEvidence = Readonly<{
   eventId: string;
   type:
     | "checkout.session.completed"
@@ -41,6 +53,8 @@ export type VerifiedPaymentEvent = Readonly<{
   amountMinor?: number;
   currency?: string;
 }>;
+/** @deprecated Use ProviderPaymentEventEvidence. */
+export type VerifiedPaymentEvent = ProviderPaymentEventEvidence;
 const key = (value: string) => /^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$/u.test(value);
 export class MemoryBillingRepository {
   private readonly obligations = new Map<string, BillingObligation>();
@@ -63,7 +77,7 @@ export class MemoryBillingRepository {
   async checkout(actor: BillingActor, paymentRef: string, idempotencyKey: string) {
     if (!key(paymentRef) || !key(idempotencyKey)) return { kind: "invalid" as const };
     const item = (await this.list(actor)).find((x) => x.paymentRef === paymentRef);
-    if (!item || item.state !== "open") return { kind: "not_found" as const };
+    if (item?.state !== "open") return { kind: "not_found" as const };
     const existing = this.checkouts.get(`${paymentRef}:${idempotencyKey}`);
     if (existing) return { kind: "ready" as const, checkoutRef: existing };
     const checkoutRef = `checkout_${this.checkouts.size + 1}`;
@@ -81,15 +95,15 @@ export class MemoryBillingRepository {
     const state: PaymentState =
       event.type === "checkout.session.completed"
         ? event.amountMinor === item.amountMinor && event.currency === item.currency
-          ? "paid"
+          ? "provider_succeeded_pending_verification"
           : "unconfirmed"
         : event.type === "checkout.session.expired"
           ? "cancelled"
           : event.type === "payment_intent.payment_failed"
             ? "failed"
             : event.type === "charge.refunded"
-              ? "refunded"
-              : "disputed";
+              ? "provider_refund_pending_verification"
+              : "provider_dispute_pending_review";
     if (item.state === "paid" && ["open", "processing"].includes(state))
       return "unconfirmed" as const;
     this.obligations.set(paymentRef, { ...item, state, version: item.version + 1 });

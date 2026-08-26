@@ -1092,3 +1092,22 @@ No catalog migration was executed. No public service, API, queue, provider, part
 quote, appointment, lead, client, entitlement, workflow, AI provider, deployment or production
 behavior was activated. M042 technical implementation is complete; Product Owner acceptance and
 all operational activation remain pending.
+
+## 2026-08-26 - M043 Stripe Payments controlled foundation
+
+The Product Owner authorized implementation of M043 from the supplied four-part specification as
+a controlled provider-disabled technical foundation.
+
+Decision:
+
+- M043 owns the Stripe-facing provider boundary, provider-object evidence, signed event intake
+  contract, refund/dispute evidence, reconciliation and payment audit artifacts.
+- M042 remains the catalog authority, M046 remains the pricing authority, M044 remains the sole
+  payment-verification authority, M045 remains the entitlement authority, and commercial/service
+  workflows remain separately controlled.
+- Stripe provider calls, checkout, payment methods, invoices, refunds, subscriptions, billing
+  portal, live webhook processing, migration execution and deployment remain disabled.
+- Stripe secrets may exist only in approved runtime secret management. Repository and database
+  contracts use secret references, not values.
+- Migration 0053 is authored only with deny-by-default RLS. Product Owner acceptance, sandbox
+  evidence, independent security review and activation approval remain pending.

@@ -36,7 +36,7 @@ describe("M014 billing", () => {
       }),
     ).toBe("applied");
     expect((await repo.list(actor))[0]).toMatchObject({
-      state: "paid",
+      state: "provider_succeeded_pending_verification",
       serviceOrderRef: "order-1",
     });
   });
