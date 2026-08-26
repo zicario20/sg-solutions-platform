@@ -1,4 +1,4 @@
-import { index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 const supervisorAuditColumns = () => ({
   id: uuid("id").defaultRandom().primaryKey(),
@@ -96,7 +96,7 @@ export const supervisorRoutingDecisions = pgTable(
     decisionStatus: text("decision_status").notNull(),
     selectedSpecialistCode: text("selected_specialist_code"),
     reasonCodes: jsonb("reason_codes").$type<string[]>().notNull(),
-    executionPermitted: text("execution_permitted").notNull().default("false"),
+    executionPermitted: boolean("execution_permitted").notNull().default(false),
   },
   (table) => [
     index("supervisor_routing_decisions_tenant_task_idx").on(
@@ -114,7 +114,7 @@ export const supervisorOrchestrationPlans = pgTable(
     routingDecisionReference: text("routing_decision_reference").notNull(),
     strategy: text("strategy").notNull(),
     status: text("status").notNull().default("prepared"),
-    executionPermitted: text("execution_permitted").notNull().default("false"),
+    executionPermitted: boolean("execution_permitted").notNull().default(false),
     configurationSnapshot: jsonb("configuration_snapshot")
       .$type<Record<string, unknown>>()
       .notNull(),

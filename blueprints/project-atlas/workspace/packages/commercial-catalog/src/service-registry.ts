@@ -232,12 +232,12 @@ function hasControlCharacter(value: string): boolean {
 
 function assertText(value: string, label: string): void {
   if (value.trim().length === 0 || value.length > 500 || hasControlCharacter(value))
-    throw new TypeError(label + " invalid");
+    throw new TypeError(`${label} invalid`);
 }
 
 function assertIso(value: string, label: string): void {
   if (!Number.isFinite(Date.parse(value)) || !value.endsWith("Z"))
-    throw new TypeError(label + " invalid");
+    throw new TypeError(`${label} invalid`);
 }
 
 function assertOptionalIso(value: string | null | undefined, label: string): void {
@@ -245,9 +245,9 @@ function assertOptionalIso(value: string | null | undefined, label: string): voi
 }
 
 function assertCodeList(value: readonly string[], label: string): void {
-  if (new Set(value).size !== value.length) throw new TypeError(label + " duplicate");
+  if (new Set(value).size !== value.length) throw new TypeError(`${label} duplicate`);
   for (const item of value) {
-    if (!SERVICE_CATALOG_CODE_PATTERN.test(item)) throw new TypeError(label + " invalid");
+    if (!SERVICE_CATALOG_CODE_PATTERN.test(item)) throw new TypeError(`${label} invalid`);
   }
 }
 
@@ -264,11 +264,11 @@ function sameValue(left: unknown, right: unknown): boolean {
 }
 
 function validateTranslation(value: ServiceTranslation, locale: ServiceCatalogLocale): void {
-  assertText(value.name, "translations." + locale + ".name");
-  assertText(value.summary, "translations." + locale + ".summary");
-  assertText(value.ctaLabel, "translations." + locale + ".ctaLabel");
+  assertText(value.name, `translations.${locale}.name`);
+  assertText(value.summary, `translations.${locale}.summary`);
+  assertText(value.ctaLabel, `translations.${locale}.ctaLabel`);
   if (value.benefits.length === 0 || value.limitations.length === 0)
-    throw new TypeError("translations." + locale + " content incomplete");
+    throw new TypeError(`translations.${locale} content incomplete`);
   for (const item of [...value.benefits, ...value.limitations])
     assertText(item, "translation item");
   for (const [label, candidate] of [
@@ -276,7 +276,7 @@ function validateTranslation(value: ServiceTranslation, locale: ServiceCatalogLo
     ["publicName", value.publicName],
     ["clientDisplayName", value.clientDisplayName],
   ] as const) {
-    if (candidate !== undefined) assertText(candidate, "translations." + locale + "." + label);
+    if (candidate !== undefined) assertText(candidate, `translations.${locale}.${label}`);
   }
   if (
     value.translationStatus !== undefined &&
@@ -325,10 +325,7 @@ export function createServiceDefinition(
     throw new TypeError("availability jurisdiction required");
   assertCodeList(value.providerRequirements, "provider requirements");
   assertCodeList(value.partnerRequirements, "partner requirements");
-  if (
-    value.requiredStaffRoles !== undefined &&
-    value.requiredStaffRoles.some((role) => role.trim().length === 0)
-  )
+  if (value.requiredStaffRoles?.some((role) => role.trim().length === 0))
     throw new TypeError("required staff role invalid");
   return deepFreeze(structuredClone(value));
 }

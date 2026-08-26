@@ -104,7 +104,7 @@ describe("M008 architecture review remediation", () => {
     await expect(
       port.selectContext({
         sessionHandle: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        requestedContext: organization!.opaqueRef,
+        requestedContext: organization?.opaqueRef,
         now: new Date(),
       }),
     ).resolves.toMatchObject({ kind: "selected" });
@@ -115,7 +115,7 @@ describe("M008 architecture review remediation", () => {
     await expect(
       revokedPort.selectContext({
         sessionHandle: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        requestedContext: organization!.opaqueRef,
+        requestedContext: organization?.opaqueRef,
         now: new Date(),
       }),
     ).resolves.toEqual({ kind: "denied" });

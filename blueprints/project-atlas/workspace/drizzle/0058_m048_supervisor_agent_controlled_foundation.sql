@@ -30,13 +30,13 @@ CREATE TABLE IF NOT EXISTS supervisor_routing_policies (
 CREATE TABLE IF NOT EXISTS supervisor_routing_decisions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(), tenant_id text NOT NULL, task_envelope_reference text NOT NULL,
   routing_policy_reference text NOT NULL, decision_status text NOT NULL, selected_specialist_code text,
-  reason_codes jsonb NOT NULL, execution_permitted text NOT NULL DEFAULT 'false',
+  reason_codes jsonb NOT NULL, execution_permitted boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE TABLE IF NOT EXISTS supervisor_orchestration_plans (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(), tenant_id text NOT NULL, task_envelope_reference text NOT NULL,
   routing_decision_reference text NOT NULL, strategy text NOT NULL, status text NOT NULL DEFAULT 'prepared',
-  execution_permitted text NOT NULL DEFAULT 'false', configuration_snapshot jsonb NOT NULL,
+  execution_permitted boolean NOT NULL DEFAULT false, configuration_snapshot jsonb NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE TABLE IF NOT EXISTS supervisor_work_units (

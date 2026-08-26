@@ -10,7 +10,7 @@ describe("M007 durable sessions and invitations", () => {
       },
       rotate: async (input) => {
         const row = rows.get(input.handleDigest);
-        if (!row || row.state !== "active") return "family_revoked";
+        if (row?.state !== "active") return "family_revoked";
         row.state = "rotated";
         rows.set(input.next.handleDigest, { familyId: row.familyId, state: "active" });
         return "rotated";

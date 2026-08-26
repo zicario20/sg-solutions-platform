@@ -324,8 +324,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
   async completeInbound(input: CompleteInboundCommand): Promise<"completed" | "conflict"> {
     const record = this.inboundById.get(input.eventId);
     if (
-      !record ||
-      record.state !== "persisted" ||
+      record?.state !== "persisted" ||
       record.leaseOwnerHash !== (await sha256(input.leaseOwner)) ||
       record.leaseVersion !== input.leaseVersion ||
       !this.validLeaseCompletion(input.now, record.leaseExpiresAt)
@@ -421,7 +420,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
   async finalizeOutbound(input: FinalizeOutboundCommand): Promise<CreateOutboundResult> {
     const record = this.outboundById.get(input.commandId);
     const activeDigest = input.endpointDigests[0];
-    if (!record || record.state !== "draft" || !activeDigest) {
+    if (record?.state !== "draft" || !activeDigest) {
       return { status: "conflict", code: "idempotency_mismatch" };
     }
     const binding = this.bindings.get(record.command.bindingId);
@@ -470,7 +469,7 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
 
   async failOutboundDraft(input: FailOutboundDraftCommand): Promise<"completed" | "conflict"> {
     const record = this.outboundById.get(input.commandId);
-    if (!record || record.state !== "draft") return "conflict";
+    if (record?.state !== "draft") return "conflict";
     record.state = "failed";
     record.command.state = "failed";
     record.failureCode = input.code;
@@ -685,12 +684,14 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
         now: input.now,
       });
       if (!authority.allowed) return { status: "denied", code: authority.code };
+      const receipt = input.receipt;
+      if (!receipt) return { status: "denied", code: "authority_receipt_missing" };
       const key = this.consentKey(input.bindingId, input.purpose);
       const current = this.consents.get(key);
       if (current?.state === "withdrawn" && input.operation !== "reconsent") {
         return { status: "denied", code: "reconsent_receipt_required" };
       }
-      if (current?.state === "granted" && current.authorityReceiptId === input.receipt?.receiptId) {
+      if (current?.state === "granted" && current.authorityReceiptId === receipt.receiptId) {
         return { status: "duplicate", state: "granted", version: current.version };
       }
       const next: ConsentRecord = {
@@ -699,14 +700,14 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
         state: "granted",
         version: (current?.version ?? 0) + 1,
         receipt: {
-          receiptId: input.receipt!.receiptId,
+          receiptId: receipt.receiptId,
           owner: "consent",
           operation: "consent_confirmation",
           bindingId: input.bindingId,
-          issuedAt: input.receipt!.issuedAt,
-          expiresAt: input.receipt!.expiresAt,
+          issuedAt: receipt.issuedAt,
+          expiresAt: receipt.expiresAt,
         },
-        authorityReceiptId: input.receipt!.receiptId,
+        authorityReceiptId: receipt.receiptId,
         changedAt: input.now,
       };
       this.consents.set(key, next);
@@ -1130,25 +1131,6 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       existing.purpose === input.purpose &&
       existing.templateId === input.templateId
     );
-  }
-
-  private closeActiveAttempt(
-    record: OutboundRecord,
-    state: "sent" | "delivered" | "read" | "failed",
-    completedAt: Date,
-  ): void {
-    record.state = state;
-    record.command.state = state;
-    const attempt = [...this.attempts.values()].find(
-      (candidate) =>
-        candidate.commandId === record.command.commandId && candidate.state === "dispatching",
-    );
-    if (attempt) {
-      attempt.state = state;
-      attempt.completedAt = completedAt;
-    }
-    record.leaseOwnerHash = undefined;
-    record.leaseExpiresAt = undefined;
   }
 
   private validateWithdrawalEvidence(

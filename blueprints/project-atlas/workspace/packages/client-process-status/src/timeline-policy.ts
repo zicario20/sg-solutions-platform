@@ -65,7 +65,7 @@ const hasControlCharacter = (value: string) =>
     hasMore: false,
   });
 export function canonicalProcessSourceKey(parts: readonly string[]) {
-  return "pkey1_" + createHash("sha256").update(JSON.stringify(parts)).digest("base64url");
+  return `pkey1_${createHash("sha256").update(JSON.stringify(parts)).digest("base64url")}`;
 }
 function eventKey(
   event: Pick<ProcessOwnerEvent, "producer" | "aggregateType" | "aggregateId" | "sourceEventId">,
@@ -243,7 +243,7 @@ export function derivePublicProcessTimeline(input: {
     projected.push({
       keyset: { occurredAt: event.occurredAt, recordedAt: event.recordedAt, sourceKey: key },
       item: {
-        eventRef: "pev1_" + createHash("sha256").update(key).digest("base64url").slice(0, 32),
+        eventRef: `pev1_${createHash("sha256").update(key).digest("base64url").slice(0, 32)}`,
         code: mapping.publicCode,
         copyKey: mapping.copyKey,
         actorCategory: event.actorCategory,
@@ -264,6 +264,6 @@ export function derivePublicProcessTimeline(input: {
     items: Object.freeze(page.map((v) => v.item)),
     fences: Object.freeze([...used]),
     hasMore,
-    ...(hasMore && page.length ? { nextKeyset: page[page.length - 1]!.keyset } : {}),
+    ...(hasMore && page.length ? { nextKeyset: page[page.length - 1]?.keyset } : {}),
   };
 }

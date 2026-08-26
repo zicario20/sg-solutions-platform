@@ -55,7 +55,7 @@ export type ServiceCatalogLineage = Readonly<{
 
 function assertIso(value: string, label: string): void {
   if (!Number.isFinite(Date.parse(value)) || !value.endsWith("Z"))
-    throw new TypeError(label + " invalid");
+    throw new TypeError(`${label} invalid`);
 }
 
 export function evaluateCatalogDataQuality(

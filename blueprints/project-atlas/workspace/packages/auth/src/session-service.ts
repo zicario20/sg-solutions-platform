@@ -126,8 +126,7 @@ export class ApplicationSessionService {
   > {
     const current = this.store.sessions.get(handle);
     if (
-      !current ||
-      current.state !== "active" ||
+      current?.state !== "active" ||
       current.idleExpiresAt <= Date.now() ||
       current.absoluteExpiresAt <= Date.now()
     ) {

@@ -140,8 +140,7 @@ export function createSignedFormAdmissionTokens(input: {
         purgeExpired(now);
         const payload = grants.get(grantKey(candidate.nonce));
         if (
-          !payload ||
-          payload.v !== 1 ||
+          payload?.v !== 1 ||
           payload.formCode !== candidate.formCode ||
           payload.formVersion !== candidate.formVersion ||
           payload.locale !== candidate.locale ||

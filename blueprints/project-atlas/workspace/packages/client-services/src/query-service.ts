@@ -7,7 +7,6 @@ import {
   type ClientServiceCardDto,
   type ClientServiceDetailDto,
   type ClientServiceListDto,
-  type ClientServicePublicContextDto,
   parseClientServiceDetailDto,
   parseClientServiceListDto,
 } from "./contracts.ts";
@@ -325,7 +324,7 @@ export class ClientServicesQueryService {
         scopeLabel: copy.scopeLabel,
         milestones: copy.milestones,
         sections: Object.fromEntries(
-          CLIENT_SERVICE_SECTION_NAMES.map((name, index) => [name, children[index]!.section]),
+          CLIENT_SERVICE_SECTION_NAMES.map((name, index) => [name, children[index]?.section]),
         ),
       }),
     };

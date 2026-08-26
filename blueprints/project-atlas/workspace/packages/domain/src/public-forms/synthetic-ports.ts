@@ -404,8 +404,7 @@ export class SyntheticFormOutboxStore implements FormOutboxStore {
   ): SyntheticOutboxJob {
     const job = this.jobs.get(lease.command.idempotencyKey);
     if (
-      !job ||
-      job.state !== "leased" ||
+      job?.state !== "leased" ||
       job.leaseId !== lease.leaseId ||
       job.leaseVersion !== lease.leaseVersion ||
       job.leasePurpose !== lease.leasePurpose ||

@@ -59,10 +59,10 @@ export type ServiceJurisdictionRule = Readonly<{
 
 function reference(value: string | null | undefined, label: string, required: boolean): void {
   if (value === null || value === undefined) {
-    if (required) throw new TypeError(label + " required");
+    if (required) throw new TypeError(`${label} required`);
     return;
   }
-  if (value.trim().length === 0 || value.length > 180) throw new TypeError(label + " invalid");
+  if (value.trim().length === 0 || value.length > 180) throw new TypeError(`${label} invalid`);
 }
 
 function assertIso(value: string | null | undefined, label: string): void {
@@ -71,7 +71,7 @@ function assertIso(value: string | null | undefined, label: string): void {
     value !== undefined &&
     (!Number.isFinite(Date.parse(value)) || !value.endsWith("Z"))
   )
-    throw new TypeError(label + " invalid");
+    throw new TypeError(`${label} invalid`);
 }
 
 export function validateCommercialProfile(
@@ -187,8 +187,8 @@ export function validateDisclosureSet(
   for (const item of value) {
     if (item.code.trim().length === 0 || item.version.trim().length === 0)
       throw new TypeError("disclosure invalid");
-    if (codes.has(item.code + "@" + item.version)) throw new TypeError("disclosure duplicate");
-    codes.add(item.code + "@" + item.version);
+    if (codes.has(`${item.code}@${item.version}`)) throw new TypeError("disclosure duplicate");
+    codes.add(`${item.code}@${item.version}`);
     reference(item.contentReference, "disclosure content reference", false);
     if (item.signatureRequired && !item.acknowledgmentRequired)
       throw new TypeError("disclosure signature requires acknowledgment");
@@ -235,7 +235,7 @@ export function validateJurisdictionRules(
       throw new TypeError("jurisdiction effective range invalid");
     if (item.type === "provider_dependency" && !item.dependencyReference)
       throw new TypeError("provider dependency reference required");
-    const key = item.jurisdiction + "|" + item.type;
+    const key = `${item.jurisdiction}|${item.type}`;
     if (ruleKeys.has(key)) throw new TypeError("jurisdiction rule duplicate");
     ruleKeys.add(key);
   }

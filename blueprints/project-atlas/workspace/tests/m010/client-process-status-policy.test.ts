@@ -8,7 +8,7 @@ const base = {
   activation: "approved",
   fulfillment: "not_started",
 } as any;
-describe("M010 status policy " + PROCESS_STATUS_POLICY_VERSION, () => {
+describe(`M010 status policy ${PROCESS_STATUS_POLICY_VERSION}`, () => {
   it.each([
     {
       code: "not_started",

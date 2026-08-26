@@ -16,16 +16,16 @@ function event(id: number, hour: number) {
   return {
     producer: "case",
     aggregateType: "case",
-    aggregateId: "case-" + id,
-    sourceEventId: "event-" + id,
+    aggregateId: `case-${id}`,
+    sourceEventId: `event-${id}`,
     eventType: "step.completed",
     schemaVersion: "1",
     mappingId: "map.step.v1",
-    resourceFenceId: "resource-" + id,
+    resourceFenceId: `resource-${id}`,
     sourceVersion: "events.snapshot.v1",
     scope,
-    occurredAt: "2026-08-23T0" + hour + ":00:00Z",
-    recordedAt: "2026-08-23T0" + hour + ":01:00Z",
+    occurredAt: `2026-08-23T0${hour}:00:00Z`,
+    recordedAt: `2026-08-23T0${hour}:01:00Z`,
     actorCategory: "sg_solutions",
     authorizationEpoch: "7",
     policyEpoch: "9",
@@ -33,12 +33,12 @@ function event(id: number, hour: number) {
 }
 function fence(id: number) {
   return {
-    internalResourceId: "resource-" + id,
+    internalResourceId: `resource-${id}`,
     resourceEpoch: 1,
     sourceVersion: "events.snapshot.v1",
     sourceCode: "timeline",
     factKind: "events",
-    factRef: "event-" + id,
+    factRef: `event-${id}`,
     readCut: "cut-1",
     registryVersion: "sources.v1",
   };

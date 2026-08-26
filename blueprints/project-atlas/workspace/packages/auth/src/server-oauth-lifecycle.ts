@@ -40,8 +40,7 @@ export function createServerOAuthLifecycle(options: Options) {
       if (!options.enabled) return { kind: "unavailable" as const };
       const identity = await options.verify(input);
       if (
-        !identity ||
-        !identity.subject ||
+        !identity?.subject ||
         !identity.emailVerified ||
         identity.issuer !== options.issuer ||
         identity.audience !== options.audience ||

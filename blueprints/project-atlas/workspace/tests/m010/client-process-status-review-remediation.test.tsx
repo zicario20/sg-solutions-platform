@@ -46,7 +46,7 @@ describe("M010 review remediations", () => {
     expect(query.replace(/\s+/gu, "")).toContain("ids.size!==childFences.length");
   });
   it("AR-005/AR-011 uses one strict opaque cursor parser for API and SSR", () => {
-    const good = "ptc1_" + "A".repeat(24);
+    const good = `ptc1_${"A".repeat(24)}`;
     expect(PROCESS_TIMELINE_CURSOR_PATTERN.test(good)).toBe(true);
     expect(parseProcessCursor(good, "timeline")).toEqual({ kind: "valid", value: good });
     expect(parseProcessCursor("24", "timeline")).toEqual({ kind: "invalid" });
@@ -63,7 +63,7 @@ describe("M010 review remediations", () => {
             state: "fresh",
             items: [
               {
-                eventRef: "pev1_" + "A".repeat(32),
+                eventRef: `pev1_${"A".repeat(32)}`,
                 code: "internal_event_code",
                 copyKey: "timeline.step_completed",
                 actorCategory: "sg_solutions",
@@ -165,7 +165,7 @@ describe("M010 review remediations", () => {
         state: "fresh",
         items: [
           {
-            eventRef: "pev1_" + "A".repeat(32),
+            eventRef: `pev1_${"A".repeat(32)}`,
             code: "step_completed",
             copyKey: "timeline.step_completed",
             actorCategory: "client",

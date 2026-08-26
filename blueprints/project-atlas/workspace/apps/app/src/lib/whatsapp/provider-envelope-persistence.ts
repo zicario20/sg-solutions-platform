@@ -6,10 +6,8 @@ import {
   validateCommunicationEventRecord,
 } from "@atlas/database";
 import type {
-  CanonicalInteractiveEnvelope,
   CanonicalMediaEnvelope,
   CanonicalProviderEnvelope,
-  CanonicalStatusEnvelope,
   CanonicalTemplateProjectionEnvelope,
   UnsupportedVerifiedEnvelope,
 } from "./meta-contracts.ts";

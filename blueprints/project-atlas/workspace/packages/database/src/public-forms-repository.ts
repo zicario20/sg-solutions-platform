@@ -335,8 +335,7 @@ export class PostgresPublicFormsRepository implements PublicFormsRepository {
           )
         )[0];
         if (
-          !receiptRow ||
-          receiptRow.state !== "reserved" ||
+          receiptRow?.state !== "reserved" ||
           receiptRow.reservation_id !== input.reservationId ||
           receiptRow.command_digest !== input.submission.commandDigest
         ) {

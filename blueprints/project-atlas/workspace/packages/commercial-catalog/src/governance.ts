@@ -104,7 +104,7 @@ const PROHIBITED_AI_CLAIM_PATTERN =
 
 function assertIso(value: string, label: string): void {
   if (!Number.isFinite(Date.parse(value)) || !value.endsWith("Z"))
-    throw new CatalogControlError(label + " invalid");
+    throw new CatalogControlError(`${label} invalid`);
 }
 
 export function evaluateCatalogCommand(command: CatalogCommand): Readonly<{ allowed: true }> {

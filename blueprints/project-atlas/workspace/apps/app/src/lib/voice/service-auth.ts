@@ -148,7 +148,7 @@ export class BoundedMemoryVoiceCredentialRepository implements VoiceCredentialRe
     this.cleanup(input.now);
     const key = repositoryKey(input);
     const entry = this.entries.get(key);
-    if (!entry || entry.state !== "pending") return "replay";
+    if (entry?.state !== "pending") return "replay";
     entry.state = "consumed";
     return "consumed";
   }

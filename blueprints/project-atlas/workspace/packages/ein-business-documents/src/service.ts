@@ -222,8 +222,7 @@ export function evaluateEinReadyToSubmit(input: {
   if (input.reviewFindings.some((finding) => finding.severity === "blocking"))
     return { allowed: false, reason: "APPLICATION_REVIEW_REQUIRED" };
   if (
-    !input.authorization ||
-    input.authorization.status !== "valid" ||
+    input.authorization?.status !== "valid" ||
     input.authorization.applicationHash !== input.application.applicationHash
   )
     return { allowed: false, reason: "CLIENT_AUTHORIZATION_REQUIRED" };

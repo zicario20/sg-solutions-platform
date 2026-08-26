@@ -921,7 +921,7 @@ describe("controlled inbound opt-out and reconciliation races", () => {
         }
       },
     });
-    const service = createService(repository, {
+    const _service = createService(repository, {
       dispatch: async () => ({ status: "accepted" }),
     });
     await repository.acceptInbound({

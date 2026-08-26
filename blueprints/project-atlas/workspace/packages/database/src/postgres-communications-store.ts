@@ -1256,6 +1256,8 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       if (input.operation === "reconsent" && policy.consent_state !== "withdrawn") {
         return { status: "denied", code: "reconsent_receipt_required" } as const;
       }
+      const receipt = input.receipt;
+      if (!receipt) return { status: "denied", code: "authority_receipt_missing" } as const;
       const latest = (
         await query<{ evidence_receipt_id: string; authority_version: number }>(
           tx,
@@ -1269,7 +1271,8 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       )[0];
       if (
         policy.consent_state === "granted" &&
-        latest?.evidence_receipt_id === input.receipt!.receiptId
+        latest &&
+        latest.evidence_receipt_id === receipt.receiptId
       ) {
         return {
           status: "duplicate",
@@ -1285,14 +1288,14 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         purpose: input.purpose,
         consentState: "granted",
         fenceState: input.operation === "reconsent" ? "normal_after_review" : "normal",
-        receiptId: input.receipt!.receiptId,
+        receiptId: receipt.receiptId,
         receiptKind: "consent_evidence",
         owningDomain: "M078",
         authorityRole: "consent",
         authorityVersion: nextAuthorityVersion,
-        correlationId: input.receipt!.receiptId,
-        issuedAt: input.receipt!.issuedAt,
-        expiresAt: input.receipt!.expiresAt,
+        correlationId: receipt.receiptId,
+        issuedAt: receipt.issuedAt,
+        expiresAt: receipt.expiresAt,
         occurredAt: input.now,
       });
       await query(
@@ -1304,7 +1307,7 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
           input.bindingId,
           nextPolicyVersion,
           input.operation === "reconsent" ? "normal_after_review" : "normal",
-          input.receipt!.receiptId,
+          receipt.receiptId,
           input.now,
           input.purpose,
         ],
@@ -1388,12 +1391,13 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       if (storedEvidence && !storedEvidenceMatches) {
         return { status: "denied", code: "withdrawal_evidence_invalid" } as const;
       }
-      if (policies.length > 0 && policies.every((policy) => policy.fence_state === "withdrawn")) {
+      const [firstPolicy] = policies;
+      if (firstPolicy && policies.every((policy) => policy.fence_state === "withdrawn")) {
         return {
           status: "duplicate",
           state: "withdrawn",
-          policyVersion: policies[0]!.version,
-          fence: policies[0]!.fence,
+          policyVersion: firstPolicy.version,
+          fence: firstPolicy.fence,
           cancelledCommandIds: [],
         } as const;
       }
@@ -1429,7 +1433,7 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
             [input.bindingId, evidencePolicy.purpose],
           )
         )[0];
-        if (!latestConsent || latestConsent.consent_state !== "granted") continue;
+        if (latestConsent?.consent_state !== "granted") continue;
         await this.appendConsentWithdrawalProjection(tx, {
           bindingId: input.bindingId,
           purpose: evidencePolicy.purpose,
@@ -1481,6 +1485,8 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       now: input.now,
     });
     if (!authority.allowed) return { status: "denied", code: authority.code };
+    const receipt = input.receipt;
+    if (!receipt) return { status: "denied", code: "authority_receipt_missing" };
     return withCommunicationsTransaction(this.sql, async (tx) => {
       await query(tx, COMMUNICATIONS_TRANSACTION_SQL.lockBinding, [input.bindingId]);
       const rows = await query<{ version: number }>(
@@ -1533,6 +1539,8 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
       now: input.now,
     });
     if (!authority.allowed) return { status: "denied", code: authority.code };
+    const receipt = input.receipt;
+    if (!receipt) return { status: "denied", code: "authority_receipt_missing" };
     if (!finiteDate(input.freshUntil) || input.freshUntil <= input.now) {
       return { status: "denied", code: "freshness_invalid" };
     }
@@ -1543,7 +1551,7 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
            verification_receipt_id = $2, endpoint_verified_at = $3,
            verification_expires_at = $4, suspended_at = null,
            version = version + 1, updated_at = $3 where id = $1 returning id`,
-        [input.bindingId, input.receipt!.receiptId, input.now, input.freshUntil],
+        [input.bindingId, receipt.receiptId, input.now, input.freshUntil],
       );
       return rows[0]
         ? { status: "changed", trustState: "reverified" }

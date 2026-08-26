@@ -42,8 +42,8 @@ export function ClientServiceDetail({
         {CLIENT_SERVICE_SECTION_NAMES.map((name) => {
           const section = detail.sections[name];
           return (
-            <section className="m009-detail-section" key={name} aria-labelledby={"m009-" + name}>
-              <h2 id={"m009-" + name}>{copy.sections[name]}</h2>
+            <section className="m009-detail-section" key={name} aria-labelledby={`m009-${name}`}>
+              <h2 id={`m009-${name}`}>{copy.sections[name]}</h2>
               {section.state === "fresh" ? (
                 <ul>
                   {section.data.map((item) => (

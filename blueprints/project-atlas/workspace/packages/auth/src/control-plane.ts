@@ -91,8 +91,7 @@ export class AuthControlPlane {
     return this.repository.transaction(async (transaction) => {
       const previous = transaction.sessions.get(digestOpaqueProof(bootstrap.handle));
       if (
-        !previous ||
-        previous.state !== "preauth" ||
+        previous?.state !== "preauth" ||
         previous.csrfDigest !== digestOpaqueProof(bootstrap.csrf) ||
         previous.absoluteExpiresAt <= Date.now()
       )

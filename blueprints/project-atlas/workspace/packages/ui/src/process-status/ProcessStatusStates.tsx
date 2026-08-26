@@ -22,7 +22,7 @@ export function ProcessStatusState({
               ? [copy.partialTitle, copy.partialBody]
               : [copy.staleTitle, copy.staleBody];
   return (
-    <section className={"m010-state m010-state-" + state} role="status" aria-live="polite">
+    <section className={`m010-state m010-state-${state}`} role="status" aria-live="polite">
       <h2>{content[0]}</h2>
       <p>{content[1]}</p>
       {state === "empty" || state === "unavailable" ? (

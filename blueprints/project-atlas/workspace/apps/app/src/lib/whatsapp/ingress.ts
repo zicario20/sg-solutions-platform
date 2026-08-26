@@ -397,22 +397,18 @@ async function readRawBody(
           ? new IngressFailure("total_timeout", 504, "unavailable")
           : new IngressFailure("read_timeout", 408, "unavailable");
       let result: ReadableStreamReadResult<Uint8Array>;
-      try {
-        const readOperation = reader.read();
-        result = await withTimeout(
-          readOperation,
-          readTimeout,
-          dependencies.clock,
-          timeoutFailure,
-          abortController,
-          (operation) => {
-            cleanupOwnsReader = true;
-            return beginReaderCleanup(reader, operation);
-          },
-        );
-      } catch (error) {
-        throw error;
-      }
+      const readOperation = reader.read();
+      result = await withTimeout(
+        readOperation,
+        readTimeout,
+        dependencies.clock,
+        timeoutFailure,
+        abortController,
+        (operation) => {
+          cleanupOwnsReader = true;
+          return beginReaderCleanup(reader, operation);
+        },
+      );
       if (result.done) break;
       if (!(result.value instanceof Uint8Array)) {
         cleanupOwnsReader = true;

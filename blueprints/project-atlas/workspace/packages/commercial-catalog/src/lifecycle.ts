@@ -101,7 +101,7 @@ export type ServiceOrderReadiness =
 
 function assertIso(value: string | null, label: string): void {
   if (value !== null && (!Number.isFinite(Date.parse(value)) || !value.endsWith("Z")))
-    throw new TypeError(label + " invalid");
+    throw new TypeError(`${label} invalid`);
 }
 
 function readinessReason(readiness: ServicePublicationReadiness): ServiceCtaDecision | null {
@@ -227,7 +227,7 @@ export function createServiceBundleDefinition(
       throw new TypeError("bundle sort order invalid");
     if (component.serviceDefinitionId === value.serviceDefinitionId)
       throw new TypeError("bundle cannot include itself");
-    const key = component.serviceDefinitionId + "@" + (component.serviceVersionId ?? "current");
+    const key = `${component.serviceDefinitionId}@${component.serviceVersionId ?? "current"}`;
     if (componentIds.has(key)) throw new TypeError("bundle component duplicate");
     componentIds.add(key);
   }

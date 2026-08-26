@@ -58,8 +58,7 @@ export function createOfficialSupabaseIdentityProvider(options: {
         pkceVerifier: input.pkceVerifier,
       });
       if (
-        !identity ||
-        identity.provider !== "google" ||
+        identity?.provider !== "google" ||
         identity.issuer !== options.issuer ||
         identity.audience !== options.audience ||
         !identity.subject ||

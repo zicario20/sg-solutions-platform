@@ -199,7 +199,7 @@ const supersededPublicChatConversations = pgTable(
   ],
 ).enableRLS();
 
-const supersededPublicChatMessages = pgTable(
+const _supersededPublicChatMessages = pgTable(
   "public_chat_messages",
   {
     id: text("id").primaryKey(),
@@ -270,7 +270,7 @@ export const publicChatCitations = pgTable(
   ],
 ).enableRLS();
 
-const supersededPublicChatHandoffs = pgTable(
+const _supersededPublicChatHandoffs = pgTable(
   "public_chat_handoffs",
   {
     id: text("id").primaryKey(),
@@ -340,7 +340,7 @@ export const publicChatIdempotency = pgTable(
   ],
 ).enableRLS();
 
-const supersededPublicChatAuditEvents = pgTable(
+const _supersededPublicChatAuditEvents = pgTable(
   "public_chat_audit_events",
   {
     id: text("id").primaryKey(),
@@ -1625,15 +1625,14 @@ export const communicationAuditEvents = pgTable(
 
 export const getPublicChatTableConfig = getTableConfig;
 
+export * from "./schema/ai-control-plane.ts";
 export * from "./schema/creditcardbroker.ts";
 export * from "./schema/index.ts";
-
 export * from "./schema/partner-management.ts";
 export * from "./schema/payment-verification.ts";
+export * from "./schema/pricing.ts";
 export * from "./schema/provider-abstraction.ts";
 export * from "./schema/service-catalog.ts";
 export * from "./schema/service-catalog-completion.ts";
 export * from "./schema/service-entitlements.ts";
-export * from "./schema/pricing.ts";
-export * from "./schema/ai-control-plane.ts";
 export * from "./schema/supervisor-agent.ts";

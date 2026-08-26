@@ -1,7 +1,6 @@
 import type {
   ConditionNode,
   FormDefinitionVersion,
-  FormFieldDefinition,
   FormVisibility,
   PublicAnswerValue,
   PublishedFormDefinition,

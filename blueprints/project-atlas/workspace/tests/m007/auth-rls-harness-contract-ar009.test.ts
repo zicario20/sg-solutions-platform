@@ -62,9 +62,7 @@ describe("AR-009 live PostgreSQL RLS harness contract", () => {
               operation === "global_table_access" ||
               operation === "gateway_ddl"
             ? "denied"
-            : operation === "preauth_deny"
-              ? false
-              : true,
+            : operation !== "preauth_deny",
     };
     await expect(
       runM007RlsHarness({

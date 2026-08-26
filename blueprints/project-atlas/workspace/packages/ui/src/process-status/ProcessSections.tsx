@@ -28,8 +28,8 @@ export function ProcessSections({
       {PROCESS_SECTION_NAMES.map((name) => {
         const section = sections[name];
         return (
-          <section key={name} aria-labelledby={"m010-" + name}>
-            <h2 id={"m010-" + name}>{copy.sections[name]}</h2>
+          <section key={name} aria-labelledby={`m010-${name}`}>
+            <h2 id={`m010-${name}`}>{copy.sections[name]}</h2>
             {section?.state === "fresh" ? (
               <ul>
                 {section.items.map((item) => (

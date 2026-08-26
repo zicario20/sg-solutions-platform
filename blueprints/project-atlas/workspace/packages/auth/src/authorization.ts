@@ -49,8 +49,7 @@ export class AuthoritativeAuthorizationService {
       resourceId: input.resourceId,
     });
     if (
-      !grant ||
-      !grant.activeSession ||
+      !grant?.activeSession ||
       grant.resource.accountId !== grant.accountId ||
       grant.resource.accessEpoch !== grant.accessEpoch ||
       grant.resource.policyEpoch !== grant.policyEpoch ||

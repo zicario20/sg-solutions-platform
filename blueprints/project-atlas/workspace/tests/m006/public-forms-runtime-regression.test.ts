@@ -92,7 +92,7 @@ describe("M006 configured provider-disabled runtime", () => {
       encryptionContextVersion: "m006.answer.v1",
     });
     expect(repository.acceptedSubmissions[0]?.answers[0]).not.toHaveProperty("matchDigest");
-    expect(outboxStore.snapshot(repository.acceptedSubmissions[0]!.submissionId)).toEqual(
+    expect(outboxStore.snapshot(repository.acceptedSubmissions[0]?.submissionId)).toEqual(
       expect.arrayContaining([expect.objectContaining({ state: "pending" })]),
     );
   });

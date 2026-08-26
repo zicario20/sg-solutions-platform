@@ -30,7 +30,7 @@ export function ProcessStatusView({
           <h2 id="m010-blockers">{copy.blockers}</h2>
           <ul>
             {dto.blockers.map((blocker) => (
-              <li key={blocker.effect + ":" + blocker.code + ":" + blocker.label}>
+              <li key={`${blocker.effect}:${blocker.code}:${blocker.label}`}>
                 <strong>{blocker.label}</strong>
                 <span>{copy.parties[blocker.responsibleParty]}</span>
               </li>

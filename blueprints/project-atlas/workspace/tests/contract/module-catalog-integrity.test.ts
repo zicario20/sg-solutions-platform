@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 const expectedCodes = Array.from(
   { length: 110 },
-  (_, index) => "M" + String(index + 1).padStart(3, "0"),
+  (_, index) => `M${String(index + 1).padStart(3, "0")}`,
 );
 
 describe("canonical module catalog integrity", () => {

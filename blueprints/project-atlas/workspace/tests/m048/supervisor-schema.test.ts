@@ -18,6 +18,7 @@ describe("M048 supervisor persistence and disabled defaults", () => {
 
     expect(schema).toContain("supervisorRoutingDecisions");
     expect(schema).toContain("supervisorOrchestrationPlans");
+    expect(schema).toContain('boolean("execution_permitted").notNull().default(false)');
     expect(schema).toContain(".enableRLS()");
     expect(migration).toContain("ENABLE ROW LEVEL SECURITY");
     expect(migration).toContain("supervisor_audit_events");
@@ -35,5 +36,29 @@ describe("M048 supervisor persistence and disabled defaults", () => {
     expect(environment).toMatch(/^M048_SUPERVISOR_DELEGATION_ENABLED=false$/m);
     expect(environment).toMatch(/^M048_SUPERVISOR_PROVIDER_CALLS_ENABLED=false$/m);
     expect(source).not.toMatch(/\b(fetch|axios|ollama)\s*\(/);
+  });
+
+  it("includes M047 and M048 control switches in Turborepo cache inputs", async () => {
+    const turbo = await readFile(resolve(root, "turbo.json"), "utf8");
+    const flags = [
+      "M047_AI_HUB_ENABLED",
+      "M047_MODEL_PROVIDER_CALLS_ENABLED",
+      "M047_TOOL_EXECUTION_ENABLED",
+      "M047_JOB_DISPATCH_ENABLED",
+      "M047_EXTERNAL_EGRESS_ENABLED",
+      "M047_AUTOMATIC_MEMORY_WRITES_ENABLED",
+      "M047_SUPERVISOR_DELEGATION_ENABLED",
+      "M048_SUPERVISOR_ENABLED",
+      "M048_SUPERVISOR_DELEGATION_ENABLED",
+      "M048_SUPERVISOR_PROVIDER_CALLS_ENABLED",
+      "M048_SUPERVISOR_ORCHESTRATION_EXECUTION_ENABLED",
+      "M048_SUPERVISOR_AUTO_REROUTING_ENABLED",
+      "M048_SUPERVISOR_PARALLEL_EXECUTION_ENABLED",
+      "M048_SUPERVISOR_AUTOMATION_ENABLED",
+    ];
+
+    for (const flag of flags) {
+      expect(turbo).toContain(`"${flag}"`);
+    }
   });
 });

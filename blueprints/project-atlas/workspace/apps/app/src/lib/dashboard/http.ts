@@ -231,7 +231,8 @@ async function admitted(
   }
 }
 function mediaType(request: Request): string {
-  return (request.headers.get("content-type") ?? "").split(";", 1)[0]!.trim().toLowerCase();
+  const [value = ""] = (request.headers.get("content-type") ?? "").split(";", 1);
+  return value.trim().toLowerCase();
 }
 function hasRequestBody(request: Request): boolean {
   const length = request.headers.get("content-length");

@@ -19,7 +19,6 @@ import { createUnavailableDashboardAuthPort } from "./auth-context.ts";
 import {
   buildDashboardTrustedRateKeys,
   type DashboardAdmissionResult,
-  type DashboardRateAction,
 } from "./dashboard-admission.ts";
 import {
   createM007DashboardAuthPort,

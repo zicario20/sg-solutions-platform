@@ -1,5 +1,4 @@
 import type {
-  ChannelLocale,
   MessageTemplateProjection,
   OutboundCommandState,
   TemplateLifecycleState,

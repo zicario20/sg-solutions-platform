@@ -155,7 +155,7 @@ export function createProviderDisabledPublicFormsRuntime(
   const admissionScope = config.admissionScope ?? "local";
   if (
     admissionScope === "public" &&
-    (!config.rateLimiter || config.rateLimiter.scope !== "shared" || !config.networkBucket)
+    (config.rateLimiter?.scope !== "shared" || !config.networkBucket)
   ) {
     throw new Error("PUBLIC_FORMS_SHARED_ADMISSION_REQUIRED");
   }
@@ -252,7 +252,7 @@ export function configureAttestedPublicFormsRuntime(
   return configuredRuntime;
 }
 
-function configuredProviderDisabledRuntime():
+function _configuredProviderDisabledRuntime():
   | ReturnType<typeof createProviderDisabledPublicFormsRuntime>
   | undefined {
   if (import.meta.env.PUBLIC_FORMS_DATABASE_URL) {

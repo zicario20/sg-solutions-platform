@@ -49,7 +49,7 @@ describe("M006 governed public form inventory", () => {
   it("keeps consent purposes separated and supports governed conditional rules", () => {
     const consentTypes = new Set(
       publicFormRegistry.codes.flatMap((code) =>
-        getPublishedProjection(code, "en")!.consentRequirements.map(
+        getPublishedProjection(code, "en")?.consentRequirements.map(
           (consent) => consent.consentType,
         ),
       ),
@@ -64,7 +64,7 @@ describe("M006 governed public form inventory", () => {
       ]),
     );
     expect(
-      getPublishedProjection("taxes_interest", "en")!.fields.some((field) => field.visibleWhen),
+      getPublishedProjection("taxes_interest", "en")?.fields.some((field) => field.visibleWhen),
     ).toBe(true);
   });
 });

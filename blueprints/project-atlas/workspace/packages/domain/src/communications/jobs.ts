@@ -336,7 +336,8 @@ export async function processInboundChannelEvent(input: ProcessInboundInput): Pr
 
   if (input.intent === "handoff") {
     const idempotencyKey = input.idempotencyKey ?? "";
-    if (!input.humanHandoff || !idempotencyKey) {
+    const humanHandoff = input.humanHandoff;
+    if (!humanHandoff || !idempotencyKey) {
       return finishInbound(input, claim, "manual_review", {
         status: "manual_review",
         code: "handoff_unavailable",
@@ -344,7 +345,7 @@ export async function processInboundChannelEvent(input: ProcessInboundInput): Pr
     }
     try {
       const handoff = await input.executor.run("communications_handoff", input.ownerTimeoutMs, () =>
-        input.humanHandoff!.enqueue({
+        humanHandoff.enqueue({
           conversationId: claim.envelope.conversation.id,
           locale: claim.envelope.event.locale,
           reason: input.handoffReason ?? "visitor_requested",
@@ -377,7 +378,8 @@ export async function processInboundChannelEvent(input: ProcessInboundInput): Pr
   }
 
   if (input.intent === "public_orientation") {
-    if (!input.publicOrientation) {
+    const publicOrientation = input.publicOrientation;
+    if (!publicOrientation) {
       return finishInbound(input, claim, "manual_review", {
         status: "manual_review",
         code: "knowledge_unavailable",
@@ -388,7 +390,7 @@ export async function processInboundChannelEvent(input: ProcessInboundInput): Pr
         "communications_public_orientation",
         input.knowledgeTimeoutMs,
         () =>
-          input.publicOrientation!.answer({
+          publicOrientation.answer({
             prompt: input.prompt ?? "",
             locale: claim.envelope.event.locale,
             correlationId: claim.envelope.event.correlationId,
@@ -431,7 +433,8 @@ export async function processInboundChannelEvent(input: ProcessInboundInput): Pr
     const [owner, operation] = OWNER_ACTION[intent];
     const resourceId = input.resourceId ?? "";
     const idempotencyKey = input.idempotencyKey ?? "";
-    if (!input.owningAction || !resourceId || !idempotencyKey) {
+    const owningAction = input.owningAction;
+    if (!owningAction || !resourceId || !idempotencyKey) {
       return finishInbound(input, claim, "manual_review", {
         status: "manual_review",
         code: "owning_service_unavailable",
@@ -442,7 +445,7 @@ export async function processInboundChannelEvent(input: ProcessInboundInput): Pr
         `communications_owner_${intent}`,
         input.ownerTimeoutMs,
         () =>
-          input.owningAction!.execute({
+          owningAction.execute({
             intent,
             bindingId: claim.envelope.event.bindingId,
             conversationId: claim.envelope.conversation.id,

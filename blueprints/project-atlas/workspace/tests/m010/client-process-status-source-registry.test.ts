@@ -12,7 +12,7 @@ const policy = {
   },
   entry = (code: string, critical = true) => ({
     code,
-    ownerVersion: code + ".owner.v1",
+    ownerVersion: `${code}.owner.v1`,
     critical,
     freshnessMs: 60000,
     highestPriorityBand: 7,

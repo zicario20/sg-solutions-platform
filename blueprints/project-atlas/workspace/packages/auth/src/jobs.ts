@@ -135,7 +135,8 @@ export function createDurableAuthOutboxWorker(options: {
     }> {
       const startedAt = clock();
       await options.repository.recoverExpiredLeases(startedAt);
-      if (!options.provider) return { kind: "unavailable", processed: 0 };
+      const provider = options.provider;
+      if (!provider) return { kind: "unavailable", processed: 0 };
       const commands = await options.repository.lease({
         owner: options.owner,
         leasePurpose: options.leasePurpose,
@@ -156,8 +157,8 @@ export function createDurableAuthOutboxWorker(options: {
         try {
           result = await withWorkerTimeout(options.timeoutMs, (signal) =>
             options.leasePurpose === "dispatch"
-              ? options.provider!.send(command, signal)
-              : options.provider!.queryByOwner(command, signal),
+              ? provider.send(command, signal)
+              : provider.queryByOwner(command, signal),
           );
         } catch {
           result = { outcome: "unknown", errorCode: "provider_timeout_or_exception" };

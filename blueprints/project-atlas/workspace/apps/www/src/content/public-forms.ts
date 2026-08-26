@@ -342,8 +342,8 @@ export function getPublicFormRenderProjection(
     consents: definition.consentRequirements.map((consent) => ({
       consentType: consent.consentType,
       version: consent.version,
-      label: consentCopy[consent.consentType]!["label"][locale],
-      disclosure: consentCopy[consent.consentType]!["disclosure"][locale],
+      label: consentCopy[consent.consentType]?.label[locale],
+      disclosure: consentCopy[consent.consentType]?.disclosure[locale],
       required: consent.required,
     })),
     copy:

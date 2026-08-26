@@ -23,8 +23,15 @@ async function seedScenario(scenario: string): Promise<void> {
   if (!sql) throw new Error("M004_POSTGRES_INTEGRATION_URL_REQUIRED");
   const ids = communicationsConformanceIds(scenario);
   const seed = communicationsConformanceSeed(scenario);
-  const primaryBinding = seed.bindings![0]!;
-  const template = seed.templates![0]!;
+  const bindings = seed.bindings;
+  const policies = seed.policies;
+  const consents = seed.consents;
+  const templates = seed.templates;
+  const [primaryBinding] = bindings ?? [];
+  const [template] = templates ?? [];
+  if (!(bindings && policies && consents && primaryBinding && template)) {
+    throw new Error("M004_CONFORMANCE_SEED_INCOMPLETE");
+  }
   await sql.begin(async (tx) => {
     const principalRows = await tx.unsafe<
       Array<Parameters<typeof assertRestrictedCommunicationsPrincipal>[0]>
@@ -41,9 +48,10 @@ async function seedScenario(scenario: string): Promise<void> {
         ${primaryBinding.createdAt}, ${primaryBinding.updatedAt}
       ) on conflict (id) do nothing
     `;
-    for (const [index, binding] of seed.bindings!.entries()) {
-      const policy = seed.policies![index]!;
-      const consents = seed.consents!.filter((consent) => consent.bindingId === binding.bindingId);
+    for (const [index, binding] of bindings.entries()) {
+      const policy = policies[index];
+      if (!policy) throw new Error("M004_CONFORMANCE_POLICY_MISSING");
+      const bindingConsents = consents.filter((consent) => consent.bindingId === binding.bindingId);
       await tx`
       insert into communication_contact_bindings (
         id, connection_id, channel_kind, endpoint_digest, endpoint_digest_key_version,
@@ -57,14 +65,14 @@ async function seedScenario(scenario: string): Promise<void> {
         null, null, null, ${binding.createdAt}, ${binding.updatedAt}
       ) on conflict (id) do nothing
     `;
-      for (const [consentIndex, consent] of consents.entries()) {
+      for (const [consentIndex, consent] of bindingConsents.entries()) {
         await tx`
           insert into communication_contact_policies (
             id, binding_id, purpose, consent_state, fence_state, decision_code,
             evidence_receipt_id, version, fence, evaluated_at, created_at, updated_at
           ) values (
             ${`${policy.policyId}_${consent.purpose}`}, ${binding.bindingId}, ${consent.purpose},
-            ${consent.state}, ${policy.state}, 'allowed', ${consent.receipt!.receiptId},
+            ${consent.state}, ${policy.state}, 'allowed', ${consent.receipt?.receiptId},
             ${policy.version}, ${policy.fence}, ${policy.updatedAt}, ${binding.createdAt},
             ${policy.updatedAt}
           ) on conflict (binding_id, purpose) do nothing
@@ -79,10 +87,10 @@ async function seedScenario(scenario: string): Promise<void> {
           ) values (
             ${`evidence_${ids.bindingId}_${consent.purpose}`}, ${binding.bindingId},
             ${consentIndex + 1}, 'consent_granted', ${consent.purpose}, 'granted', 'normal',
-            null, null, ${consent.receipt!.receiptId}, 'consent_evidence', 'M078',
+            null, null, ${consent.receipt?.receiptId}, 'consent_evidence', 'M078',
             'consent', ${consent.version}, null, null,
             ${`consent_correlation_${ids.bindingId}_${consent.purpose}`},
-            ${consent.receipt!.issuedAt}, ${consent.receipt!.expiresAt},
+            ${consent.receipt?.issuedAt}, ${consent.receipt?.expiresAt},
             ${consent.changedAt}, ${consent.changedAt}
           ) on conflict (evidence_receipt_id) do nothing
         `;

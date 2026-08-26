@@ -46,12 +46,12 @@ export function ProcessStatusLanding({
                   <h3>{choice.serviceLabel}</h3>
                   {choice.instanceLabel ? <p>{choice.instanceLabel}</p> : null}
                   <a
-                    href={"/client/status/" + encodeURIComponent(choice.serviceRef)}
+                    href={`/client/status/${encodeURIComponent(choice.serviceRef)}`}
                     aria-label={
                       copy.view +
                       ": " +
                       choice.serviceLabel +
-                      (choice.instanceLabel ? ", " + choice.instanceLabel : "")
+                      (choice.instanceLabel ? `, ${choice.instanceLabel}` : "")
                     }
                   >
                     {copy.view}
@@ -63,7 +63,7 @@ export function ProcessStatusLanding({
           {dto.hasMore && dto.cursor ? (
             <a
               className="m010-more"
-              href={"/client/status?cursor=" + encodeURIComponent(dto.cursor)}
+              href={`/client/status?cursor=${encodeURIComponent(dto.cursor)}`}
             >
               {copy.loadMore}
             </a>

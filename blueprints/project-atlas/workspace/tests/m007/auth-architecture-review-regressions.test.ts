@@ -4,7 +4,6 @@ import {
   AuthorizationService,
   createDurableOAuthTransactionService,
   createOpaqueValue,
-  createSecureInvitationService,
   createSupabaseIdentityProvider,
   createTransactionalAuthControls,
   PartyLinkingService,
