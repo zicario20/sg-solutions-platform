@@ -6,6 +6,13 @@
 
 ## Unreleased
 
+- Completed the provider-disabled M042 Service Catalog technical implementation across all four
+  specification parts: canonical registry/version/surface contracts, commercial and workflow
+  references, channel/CTA gates, service-order snapshots, change/deprecation controls,
+  governance/AI safeguards, quality/drift/recovery contracts and authored-only RLS migration
+  0052. No service was published, no provider/payment/workflow was activated and no migration or
+  deployment was performed.
+
 - Completed a repository-wide M005-M019 provider-disabled technical reconciliation: repaired bounded M006 attribution validation, aligned stale M005/M007/M008/M010 contracts, synchronized module maturity status and added the provider/future-connection inventory. The audited matrix passed 136 files and 436 tests; no provider, persistence, deployment or operational activation occurred.
 
 - Built and locally verified the provider-disabled M003 Public Chat on its isolated branch: bilingual

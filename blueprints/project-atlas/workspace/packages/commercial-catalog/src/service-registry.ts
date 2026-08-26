@@ -8,6 +8,7 @@ export const SERVICE_CATALOG_CODE_PATTERN = /^[A-Z][A-Z0-9_]{2,63}$/u;
 export const SERVICE_CATALOG_VERSION_PATTERN = /^\d+\.\d+\.\d+$/u;
 
 export type ServiceCatalogLocale = "es" | "en";
+export type ServiceContentLocale = "es-US" | "en-US";
 export type ServiceAvailabilityStatus =
   | "available"
   | "limited"
@@ -18,6 +19,9 @@ export type ServiceLifecycleStatus =
   | "draft"
   | "under_review"
   | "approved"
+  | "scheduled"
+  | "active"
+  | "limited"
   | "published"
   | "paused"
   | "deprecated"
@@ -29,8 +33,10 @@ export type ServicePublicationStatus =
   | "approved"
   | "published"
   | "unpublished"
+  | "scheduled"
+  | "expired"
   | "retired";
-export type ServiceSurface = "public" | "client" | "admin";
+export type ServiceSurface = "public" | "client" | "admin" | "backend";
 export type ServiceFulfillmentMode =
   | "internal_guidance"
   | "internal_operation"
@@ -43,6 +49,18 @@ export type ServiceAvailability = Readonly<{
   jurisdictions: readonly string[];
   excludedJurisdictions: readonly string[];
   lastVerifiedAt: string | null;
+  availableFrom?: string | null;
+  availableUntil?: string | null;
+  capacityReference?: string | null;
+  sourceReference?: string | null;
+}>;
+
+export type ServiceFulfillmentConfiguration = Readonly<{
+  caseRequired: boolean;
+  serviceOrderRequired: boolean;
+  workflowRequired: boolean;
+  appointmentRequired: boolean;
+  documentCollectionRequired: boolean;
 }>;
 
 export type ServiceDefinition = Readonly<{
@@ -58,9 +76,26 @@ export type ServiceDefinition = Readonly<{
   surfaces: readonly ServiceSurface[];
   providerRequirements: readonly string[];
   partnerRequirements: readonly string[];
+  requiredStaffRoles?: readonly string[];
+  professionalScope?:
+    | "education"
+    | "administrative_assistance"
+    | "document_preparation"
+    | "referral"
+    | "professional_service"
+    | "regulated_activity";
+  fulfillmentConfiguration?: ServiceFulfillmentConfiguration;
   createdAt: string;
   updatedAt: string;
 }>;
+
+export type ServiceTranslationStatus =
+  | "draft"
+  | "machine_generated"
+  | "human_review_required"
+  | "approved"
+  | "published"
+  | "outdated";
 
 export type ServiceTranslation = Readonly<{
   name: string;
@@ -68,6 +103,12 @@ export type ServiceTranslation = Readonly<{
   benefits: readonly string[];
   limitations: readonly string[];
   ctaLabel: string;
+  internalName?: string;
+  publicName?: string;
+  clientDisplayName?: string;
+  translationStatus?: ServiceTranslationStatus;
+  reviewedByReference?: string | null;
+  reviewedAt?: string | null;
 }>;
 
 export type ServiceCommercialProfile = Readonly<{
@@ -76,6 +117,13 @@ export type ServiceCommercialProfile = Readonly<{
   depositPolicyReference: string | null;
   paymentScheduleReference: string | null;
   cancellationPolicyReference: string | null;
+  publicPriceDisplayMode?:
+    | "exact_price"
+    | "starting_at"
+    | "quote_required"
+    | "consultation_required"
+    | "not_public"
+    | "unknown";
 }>;
 
 export type ServiceDurationProfile = Readonly<{
@@ -85,13 +133,28 @@ export type ServiceDurationProfile = Readonly<{
   maximum: number | null;
   confidence: "estimated" | "verified" | "unknown";
   sourceReference: string | null;
+  components?: readonly (
+    | "SG_processing"
+    | "client_response"
+    | "partner_processing"
+    | "external_authority"
+  )[];
+  displayMode?: "range" | "starting_from" | "contact_for_estimate" | "not_displayed";
 }>;
 
 export type ServiceWorkflowBinding = Readonly<{
   workflowCode: string;
-  startTrigger: "payment_confirmation" | "human_authorization" | "intake_completion" | "manual";
+  workflowVersion?: string;
+  startTrigger:
+    | "payment_confirmation"
+    | "payment_verified"
+    | "human_authorization"
+    | "intake_completion"
+    | "manual";
   requiresPaymentConfirmation: boolean;
   requiresHumanAuthorization: boolean;
+  clientStatusMappingReference?: string | null;
+  inputMappingReference?: string | null;
 }>;
 
 export type ServiceVersion = Readonly<{
@@ -100,6 +163,7 @@ export type ServiceVersion = Readonly<{
   version: string;
   publicationStatus: ServicePublicationStatus;
   effectiveFrom: string;
+  effectiveTo?: string | null;
   translations: Readonly<Record<ServiceCatalogLocale, ServiceTranslation>>;
   commercialProfile: ServiceCommercialProfile;
   documentRequirementSetReference: string | null;
@@ -150,6 +214,9 @@ export type ServiceOrderCatalogSnapshot = Readonly<{
   intakeDefinitionReference: string | null;
   workflowBinding: ServiceWorkflowBinding | null;
   jurisdictionRuleSetReference: string | null;
+  servicePrerequisites: readonly string[];
+  dependencyCodes: readonly string[];
+  translations: Readonly<Record<ServiceCatalogLocale, ServiceTranslation>>;
   capturedAt: string;
 }>;
 
@@ -165,6 +232,17 @@ function assertText(value: string, label: string): void {
 function assertIso(value: string, label: string): void {
   if (!Number.isFinite(Date.parse(value)) || !value.endsWith("Z"))
     throw new TypeError(label + " invalid");
+}
+
+function assertOptionalIso(value: string | null | undefined, label: string): void {
+  if (value !== null && value !== undefined) assertIso(value, label);
+}
+
+function assertCodeList(value: readonly string[], label: string): void {
+  if (new Set(value).size !== value.length) throw new TypeError(label + " duplicate");
+  for (const item of value) {
+    if (!SERVICE_CATALOG_CODE_PATTERN.test(item)) throw new TypeError(label + " invalid");
+  }
 }
 
 function deepFreeze<T>(value: T): T {
@@ -187,6 +265,26 @@ function validateTranslation(value: ServiceTranslation, locale: ServiceCatalogLo
     throw new TypeError("translations." + locale + " content incomplete");
   for (const item of [...value.benefits, ...value.limitations])
     assertText(item, "translation item");
+  for (const [label, candidate] of [
+    ["internalName", value.internalName],
+    ["publicName", value.publicName],
+    ["clientDisplayName", value.clientDisplayName],
+  ] as const) {
+    if (candidate !== undefined) assertText(candidate, "translations." + locale + "." + label);
+  }
+  if (
+    value.translationStatus !== undefined &&
+    ![
+      "draft",
+      "machine_generated",
+      "human_review_required",
+      "approved",
+      "published",
+      "outdated",
+    ].includes(value.translationStatus)
+  )
+    throw new TypeError("translation status invalid");
+  assertOptionalIso(value.reviewedAt, "translation reviewedAt");
 }
 
 export function createServiceDefinition(
@@ -202,10 +300,30 @@ export function createServiceDefinition(
   assertText(value.primaryDomain, "primaryDomain");
   assertIso(value.createdAt, "createdAt");
   assertIso(value.updatedAt, "updatedAt");
+  assertOptionalIso(value.availability.lastVerifiedAt, "availability.lastVerifiedAt");
+  assertOptionalIso(value.availability.availableFrom, "availability.availableFrom");
+  assertOptionalIso(value.availability.availableUntil, "availability.availableUntil");
+  if (
+    value.availability.availableFrom !== null &&
+    value.availability.availableFrom !== undefined &&
+    value.availability.availableUntil !== null &&
+    value.availability.availableUntil !== undefined &&
+    Date.parse(value.availability.availableUntil) < Date.parse(value.availability.availableFrom)
+  )
+    throw new TypeError("availability effective range invalid");
   if (value.audiences.length === 0 || value.surfaces.length === 0)
     throw new TypeError("audience and surface required");
-  if (value.availability.jurisdictions.length === 0)
+  if (new Set(value.surfaces).size !== value.surfaces.length)
+    throw new TypeError("service surfaces duplicate");
+  if (value.availability.status !== "unknown" && value.availability.jurisdictions.length === 0)
     throw new TypeError("availability jurisdiction required");
+  assertCodeList(value.providerRequirements, "provider requirements");
+  assertCodeList(value.partnerRequirements, "partner requirements");
+  if (
+    value.requiredStaffRoles !== undefined &&
+    value.requiredStaffRoles.some((role) => role.trim().length === 0)
+  )
+    throw new TypeError("required staff role invalid");
   return deepFreeze(structuredClone(value));
 }
 
@@ -223,9 +341,25 @@ export function createServiceVersion(
   )
     throw new TypeError("service version must be unique");
   assertIso(value.effectiveFrom, "effectiveFrom");
+  assertOptionalIso(value.effectiveTo, "effectiveTo");
+  if (
+    value.effectiveTo !== undefined &&
+    value.effectiveTo !== null &&
+    Date.parse(value.effectiveTo) < Date.parse(value.effectiveFrom)
+  )
+    throw new TypeError("effective range invalid");
   assertIso(value.createdAt, "createdAt");
   validateTranslation(value.translations.es, "es");
   validateTranslation(value.translations.en, "en");
+  assertCodeList(value.servicePrerequisites, "service prerequisites");
+  assertCodeList(value.dependencyCodes, "service dependencies");
+  assertCodeList(value.relatedServiceCodes, "related services");
+  if (value.seo !== null) {
+    if (!value.seo.canonicalPath.startsWith("/") || value.seo.canonicalPath.includes("//"))
+      throw new TypeError("seo canonical path invalid");
+    assertText(value.seo.title, "seo title");
+    assertText(value.seo.description, "seo description");
+  }
   assertText(value.configurationHash, "configurationHash");
   return deepFreeze(structuredClone(value));
 }
@@ -236,6 +370,12 @@ export function assertPublishedVersionImmutable(
 ): ServiceVersion {
   if (current.id === candidate.id && !sameValue(current, candidate))
     throw new TypeError("published service version is immutable; create a new version");
+  if (
+    current.id !== candidate.id &&
+    current.serviceDefinitionId === candidate.serviceDefinitionId &&
+    current.version === candidate.version
+  )
+    throw new TypeError("replacement service version must advance version");
   return deepFreeze(structuredClone(candidate));
 }
 
@@ -247,9 +387,9 @@ export function validateServicePublication(
     Extract<ServicePublicationReadiness, { kind: "blocked" }>["reasons"]
   >[number][] = [];
 
-  if (!["approved", "published"].includes(definition.lifecycleStatus))
+  if (!["approved", "active", "limited", "published"].includes(definition.lifecycleStatus))
     reasons.push("service_not_approved");
-  if (!["approved", "published"].includes(version.publicationStatus))
+  if (!["approved", "published", "scheduled"].includes(version.publicationStatus))
     reasons.push("version_not_approved");
   try {
     validateTranslation(version.translations.es, "es");
@@ -288,9 +428,11 @@ export function validateServicePublication(
 export function createServiceOrderCatalogSnapshot(
   definition: ServiceDefinition,
   version: ServiceVersion,
+  capturedAt = version.createdAt,
 ): ServiceOrderCatalogSnapshot {
   const readiness = validateServicePublication(definition, version);
   if (readiness.kind !== "ready") throw new TypeError("service catalog version is not order-ready");
+  assertIso(capturedAt, "capturedAt");
   return deepFreeze({
     serviceDefinitionId: definition.id,
     serviceVersionId: version.id,
@@ -305,7 +447,10 @@ export function createServiceOrderCatalogSnapshot(
     intakeDefinitionReference: version.intakeDefinitionReference,
     workflowBinding: structuredClone(version.workflowBinding),
     jurisdictionRuleSetReference: version.jurisdictionRuleSetReference,
-    capturedAt: version.createdAt,
+    servicePrerequisites: structuredClone(version.servicePrerequisites),
+    dependencyCodes: structuredClone(version.dependencyCodes),
+    translations: structuredClone(version.translations),
+    capturedAt,
   });
 }
 
@@ -326,4 +471,27 @@ export function assertServiceDependencyGraph(
   };
 
   for (const code of graph.keys()) visit(code);
+}
+
+export function assertServiceCategoryHierarchy(
+  categories: readonly Readonly<{ code: string; parentCategoryCode: string | null }>[],
+): void {
+  const parentByCode = new Map(
+    categories.map((category) => [category.code, category.parentCategoryCode]),
+  );
+  for (const category of categories) {
+    if (!SERVICE_CATALOG_CODE_PATTERN.test(category.code))
+      throw new TypeError("category code invalid");
+    if (category.parentCategoryCode !== null && !parentByCode.has(category.parentCategoryCode))
+      throw new TypeError("category parent missing");
+  }
+  for (const category of categories) {
+    const seen = new Set<string>();
+    let current: string | null = category.code;
+    while (current !== null) {
+      if (seen.has(current)) throw new TypeError("service category cycle detected");
+      seen.add(current);
+      current = parentByCode.get(current) ?? null;
+    }
+  }
 }

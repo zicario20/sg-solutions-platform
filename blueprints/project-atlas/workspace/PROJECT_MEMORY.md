@@ -1076,3 +1076,19 @@ English discovery documents from their respective source content. Forward-only m
 enables RLS and adds restrictive deny-all policies for the previously omitted M040 Partner and
 M041 Provider tables. The migration is authored only: no database, provider, external route,
 deployment, partner, payment or client data operation was activated.
+
+## 2026-08-26 - M042 four-part controlled completion
+
+The Product Owner provided the complete four-part M042 Service Catalog specification and authorized
+its completion. The existing @atlas/commercial-catalog bounded context was extended rather than
+duplicated. The controlled implementation now includes canonical service/version contracts,
+bilingual and surface-safe projections, commercial/document/duration/disclosure/intake/workflow
+references, publication and CTA handoff gates, immutable order snapshots, structural bundles,
+change-impact and deprecation planning, deterministic jurisdiction readiness, AI claim grounding,
+owner-MFA-shaped pending break-glass records, catalog QA/drift/lineage/metric/recovery contracts and
+the authored-only 0052_m042_service_catalog_completion.sql migration with deny-by-default RLS.
+
+No catalog migration was executed. No public service, API, queue, provider, partner, payment,
+quote, appointment, lead, client, entitlement, workflow, AI provider, deployment or production
+behavior was activated. M042 technical implementation is complete; Product Owner acceptance and
+all operational activation remain pending.

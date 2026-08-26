@@ -2,7 +2,8 @@
 
 ## Scope
 
-This audit covers the M042 provider-disabled and execution-disabled catalog foundation. It is not an approval of any public service, price, checkout, workflow, provider or production deployment.
+This audit covers the M042 provider-disabled and execution-disabled catalog implementation. It is
+not an approval of any public service, price, checkout, workflow, provider or production deployment.
 
 ## Controls evidenced
 
@@ -20,6 +21,10 @@ This audit covers the M042 provider-disabled and execution-disabled catalog foun
 | AI boundary | Pass | AI cannot approve, publish, change price, workflow, disclosure or retirement |
 | Provider boundary | Pass | Provider-required services are not readiness-approved |
 | Persistence security | Pass | Authored migration enables RLS with restrictive deny-all policies |
+| Change and active-order control | Pass | Explicit impact/deprecation plan and immutable order snapshot contracts |
+| Catalog handoff boundary | Pass | CTA and lead-interest contracts create references only; no client, order or payment action |
+| AI and privileged access | Pass | Grounding/claim checks plus owner-MFA-shaped pending break-glass request |
+| Continuity and drift | Pass | Data-quality, public-field drift, lineage, metrics and fail-closed recovery contracts |
 
 ## Residual risks
 
@@ -27,8 +32,10 @@ This audit covers the M042 provider-disabled and execution-disabled catalog foun
 - No catalog repository, API, UI, authorization adapter, publication worker, cache invalidation or event consumer is active.
 - No factual claims, prices, service availability, provider status, contracts or disclosures have been approved as real catalog content.
 - M014, M011, M006, M013, M020B, M040 and M041 integrations are represented only by references.
-- No production migration, performance, browser, accessibility, end-to-end, recovery or external-provider validation was executed.
+- No production migration, performance, browser, accessibility, deployment, recovery operation or external-provider validation was executed.
 
 ## Conclusion
 
-M042 is an implementation-ready controlled catalog foundation. It must remain marked as not operational and Product Owner acceptance pending until real catalog data, permissions, integrations, migrations, security review and production evidence are separately approved.
+M042 is technically implemented as a controlled catalog bounded context. It must remain marked as
+not operational and Product Owner acceptance pending until real catalog data, permissions,
+integrations, migrations, security review and production evidence are separately approved.

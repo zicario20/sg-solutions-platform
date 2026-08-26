@@ -965,3 +965,28 @@ Provider tables. The migration remains authored only and may not be applied with
 backup evidence, independent security review, migration plan and deployment approval. M042 public
 discovery must expose only published, public, readiness-complete content and must preserve locale
 specificity. The canonical module catalog must remain exactly one distinct entry per M001-M110.
+
+## 2026-08-26 - M042 Service Catalog four-part completion boundary
+
+The Product Owner authorized completion of M042 from the supplied four-part specification.
+
+Decision:
+
+- @atlas/commercial-catalog remains the one catalog bounded context. The M021 parser is a
+  compatibility/ingress contract, while the M042 ServiceDefinition and ServiceVersion contracts
+  are the canonical versioned registry.
+- M042 may model publication, discovery, CTA handoff, order snapshots, bundles, change impact,
+  deprecation, governance, AI review, quality, continuity and persisted evidence. It does not own
+  pricing calculation, payment confirmation, entitlement grants, workflow execution, client
+  creation, lead persistence, document storage, appointments, provider routing or public transport.
+- Provider-dependent services remain blocked until M040/M041 activation evidence is separately
+  approved. A CTA can create only a structured handoff reference, never a payment, client, order or
+  external action.
+- Published/versioned contracts and active order snapshots remain immutable. Material changes,
+  deprecation, break-glass and privileged actions require explicit human controls and audit.
+- Migration 0052_m042_service_catalog_completion.sql is authored only and must not be applied
+  without the required backup evidence, real authorization model, independent security review,
+  migration plan and deployment approval.
+
+Status: controlled technical implementation complete. Product Owner acceptance, real catalog data,
+provider activation, migrations, operational integrations and production release remain pending.

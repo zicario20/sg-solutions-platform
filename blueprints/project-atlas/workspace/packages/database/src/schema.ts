@@ -1631,3 +1631,4 @@ export * from "./schema/partner-management.ts";
 
 export * from "./schema/provider-abstraction.ts";
 export * from "./schema/service-catalog.ts";
+export * from "./schema/service-catalog-completion.ts";

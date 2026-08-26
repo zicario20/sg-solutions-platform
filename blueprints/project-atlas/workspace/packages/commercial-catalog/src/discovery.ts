@@ -18,11 +18,52 @@ export type ServiceDiscoveryDocument = Readonly<{
 }>;
 
 export type ServiceSurfaceProjectionRequest = Readonly<{
-  surface: ServiceSurface;
+  surface: Exclude<ServiceSurface, "backend">;
   locale: ServiceCatalogLocale;
   authorized: boolean;
   purpose: "public_discovery" | "client_service_detail" | "catalog_administration";
   clientHasServiceGrant: boolean;
+}>;
+
+export type PublicServiceView = Readonly<{
+  code: string;
+  categoryCode: string;
+  name: string;
+  summary: string;
+  benefits: readonly string[];
+  limitations: readonly string[];
+  ctaLabel: string;
+  availability: "available" | "limited" | "waitlist";
+  canonicalPath: string | null;
+  duration: Readonly<{
+    type: "estimate" | "target_window";
+    unit: "business_days" | "calendar_days" | "weeks" | "months";
+    minimum: number | null;
+    maximum: number | null;
+    confidence: "estimated" | "verified" | "unknown";
+  }> | null;
+}>;
+
+export type ClientServiceCatalogView = Readonly<{
+  code: string;
+  catalogVersion: string;
+  name: string;
+  summary: string;
+  limitations: readonly string[];
+  availability: ServiceDefinition["availability"]["status"];
+  duration: Readonly<{
+    type: "estimate" | "target_window" | "unknown";
+    unit: "business_days" | "calendar_days" | "weeks" | "months";
+    minimum: number | null;
+    maximum: number | null;
+    confidence: "estimated" | "verified" | "unknown";
+  }> | null;
+}>;
+
+export type AdminServiceCatalogView = Readonly<{
+  definition: ServiceDefinition;
+  version: ServiceVersion;
+  publicationReadiness: "ready" | "blocked" | "review_required";
 }>;
 
 type PublicDiscoveryAvailability = ServiceDiscoveryDocument["availability"];
@@ -69,7 +110,7 @@ export function buildServiceDiscoveryIndex(
         code: definition.code,
         categoryCode: definition.categoryCode,
         canonicalPath: seo.canonicalPath,
-        title: spanish.name,
+        title: spanish.publicName ?? spanish.name,
         description: spanish.summary,
         availability,
         locale: "es",
@@ -93,7 +134,7 @@ export function projectServiceForSurface(
   definition: ServiceDefinition,
   version: ServiceVersion,
   request: ServiceSurfaceProjectionRequest,
-): Readonly<Record<string, unknown>> {
+): PublicServiceView | ClientServiceCatalogView | AdminServiceCatalogView {
   if (!request.authorized) throw new CatalogControlError("authorization required");
 
   const translation = version.translations[request.locale];
@@ -103,17 +144,45 @@ export function projectServiceForSurface(
       throw new CatalogControlError("public purpose required");
     if (!isPubliclyDiscoverable(definition, version))
       throw new CatalogControlError("public service is not discoverable");
+    if (!isPublicDiscoveryAvailability(definition.availability.status))
+      throw new CatalogControlError("public availability is not confirmed");
 
     return Object.freeze({
       code: definition.code,
       categoryCode: definition.categoryCode,
-      name: translation.name,
+      name: translation.publicName ?? translation.name,
       summary: translation.summary,
       benefits: translation.benefits,
       limitations: translation.limitations,
       ctaLabel: translation.ctaLabel,
       availability: definition.availability.status,
       canonicalPath: version.seo?.canonicalPath ?? null,
+      duration:
+        version.durationProfile === null || version.durationProfile.type === "unknown"
+          ? null
+          : {
+              type: version.durationProfile.type,
+              unit: version.durationProfile.unit,
+              minimum: version.durationProfile.minimum,
+              maximum: version.durationProfile.maximum,
+              confidence: version.durationProfile.confidence,
+            },
+    });
+  }
+
+  if (request.surface === "client") {
+    if (!definition.surfaces.includes("client"))
+      throw new CatalogControlError("client service surface unavailable");
+    if (request.purpose !== "client_service_detail" || !request.clientHasServiceGrant)
+      throw new CatalogControlError("client service grant required");
+
+    return Object.freeze({
+      code: definition.code,
+      catalogVersion: version.version,
+      name: translation.clientDisplayName ?? translation.publicName ?? translation.name,
+      summary: translation.summary,
+      limitations: translation.limitations,
+      availability: definition.availability.status,
       duration:
         version.durationProfile === null
           ? null
@@ -127,29 +196,20 @@ export function projectServiceForSurface(
     });
   }
 
-  if (request.surface === "client") {
-    if (request.purpose !== "client_service_detail" || !request.clientHasServiceGrant)
-      throw new CatalogControlError("client service grant required");
-
-    return Object.freeze({
-      code: definition.code,
-      name: translation.name,
-      summary: translation.summary,
-      limitations: translation.limitations,
-      availability: definition.availability.status,
-      documentRequirementSetReference: version.documentRequirementSetReference,
-      disclosureSetReference: version.disclosureSetReference,
-      durationProfile: version.durationProfile,
-    });
-  }
-
+  if (!definition.surfaces.includes("admin"))
+    throw new CatalogControlError("admin service surface unavailable");
   if (request.purpose !== "catalog_administration")
     throw new CatalogControlError("admin purpose required");
 
+  const readiness = validateServicePublication(definition, version);
   return Object.freeze({
     definition,
     version,
     publicationReadiness:
-      definition.availability.status === "unknown" ? "blocked" : "review_required",
+      readiness.kind === "ready"
+        ? "ready"
+        : definition.availability.status === "unknown"
+          ? "blocked"
+          : "review_required",
   });
 }

@@ -4,6 +4,8 @@ export * from "./contracts.ts";
 export * from "./discovery.ts";
 export * from "./eligibility.ts";
 export * from "./governance.ts";
+export * from "./lifecycle.ts";
 export * from "./pricing.ts";
 export * from "./publication.ts";
+export * from "./quality.ts";
 export * from "./service-registry.ts";
