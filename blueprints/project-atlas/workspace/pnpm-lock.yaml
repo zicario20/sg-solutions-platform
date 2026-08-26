@@ -317,6 +317,8 @@ importers:
 
   packages/partner-management: {}
 
+  packages/provider-abstraction: {}
+
   packages/provider-control: {}
 
   packages/recommendation-engine: {}

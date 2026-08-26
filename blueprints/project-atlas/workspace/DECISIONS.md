@@ -948,3 +948,7 @@ The Product Owner authorized an M039 provider-disabled technical foundation. Cre
 ## 2026-08-25 - M040 Partner Management controlled foundation
 
 The Product Owner authorized M040 as a provider-disabled central Partner Registry foundation. M035, M036, M037 and M039 must reuse Partner IDs rather than create separate partner sources of truth. Portal access, referrals, routing, integrations, data sharing, webhooks, payments, settlements, production migration and activation remain unauthorized pending a separate Product Owner decision and security/compliance evidence.
+
+## 2026-08-26 - M041 Provider Abstraction controlled foundation
+
+The Product Owner authorized M041 as a provider-disabled technical foundation. Provider records are technically distinct from M040 partner records. Canonical provider interfaces, adapter contracts, secret-reference configuration, endpoint allowlists, conservative status normalization, idempotency controls and persistence models may be implemented without activating any external provider. Live adapters, routing, failover, webhooks, polling, file exchange, credentials, provider production configuration and external calls require a separate Product Owner activation decision with security, legal, testing, monitoring and rollback evidence.

@@ -317,3 +317,7 @@
 # M040 - Partner Management controlled foundation
 
 - Added central Partner Registry contracts, provider-disabled gate, authored schema/migration and focused tests. No external partner capability is enabled.
+
+## 2026-08-26
+
+- Added M041 provider-abstraction controlled foundation, including versioned canonical provider contracts, provider metadata schema and migration, disabled adapter and routing guards, endpoint and secret-reference validation, focused tests, documentation and audit evidence. No external provider was enabled.

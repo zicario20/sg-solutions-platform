@@ -64,3 +64,13 @@ These families are expected planning areas for M020-M110. The canonical module c
 - Which data classification and retention period apply.
 - Who owns support, monitoring, incident response and reconciliation.
 - Whether a staging proof and an independent security review are required before activation.
+
+## M041 - Provider Abstraction
+
+- Status: disabled foundation.
+- Providers: no live provider enabled.
+- Capabilities: canonical contracts only.
+- External network calls: blocked.
+- Webhooks, polling and file exchange: not implemented.
+- Credentials: secret references only; no values committed.
+- Activation: requires separate Product Owner approval.

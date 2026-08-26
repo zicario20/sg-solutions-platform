@@ -203,3 +203,10 @@ M031 Bookkeeping has an authorized controlled-internal Build Gate following its 
 
 - M040 is the central provider-disabled Partner Registry for M035, M036, M037 and M039.
 - Partner portals, routing, referrals, data/document exchange, integrations, webhooks, payments, settlements, credentials, migration execution, deployment and production activation remain disabled.
+
+## M041 - Provider Abstraction
+
+- Status: controlled foundation implemented; runtime disabled.
+- External provider activation: not started.
+- Migration: authored only; not applied.
+- Pending: Product Owner activation workflow, provider-specific contracts, security and commercial approval.
