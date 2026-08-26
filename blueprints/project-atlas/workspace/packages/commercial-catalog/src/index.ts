@@ -3,3 +3,7 @@ export * from "./contracts.ts";
 export * from "./eligibility.ts";
 export * from "./pricing.ts";
 export * from "./publication.ts";
+export * from "./commercial-bindings.ts";
+export * from "./discovery.ts";
+export * from "./governance.ts";
+export * from "./service-registry.ts";

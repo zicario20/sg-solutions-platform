@@ -210,3 +210,11 @@ M031 Bookkeeping has an authorized controlled-internal Build Gate following its 
 - External provider activation: not started.
 - Migration: authored only; not applied.
 - Pending: Product Owner activation workflow, provider-specific contracts, security and commercial approval.
+
+## M042 - Service Catalog
+
+- Status: controlled technical foundation implemented; Product Owner acceptance pending.
+- Catalog source: @atlas/commercial-catalog extended; no parallel catalog.
+- Migration: 0050 authored only; not applied.
+- Publication, checkout, workflow execution, providers and partner actions: disabled.
+- Pending: real service content, authorization/RLS integration, owner-module bindings, activation and deployment gates.

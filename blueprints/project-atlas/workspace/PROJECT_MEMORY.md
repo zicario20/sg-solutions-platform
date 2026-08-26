@@ -1064,3 +1064,5 @@ Implemented the M039 provider-disabled adapter contracts, source lineage, offer 
 Implemented M040 central Partner contracts, lifecycle gating, onboarding, capability/jurisdiction/authorization references, assignments, suspension, economic safeguards, AI boundary, schema, authored migration, tests and documentation. No live partner operation was enabled.
 
 - 2026-08-26: Implemented M041 Provider Abstraction as a provider-disabled controlled foundation. It establishes technical provider contracts and safeguards without activating vendors, routing, webhooks, polling, secrets or network traffic. A provider remains separate from an M040 Partner relationship.
+
+- 2026-08-26: Implemented M042 Service Catalog as a controlled foundation across its four specification parts. It reuses @atlas/commercial-catalog, records configuration/version/governance contracts and remains unmigrated, undeployed, execution-disabled and pending Product Owner acceptance.

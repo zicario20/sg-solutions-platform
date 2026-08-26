@@ -952,3 +952,7 @@ The Product Owner authorized M040 as a provider-disabled central Partner Registr
 ## 2026-08-26 - M041 Provider Abstraction controlled foundation
 
 The Product Owner authorized M041 as a provider-disabled technical foundation. Provider records are technically distinct from M040 partner records. Canonical provider interfaces, adapter contracts, secret-reference configuration, endpoint allowlists, conservative status normalization, idempotency controls and persistence models may be implemented without activating any external provider. Live adapters, routing, failover, webhooks, polling, file exchange, credentials, provider production configuration and external calls require a separate Product Owner activation decision with security, legal, testing, monitoring and rollback evidence.
+
+## 2026-08-26 - M042 Service Catalog controlled foundation
+
+The Product Owner authorized implementation of M042 from the approved four-part specification. M042 extends the canonical commercial-catalog bounded context with versioned service definitions, commercial/document/intake/workflow references, discovery/publication readiness, surface projections and governance controls. It does not activate service publication, checkout, pricing, forms, workflows, documents, appointments, providers, partners, RLS deployment or production behavior. AI remains unable to approve, publish, retire, change prices, workflows or disclosures.

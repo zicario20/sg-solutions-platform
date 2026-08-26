@@ -321,3 +321,7 @@
 ## 2026-08-26
 
 - Added M041 provider-abstraction controlled foundation, including versioned canonical provider contracts, provider metadata schema and migration, disabled adapter and routing guards, endpoint and secret-reference validation, focused tests, documentation and audit evidence. No external provider was enabled.
+
+## 2026-08-26
+
+- Added M042 Service Catalog controlled foundation across service registry/versioning, configuration references, publication readiness, discovery projections, governance controls, Drizzle schema and migration 0050. No public service publication, price, checkout, workflow, provider or partner activation occurred.
