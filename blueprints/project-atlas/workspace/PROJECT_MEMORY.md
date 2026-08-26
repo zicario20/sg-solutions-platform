@@ -1055,3 +1055,10 @@ Expanded the pre-existing Marketplace package rather than creating a parallel ma
 ## 2026-08-25 - M038 Recommendation Engine foundation implemented
 
 Implemented M038 as a separate, source-eligibility-consuming recommendation package: immutable requests/context/candidate/policy/constraint snapshots, deterministic gated ranking, hard and soft constraints, non-decisional outputs, alternatives, client decisions, constrained specialist review, personalization withdrawal, experiments with approval gates, fairness findings, grounded AI explanation contracts, schema, authored migration, tests, and documentation. Focused M038 tests and recommendation/database typechecks passed. No autonomous decision model, personalized production behavior, experiment, AI provider, provider integration, referral action, or production service was enabled.
+## 2026-08-25 - M039 CreditCardBroker controlled foundation
+
+Implemented the M039 provider-disabled adapter contracts, source lineage, offer and link gates, marketplace/recommendation references, uncertain outcomes, conversion and commission safeguards, tests, schema and authored migration. No live provider behavior was enabled.
+
+## 2026-08-25 - M040 Partner Management controlled foundation
+
+Implemented M040 central Partner contracts, lifecycle gating, onboarding, capability/jurisdiction/authorization references, assignments, suspension, economic safeguards, AI boundary, schema, authored migration, tests and documentation. No live partner operation was enabled.

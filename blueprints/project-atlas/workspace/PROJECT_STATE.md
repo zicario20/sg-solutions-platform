@@ -194,3 +194,12 @@ M031 Bookkeeping has an authorized controlled-internal Build Gate following its 
 - M037 Financial Marketplace: controlled technical foundation implemented; partner providers, redirects, referrals, data sharing, webhooks and commission feeds remain disabled and not deployed.
 - M038 Recommendation Engine: controlled technical foundation implemented; live personalization, experiments, AI providers, external candidate feeds and external actions remain disabled and not deployed.
 - Cross-module architecture audit: complete; documented findings corrected. Product Owner acceptance and production activation remain pending.
+## 2026-08-25 - M039 CreditCardBroker controlled foundation
+
+- M039 is a provider-disabled adapter under M037. M037 owns marketplace journeys and M038 owns ranking.
+- CreditCardBroker account activation, credentials, API, JavaScript, feeds, hosted pages, public offer CTAs, redirects, referrals, applications, data sharing, tracking transmission, webhooks, conversion feeds, commission statements, migration execution, deployment and production activation remain disabled.
+
+## 2026-08-25 - M040 Partner Management controlled foundation
+
+- M040 is the central provider-disabled Partner Registry for M035, M036, M037 and M039.
+- Partner portals, routing, referrals, data/document exchange, integrations, webhooks, payments, settlements, credentials, migration execution, deployment and production activation remain disabled.

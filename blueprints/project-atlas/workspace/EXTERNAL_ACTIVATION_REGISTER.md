@@ -544,3 +544,18 @@ evidencia no sensible, responsable, decisión y limitaciones conocidas.
 | AI explanation provider and model access | `provider_disabled` | Model approval, secret management, prompt registry, source-grounding evaluation, redaction, human-review workflow | AI contracts are provider-neutral and require human review. |
 | Experiments, learning loops and model training | `provider_disabled` | Approved experiment registry, guardrails, fairness review, rollback owner, data-governance approval | No experiment or automated learning loop can start. |
 | External candidate feeds and provider actions | `provider_disabled` | M037 provider activation, source verification, consent, adapter testing, audit and kill switch | M038 consumes supplied snapshots only and sends no external action. |
+## M039 - CreditCardBroker
+
+| Capability | State | Activation prerequisites |
+| --- | --- | --- |
+| Partner account, API, JavaScript and feed | disabled | Executed agreement, scoped credentials, partner authorization, security review and Product Owner approval. |
+| Offers, affiliate links, redirects and applications | disabled | Approved source/content/terms/disclosures/domains, consent and launch review. |
+| Tracking, conversions and commissions | disabled | Data-processing policy, signed verification, reconciliation and retention approval. |
+
+## M040 - Partner Management
+
+| Capability | State | Activation prerequisites |
+| --- | --- | --- |
+| Partner Portal, routing, referrals and assignments | disabled | Verified partner agreement, authorization, capability/jurisdiction evidence, portal security and Product Owner approval. |
+| Partner data/document exchange, APIs and webhooks | disabled | Consent, data-minimization, credential, RLS, security and integration evidence. |
+| Economics, settlements and reconciliation | disabled | Contractual policy, qualifying evidence, finance review, reconciliation and approval. |

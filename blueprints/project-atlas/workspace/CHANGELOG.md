@@ -309,3 +309,11 @@
 
 - Recorded Product Owner acceptance of M016-M019 as provider-disabled technical foundations. Real
   administrator, CRM, client and organization operations remain deferred to their canonical owners.
+
+# M039 - CreditCardBroker controlled foundation
+
+- Added source-controlled, provider-disabled CreditCardBroker contracts, authored schema/migration and focused tests. No external provider behavior is enabled.
+
+# M040 - Partner Management controlled foundation
+
+- Added central Partner Registry contracts, provider-disabled gate, authored schema/migration and focused tests. No external partner capability is enabled.

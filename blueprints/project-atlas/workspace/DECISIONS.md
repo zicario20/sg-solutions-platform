@@ -941,3 +941,10 @@ Status: controlled foundation implemented. Provider onboarding, jurisdiction-spe
 **Controls:** Unknown hard constraints fail closed. Published policies require human approval and source lineage. Compensation, commission, protected-trait, and sensitive features are excluded from organic ranking. Personalization requires scoped consent and is cleared on withdrawal. Specialist review preserves the original candidate set. AI is limited to grounded explanations that require human review and cannot change policies, rankings, eligibility, providers, referrals, or external state.
 
 **Status:** Technical foundation implemented. No live personalized recommendations, experiments, AI provider, external candidate feed, provider action, or production release is enabled.
+## 2026-08-25 - M039 CreditCardBroker controlled foundation
+
+The Product Owner authorized an M039 provider-disabled technical foundation. CreditCardBroker is represented only as an external affiliate/network adapter under M037; advertisers remain distinct and M038 retains ranking authority. No credentials, API, JavaScript, feed, CTA, redirect, referral, application, data sharing, webhook, commission feed, deployment or activation is authorized.
+
+## 2026-08-25 - M040 Partner Management controlled foundation
+
+The Product Owner authorized M040 as a provider-disabled central Partner Registry foundation. M035, M036, M037 and M039 must reuse Partner IDs rather than create separate partner sources of truth. Portal access, referrals, routing, integrations, data sharing, webhooks, payments, settlements, production migration and activation remain unauthorized pending a separate Product Owner decision and security/compliance evidence.

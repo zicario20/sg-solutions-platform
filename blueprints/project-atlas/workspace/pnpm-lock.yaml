@@ -224,6 +224,8 @@ importers:
 
   packages/config: {}
 
+  packages/creditcardbroker: {}
+
   packages/crm: {}
 
   packages/dashboard: {}
@@ -312,6 +314,8 @@ importers:
         version: 19.2.8(react@19.2.8)
 
   packages/organization-management: {}
+
+  packages/partner-management: {}
 
   packages/provider-control: {}
 
