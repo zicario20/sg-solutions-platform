@@ -317,6 +317,12 @@ importers:
 
   packages/partner-management: {}
 
+  packages/payment-verification:
+    dependencies:
+      '@atlas/billing':
+        specifier: workspace:*
+        version: link:../billing
+
   packages/provider-abstraction: {}
 
   packages/provider-control: {}

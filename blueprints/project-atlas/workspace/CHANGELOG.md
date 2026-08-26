@@ -339,3 +339,13 @@
 ## 2026-08-26
 
 - Added M042 Service Catalog controlled foundation across service registry/versioning, configuration references, publication readiness, discovery projections, governance controls, Drizzle schema and migration 0050. No public service publication, price, checkout, workflow, provider or partner activation occurred.
+
+## 2026-08-26
+
+### Added
+- Controlled M044 payment-verification foundation with provider-neutral contracts, deterministic verification engine, rule traces, sufficiency records, human-start gates, manual-review queue, overrides, audit/outbox records, and safe M043 evidence mapping.
+- Deny-by-default M044 PostgreSQL schema and authored-only migration `0054_m044_payment_verification_controlled_foundation.sql`.
+- Provider-disabled configuration, M044 architecture/module/runbook documentation, and focused verification tests.
+
+### Security
+- Kept all provider ingress and M045/M068 handoffs disabled, prohibited AI payment decisions, and prevented payment verification from granting entitlements or starting workflows.

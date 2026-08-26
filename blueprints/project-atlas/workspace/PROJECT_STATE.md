@@ -240,3 +240,10 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
   even then the current runtime has no event processor.
 - Product Owner acceptance, M044/M045/M046 integration, credentials, sandbox testing, independent
   security review, migration evidence, reconciliation and production activation remain pending.
+
+## M044 - Payment Verification
+
+- Status: controlled provider-disabled foundation implemented; Product Owner acceptance pending.
+- M044 is the sole internal verifier of payment sufficiency. M043 remains evidence-candidate only and cannot mark an order paid.
+- Provider ingress, automatic verification, manual external evidence, workflow handoff, and entitlement handoff are disabled by default.
+- No payment provider, schema migration, service activation, entitlement, workflow, or deployment has been activated.

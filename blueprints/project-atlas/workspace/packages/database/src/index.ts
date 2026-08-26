@@ -35,3 +35,4 @@ export * from "./schema/stripe-payments.ts";
 export * from "./schema.ts";
 export * from "./voice-command-repository.ts";
 export * from "./voice-lifecycle-repository.ts";
+export * from "./schema/payment-verification.ts";

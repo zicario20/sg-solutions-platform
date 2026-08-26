@@ -86,3 +86,15 @@ These families are expected planning areas for M020-M110. The canonical module c
 - Activation: requires a separately approved Stripe sandbox plan, M046/M044/M045 integration,
   M024 approval policy, M077 audit, M078 consent, M083 secret management, migration/RLS evidence,
   reconciliation, security review and rollback plan.
+
+## M044 - Payment Verification
+
+- Status: disabled controlled foundation.
+- Owner: M044 is the sole authority for verified SG Solutions payment facts, payment sufficiency
+  and the payment-start gate; it is provider neutral.
+- Input boundary: M043 and future approved adapters contribute evidence candidates only. Browser
+  returns, amount matches, client assertions and AI are not verification evidence.
+- Activation: requires Product Owner payment-policy approval, M043 current/signed evidence, M046
+  obligation/price references, M024/M074 approval, M045/M068 handoff contracts, M077 audit, M078
+  consent, M083 secrets, migration/RLS evidence, sandbox reconciliation, recovery test and
+  independent finance/security review.

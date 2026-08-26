@@ -1012,3 +1012,11 @@ Decision:
 
 Status: controlled technical foundation implemented; Product Owner acceptance and all operational
 activation gates remain pending.
+
+## 2026-08-26 - M044 Payment Verification as internal verification authority
+
+**Decision:** M044 is the sole internal authority for verified payment sufficiency. Provider integrations, including M043 Stripe evidence, may submit evidence candidates only and must not alter payment, order, entitlement, or workflow state directly.
+
+**Controls:** Positive verification requires fresh, policy-authorized evidence and deterministic validation of environment, provider/object relationship, client, service order, amount, currency, event state, and freshness. Refunds, disputes, reversals, and corrections supersede rather than rewrite historical decisions. AI actors may not decide, override, or execute payment verification.
+
+**Status:** Implemented as a controlled provider-disabled foundation; activation and Product Owner acceptance are pending.

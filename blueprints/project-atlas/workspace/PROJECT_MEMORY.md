@@ -1111,3 +1111,7 @@ Decision:
   contracts use secret references, not values.
 - Migration 0053 is authored only with deny-by-default RLS. Product Owner acceptance, sandbox
   evidence, independent security review and activation approval remain pending.
+
+## 2026-08-26 - M044 Payment Verification controlled foundation
+
+The Product Owner authorized implementation of M044. A provider-neutral, provider-disabled payment verification foundation was added. M044 separates provider evidence from the internal verification decision, requires deterministic rule evaluation, preserves historical decisions through supersession, and keeps M045/M068 handoffs blocked. No live provider, migration, deployment, payment action, entitlement, or operational workflow was activated. Product Owner acceptance remains pending.
