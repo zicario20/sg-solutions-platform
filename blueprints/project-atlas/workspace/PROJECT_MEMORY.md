@@ -1115,3 +1115,13 @@ Decision:
 ## 2026-08-26 - M044 Payment Verification controlled foundation
 
 The Product Owner authorized implementation of M044. A provider-neutral, provider-disabled payment verification foundation was added. M044 separates provider evidence from the internal verification decision, requires deterministic rule evaluation, preserves historical decisions through supersession, and keeps M045/M068 handoffs blocked. No live provider, migration, deployment, payment action, entitlement, or operational workflow was activated. Product Owner acceptance remains pending.
+
+## 2026-08-26 - M045 Service Entitlements controlled foundation
+<!-- M045_SERVICE_ENTITLEMENTS_MEMORY_2026_08_26 -->
+
+Implemented the provider-disabled M045 foundation on the active feature branch. It adds
+a typed entitlement policy engine, decision snapshots, explicit deny precedence,
+temporary grant expiry, quota idempotency contract, client-safe views, RLS schema, and
+an unapplied migration. M044 is consumed only as a normalized condition; payment never
+automatically grants entitlement. No provider, workflow, database migration, or
+production activation occurred. Product Owner acceptance remains pending.

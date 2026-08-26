@@ -98,3 +98,12 @@ These families are expected planning areas for M020-M110. The canonical module c
   obligation/price references, M024/M074 approval, M045/M068 handoff contracts, M077 audit, M078
   consent, M083 secrets, migration/RLS evidence, sandbox reconciliation, recovery test and
   independent finance/security review.
+
+## M045 Service Entitlements
+<!-- M045_SERVICE_ENTITLEMENTS_PROVIDER_DISABLED -->
+
+Status: provider disabled. M045 has no external provider integration and must not
+receive raw payment processor data, invoke partners, or dispatch workflow actions.
+Future M044, approval, document, consent, identity, and M068 adapters require separate
+Product Owner approval, security review, durable repository evidence, and rollback
+planning before any flag can be enabled.

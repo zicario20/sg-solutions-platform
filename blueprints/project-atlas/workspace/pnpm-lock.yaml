@@ -331,6 +331,8 @@ importers:
 
   packages/secure-messaging: {}
 
+  packages/service-entitlements: {}
+
   packages/task-management: {}
 
   packages/tax-operations: {}

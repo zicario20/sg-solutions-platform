@@ -171,6 +171,8 @@ export type ServiceVersion = Readonly<{
   disclosureSetReference: string | null;
   intakeDefinitionReference: string | null;
   workflowBinding: ServiceWorkflowBinding | null;
+  entitlementProfileReference?: string | null;
+  entitlementProfileVersion?: number | null;
   jurisdictionRuleSetReference: string | null;
   servicePrerequisites: readonly string[];
   dependencyCodes: readonly string[];
@@ -213,6 +215,8 @@ export type ServiceOrderCatalogSnapshot = Readonly<{
   disclosureSetReference: string | null;
   intakeDefinitionReference: string | null;
   workflowBinding: ServiceWorkflowBinding | null;
+  entitlementProfileReference?: string | null;
+  entitlementProfileVersion?: number | null;
   jurisdictionRuleSetReference: string | null;
   servicePrerequisites: readonly string[];
   dependencyCodes: readonly string[];
@@ -354,6 +358,22 @@ export function createServiceVersion(
   assertCodeList(value.servicePrerequisites, "service prerequisites");
   assertCodeList(value.dependencyCodes, "service dependencies");
   assertCodeList(value.relatedServiceCodes, "related services");
+  const hasEntitlementProfileReference =
+    value.entitlementProfileReference !== undefined && value.entitlementProfileReference !== null;
+  const hasEntitlementProfileVersion =
+    value.entitlementProfileVersion !== undefined && value.entitlementProfileVersion !== null;
+  if (hasEntitlementProfileReference !== hasEntitlementProfileVersion)
+    throw new TypeError("entitlement profile reference and version must be provided together");
+  if (hasEntitlementProfileReference) {
+    assertText(value.entitlementProfileReference ?? "", "entitlement profile reference");
+    if (
+      value.entitlementProfileVersion === undefined ||
+      value.entitlementProfileVersion === null ||
+      !Number.isInteger(value.entitlementProfileVersion) ||
+      value.entitlementProfileVersion <= 0
+    )
+      throw new TypeError("entitlement profile version invalid");
+  }
   if (value.seo !== null) {
     if (!value.seo.canonicalPath.startsWith("/") || value.seo.canonicalPath.includes("//"))
       throw new TypeError("seo canonical path invalid");
@@ -446,6 +466,12 @@ export function createServiceOrderCatalogSnapshot(
     disclosureSetReference: version.disclosureSetReference,
     intakeDefinitionReference: version.intakeDefinitionReference,
     workflowBinding: structuredClone(version.workflowBinding),
+    ...(version.entitlementProfileReference === undefined
+      ? {}
+      : {
+          entitlementProfileReference: version.entitlementProfileReference,
+          entitlementProfileVersion: version.entitlementProfileVersion ?? null,
+        }),
     jurisdictionRuleSetReference: version.jurisdictionRuleSetReference,
     servicePrerequisites: structuredClone(version.servicePrerequisites),
     dependencyCodes: structuredClone(version.dependencyCodes),

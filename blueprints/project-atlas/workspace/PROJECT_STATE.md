@@ -247,3 +247,13 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - M044 is the sole internal verifier of payment sufficiency. M043 remains evidence-candidate only and cannot mark an order paid.
 - Provider ingress, automatic verification, manual external evidence, workflow handoff, and entitlement handoff are disabled by default.
 - No payment provider, schema migration, service activation, entitlement, workflow, or deployment has been activated.
+
+## M045 Service Entitlements
+<!-- M045_SERVICE_ENTITLEMENTS_CONTROLLED_FOUNDATION -->
+
+- Technical controlled foundation: implemented.
+- Runtime activation: disabled; all M045 environment flags remain `false`.
+- M044 payment-gate ingress, automatic grant materialization, provider/partner actions,
+  and M068 workflow handoff: not implemented or authorized.
+- Database schema and migration: authored only; not applied.
+- Product Owner acceptance and production activation: pending.

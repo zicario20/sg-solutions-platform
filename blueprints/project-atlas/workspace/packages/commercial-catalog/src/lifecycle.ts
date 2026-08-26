@@ -1,5 +1,5 @@
-import { CatalogControlError, evaluateCatalogCommand } from "./governance.ts";
 import type { ServiceJurisdictionRule } from "./commercial-bindings.ts";
+import { CatalogControlError, evaluateCatalogCommand } from "./governance.ts";
 import {
   type ServiceDefinition,
   type ServiceOrderCatalogSnapshot,

@@ -1020,3 +1020,16 @@ activation gates remain pending.
 **Controls:** Positive verification requires fresh, policy-authorized evidence and deterministic validation of environment, provider/object relationship, client, service order, amount, currency, event state, and freshness. Refunds, disputes, reversals, and corrections supersede rather than rewrite historical decisions. AI actors may not decide, override, or execute payment verification.
 
 **Status:** Implemented as a controlled provider-disabled foundation; activation and Product Owner acceptance are pending.
+
+## D-2026-08-26-M045-CONTROLLED-FOUNDATION
+<!-- D-2026-08-26-M045-CONTROLLED-FOUNDATION -->
+
+**Decision:** M045 Service Entitlements is introduced as a deny-by-default,
+provider-disabled controlled foundation. It owns scoped business-entitlement decisions
+and immutable decision provenance, but does not own IAM, payment verification, service
+catalog publication, provider integrations, or operational workflow execution.
+
+**Consequences:** M44 payment evidence is only one condition; a separate human
+authorization and all other current conditions remain required. Runtime ingress,
+automatic grant materialization, provider actions, and M068 handoffs remain disabled
+until a separate Product Owner-approved activation change.

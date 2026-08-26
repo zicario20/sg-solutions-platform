@@ -349,3 +349,11 @@
 
 ### Security
 - Kept all provider ingress and M045/M068 handoffs disabled, prohibited AI payment decisions, and prevented payment verification from granting entitlements or starting workflows.
+
+## Unreleased
+
+<!-- M045_SERVICE_ENTITLEMENTS_CHANGELOG -->
+### Added
+- M045 controlled service-entitlements foundation with deterministic scoped decisions,
+  explicit deny precedence, temporary grants, quota/idempotency contracts, client-safe
+  views, RLS schema, and provider-disabled runtime controls.
