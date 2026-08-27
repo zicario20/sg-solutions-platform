@@ -232,6 +232,8 @@ importers:
 
   packages/crm: {}
 
+  packages/customer-support-agent: {}
+
   packages/dashboard: {}
 
   packages/database:
