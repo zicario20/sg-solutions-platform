@@ -1647,3 +1647,6 @@ export * from "./schema/service-catalog-completion.ts";
 export * from "./schema/service-entitlements.ts";
 export * from "./schema/supervisor-agent.ts";
 export * from "./schema/tax-specialist-agent.ts";
+export * from "./schema/compliance-reviewer.ts";
+export * from "./schema/knowledge-base.ts";
+export * from "./schema/skills-system.ts";

@@ -381,3 +381,17 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
   applications, status reconciliation, commissions, accounting handoffs, or AI execution.
 - Activation: [NEEDS PRODUCT OWNER DECISION: provider portfolio, disclosures, consent and data
   sharing, neutrality, source freshness, approvals, security review, sandbox validation, rollback.]
+
+## M060-M062 - Governance, Skills, and Knowledge Foundations
+
+- M060 Compliance Reviewer: controlled, provider-disabled review foundation implemented. It produces
+  candidate findings and blocked/review-required control assessments only; it owns no policy,
+  legal conclusion, exception approval, release, or external action.
+- M061 Skills System: controlled, provider-disabled skill-governance foundation implemented. Skill
+  definitions, versions, bindings, dependency checks, and authority-intersection decisions exist,
+  but no runtime capability, tool execution, or authority expansion is enabled.
+- M062 Knowledge Base: controlled, provider-disabled curation foundation implemented. Items,
+  draft versions, provenance, scoped projections, and publication-readiness are prepared; ingestion,
+  publication, retrieval, delivery, indexing, and export are disabled.
+- Operational activation: not implemented. Product Owner acceptance: pending. Each module requires
+  documented dependencies, security/audit controls, staging evidence, and separate authorization.

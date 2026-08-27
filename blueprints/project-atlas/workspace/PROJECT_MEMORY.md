@@ -1235,3 +1235,15 @@ references, neutral candidate sets, sponsorship checks, blocked or review-requir
 non-dispatching handoffs, schema preparation, tests, and documentation. No provider call,
 personalized ranking, recommendation execution, referral, redirect, application, status
 reconciliation, commission, accounting, or AI capability was enabled.
+
+## 2026-08-27 - M060-M062 controlled governance and knowledge foundations
+
+The Product Owner authorized M060 Compliance Reviewer, M061 Skills System, and M062 Knowledge
+Base implementation. Provider-disabled foundations were added with typed contracts, fail-closed
+runtime policies, schema preparation, contract tests, documentation, and activation records.
+M060 produces candidate findings and review-required or deterministic-block assessments without
+legal conclusions or approvals. M061 models registered skills, draft versions, explicit bindings,
+and authority intersections without model, tool, job, workflow, or external execution. M062 models
+curated draft knowledge, provenance references, scoped projections, and publication readiness
+without ingestion, publication, retrieval, indexing, delivery, or export. No production provider,
+policy source, knowledge source, model, external action, or operational module was activated.

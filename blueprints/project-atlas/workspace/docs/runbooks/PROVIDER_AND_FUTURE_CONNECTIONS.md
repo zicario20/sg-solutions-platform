@@ -141,3 +141,11 @@ planning before any flag can be enabled.
 | Specialist delegation | Disabled | Authorized specialist manifests, consent/ownership checks, human queue, and rollback plan |
 | Model provider calls | Disabled | M047 provider approval and separate provider configuration |
 | Automatic rerouting and parallel execution | Disabled | Bounded budget/SLA/fallback policy and operational approval |
+
+## M060-M062 - Compliance, Skills, and Knowledge
+
+| Module | Provider or capability | Status | Connection requirement |
+| --- | --- | --- | --- |
+| M060 | Compliance source lookup, policy evaluation, release, and external actions | Disabled | M064 source authority, M076 canonical controls, M074/M075 approvals, immutable audit, security evidence, and Product Owner authorization |
+| M061 | Model invocation, skill execution, tools, jobs, workflows, cache, fallback, and external writes | Disabled | M047 control-plane binding, IAM/resource enforcement, release/audit controls, staging evidence, and Product Owner authorization |
+| M062 | Source ingestion, publication, delivery, retrieval, indexing, AI drafting, and export | Disabled | M063 retrieval, M064 source authority, editorial/domain/compliance approval, projection controls, staging evidence, and Product Owner authorization |
