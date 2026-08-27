@@ -16,7 +16,7 @@ export function createIntakeSpecialistHandoff(input: {
     (reference) => reference.startsWith("answer:") || reference.startsWith("normalized:"),
   );
   return {
-    id: "intake-handoff:" + input.intakeSessionId + ":" + input.target,
+    id: `intake-handoff:${input.intakeSessionId}:${input.target}`,
     intakeSessionId: input.intakeSessionId,
     target: input.target,
     locale: input.locale,

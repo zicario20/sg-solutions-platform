@@ -397,14 +397,17 @@ export class CommunicationsService {
     const versions = new Set<string>();
     if (
       ring.prior.length > MAX_PRIOR_ENDPOINT_KEYS ||
-      keys.some(
-        (candidate) =>
+      keys.some((candidate) => {
+        if (
           candidate.purpose !== "communications_endpoint_digest" ||
           !KEY_VERSION.test(candidate.version) ||
           !candidate.key ||
-          versions.has(candidate.version) ||
-          (versions.add(candidate.version), false),
-      )
+          versions.has(candidate.version)
+        )
+          return true;
+        versions.add(candidate.version);
+        return false;
+      })
     ) {
       return { status: "unavailable", code: "endpoint_digest_key_invalid" };
     }

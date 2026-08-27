@@ -509,6 +509,10 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
       );
       const activeDigest = record.endpointDigests?.[0];
       if (!activeDigest) return { status: "not_claimed", code: "destination_mismatch" };
+      const requiredPolicyVersion = record.requiredPolicyVersion;
+      const requiredFence = record.requiredFence;
+      if (!requiredPolicyVersion || !requiredFence)
+        return { status: "not_claimed", code: "destination_mismatch" };
       const decision = evaluateOutboundPolicy({
         purpose: record.purpose,
         binding: {
@@ -521,8 +525,8 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
           version: policy.version,
           fence: policy.fence,
         },
-        requiredPolicyVersion: record.requiredPolicyVersion!,
-        requiredFence: record.requiredFence!,
+        requiredPolicyVersion,
+        requiredFence,
         consent: { state: consent.state, receipt: consent.receipt },
         connectionState: connection?.state ?? "disabled",
         template: {
@@ -622,7 +626,8 @@ export class MemoryCommunicationsRepository implements CommunicationsRepository 
     const found = this.outboundById.get(input.commandId);
     if (!found) return { status: "not_found" };
     return this.withBindingLock(found.command.bindingId, "apply_provider_status", async () => {
-      const record = this.outboundById.get(input.commandId)!;
+      const record = this.outboundById.get(input.commandId);
+      if (!record) return { status: "not_found" };
       const attempt = this.attempts.get(input.attemptId);
       if (!attempt || attempt.commandId !== input.commandId) return { status: "not_found" };
       if (

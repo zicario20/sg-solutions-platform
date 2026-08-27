@@ -41,11 +41,14 @@ const defaults: Factories = {
   createProvider: (env) => createSupabaseServerAuthProvider(env),
   createCrm: (env) => ({
     async resolve(input) {
-      const response = await fetch(env.CRM_AUTH_RESOLUTION_URL!, {
+      const endpoint = env.CRM_AUTH_RESOLUTION_URL;
+      const token = env.CRM_AUTH_TOKEN;
+      if (!endpoint || !token) return { kind: "unavailable" };
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${env.CRM_AUTH_TOKEN}`,
+          Authorization: ["Bearer", token].join(" "),
         },
         body: JSON.stringify(input),
       });
@@ -72,14 +75,12 @@ export function createConfiguredOAuthDependencies(
   env: Record<string, string | undefined>,
   factories: Factories = defaults,
 ): { sql: AuthSql; provider: Provider; crm: Crm } | undefined {
-  if (
-    required.some((key) => !env[key]) ||
-    !(env.SUPABASE_ISSUER ?? env.SUPABASE_AUTH_ISSUER) ||
-    !(env.SUPABASE_AUDIENCE ?? env.SUPABASE_AUTH_AUDIENCE)
-  )
-    return undefined;
+  const databaseUrl = env.DATABASE_URL;
+  const issuer = env.SUPABASE_ISSUER ?? env.SUPABASE_AUTH_ISSUER;
+  const audience = env.SUPABASE_AUDIENCE ?? env.SUPABASE_AUTH_AUDIENCE;
+  if (!databaseUrl || required.some((key) => !env[key]) || !issuer || !audience) return undefined;
   return {
-    sql: factories.createSql(env.DATABASE_URL!),
+    sql: factories.createSql(databaseUrl),
     provider: factories.createProvider(env),
     crm: factories.createCrm(env),
   };

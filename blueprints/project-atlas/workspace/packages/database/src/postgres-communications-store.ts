@@ -1910,11 +1910,16 @@ export class PostgresCommunicationsRepository implements CommunicationsRepositor
         ) work order by recovery_at asc limit $2`,
         [input.now, limit],
       );
-      return rows.map((row) =>
-        row.kind === "inbound_lease_expired"
-          ? { kind: row.kind, eventId: row.event_id!, attempts: row.attempts! }
-          : { kind: row.kind, commandId: row.command_id!, attemptId: row.attempt_id! },
-      );
+      return rows.map((row) => {
+        if (row.kind === "inbound_lease_expired") {
+          if (!row.event_id || typeof row.attempts !== "number")
+            throw new Error("COMMUNICATION_RECOVERY_ROW_INVALID");
+          return { kind: row.kind, eventId: row.event_id, attempts: row.attempts };
+        }
+        if (!row.command_id || !row.attempt_id)
+          throw new Error("COMMUNICATION_RECOVERY_ROW_INVALID");
+        return { kind: row.kind, commandId: row.command_id, attemptId: row.attempt_id };
+      });
     });
   }
 

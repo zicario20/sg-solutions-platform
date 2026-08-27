@@ -4,6 +4,7 @@ import {
   type ClientServicesSourcePort,
 } from "@atlas/client-services";
 import type { DashboardAuthPort } from "@atlas/dashboard";
+import type { AuthSql } from "@atlas/database";
 
 import {
   createM007DashboardAuthPort,
@@ -17,6 +18,16 @@ import {
   type ClientServicesSqlPort,
   createPostgresClientServicesSource,
 } from "./postgres-repository.ts";
+
+type PostgresTransaction = {
+  unsafe<T extends readonly Record<string, unknown>[]>(
+    text: string,
+    values: readonly unknown[],
+  ): Promise<T>;
+};
+type PostgresClient = {
+  begin<T>(work: (transaction: PostgresTransaction) => Promise<T>): Promise<T>;
+};
 
 export interface ClientServicesRuntimeConfiguration {
   admission: ClientServicesAdmissionPort;
@@ -60,17 +71,17 @@ export function createM007M008ClientServicesRuntime(
 async function databaseSource(url: string) {
   const name = "postgres";
   const module = (await import(name)) as {
-    default: (url: string, options: object) => any;
+    default: (url: string, options: { max: number; prepare: boolean }) => PostgresClient;
   };
   const client = module.default(url, { max: 4, prepare: false });
   const sql: ClientServicesSqlPort = {
     transaction: async (work) =>
-      client.begin(async (transaction: any) =>
+      client.begin(async (transaction) =>
         work({
           query: async <T extends Record<string, unknown>>(
             text: string,
             values: readonly unknown[],
-          ) => (await transaction.unsafe(text, [...values])) as readonly T[],
+          ) => transaction.unsafe<readonly T[]>(text, values),
         }),
       ),
   };
@@ -98,7 +109,7 @@ export async function createEnvironmentClientServicesRuntime(
     if (!repository) {
       const name = "@atlas/database";
       const database = (await import(name)) as {
-        createPostgresAuthSql: (url: string) => any;
+        createPostgresAuthSql: (url: string) => AuthSql;
       };
       repository = createPostgresM007DashboardAuthRepository(database.createPostgresAuthSql(url));
     }

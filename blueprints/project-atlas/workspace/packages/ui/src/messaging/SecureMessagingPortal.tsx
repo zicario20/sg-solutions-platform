@@ -17,7 +17,7 @@ export function SecureMessagingPortal({
   locale: DashboardLocale;
   state: "unavailable" | "ready";
 }) {
-  const copy = secureMessagingCopy[locale]!;
+  const copy = secureMessagingCopy[locale];
   const [items, setItems] = useState<readonly InboxItem[] | undefined>();
   const [unavailable, setUnavailable] = useState(state === "unavailable");
   useEffect(() => {

@@ -253,8 +253,9 @@ export function derivePublicProcessTimeline(input: {
     });
   }
   projected.sort((a, b) => compare(a.keyset, b.keyset));
-  const eligible = input.after
-      ? projected.filter((value) => compare(value.keyset, input.after!) > 0)
+  const after = input.after;
+  const eligible = after
+      ? projected.filter((value) => compare(value.keyset, after) > 0)
       : projected,
     limit = Math.min(Math.max(input.limit ?? 20, 1), 20),
     page = eligible.slice(0, limit),

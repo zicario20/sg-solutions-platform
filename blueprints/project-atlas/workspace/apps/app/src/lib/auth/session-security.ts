@@ -22,11 +22,11 @@ export function buildAuthRiskKeyDigests(
 ): readonly string[] {
   if (!/^[a-z_]{3,64}$/u.test(action)) throw new Error("AUTH_RISK_ACTION_DENIED");
   const keys = (["flow", "ip", "account", "device", "email", "phone"] as const)
-    .flatMap((dimension) =>
-      dimensions[dimension]?.trim()
-        ? [hmacIdentifier(secret, `${action}:${dimension}`, dimensions[dimension]!)]
-        : [],
-    )
+    .flatMap((dimension) => {
+      const value = dimensions[dimension];
+      if (!value?.trim()) return [];
+      return [hmacIdentifier(secret, `${action}:${dimension}`, value)];
+    })
     .slice(0, 5);
   if (keys.length === 0) throw new Error("AUTH_RISK_DIMENSION_REQUIRED");
   return keys;

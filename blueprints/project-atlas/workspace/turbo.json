@@ -1,6 +1,9 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalEnv": [
+    "M004_POSTGRES_INTEGRATION_URL",
+    "ATLAS_M008_DEPENDENCY_ROOT",
+    "ATLAS_M009_DEPENDENCY_ROOT",
     "M003_POSTGRES_INTEGRATION_URL",
     "PLAYWRIGHT_BASE_URL",
     "RELEASE_GATE",

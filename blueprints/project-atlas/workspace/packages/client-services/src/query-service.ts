@@ -290,16 +290,17 @@ export class ClientServicesQueryService {
     )
       return { kind: "not_found" };
     const children = await Promise.all(
-      CLIENT_SERVICE_SECTION_NAMES.map((name) =>
-        this.dependencies.sections[name]
+      CLIENT_SERVICE_SECTION_NAMES.map((name) => {
+        const section = this.dependencies.sections[name];
+        return section
           ? loadBoundedClientServiceSection(
-              this.dependencies.sections[name]!,
+              section,
               auth.snapshot,
               source.root,
               this.dependencies.ownerTimeoutMs ?? 250,
             )
-          : Promise.resolve(unavailable("provider_disabled")),
-      ),
+          : Promise.resolve(unavailable("provider_disabled"));
+      }),
     );
     if (hasDuplicateChildFence(children)) return { kind: "retry_required" };
     if (!(await verifyFinal(this.dependencies, auth.snapshot, fence(source.root, children))))

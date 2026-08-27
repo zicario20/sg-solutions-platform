@@ -28,10 +28,12 @@ export function createSupabaseServerAuthProvider(
     redirectUri: string;
   }): Promise<OfficialSupabaseIdentity | undefined>;
 } {
-  const base = env.SUPABASE_URL!;
-  const apiKey = env.SUPABASE_ANON_KEY!;
-  const issuer = (env.SUPABASE_ISSUER ?? env.SUPABASE_AUTH_ISSUER)!;
-  const audience = (env.SUPABASE_AUDIENCE ?? env.SUPABASE_AUTH_AUDIENCE)!;
+  const base = env.SUPABASE_URL;
+  const apiKey = env.SUPABASE_ANON_KEY;
+  const issuer = env.SUPABASE_ISSUER ?? env.SUPABASE_AUTH_ISSUER;
+  const audience = env.SUPABASE_AUDIENCE ?? env.SUPABASE_AUTH_AUDIENCE;
+  if (!base || !apiKey || !issuer || !audience)
+    throw new Error("SUPABASE_AUTH_CONFIGURATION_REQUIRED");
   const request = (path: string, init: RequestInit) =>
     fetcher(`${base}/auth/v1/${path}`, {
       ...init,

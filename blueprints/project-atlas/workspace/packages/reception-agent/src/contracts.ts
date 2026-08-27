@@ -226,37 +226,37 @@ export function freezeReception<T>(value: T): T {
 
 export function assertReceptionText(value: string, label: string, maximumLength = 240): void {
   if (value.trim().length === 0 || value.length > maximumLength)
-    throw new TypeError(label + " must be between 1 and " + maximumLength + " characters");
+    throw new TypeError(`${label} must be between 1 and ${maximumLength} characters`);
   if (PRIVATE_REASONING_PATTERN.test(value))
-    throw new TypeError(label + " must not contain private reasoning");
+    throw new TypeError(`${label} must not contain private reasoning`);
 }
 
 export function assertReceptionReference(value: string, label: string): void {
   assertReceptionText(value, label);
   if (SENSITIVE_REFERENCE_PATTERN.test(value))
-    throw new TypeError(label + " must not identify sensitive content");
+    throw new TypeError(`${label} must not identify sensitive content`);
 }
 
 export function assertReceptionVersionReference(value: string, label: string): void {
   assertReceptionReference(value, label);
   if (!VERSION_REFERENCE_PATTERN.test(value))
-    throw new TypeError(label + " must be an exact version reference");
+    throw new TypeError(`${label} must be an exact version reference`);
 }
 
 export function assertReceptionIdempotencyKey(value: string, label: string): void {
   assertReceptionReference(value, label);
   if (!IDEMPOTENCY_KEY_PATTERN.test(value))
-    throw new TypeError(label + " must be a versioned idempotency key");
+    throw new TypeError(`${label} must be a versioned idempotency key`);
 }
 
 export function assertReceptionIso(value: string, label: string): void {
   assertReceptionText(value, label, 64);
   if (!value.endsWith("Z") || Number.isNaN(Date.parse(value)))
-    throw new TypeError(label + " must be an ISO timestamp");
+    throw new TypeError(`${label} must be an ISO timestamp`);
 }
 
 function assertNonEmptyReferences(values: readonly string[], label: string): void {
-  if (values.length === 0) throw new TypeError(label + " is required");
+  if (values.length === 0) throw new TypeError(`${label} is required`);
   values.forEach((value) => {
     assertReceptionVersionReference(value, label);
   });

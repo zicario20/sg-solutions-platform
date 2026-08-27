@@ -58,12 +58,12 @@ export function validBookkeepingMutationProof(
       ? readDashboardCookie(request, DASHBOARD_SESSION_COOKIE)
       : input.sessionHandle;
   const token = request.headers.get("x-atlas-csrf") ?? "";
+  if (!sessionHandle) return false;
   return (
-    Boolean(sessionHandle) &&
     request.headers.get("origin") === runtime.canonicalOrigin &&
     token.length > 0 &&
     token === readDashboardCookie(request, DASHBOARD_CSRF_COOKIE) &&
-    runtime.verifyCsrf(sessionHandle!, token)
+    runtime.verifyCsrf(sessionHandle, token)
   );
 }
 

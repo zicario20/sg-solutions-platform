@@ -141,7 +141,7 @@ export function createDefaultOAuthAdapter(
       });
       try {
         const authorize = new URL(location);
-        const configured = new URL(supabaseUrl!);
+        const configured = new URL(supabaseUrl ?? "");
         if (authorize.origin !== configured.origin || authorize.pathname !== "/auth/v1/authorize")
           return { kind: "unavailable" };
       } catch {
@@ -684,6 +684,8 @@ export function createConfiguredAuthControlPlane(
           : input.purpose === "login"
             ? environment.AUTH_SECURITY_ALERT_PROVIDER_ENABLED === "true"
             : environment.AUTH_EMAIL_PROVIDER_ENABLED === "true";
+      const primaryRiskKeyDigest = riskKeyDigests[0];
+      if (!primaryRiskKeyDigest) throw new Error("AUTH_RISK_DIMENSION_REQUIRED");
       const result = await controls.admitAndEnqueue({
         action: input.purpose,
         riskKeyDigests,
@@ -691,7 +693,7 @@ export function createConfiguredAuthControlPlane(
         eventKey,
         correlationId: input.requestId,
         metadata: { riskClass: "multi_key" },
-        outbox: notification(input.purpose, providerEnabled, eventKey, riskKeyDigests[0]!),
+        outbox: notification(input.purpose, providerEnabled, eventKey, primaryRiskKeyDigest),
         now: input.now,
       });
       return result;

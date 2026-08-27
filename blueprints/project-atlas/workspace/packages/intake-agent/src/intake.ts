@@ -121,7 +121,7 @@ export function normalizeSafeIntakeValue(input: {
   }
   if (fieldCode === "phone") {
     const digits = input.value.replace(/\D/g, "");
-    const normalizedValue = digits.length === 10 ? "+1" + digits : "+" + digits;
+    const normalizedValue = digits.length === 10 ? `+1${digits}` : `+${digits}`;
     return {
       status: "normalized",
       normalizedValue,

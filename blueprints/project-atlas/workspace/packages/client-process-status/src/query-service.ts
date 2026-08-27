@@ -60,11 +60,11 @@ const unavailable = (
     services: 6,
     notifications: 7,
   };
-function validDate(value: string | undefined) {
+function validDate(value: string | undefined): value is string {
   return (
-    Boolean(value) &&
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/u.test(value!) &&
-    Number.isFinite(Date.parse(value!))
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/u.test(value) &&
+    Number.isFinite(Date.parse(value))
   );
 }
 function factCounts(result: ProcessOwnerResult) {
@@ -170,18 +170,22 @@ function validOwner(
       !priorityKeys.length
     );
   }
+  const asOf = result.asOf;
   if (
     result.bindingMode !== "resource_fences" ||
-    !validDate(result.asOf) ||
-    Date.parse(result.asOf!) > now.getTime() ||
-    now.getTime() - Date.parse(result.asOf!) > entry.freshnessMs ||
-    (entry.code === "timeline" &&
-      (!validDate(result.highWatermark) ||
-        result.events?.some(
-          (event) => Date.parse(event.recordedAt) > Date.parse(result.highWatermark!),
-        )))
+    !validDate(asOf) ||
+    Date.parse(asOf) > now.getTime() ||
+    now.getTime() - Date.parse(asOf) > entry.freshnessMs
   )
     return false;
+  if (entry.code === "timeline") {
+    const highWatermark = result.highWatermark;
+    if (
+      !validDate(highWatermark) ||
+      result.events?.some((event) => Date.parse(event.recordedAt) > Date.parse(highWatermark))
+    )
+      return false;
+  }
   const counts = factCounts(result),
     expected = Object.entries(counts).filter(([, count]) => count > 0) as [
       Exclude<keyof typeof counts, never>,
@@ -280,11 +284,11 @@ function processPriority(
   for (const entry of entries) {
     const value = loaded.get(entry.code);
     for (const key of PROCESS_SOURCE_CAPABILITIES[entry.code].priority) {
+      const priority = value?.priority?.[key];
       if (!value || value.state === "stale" || value.state === "unavailable")
         input[key] = emptyPriority();
-      else if (value.state === "empty" || !value.priority?.[key])
-        input[key] = emptyPriority("empty");
-      else input[key] = value.priority[key]!;
+      else if (value.state === "empty" || !priority) input[key] = emptyPriority("empty");
+      else input[key] = priority;
     }
   }
   try {
@@ -564,13 +568,14 @@ export class ClientProcessStatusQueryService {
     const sections: ClientProcessDetailDto["sections"] = {};
     for (const name of PROCESS_SECTION_NAMES) {
       const value = loaded.get(name);
+      const asOf = value?.asOf;
       sections[name] =
-        value?.state === "fresh" && value.items?.length
-          ? { state: "fresh", asOf: value.asOf!, items: value.items }
-          : value?.state === "empty"
-            ? { state: "empty", asOf: value.asOf! }
+        value?.state === "fresh" && value.items?.length && validDate(asOf)
+          ? { state: "fresh", asOf, items: value.items }
+          : value?.state === "empty" && validDate(asOf)
+            ? { state: "empty", asOf }
             : value?.state === "stale" && validDate(value.asOf)
-              ? { state: "stale", asOf: value.asOf! }
+              ? { state: "stale", asOf: value.asOf }
               : { state: "unavailable" };
     }
     const workflow = loaded.get("workflow"),

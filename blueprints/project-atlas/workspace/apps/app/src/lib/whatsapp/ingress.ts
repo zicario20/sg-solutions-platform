@@ -396,9 +396,8 @@ async function readRawBody(
         totalRemaining <= dependencies.limits.readTimeoutMilliseconds
           ? new IngressFailure("total_timeout", 504, "unavailable")
           : new IngressFailure("read_timeout", 408, "unavailable");
-      let result: ReadableStreamReadResult<Uint8Array>;
       const readOperation = reader.read();
-      result = await withTimeout(
+      const result: ReadableStreamReadResult<Uint8Array> = await withTimeout(
         readOperation,
         readTimeout,
         dependencies.clock,
