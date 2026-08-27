@@ -1082,3 +1082,7 @@ M003 remains the public transport owner; M047 remains the AI control plane; M048
 supervisor boundary; M020, M050, M051, M052, M011, M013, M043/M044, and other owners remain
 authoritative for their respective actions. Runtime flags, RLS, audit, exact references, human
 approval, consent, and owner adapters must be independently approved before activation.
+
+## 2026-08-27 - M050 controlled Intake Agent boundary
+
+M050 is implemented as a versioned, purpose-limited intake foundation. M49 remains responsible for minimum public reception, M22 remains canonical for form definitions/submissions, and M50 may only prepare scoped references and assessments. Until a future approved activation gate, all M050 provider calls, persistence, document/consent requests, lead/order/case candidates, workflow events, handoff dispatch, and AI execution remain disabled. User assertions must not be promoted to verified facts by M050.

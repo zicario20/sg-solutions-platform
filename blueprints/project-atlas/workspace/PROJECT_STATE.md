@@ -300,3 +300,10 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - All M049 provider calls, lead writes, secure-link issuance, handoff dispatch, and follow-up flags
   remain disabled. No public operation, migration, deployment, or product activation occurred.
 - Product Owner acceptance, owner adapters, security evidence, and operational release remain pending.
+
+## M050 Intake Agent
+
+- Status: controlled technical foundation implemented; provider-disabled and non-operational.
+- Scope: versioned intake contracts, collection gates, safe normalization, conditional cycle checks, completion/readiness separation, M049 adapter, scoped handoff preparation, schema/migration preparation, and tests.
+- Boundaries: M22 remains canonical for forms; M42 binds service intake; M11/M58 own documents; M78/M67 own consent/signature; M20/M18/M21/M22 own CRM/client/order/case; M68 owns workflow execution.
+- Activation: Product Owner approval, secure-storage evidence, integration evidence, migration approval, and independent security/architecture review are required.

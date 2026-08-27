@@ -286,6 +286,12 @@ importers:
         specifier: workspace:*
         version: link:../client-services
 
+  packages/intake-agent:
+    dependencies:
+      '@atlas/reception-agent':
+        specifier: workspace:*
+        version: link:../reception-agent
+
   packages/intake-forms: {}
 
   packages/marketplace: {}

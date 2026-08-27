@@ -1159,3 +1159,7 @@ Sensitive public input and untrusted instruction text fail safely to a secure ch
 No raw visitor messages, providers, CRM writes, secure-link issuance, scheduling, payment access,
 handoff dispatch, follow-up, migration execution, or deployment was activated. Product Owner
 acceptance and all operational activation remain pending.
+
+## 2026-08-27 - M050 Intake Agent controlled foundation
+
+The Product Owner authorized implementation of M050 after M049. The repository now contains a provider-disabled intake-agent package, additive migration preparation, focused contract tests, and documentation. M050 does not collect or persist raw answers, dispatch handoffs, call providers, create CRM/order/case records, or execute workflows. Product Owner acceptance and activation remain pending.

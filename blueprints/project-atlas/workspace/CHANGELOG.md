@@ -391,3 +391,10 @@
   migration 0059_m049_reception_agent_controlled_foundation.sql, focused tests, and runbook.
 - No raw sensitive public content, provider call, CRM write, appointment, link issuance, payment
   access, follow-up, handoff dispatch, migration execution, deployment, or product activation was added.
+
+## 2026-08-27 - M050 Intake Agent
+
+- Added the provider-disabled M050 structured intake foundation.
+- Added intake contracts, collection gates, safe normalization, conditional-cycle detection, completion/readiness assessment, and scoped handoff preparation.
+- Added additive database schema and unexecuted migration 0060.
+- Added M050 module, architecture, and runbook documentation plus focused tests.
