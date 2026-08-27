@@ -228,6 +228,8 @@ importers:
 
   packages/config: {}
 
+  packages/credit-specialist-agent: {}
+
   packages/creditcardbroker: {}
 
   packages/crm: {}

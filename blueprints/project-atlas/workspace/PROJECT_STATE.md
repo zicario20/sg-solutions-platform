@@ -323,3 +323,11 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - Runtime: all M052 flags are false. Private context reads, case writes, owner-module actions, secure messaging, attachment access, payment/refund actions, workflows, specialist dispatch, providers, AI execution, migration execution, and deployment are disabled.
 - Migration: 0062_m052_customer_support_agent_controlled_foundation.sql is authored only and not applied.
 - Pending: Product Owner activation approval, identity/ownership/RLS, client-safe projections, owner adapters, retention/audit evidence, independent review, and deployment evidence.
+
+## M053 - Credit Specialist Agent
+
+- Status: controlled, provider-disabled foundation implemented; Product Owner acceptance pending.
+- Runtime: disabled; no provider calls, raw-report ingestion, analysis execution, dispute dispatch,
+  dispute submission, monitoring, tradeline action, handoff dispatch, or AI execution.
+- Activation: [NEEDS PRODUCT OWNER DECISION: provider, legal/compliance authority, data controls,
+  human approvals, security review, sandbox validation, rollback evidence.]

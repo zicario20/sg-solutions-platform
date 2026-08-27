@@ -575,3 +575,14 @@ evidencia no sensible, responsable, decisión y limitaciones conocidas.
 | Private support context and owner-module actions | disabled | Product Owner approval, authenticated authorization, client/resource ownership, purpose, RLS, and authoritative projection evidence. |
 | Secure messages, attachments, payment/refund, workflow, and specialist handoffs | disabled | Approved owner contracts, consent/retention controls, idempotency/reconciliation, security review, and independent test evidence. |
 | Support agent runtime, providers, and AI execution | disabled | M047 release, tool allowlist, audit/observability, redaction, human escalation, deployment approval, and kill switch. |
+
+## M053 - Credit Specialist Agent
+
+| Capability | Status | Activation requirement |
+| --- | --- | --- |
+| Credit report provider calls | Disabled | Product Owner approval, M041 adapter, contract, privacy/security/compliance review |
+| Raw report ingestion or storage | Disabled | Approved data classification, retention, encryption, access controls, and validation |
+| Analysis execution | Disabled | Approved deterministic scope, human review, security review, and sandbox evidence |
+| Dispute dispatch or submission | Disabled | M027 workflow, M060 compliance, M074-M075 approval, M078 consent, and rollback evidence |
+| Monitoring and tradeline actions | Disabled | M028/M029 ownership and separately approved provider controls |
+| AI execution and handoff dispatch | Disabled | Approved model/tool scope, least privilege, audit, and independent review |

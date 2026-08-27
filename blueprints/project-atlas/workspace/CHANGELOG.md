@@ -410,3 +410,11 @@
 - Added a provider-disabled authenticated support foundation with ownership gating, client-safe
   unknown/stale status handling, explicit routing, prepared support-case drafts, minimized handoffs,
   schema, and a non-executed migration.
+
+## Unreleased
+
+### Added
+
+- M053 Credit Specialist Agent controlled foundation with authorization gates, reference-only report
+  objects, evidence candidates, dispute-readiness guards, non-dispatching handoffs, and disabled
+  runtime controls.
