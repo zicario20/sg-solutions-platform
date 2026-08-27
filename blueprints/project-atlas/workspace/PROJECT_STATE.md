@@ -356,3 +356,28 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
   handoff dispatch, or AI execution.
 - Activation: [NEEDS PRODUCT OWNER DECISION: financial-service role, provider/source scope,
   authorization and sharing controls, approvals, security review, sandbox validation, rollback.]
+
+## M057 - Home Buying Assistance Agent
+
+- Status: controlled, provider-disabled foundation implemented; Product Owner acceptance pending.
+- Runtime: disabled; no lender/program/provider calls, raw home-buying data, eligibility or
+  underwriting conclusions, application preparation/submission, provider handoff, mortgage status
+  ingestion, signatures, or AI execution.
+- Activation: [NEEDS PRODUCT OWNER DECISION: service role, authoritative sources, co-applicant and
+  provider-sharing controls, approvals, compliance/security review, sandbox validation, rollback.]
+
+## M058 - Document Specialist Agent
+
+- Status: controlled, provider-disabled foundation implemented; Product Owner acceptance pending.
+- Runtime: disabled; no document download/storage, OCR, parser, classification/extraction execution,
+  canonical-fact creation, generation, signature, delivery, handoff dispatch, or AI execution.
+- Activation: [NEEDS PRODUCT OWNER DECISION: processing ownership, storage/quarantine/retention,
+  provenance, approvals, security review, sandbox validation, rollback.]
+
+## M059 - Marketplace Assistant
+
+- Status: controlled, provider-disabled foundation implemented; Product Owner acceptance pending.
+- Runtime: disabled; no provider calls, personalized ranking, recommendations, referrals, redirects,
+  applications, status reconciliation, commissions, accounting handoffs, or AI execution.
+- Activation: [NEEDS PRODUCT OWNER DECISION: provider portfolio, disclosures, consent and data
+  sharing, neutrality, source freshness, approvals, security review, sandbox validation, rollback.]

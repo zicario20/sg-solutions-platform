@@ -32,6 +32,9 @@ This document is a checklist, not activation authority. A provider remains disab
 | M018 | Client management | Identity/contact verification and approved partner adapters | Identity proof policy, representative authorization, sensitive-data controls |
 | M019 | Organization management | Filing/business-verification adapter when approved | Jurisdiction policy, authority evidence, reauthentication, external reconciliation |
 | M031 | Bookkeeping and accounting | QuickBooks Online, Xero, bank-data, receipt, payroll, commerce, expense and tax-platform adapters | Separate provider approval, scoped secrets, internal-ledger source-of-truth policy, RLS/migration evidence, signed ingress, idempotent reconciliation, kill switch, security review and rollback |
+| M057 | Home Buying Assistance Agent | Approved mortgage/program/property/provider adapters through M041; M064 current sources | Service-role/lending boundary, co-applicant consent, source freshness, specialist/compliance approvals, sandbox, rollback |
+| M058 | Document Specialist Agent | M011/M065 document processing, private storage, OCR/parser, M066/M067 delivery/signature owners | Quarantine, malware, retention, provenance, secure delivery, human review, security review, rollback |
+| M059 | Marketplace Assistant | M037/M038 plus approved M039-M041 provider, partner, referral, and redirect adapters | Disclosures, consent, data minimization, neutrality, source freshness, open-redirect protection, specialist review, rollback |
 
 ## Future provider families
 

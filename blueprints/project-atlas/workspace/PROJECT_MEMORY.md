@@ -1208,3 +1208,30 @@ references, readiness candidates, application-readiness controls, non-dispatchin
 schema/migration preparation, and documentation. No lender/provider call, financial ingestion,
 underwriting, recommendation, application, offer, funding action, personal-credit retrieval, or AI
 execution was enabled.
+
+## 2026-08-27 - M057 controlled home-buying assistance foundation
+
+The Product Owner authorized M057 implementation. A provider-disabled specialist foundation was
+added over M036 with verified, reference-only home-buying sessions; separate co-applicant
+authorization; opaque source references; non-conclusive readiness and application-readiness
+candidates; reference-only application preparation; non-dispatching human handoffs; schema
+preparation; tests; and documentation. No lender, program, property, credit, application,
+signature, provider-handoff, mortgage-status, or AI capability was enabled.
+
+## 2026-08-27 - M058 controlled document-specialist foundation
+
+The Product Owner authorized M058 implementation. A provider-disabled specialist foundation was
+added over the document-processing owners with authorized reference-only sessions, opaque document
+references, unverified classification and extraction candidates, quality gates, domain-pack
+references, non-dispatching handoffs, schema preparation, tests, and documentation. No raw document
+storage, OCR, parser, extraction execution, canonical-fact creation, generation, signature,
+delivery, or AI capability was enabled.
+
+## 2026-08-27 - M059 controlled marketplace-assistant foundation
+
+The Product Owner authorized M059 implementation. A provider-disabled specialist foundation was
+added over M037/M038 with generic-public and purpose-authorized reference-only sessions, listing
+references, neutral candidate sets, sponsorship checks, blocked or review-required referral intents,
+non-dispatching handoffs, schema preparation, tests, and documentation. No provider call,
+personalized ranking, recommendation execution, referral, redirect, application, status
+reconciliation, commission, accounting, or AI capability was enabled.
