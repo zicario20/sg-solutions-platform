@@ -2,10 +2,10 @@ import type {
   IntakeAnswerRecord,
   IntakeDataClassification,
   IntakeEnteredByType,
+  IntakeSession,
   IntakeSourceType,
   IntakeVerificationStatus,
   ReceptionIntakeSessionInput,
-  IntakeSession,
 } from "./contracts.js";
 
 function deriveVerificationStatus(sourceType: IntakeSourceType): IntakeVerificationStatus {

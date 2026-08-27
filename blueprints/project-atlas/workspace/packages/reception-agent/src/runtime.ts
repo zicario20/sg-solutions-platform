@@ -13,7 +13,9 @@ export interface ReceptionBlockedResult {
 }
 
 export interface DisabledReceptionRuntime {
-  readonly respond: (input: { readonly sessionReference: string }) => Promise<ReceptionBlockedResult>;
+  readonly respond: (input: {
+    readonly sessionReference: string;
+  }) => Promise<ReceptionBlockedResult>;
   readonly createLead: (input: {
     readonly leadCaptureRequestReference: string;
   }) => Promise<ReceptionBlockedResult>;

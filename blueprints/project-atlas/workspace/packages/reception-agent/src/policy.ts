@@ -21,8 +21,7 @@ export function validateReceptionToolRequest(input: {
   readonly executionRequested: boolean;
   readonly authenticated: boolean;
 }): ReceptionToolDecision {
-  if (isProhibitedReceptionTool(input.tool))
-    throw new TypeError("reception tool is prohibited");
+  if (isProhibitedReceptionTool(input.tool)) throw new TypeError("reception tool is prohibited");
   if (input.executionRequested) throw new TypeError("reception tool execution is not allowed");
   if (input.tool === "prepare_authenticated_support_handoff" && !input.authenticated)
     throw new TypeError("authentication is required for authenticated support handoff");

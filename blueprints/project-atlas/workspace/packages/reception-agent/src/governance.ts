@@ -37,14 +37,15 @@ export function validateReceptionChangeRequest(
     throw new TypeError("system changes to reception governance require human ownership");
   if (value.humanApprovalReference === null)
     throw new TypeError("reception governance changes require human approval");
-  assertReceptionVersionReference(value.humanApprovalReference, "reception human approval reference");
+  assertReceptionVersionReference(
+    value.humanApprovalReference,
+    "reception human approval reference",
+  );
   assertReceptionVersionReference(value.changeReference, "reception change reference");
   return Object.freeze({ ...value });
 }
 
-export function createReceptionAuditEvent(
-  value: ReceptionAuditEventInput,
-): ReceptionAuditEvent {
+export function createReceptionAuditEvent(value: ReceptionAuditEventInput): ReceptionAuditEvent {
   assertReceptionText(value.id, "reception audit id", 160);
   assertReceptionText(value.eventType, "reception audit event type", 160);
   assertReceptionVersionReference(value.resourceReference, "reception audit resource reference");

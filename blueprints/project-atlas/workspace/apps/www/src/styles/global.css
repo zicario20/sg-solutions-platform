@@ -768,8 +768,12 @@ ol {
 }
 .final-cta .action-link--primary {
   background: white;
-  color: var(--color-brand-navy);
+  color: #0a2540;
   box-shadow: none;
+}
+.final-cta .action-link--primary:visited,
+.final-cta .action-link--primary span {
+  color: #0a2540;
 }
 
 .site-footer {

@@ -17,7 +17,9 @@ export const receptionAgentConfigurations = pgTable(
     status: text("status").notNull().default("disabled"),
     configuration: jsonb("configuration").$type<Record<string, unknown>>().notNull(),
   },
-  (table) => [index("reception_agent_configurations_tenant_code_idx").on(table.tenantId, table.code)],
+  (table) => [
+    index("reception_agent_configurations_tenant_code_idx").on(table.tenantId, table.code),
+  ],
 ).enableRLS();
 
 export const receptionSessions = pgTable(
@@ -171,7 +173,10 @@ export const receptionHumanTransfers = pgTable(
     executionPermitted: boolean("execution_permitted").notNull().default(false),
   },
   (table) => [
-    index("reception_human_transfers_tenant_session_idx").on(table.tenantId, table.sessionReference),
+    index("reception_human_transfers_tenant_session_idx").on(
+      table.tenantId,
+      table.sessionReference,
+    ),
   ],
 ).enableRLS();
 

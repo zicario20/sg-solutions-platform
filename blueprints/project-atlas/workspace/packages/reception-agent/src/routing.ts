@@ -62,7 +62,10 @@ export function createReceptionRoutingDecision(input: {
       intent: input.classification.intent,
       nextAction: "human_transfer_required" as const,
       target: "human" as const,
-      reasonCodes: Object.freeze([...input.classification.reasonCodes, "public_knowledge_unavailable"]),
+      reasonCodes: Object.freeze([
+        ...input.classification.reasonCodes,
+        "public_knowledge_unavailable",
+      ]),
       executionPermitted: false as const,
       createdAt: input.createdAt,
     });
@@ -84,7 +87,8 @@ export function createReceptionRoutingDecision(input: {
   return Object.freeze({
     sessionId: input.session.id,
     intent: input.classification.intent,
-    nextAction: target === "human" ? ("human_transfer_required" as const) : ("handoff_prepared" as const),
+    nextAction:
+      target === "human" ? ("human_transfer_required" as const) : ("handoff_prepared" as const),
     target,
     reasonCodes: Object.freeze(
       target === "human"

@@ -1,8 +1,5 @@
 import type { AgentManifest } from "@atlas/ai-control-plane";
-import {
-  createSupervisorTaskEnvelope,
-  type SupervisorTaskEnvelope,
-} from "@atlas/supervisor-agent";
+import { createSupervisorTaskEnvelope, type SupervisorTaskEnvelope } from "@atlas/supervisor-agent";
 
 export const RECEPTION_PROHIBITED_TOOLS = [
   "approve_service_start",
@@ -221,8 +218,7 @@ const SENSITIVE_REFERENCE_PATTERN =
   /\b(?:ssn|social security|ein|bank(?:ing)?|card(?: number)?|credential|password|tax return)\b/iu;
 const VERSION_REFERENCE_PATTERN =
   /^[a-z][a-z0-9_-]*:[a-zA-Z0-9._/-]+@(?:[1-9]\d*|v?[a-zA-Z0-9._-]+)$/u;
-const IDEMPOTENCY_KEY_PATTERN =
-  /^[a-z][a-z0-9:_-]*@(?:[1-9]\d*|v?[a-zA-Z0-9._-]+)$/u;
+const IDEMPOTENCY_KEY_PATTERN = /^[a-z][a-z0-9:_-]*@(?:[1-9]\d*|v?[a-zA-Z0-9._-]+)$/u;
 
 export function freezeReception<T>(value: T): T {
   return Object.freeze(structuredClone(value));
@@ -273,9 +269,11 @@ export function createReceptionAgentBinding(value: ReceptionAgentBinding): Recep
   return freezeReception(value);
 }
 
-export function createReceptionSession(value: Omit<ReceptionSession, "currentStage"> & {
-  readonly currentStage?: ReceptionStage;
-}): ReceptionSession {
+export function createReceptionSession(
+  value: Omit<ReceptionSession, "currentStage"> & {
+    readonly currentStage?: ReceptionStage;
+  },
+): ReceptionSession {
   assertReceptionText(value.id, "reception session id", 160);
   assertReceptionReference(value.tenantReference, "reception tenant reference");
   assertReceptionReference(value.publicSessionReference, "reception public session reference");
