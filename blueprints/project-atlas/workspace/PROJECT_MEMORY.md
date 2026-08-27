@@ -1163,3 +1163,9 @@ acceptance and all operational activation remain pending.
 ## 2026-08-27 - M050 Intake Agent controlled foundation
 
 The Product Owner authorized implementation of M050 after M049. The repository now contains a provider-disabled intake-agent package, additive migration preparation, focused contract tests, and documentation. M050 does not collect or persist raw answers, dispatch handoffs, call providers, create CRM/order/case records, or execute workflows. Product Owner acceptance and activation remain pending.
+
+## 2026-08-27 - M051 Scheduler Agent controlled foundation
+
+- Implemented M051 as a provider-disabled scheduling-behavior boundary. It creates only typed sessions, explicit timezone assessments, prepared booking requests, precondition results, and client-safe human handoffs.
+- M013 and M024 remain canonical appointment/calendar owners. No appointment, calendar, hold, booking, reschedule, cancellation, notification, conference, provider call, migration, or deployment was executed.
+- Product Owner acceptance and operational activation remain pending.

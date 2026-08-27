@@ -1086,3 +1086,11 @@ approval, consent, and owner adapters must be independently approved before acti
 ## 2026-08-27 - M050 controlled Intake Agent boundary
 
 M050 is implemented as a versioned, purpose-limited intake foundation. M49 remains responsible for minimum public reception, M22 remains canonical for form definitions/submissions, and M50 may only prepare scoped references and assessments. Until a future approved activation gate, all M050 provider calls, persistence, document/consent requests, lead/order/case candidates, workflow events, handoff dispatch, and AI execution remain disabled. User assertions must not be promoted to verified facts by M050.
+
+## Implementation record - M051 Scheduler Agent controlled foundation (2026-08-27)
+
+M051 is implemented as a provider-disabled, owner-bound scheduling behavior layer. M013 remains
+canonical for client appointment records and M024 remains canonical for calendar and availability
+state. Displayed slots, prepared holds, and booking requests are not confirmations. Activation,
+provider access, calendar mutation, notifications, and deployment require a separate Product Owner
+approval and evidence record.

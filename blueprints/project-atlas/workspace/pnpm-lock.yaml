@@ -350,6 +350,12 @@ importers:
 
   packages/recommendation-engine: {}
 
+  packages/scheduler-agent:
+    dependencies:
+      '@atlas/reception-agent':
+        specifier: workspace:*
+        version: link:../reception-agent
+
   packages/secure-messaging: {}
 
   packages/service-entitlements: {}

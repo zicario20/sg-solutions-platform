@@ -1628,14 +1628,14 @@ export const getPublicChatTableConfig = getTableConfig;
 export * from "./schema/ai-control-plane.ts";
 export * from "./schema/creditcardbroker.ts";
 export * from "./schema/index.ts";
+export * from "./schema/intake-agent.ts";
 export * from "./schema/partner-management.ts";
 export * from "./schema/payment-verification.ts";
 export * from "./schema/pricing.ts";
-export * from "./schema/reception-agent.ts";
 export * from "./schema/provider-abstraction.ts";
+export * from "./schema/reception-agent.ts";
+export * from "./schema/scheduler-agent.ts";
 export * from "./schema/service-catalog.ts";
 export * from "./schema/service-catalog-completion.ts";
 export * from "./schema/service-entitlements.ts";
 export * from "./schema/supervisor-agent.ts";
-
-export * from "./schema/intake-agent.ts";

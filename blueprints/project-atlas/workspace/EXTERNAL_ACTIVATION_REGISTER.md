@@ -559,3 +559,11 @@ evidencia no sensible, responsable, decisión y limitaciones conocidas.
 | Partner Portal, routing, referrals and assignments | disabled | Verified partner agreement, authorization, capability/jurisdiction evidence, portal security and Product Owner approval. |
 | Partner data/document exchange, APIs and webhooks | disabled | Consent, data-minimization, credential, RLS, security and integration evidence. |
 | Economics, settlements and reconciliation | disabled | Contractual policy, qualifying evidence, finance review, reconciliation and approval. |
+
+## M051 Scheduler Agent
+
+| Capability | State | Activation prerequisites |
+| --- | --- | --- |
+| Calendar availability, holds, bookings, reschedules, cancellations, and waitlists | disabled | Product Owner approval, M013/M024 canonical contracts, authorization, idempotency, concurrency, and reconciliation evidence. |
+| Calendar providers, conferencing, reminders, and notifications | disabled | Approved M041 provider adapter, credential governance, consent/delivery policy, security review, sandbox evidence, and kill switch. |
+| Scheduler agent runtime and handoff dispatch | disabled | M047 tool release, scoped authorization, audit/observability evidence, independent review, and deployment approval. |

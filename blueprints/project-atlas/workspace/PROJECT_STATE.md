@@ -307,3 +307,11 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - Scope: versioned intake contracts, collection gates, safe normalization, conditional cycle checks, completion/readiness separation, M049 adapter, scoped handoff preparation, schema/migration preparation, and tests.
 - Boundaries: M22 remains canonical for forms; M42 binds service intake; M11/M58 own documents; M78/M67 own consent/signature; M20/M18/M21/M22 own CRM/client/order/case; M68 owns workflow execution.
 - Activation: Product Owner approval, secure-storage evidence, integration evidence, migration approval, and independent security/architecture review are required.
+
+## M051 Scheduler Agent
+
+- Status: controlled technical foundation implemented; Product Owner acceptance pending.
+- Authority: M051 guides scheduling interactions only. M013 owns client appointments and M024 owns calendar and availability state.
+- Runtime: all M051 flags are false. Availability searches, holds, bookings, reschedules, cancellations, waitlists, notifications, conferences, handoff dispatch, provider calls, AI execution, migration execution, and deployment are disabled.
+- Migration: 0061_m051_scheduler_agent_controlled_foundation.sql is authored only and not applied.
+- Pending: Product Owner activation approval, M013/M024 owner adapters, M041 provider security evidence, authorization/RLS, timezone/DST, idempotency/reconciliation, independent review, and deployment evidence.

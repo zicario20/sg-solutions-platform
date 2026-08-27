@@ -398,3 +398,9 @@
 - Added intake contracts, collection gates, safe normalization, conditional-cycle detection, completion/readiness assessment, and scoped handoff preparation.
 - Added additive database schema and unexecuted migration 0060.
 - Added M050 module, architecture, and runbook documentation plus focused tests.
+
+## M051 Scheduler Agent
+
+- Added a provider-disabled scheduler-agent foundation with explicit timezone resolution, prepared
+  booking requests, deterministic precondition assessment, client-safe human handoffs, schema, and
+  non-executed migration preparation.
