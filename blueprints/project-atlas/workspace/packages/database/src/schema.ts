@@ -1626,6 +1626,7 @@ export const communicationAuditEvents = pgTable(
 export const getPublicChatTableConfig = getTableConfig;
 
 export * from "./schema/ai-control-plane.ts";
+export * from "./schema/business-formation-agent.ts";
 export * from "./schema/credit-specialist-agent.ts";
 export * from "./schema/creditcardbroker.ts";
 export * from "./schema/customer-support-agent.ts";

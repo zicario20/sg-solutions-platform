@@ -197,6 +197,8 @@ importers:
 
   packages/business-formation: {}
 
+  packages/business-formation-agent: {}
+
   packages/business-funding: {}
 
   packages/client-management: {}

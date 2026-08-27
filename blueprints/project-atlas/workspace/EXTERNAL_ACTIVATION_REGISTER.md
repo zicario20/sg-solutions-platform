@@ -596,3 +596,13 @@ evidencia no sensible, responsable, decisión y limitaciones conocidas.
 | Tax rules, calculations, or return assembly | Disabled | Versioned source governance, specialist approval, testing, and security review |
 | Signatures, e-file, payments, refunds, notices | Disabled | M066-M068, M074-M075, M078 integration and rollback evidence |
 | AI execution and handoff dispatch | Disabled | Approved tool scope, least privilege, audit, and independent review |
+
+## M055 - Business Formation Agent
+
+| Capability | Status | Activation requirement |
+| --- | --- | --- |
+| State, filing, and registered-agent provider calls | Disabled | Product Owner approval, M041 adapter, M064 sources, legal/compliance review |
+| Raw formation documents and sensitive data | Disabled | Approved classification, retention, encryption, access controls, and validation |
+| Jurisdiction/entity/name evaluation | Disabled | Source governance, professional review, and security validation |
+| Reservation, signature, filing, EIN, and handoffs | Disabled | M033, M058, M060, M066-M068, M074-M075, M078 integration and rollback evidence |
+| AI execution | Disabled | Approved tool scope, least privilege, audit, and independent review |

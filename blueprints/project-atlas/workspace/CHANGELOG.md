@@ -426,3 +426,11 @@
 - M054 Tax Specialist Agent controlled foundation with tax-authorization gates, reference-only source
   records, review candidates, filing-readiness controls, non-dispatching handoffs, and disabled
   runtime flags.
+
+## Unreleased
+
+### Added
+
+- M055 Business Formation Agent controlled foundation with formation authorization gates,
+  reference-only source records, non-conclusive candidates, filing-readiness controls,
+  non-dispatching handoffs, and disabled runtime flags.

@@ -1115,3 +1115,10 @@ M054 may define reference-only contracts and deterministic safety gates before t
 authorized. M054 must not retrieve or store raw tax documents, determine tax positions, calculate,
 prepare, sign, submit, e-file, pay, refund, or alter provider records. Candidates require controlled
 human workflow and versioned rule sources.
+
+## 2026-08-27 - M055 provider-disabled business formation foundation
+
+M055 may model reference-only formation candidates and safety gates before formation operations are
+authorized. M055 must not create legal conclusions, invent state requirements or fees, search or
+reserve names, authorize a registered agent, file, sign, request an EIN, or alter state/provider
+records. Candidates require source-backed human workflow.

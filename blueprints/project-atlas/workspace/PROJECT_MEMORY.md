@@ -1191,3 +1191,11 @@ reference-only tax sessions, source and rule references, review candidates, fili
 non-dispatching handoffs, schema/migration preparation, and documentation. No tax provider, tax
 document, calculation, return, signature, e-file, payment, refund, notice, or AI execution was
 enabled.
+
+## 2026-08-27 - M055 controlled business formation foundation
+
+The Product Owner authorized M055 implementation. A provider-disabled foundation was added with
+reference-only formation sessions, source references, non-conclusive formation candidates,
+filing-readiness gates, non-dispatching human handoffs, schema/migration preparation, and
+documentation. No state/provider call, legal conclusion, name search/reservation, filing, signature,
+EIN action, registered-agent action, or AI execution was enabled.
