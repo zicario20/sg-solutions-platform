@@ -404,3 +404,9 @@
 - Added a provider-disabled scheduler-agent foundation with explicit timezone resolution, prepared
   booking requests, deterministic precondition assessment, client-safe human handoffs, schema, and
   non-executed migration preparation.
+
+## M052 Customer Support Agent
+
+- Added a provider-disabled authenticated support foundation with ownership gating, client-safe
+  unknown/stale status handling, explicit routing, prepared support-case drafts, minimized handoffs,
+  schema, and a non-executed migration.

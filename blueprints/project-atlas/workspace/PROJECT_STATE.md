@@ -315,3 +315,11 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - Runtime: all M051 flags are false. Availability searches, holds, bookings, reschedules, cancellations, waitlists, notifications, conferences, handoff dispatch, provider calls, AI execution, migration execution, and deployment are disabled.
 - Migration: 0061_m051_scheduler_agent_controlled_foundation.sql is authored only and not applied.
 - Pending: Product Owner activation approval, M013/M024 owner adapters, M041 provider security evidence, authorization/RLS, timezone/DST, idempotency/reconciliation, independent review, and deployment evidence.
+
+## M052 Customer Support Agent
+
+- Status: controlled technical foundation implemented; Product Owner acceptance pending.
+- Authority: M052 prepares authenticated, client-safe operational support only. Owner modules retain appointments, messages, documents, payments, workflows, service delivery, and specialist decisions.
+- Runtime: all M052 flags are false. Private context reads, case writes, owner-module actions, secure messaging, attachment access, payment/refund actions, workflows, specialist dispatch, providers, AI execution, migration execution, and deployment are disabled.
+- Migration: 0062_m052_customer_support_agent_controlled_foundation.sql is authored only and not applied.
+- Pending: Product Owner activation approval, identity/ownership/RLS, client-safe projections, owner adapters, retention/audit evidence, independent review, and deployment evidence.

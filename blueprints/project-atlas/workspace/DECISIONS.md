@@ -1094,3 +1094,10 @@ canonical for client appointment records and M024 remains canonical for calendar
 state. Displayed slots, prepared holds, and booking requests are not confirmations. Activation,
 provider access, calendar mutation, notifications, and deployment require a separate Product Owner
 approval and evidence record.
+
+## Implementation record - M052 Customer Support Agent controlled foundation (2026-08-27)
+
+M052 is limited to authenticated, client-safe operational support. It does not replace M049 public
+reception, M050 intake, M051 scheduling, M053-M060 specialist authority, M012 communications,
+M011 documents, M043/M044/M046 payments, M068 workflows, or M22 professional case files. All
+runtime actions remain disabled pending a separate Product Owner approval and owner-adapter evidence.

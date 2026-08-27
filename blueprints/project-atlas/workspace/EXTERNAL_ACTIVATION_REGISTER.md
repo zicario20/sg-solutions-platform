@@ -567,3 +567,11 @@ evidencia no sensible, responsable, decisión y limitaciones conocidas.
 | Calendar availability, holds, bookings, reschedules, cancellations, and waitlists | disabled | Product Owner approval, M013/M024 canonical contracts, authorization, idempotency, concurrency, and reconciliation evidence. |
 | Calendar providers, conferencing, reminders, and notifications | disabled | Approved M041 provider adapter, credential governance, consent/delivery policy, security review, sandbox evidence, and kill switch. |
 | Scheduler agent runtime and handoff dispatch | disabled | M047 tool release, scoped authorization, audit/observability evidence, independent review, and deployment approval. |
+
+## M052 Customer Support Agent
+
+| Capability | State | Activation prerequisites |
+| --- | --- | --- |
+| Private support context and owner-module actions | disabled | Product Owner approval, authenticated authorization, client/resource ownership, purpose, RLS, and authoritative projection evidence. |
+| Secure messages, attachments, payment/refund, workflow, and specialist handoffs | disabled | Approved owner contracts, consent/retention controls, idempotency/reconciliation, security review, and independent test evidence. |
+| Support agent runtime, providers, and AI execution | disabled | M047 release, tool allowlist, audit/observability, redaction, human escalation, deployment approval, and kill switch. |

@@ -1169,3 +1169,9 @@ The Product Owner authorized implementation of M050 after M049. The repository n
 - Implemented M051 as a provider-disabled scheduling-behavior boundary. It creates only typed sessions, explicit timezone assessments, prepared booking requests, precondition results, and client-safe human handoffs.
 - M013 and M024 remain canonical appointment/calendar owners. No appointment, calendar, hold, booking, reschedule, cancellation, notification, conference, provider call, migration, or deployment was executed.
 - Product Owner acceptance and operational activation remain pending.
+
+## 2026-08-27 - M052 Customer Support Agent controlled foundation
+
+- Implemented M052 as an authenticated, client-safe support boundary with deterministic routing, stale-status preservation, prepared case drafts, minimal handoffs, and a disabled runtime.
+- No private client context was read, no case/workflow/message/document/payment/refund action was executed, and no migration or deployment occurred.
+- Product Owner acceptance and operational activation remain pending.

@@ -1627,6 +1627,7 @@ export const getPublicChatTableConfig = getTableConfig;
 
 export * from "./schema/ai-control-plane.ts";
 export * from "./schema/creditcardbroker.ts";
+export * from "./schema/customer-support-agent.ts";
 export * from "./schema/index.ts";
 export * from "./schema/intake-agent.ts";
 export * from "./schema/partner-management.ts";
