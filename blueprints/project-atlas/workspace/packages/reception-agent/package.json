@@ -1,0 +1,18 @@
+{
+  "name": "@atlas/reception-agent",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@atlas/ai-control-plane": "workspace:*",
+    "@atlas/supervisor-agent": "workspace:*"
+  }
+}

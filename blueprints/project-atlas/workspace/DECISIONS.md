@@ -1068,3 +1068,17 @@ Product Owner acceptance, deployment, and operational activation remain pending.
 ## 2026-08-26 - M048 Supervisor Agent control boundary
 
 The Supervisor Agent is a deterministic coordination boundary above M047, not an autonomous executive agent. It may classify minimized task envelopes, assess registered specialist eligibility, prepare non-executable plans, and escalate to humans. It must not call providers, dispatch specialists, alter policy, approve itself, grant entitlements, modify prices, or perform sensitive actions. Any activation requires a separately approved release gate.
+
+## 2026-08-27 - M049 Reception Agent control boundary
+
+M049 is the controlled public-reception boundary. It may classify a bounded public interaction,
+select public-knowledge-only guidance, and prepare reference-only lead, secure-link, appointment,
+intake, authenticated-support, supervisor, or human-handoff requests. It is not permitted to retain
+raw sensitive public content, enumerate private resources, call a model or provider, write CRM data,
+issue a link, send follow-up, dispatch a handoff, schedule, access a case, confirm payment, change a
+price, grant an entitlement, or execute a service.
+
+M003 remains the public transport owner; M047 remains the AI control plane; M048 remains the
+supervisor boundary; M020, M050, M051, M052, M011, M013, M043/M044, and other owners remain
+authoritative for their respective actions. Runtime flags, RLS, audit, exact references, human
+approval, consent, and owner adapters must be independently approved before activation.

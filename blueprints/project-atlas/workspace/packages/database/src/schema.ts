@@ -1631,6 +1631,7 @@ export * from "./schema/index.ts";
 export * from "./schema/partner-management.ts";
 export * from "./schema/payment-verification.ts";
 export * from "./schema/pricing.ts";
+export * from "./schema/reception-agent.ts";
 export * from "./schema/provider-abstraction.ts";
 export * from "./schema/service-catalog.ts";
 export * from "./schema/service-catalog-completion.ts";

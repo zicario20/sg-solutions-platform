@@ -33,6 +33,7 @@ export * from "./schema/client-services.ts";
 export * from "./schema/documents.ts";
 export * from "./schema/payment-verification.ts";
 export * from "./schema/pricing.ts";
+export * from "./schema/reception-agent.ts";
 export * from "./schema/secure-messaging.ts";
 export * from "./schema/service-entitlements.ts";
 export * from "./schema/stripe-payments.ts";

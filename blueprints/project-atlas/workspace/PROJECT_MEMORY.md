@@ -1149,3 +1149,13 @@ A future local Ollama/Qwen profile can be represented as disabled metadata only.
 ## 2026-08-26 - M048 Supervisor Agent controlled foundation
 
 Implemented the M048 deterministic supervisor foundation after M047. It prepares bounded task envelopes, specialist eligibility, candidate routing, non-executable orchestration plans, human escalation, loop guards, governance validation, audit-chain contracts, RLS schemas, tests, and documentation. Product Owner direction remains that no provider or execution is activated; all M048 flags are false.
+
+## 2026-08-27 - M049 Reception Agent controlled foundation
+
+Implemented M049 as the constrained public-reception layer after M047/M048. It reuses the existing
+public-chat surface as ingress and prepares deterministic, bilingual, reference-only intent, lead,
+secure-link, intake, appointment, authenticated-support, supervisor, and human-handoff decisions.
+Sensitive public input and untrusted instruction text fail safely to a secure channel or human review.
+No raw visitor messages, providers, CRM writes, secure-link issuance, scheduling, payment access,
+handoff dispatch, follow-up, migration execution, or deployment was activated. Product Owner
+acceptance and all operational activation remain pending.

@@ -289,3 +289,14 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - All supervisor, delegation, provider-call, orchestration, auto-rerouting, parallel-execution, and automation flags remain disabled.
 - No provider, specialist, tool, workflow, or external action is activated by this module.
 - Product Owner acceptance, operational release, and deployment remain pending.
+
+# M049 - Reception Agent
+
+- Technical controlled reception foundation implemented on 2026-08-27.
+- M049 reuses M003 as a public ingress surface and M047/M048 as control boundaries; it does not
+  replace chat, CRM, intake, appointments, support, documents, payments, or workflows.
+- Deterministic classification, reference-only lead/link/handoff preparation, M048 escalation,
+  governance, audit, and deny-by-default persistence are present.
+- All M049 provider calls, lead writes, secure-link issuance, handoff dispatch, and follow-up flags
+  remain disabled. No public operation, migration, deployment, or product activation occurred.
+- Product Owner acceptance, owner adapters, security evidence, and operational release remain pending.

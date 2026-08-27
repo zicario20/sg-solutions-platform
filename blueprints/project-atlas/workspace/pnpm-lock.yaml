@@ -333,6 +333,15 @@ importers:
 
   packages/provider-control: {}
 
+  packages/reception-agent:
+    dependencies:
+      '@atlas/ai-control-plane':
+        specifier: workspace:*
+        version: link:../ai-control-plane
+      '@atlas/supervisor-agent':
+        specifier: workspace:*
+        version: link:../supervisor-agent
+
   packages/recommendation-engine: {}
 
   packages/secure-messaging: {}

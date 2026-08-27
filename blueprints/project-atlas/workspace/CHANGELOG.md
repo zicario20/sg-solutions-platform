@@ -382,3 +382,12 @@
 ## 2026-08-26
 
 - Added M048 Supervisor Agent controlled foundation. Routing, planning, execution controls, governance, persistence, audit chain, and tests are present; runtime execution remains disabled pending Product Owner approval.
+
+## 2026-08-27
+
+- Added M049 Reception Agent controlled foundation with deterministic bilingual public-intent
+  classification, digest/reference-only records, prepared lead/link/handoff requests, M047 manifest
+  binding, M048 supervisor-envelope conversion, provider-disabled runtime, RLS schema, authored-only
+  migration 0059_m049_reception_agent_controlled_foundation.sql, focused tests, and runbook.
+- No raw sensitive public content, provider call, CRM write, appointment, link issuance, payment
+  access, follow-up, handoff dispatch, migration execution, deployment, or product activation was added.
