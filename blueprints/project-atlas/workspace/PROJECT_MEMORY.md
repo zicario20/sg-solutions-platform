@@ -1199,3 +1199,12 @@ reference-only formation sessions, source references, non-conclusive formation c
 filing-readiness gates, non-dispatching human handoffs, schema/migration preparation, and
 documentation. No state/provider call, legal conclusion, name search/reservation, filing, signature,
 EIN action, registered-agent action, or AI execution was enabled.
+
+## 2026-08-27 - M056 controlled business funding foundation
+
+The Product Owner authorized M056 implementation. A provider-disabled foundation was added with
+reference-only funding sessions, separate business-authority and personal-scope gates, source
+references, readiness candidates, application-readiness controls, non-dispatching human handoffs,
+schema/migration preparation, and documentation. No lender/provider call, financial ingestion,
+underwriting, recommendation, application, offer, funding action, personal-credit retrieval, or AI
+execution was enabled.

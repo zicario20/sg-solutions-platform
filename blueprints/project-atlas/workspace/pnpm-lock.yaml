@@ -201,6 +201,8 @@ importers:
 
   packages/business-funding: {}
 
+  packages/business-funding-agent: {}
+
   packages/client-management: {}
 
   packages/client-process-status:

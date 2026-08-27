@@ -606,3 +606,13 @@ evidencia no sensible, responsable, decisión y limitaciones conocidas.
 | Jurisdiction/entity/name evaluation | Disabled | Source governance, professional review, and security validation |
 | Reservation, signature, filing, EIN, and handoffs | Disabled | M033, M058, M060, M066-M068, M074-M075, M078 integration and rollback evidence |
 | AI execution | Disabled | Approved tool scope, least privilege, audit, and independent review |
+
+## M056 - Business Funding Agent
+
+| Capability | Status | Activation requirement |
+| --- | --- | --- |
+| Lender, broker, marketplace, and provider calls | Disabled | Product Owner approval, M041 adapter, M064 sources, compliance review |
+| Raw financial and personal-credit data | Disabled | Approved classification, consent, retention, encryption, access controls, and validation |
+| Matching, recommendations, eligibility, underwriting | Disabled | Explainability policy, source governance, human review, and security validation |
+| Applications, signatures, offers, funds, and handoffs | Disabled | M037-M040, M058, M060, M066-M068, M074-M075, M078 integration and rollback evidence |
+| AI execution | Disabled | Approved tool scope, least privilege, audit, privacy review, and independent review |

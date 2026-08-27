@@ -347,3 +347,12 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
   reservations, registered-agent actions, filings, signatures, EIN actions, handoff dispatch, or AI.
 - Activation: [NEEDS PRODUCT OWNER DECISION: jurisdiction/legal authority, providers and sources,
   data controls, human approvals, security review, sandbox validation, and rollback evidence.]
+
+## M056 - Business Funding Agent
+
+- Status: controlled, provider-disabled foundation implemented; Product Owner acceptance pending.
+- Runtime: disabled; no lender/provider calls, raw financial data, personal-credit retrieval, matching,
+  underwriting, recommendations, application preparation/submission, offers, funding actions,
+  handoff dispatch, or AI execution.
+- Activation: [NEEDS PRODUCT OWNER DECISION: financial-service role, provider/source scope,
+  authorization and sharing controls, approvals, security review, sandbox validation, rollback.]
