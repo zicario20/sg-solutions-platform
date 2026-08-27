@@ -418,3 +418,11 @@
 - M053 Credit Specialist Agent controlled foundation with authorization gates, reference-only report
   objects, evidence candidates, dispute-readiness guards, non-dispatching handoffs, and disabled
   runtime controls.
+
+## Unreleased
+
+### Added
+
+- M054 Tax Specialist Agent controlled foundation with tax-authorization gates, reference-only source
+  records, review candidates, filing-readiness controls, non-dispatching handoffs, and disabled
+  runtime flags.

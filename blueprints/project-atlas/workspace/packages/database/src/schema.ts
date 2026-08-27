@@ -1641,3 +1641,4 @@ export * from "./schema/service-catalog.ts";
 export * from "./schema/service-catalog-completion.ts";
 export * from "./schema/service-entitlements.ts";
 export * from "./schema/supervisor-agent.ts";
+export * from "./schema/tax-specialist-agent.ts";

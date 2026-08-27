@@ -586,3 +586,13 @@ evidencia no sensible, responsable, decisión y limitaciones conocidas.
 | Dispute dispatch or submission | Disabled | M027 workflow, M060 compliance, M074-M075 approval, M078 consent, and rollback evidence |
 | Monitoring and tradeline actions | Disabled | M028/M029 ownership and separately approved provider controls |
 | AI execution and handoff dispatch | Disabled | Approved model/tool scope, least privilege, audit, and independent review |
+
+## M054 - Tax Specialist Agent
+
+| Capability | Status | Activation requirement |
+| --- | --- | --- |
+| Tax/e-file provider calls | Disabled | Product Owner approval, M041 adapter, M064 sources, professional/compliance review |
+| Raw tax documents or identifiers | Disabled | Approved classification, retention, encryption, access controls, and validation |
+| Tax rules, calculations, or return assembly | Disabled | Versioned source governance, specialist approval, testing, and security review |
+| Signatures, e-file, payments, refunds, notices | Disabled | M066-M068, M074-M075, M078 integration and rollback evidence |
+| AI execution and handoff dispatch | Disabled | Approved tool scope, least privilege, audit, and independent review |

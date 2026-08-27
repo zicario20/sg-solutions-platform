@@ -1108,3 +1108,10 @@ M053 may define reference-only contracts and deterministic safety gates before o
 capabilities are authorized. M053 must not retrieve or store raw credit reports, verify report facts,
 guarantee outcomes, submit disputes, operate monitoring or tradelines, or make provider calls.
 Potential issues remain candidates and every readiness outcome requires controlled human workflow.
+
+## 2026-08-27 - M054 provider-disabled tax specialist foundation
+
+M054 may define reference-only contracts and deterministic safety gates before tax operations are
+authorized. M054 must not retrieve or store raw tax documents, determine tax positions, calculate,
+prepare, sign, submit, e-file, pay, refund, or alter provider records. Candidates require controlled
+human workflow and versioned rule sources.

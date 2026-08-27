@@ -1183,3 +1183,11 @@ foundation was added with reference-only credit-session contracts, evidence/cand
 guards, non-dispatching human handoffs, disabled runtime flags, schema/migration preparation, and
 documentation. No credit-report provider, raw credit report, score analysis, dispute, monitoring,
 tradeline, or AI execution was enabled.
+
+## 2026-08-27 - M054 controlled tax specialist foundation
+
+The Product Owner authorized M054 implementation. A provider-disabled foundation was added with
+reference-only tax sessions, source and rule references, review candidates, filing-readiness guards,
+non-dispatching handoffs, schema/migration preparation, and documentation. No tax provider, tax
+document, calculation, return, signature, e-file, payment, refund, notice, or AI execution was
+enabled.

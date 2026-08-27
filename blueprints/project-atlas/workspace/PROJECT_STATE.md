@@ -331,3 +331,11 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
   dispute submission, monitoring, tradeline action, handoff dispatch, or AI execution.
 - Activation: [NEEDS PRODUCT OWNER DECISION: provider, legal/compliance authority, data controls,
   human approvals, security review, sandbox validation, rollback evidence.]
+
+## M054 - Tax Specialist Agent
+
+- Status: controlled, provider-disabled foundation implemented; Product Owner acceptance pending.
+- Runtime: disabled; no tax provider calls, raw document ingestion, tax calculations, return assembly,
+  signatures, e-file, payments, refunds, notices, handoff dispatch, or AI execution.
+- Activation: [NEEDS PRODUCT OWNER DECISION: professional authority, provider/rule sources, data
+  controls, human approvals, security review, sandbox validation, and rollback evidence.]

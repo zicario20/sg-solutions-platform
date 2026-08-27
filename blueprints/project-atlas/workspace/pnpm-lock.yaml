@@ -374,6 +374,8 @@ importers:
 
   packages/tax-operations: {}
 
+  packages/tax-specialist-agent: {}
+
   packages/tradeline-operations: {}
 
   packages/ui:
