@@ -1263,3 +1263,7 @@ content, OCR, source fetch, retrieval, embedding, external action, or operationa
 ## 2026-08-28 - M066-M068 controlled document, signature, and workflow foundations
 
 The Product Owner authorized foundations for M066 Document Generation, M067 Electronic Signature / DocuSeal, and M068 Workflow Engine. The implementation records typed contracts, disabled runtime policies, schemas, regression tests, and module documentation. It does not render documents, activate DocuSeal, send envelopes, expose signing links, receive provider webhooks, start workflow instances, run jobs or n8n, or execute external side effects. All provider and runtime activation remains subject to separate Product Owner authorization and safety evidence.
+
+## 2026-08-28 - M069-M071 controlled automation foundations
+
+The Product Owner authorized implementation of Modules 69 through 71. M069 provides n8n adapter contracts, M070 provides browser automation controls, and M071 provides jurisdiction source/rule/resolution contracts. All provider and runtime capabilities remain disabled: no n8n connection, browser session, portal navigation, source refresh, rule publication, or external submission has been configured or activated. These modules require independent security, compliance, provider, and Product Owner activation gates before operational use.

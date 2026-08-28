@@ -415,3 +415,9 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - M067 Electronic Signature / DocuSeal: provider-agnostic signature request, envelope, signer, evidence, and frozen-artifact foundation implemented. DocuSeal remains disabled; no credentials, signing URLs, provider calls, webhooks, or signed artifacts are active.
 - M068 Workflow Engine: runtime-disabled workflow definition, version, start request, wait, signal, side-effect, and outbox foundation implemented. No scheduler, n8n, jobs, signals, timers, or side effects are active.
 - Operational activation: not implemented. Product Owner acceptance: pending. Any future activation requires durable migrations, authorization, audit, security review, staging evidence, rollback planning, and separate Product Owner authorization.
+
+## M069-M071 controlled foundations
+
+- M069 n8n integration contracts, M070 browser automation contracts, and M071 jurisdiction automation contracts are implemented as provider-disabled foundations.
+- No n8n instance, browser worker, external portal, source refresh, rule resolver, webhook, credentials, or external action is active.
+- Operational activation requires provider-specific configuration, independent security/compliance review, validation evidence, and explicit Product Owner approval.

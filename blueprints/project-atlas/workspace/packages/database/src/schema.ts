@@ -1656,3 +1656,6 @@ export * from "./schema/rag.ts";
 export * from "./schema/document-generation.ts";
 export * from "./schema/electronic-signature.ts";
 export * from "./schema/workflow-engine.ts";
+export * from "./schema/n8n-integration.ts";
+export * from "./schema/browser-automation.ts";
+export * from "./schema/jurisdiction-automation.ts";

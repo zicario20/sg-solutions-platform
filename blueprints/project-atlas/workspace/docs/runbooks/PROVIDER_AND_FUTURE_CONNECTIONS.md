@@ -160,3 +160,11 @@ planning before any flag can be enabled.
 | M066 | Document renderer, PDF/DOCX conversion, remote assets, source refresh, AI drafting, delivery, and signature handoff | Disabled | Contracts only; activation requires sandboxing, governance, M65/M67/M68/M72 integration, security review, staging evidence, rollback, and Product Owner authorization. |
 | M067 | DocuSeal and all electronic-signature provider calls, signing sessions, webhooks, reminders, downloads, and reconciliation | Disabled | Provider-agnostic contracts only; requires agreement, secrets, verification, audit, staging evidence, rollback, and Product Owner authorization. |
 | M068 | Workflow scheduler, timers, signals, M72 jobs, n8n, agents, outbox publication, and side effects | Disabled | Durable orchestration contracts only; requires migrations, transactional outbox/inbox, authorization, audit, M72/M74/M75 integrations, staging evidence, rollback, and Product Owner authorization. |
+
+## M069-M071 automation foundations
+
+| Module | Provider or capability | Current status | Required activation work |
+| --- | --- | --- | --- |
+| M069 | n8n instance, workflows, webhooks, credentials, callbacks, jobs, and AI-triggered adapter actions | Disabled | Deploy approved n8n, configure secrets outside Git, signed webhooks, typed contracts, reconciliation, isolation, backups, monitoring, and Product Owner approval. |
+| M070 | Browser workers, browser binaries, portal navigation, authentication state, cookies, uploads, downloads, screenshots, and side-effecting actions | Disabled | Approve a specific portal use case, worker isolation, network allowlist, secrets, action gates, evidence, reconciliation, legal/security review, and Product Owner approval. |
+| M071 | Source refresh, rule-pack publication, jurisdiction resolution, portal selection, browser binding dispatch, and external submissions | Disabled | Validate official sources and freshness, approve versioned rules, compliance review, M064/M068 integration, tests, rollback, and Product Owner approval. |
