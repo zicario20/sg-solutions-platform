@@ -176,3 +176,11 @@ planning before any flag can be enabled.
 | M072 | Queue backend, worker pools, leases, scheduling, retries, dead-letter consumers, result delivery | Disabled | Select and secure a durable backend, configure isolated workers and least privilege, implement outbox/inbox, idempotency, reconciliation, backups, monitoring, and Product Owner approval. |
 | M073 | Health probes, circuit breakers, target connections, automatic failover/failback, degraded-mode enforcement, fallback dispatch | Disabled | Approve target equivalence and hard gates, implement health/reconciliation/idempotency controls, integrate owner modules, test recovery, and obtain Product Owner approval. |
 | M074 | Approval policy activation, human decision authority, MFA/step-up, notification delivery, M068 consumption, quorum/delegation workflows | Disabled | Integrate IAM and MFA, approve policies/SoD/quorum/expiry rules, configure durable events/audit/notifications, validate stale-context controls, and obtain Product Owner approval. |
+
+## M075-M077 control foundations
+
+| Module | Capability | Status | Activation requirements |
+| --- | --- | --- | --- |
+| M075 | Human task review, handback, and reviewer assignment | Provider disabled | IAM and reviewer eligibility, approved task definitions, M068 workflow bindings, M074 approvals, M077 audit, review UX, notification and escalation policy. |
+| M076 | Compliance applicability, assessment, findings, exceptions, and monitoring | Provider disabled | M064 approved sources, M071 jurisdiction rules, legal/compliance ownership, M068 gates, M074 approvals, M075 review, M077 audit, retention and escalation policy. |
+| M077 | Material audit append, ingestion, search, integrity, export, and retention | Provider disabled | Durable append-only store, KMS/integrity design, IAM/export controls, retention/hold policy, backup/restore validation, M080-M085 data controls, M097 observability boundary. |

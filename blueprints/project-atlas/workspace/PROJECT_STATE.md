@@ -427,3 +427,10 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - M072 Job Queue, M073 Fallback System, and M074 Approval Inbox are implemented as controlled, provider-disabled foundations.
 - No physical queue, worker, retry dispatcher, fallback target switch, health probe, circuit breaker, policy activation, human approval authority, notification, or external action is active.
 - Activation requires provider configuration, IAM/security/compliance review, operational validation, documented rollback, and explicit Product Owner approval.
+
+## M075-M077 controlled foundations
+
+- M075 Human-in-the-loop: controlled task, review, and handback contracts implemented; assignment, notifications, review completion authority, browser handoff, and canonical result consumption are disabled.
+- M076 Compliance: controlled requirements, assessment, evidence-reference, finding, and exception-request contracts implemented; source refresh, applicability resolution, legal conclusions, finding closure, exception approval, monitoring, and workflow gating are disabled.
+- M077 Audit: controlled material-audit event contracts implemented; durable append-only storage, ingestion, search, exports, integrity verification, and retention execution are disabled.
+- Product Owner acceptance and provider/runtime activation remain pending for M075-M077.

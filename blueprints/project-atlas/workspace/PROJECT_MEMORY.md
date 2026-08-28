@@ -1271,3 +1271,10 @@ The Product Owner authorized implementation of Modules 69 through 71. M069 provi
 ## 2026-08-28 - M072-M074 controlled orchestration foundations
 
 The Product Owner authorized implementation of Modules 72 through 74. M072 records safe job-queue contracts, M073 records fallback policy/control-plane contracts, and M074 records scoped human-approval contracts. All runtime capabilities remain disabled. No queue backend, workers, fallback switching, health probes, approval policy activation, decision authority, notifications, or domain execution has been enabled. Product Owner acceptance and operational activation remain pending.
+
+## 2026-08-28 - M075-M077 controlled foundations added
+
+- Added M075 Human-in-the-loop contracts and schema as a non-operational review boundary. Human work remains noncanonical, AI cannot submit human results, and activation is blocked pending IAM, workflow, approval, audit, policy, and UX controls.
+- Added M076 Compliance contracts and schema as a non-operational source-aware assessment boundary. The foundation returns unknown or review-required outcomes rather than legal conclusions, and no rule resolution, compliance certification, exception approval, or workflow gate is active.
+- Added M077 Audit contracts and schema as a non-operational append-only audit design boundary. No durable audit append, ingestion, search, export, integrity verification, retention execution, or resource-access expansion is active.
+- These modules are implementation foundations only; Product Owner acceptance and runtime activation remain pending.

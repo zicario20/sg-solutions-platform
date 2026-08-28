@@ -1662,3 +1662,7 @@ export * from "./schema/jurisdiction-automation.ts";
 export * from "./schema/job-queue.ts";
 export * from "./schema/fallback-system.ts";
 export * from "./schema/approval-inbox.ts";
+
+export * from "./schema/human-in-the-loop.ts";
+export * from "./schema/compliance.ts";
+export * from "./schema/audit.ts";
