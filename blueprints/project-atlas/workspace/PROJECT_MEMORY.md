@@ -1278,3 +1278,9 @@ The Product Owner authorized implementation of Modules 72 through 74. M072 recor
 - Added M076 Compliance contracts and schema as a non-operational source-aware assessment boundary. The foundation returns unknown or review-required outcomes rather than legal conclusions, and no rule resolution, compliance certification, exception approval, or workflow gate is active.
 - Added M077 Audit contracts and schema as a non-operational append-only audit design boundary. No durable audit append, ingestion, search, export, integrity verification, retention execution, or resource-access expansion is active.
 - These modules are implementation foundations only; Product Owner acceptance and runtime activation remain pending.
+## 2026-08-28 - M078-M080 controlled foundations added
+
+- Added M078 Consent Management as a fail-closed consent boundary. No consent is presumed, no grant is effective, AI and service actors cannot consent for a subject, and no data sharing or propagation is active.
+- Added M079 Risk Management as a governance-only risk boundary. Assessment, scoring, appetite, treatment, risk acceptance, monitoring, and workflow effects are disabled; unknown risk remains unknown.
+- Added M080 IAM as a reference-only identity and authentication boundary. It does not change the existing client login, does not activate accounts, and never stores credentials or issues sessions/tokens.
+- These modules are implementation foundations only; Product Owner acceptance, provider selection, independent security review, and runtime activation remain pending.

@@ -184,3 +184,10 @@ planning before any flag can be enabled.
 | M075 | Human task review, handback, and reviewer assignment | Provider disabled | IAM and reviewer eligibility, approved task definitions, M068 workflow bindings, M074 approvals, M077 audit, review UX, notification and escalation policy. |
 | M076 | Compliance applicability, assessment, findings, exceptions, and monitoring | Provider disabled | M064 approved sources, M071 jurisdiction rules, legal/compliance ownership, M068 gates, M074 approvals, M075 review, M077 audit, retention and escalation policy. |
 | M077 | Material audit append, ingestion, search, integrity, export, and retention | Provider disabled | Durable append-only store, KMS/integrity design, IAM/export controls, retention/hold policy, backup/restore validation, M080-M085 data controls, M097 observability boundary. |
+## M078-M080 control foundations
+
+| Module | Capability | Status | Activation requirements |
+| --- | --- | --- | --- |
+| M078 | Consent presentation, grant, withdrawal, data sharing, and pre-action checks | Provider disabled | M080 identity binding, M081 authorization, approved consent copy/versioning, M067 signatures where needed, M068 gates, M075/M076 review, M077 audit, M082/M085 privacy and retention controls. |
+| M079 | Risk assessment, scoring, treatment, acceptance, KRI monitoring, and gates | Provider disabled | Product Owner-approved taxonomy, score/appetite/tolerance policy, M074 approvals, M075 review, M076 compliance, M077 audit, M078 consent, M080/M081 security, M068 workflow and M097 observability. |
+| M080 | Identity, authentication, MFA, sessions, service identities, federation, and delegation | Provider disabled | Product Owner-approved auth provider and lifecycle, M081 least privilege, M077 audit, M079 risk, M082 PII, M083 secrets, M084 integration security, M085 retention, M091 administration, and independent security review. |

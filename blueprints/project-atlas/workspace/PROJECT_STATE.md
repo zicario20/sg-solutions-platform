@@ -434,3 +434,9 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - M076 Compliance: controlled requirements, assessment, evidence-reference, finding, and exception-request contracts implemented; source refresh, applicability resolution, legal conclusions, finding closure, exception approval, monitoring, and workflow gating are disabled.
 - M077 Audit: controlled material-audit event contracts implemented; durable append-only storage, ingestion, search, exports, integrity verification, and retention execution are disabled.
 - Product Owner acceptance and provider/runtime activation remain pending for M075-M077.
+## M078-M080 controlled foundations
+
+- M078 Consent Management: typed consent definitions, scopes, decision candidates, grants, withdrawals, and fail-closed checks are implemented; presentation, effective consent, data sharing, propagation, runtime gates, and notifications are disabled.
+- M079 Risk Management: typed taxonomy, register, item, evidence-reference, assessment, treatment, and acceptance-request contracts are implemented; scoring, appetite, treatment execution, acceptance, monitoring, workflow gates, and events are disabled.
+- M080 IAM: typed principal, identity, account-reference, authenticator-reference, attempt, result, session-candidate, service-identity, and delegation contracts are implemented; account activation, authentication, MFA, sessions, tokens, federation, recovery, and delegation are disabled.
+- Product Owner acceptance and provider/runtime activation remain pending for M078-M080.

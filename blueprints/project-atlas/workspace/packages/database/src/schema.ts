@@ -1666,3 +1666,6 @@ export * from "./schema/approval-inbox.ts";
 export * from "./schema/human-in-the-loop.ts";
 export * from "./schema/compliance.ts";
 export * from "./schema/audit.ts";
+export * from "./schema/consent-management.ts";
+export * from "./schema/risk-management.ts";
+export * from "./schema/iam.ts";
