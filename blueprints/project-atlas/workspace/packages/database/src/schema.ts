@@ -1659,3 +1659,6 @@ export * from "./schema/workflow-engine.ts";
 export * from "./schema/n8n-integration.ts";
 export * from "./schema/browser-automation.ts";
 export * from "./schema/jurisdiction-automation.ts";
+export * from "./schema/job-queue.ts";
+export * from "./schema/fallback-system.ts";
+export * from "./schema/approval-inbox.ts";

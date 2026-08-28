@@ -168,3 +168,11 @@ planning before any flag can be enabled.
 | M069 | n8n instance, workflows, webhooks, credentials, callbacks, jobs, and AI-triggered adapter actions | Disabled | Deploy approved n8n, configure secrets outside Git, signed webhooks, typed contracts, reconciliation, isolation, backups, monitoring, and Product Owner approval. |
 | M070 | Browser workers, browser binaries, portal navigation, authentication state, cookies, uploads, downloads, screenshots, and side-effecting actions | Disabled | Approve a specific portal use case, worker isolation, network allowlist, secrets, action gates, evidence, reconciliation, legal/security review, and Product Owner approval. |
 | M071 | Source refresh, rule-pack publication, jurisdiction resolution, portal selection, browser binding dispatch, and external submissions | Disabled | Validate official sources and freshness, approve versioned rules, compliance review, M064/M068 integration, tests, rollback, and Product Owner approval. |
+
+## M072-M074 orchestration foundations
+
+| Module | Provider or capability | Current status | Required activation work |
+| --- | --- | --- | --- |
+| M072 | Queue backend, worker pools, leases, scheduling, retries, dead-letter consumers, result delivery | Disabled | Select and secure a durable backend, configure isolated workers and least privilege, implement outbox/inbox, idempotency, reconciliation, backups, monitoring, and Product Owner approval. |
+| M073 | Health probes, circuit breakers, target connections, automatic failover/failback, degraded-mode enforcement, fallback dispatch | Disabled | Approve target equivalence and hard gates, implement health/reconciliation/idempotency controls, integrate owner modules, test recovery, and obtain Product Owner approval. |
+| M074 | Approval policy activation, human decision authority, MFA/step-up, notification delivery, M068 consumption, quorum/delegation workflows | Disabled | Integrate IAM and MFA, approve policies/SoD/quorum/expiry rules, configure durable events/audit/notifications, validate stale-context controls, and obtain Product Owner approval. |

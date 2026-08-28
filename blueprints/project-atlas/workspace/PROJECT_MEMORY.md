@@ -1267,3 +1267,7 @@ The Product Owner authorized foundations for M066 Document Generation, M067 Elec
 ## 2026-08-28 - M069-M071 controlled automation foundations
 
 The Product Owner authorized implementation of Modules 69 through 71. M069 provides n8n adapter contracts, M070 provides browser automation controls, and M071 provides jurisdiction source/rule/resolution contracts. All provider and runtime capabilities remain disabled: no n8n connection, browser session, portal navigation, source refresh, rule publication, or external submission has been configured or activated. These modules require independent security, compliance, provider, and Product Owner activation gates before operational use.
+
+## 2026-08-28 - M072-M074 controlled orchestration foundations
+
+The Product Owner authorized implementation of Modules 72 through 74. M072 records safe job-queue contracts, M073 records fallback policy/control-plane contracts, and M074 records scoped human-approval contracts. All runtime capabilities remain disabled. No queue backend, workers, fallback switching, health probes, approval policy activation, decision authority, notifications, or domain execution has been enabled. Product Owner acceptance and operational activation remain pending.

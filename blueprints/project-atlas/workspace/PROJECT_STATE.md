@@ -421,3 +421,9 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - M069 n8n integration contracts, M070 browser automation contracts, and M071 jurisdiction automation contracts are implemented as provider-disabled foundations.
 - No n8n instance, browser worker, external portal, source refresh, rule resolver, webhook, credentials, or external action is active.
 - Operational activation requires provider-specific configuration, independent security/compliance review, validation evidence, and explicit Product Owner approval.
+
+## M072-M074 controlled foundations
+
+- M072 Job Queue, M073 Fallback System, and M074 Approval Inbox are implemented as controlled, provider-disabled foundations.
+- No physical queue, worker, retry dispatcher, fallback target switch, health probe, circuit breaker, policy activation, human approval authority, notification, or external action is active.
+- Activation requires provider configuration, IAM/security/compliance review, operational validation, documented rollback, and explicit Product Owner approval.
