@@ -395,3 +395,16 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
   publication, retrieval, delivery, indexing, and export are disabled.
 - Operational activation: not implemented. Product Owner acceptance: pending. Each module requires
   documented dependencies, security/audit controls, staging evidence, and separate authorization.
+
+## M063-M065 - Retrieval, Sources, and Document-Processing Foundations
+
+- M063 RAG: controlled, provider-disabled retrieval foundation implemented. Hard filters precede
+  ranking; no retrieval, vector, lexical, embedding, context-delivery, cache, job, or AI runtime is enabled.
+- M064 Source Management: controlled, provider-disabled registry and immutable-snapshot foundation
+  implemented. No fetch, connector, parser dispatch, snapshot promotion, refresh job, or source-direct
+  runtime is enabled.
+- M065 Document Processing: controlled, provider-disabled technical artifact foundation implemented.
+  No file-byte processing, native parsing, rendering, OCR, conversion, redaction, archive extraction,
+  malware scan, job dispatch, delivery, or AI runtime is enabled.
+- Operational activation: not implemented. Product Owner acceptance: pending. All source, document,
+  retrieval, security, audit, provider, workflow, and rollout dependencies need separate approval.

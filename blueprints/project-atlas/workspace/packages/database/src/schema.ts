@@ -1650,3 +1650,6 @@ export * from "./schema/tax-specialist-agent.ts";
 export * from "./schema/compliance-reviewer.ts";
 export * from "./schema/knowledge-base.ts";
 export * from "./schema/skills-system.ts";
+export * from "./schema/source-management.ts";
+export * from "./schema/document-processing.ts";
+export * from "./schema/rag.ts";

@@ -1247,3 +1247,15 @@ and authority intersections without model, tool, job, workflow, or external exec
 curated draft knowledge, provenance references, scoped projections, and publication readiness
 without ingestion, publication, retrieval, indexing, delivery, or export. No production provider,
 policy source, knowledge source, model, external action, or operational module was activated.
+
+## 2026-08-28 - M063-M065 controlled retrieval, source, and document foundations
+
+The Product Owner authorized M063 RAG, M064 Source Management, and M065 Document Processing
+implementation. Provider-disabled foundations were added with typed contracts, immutable-reference
+boundaries, fail-closed runtime policies, schema preparation, contract tests, documentation, and
+activation prerequisites. M064 models draft source records, versions, immutable unpromoted snapshots,
+freshness, and citation support without acquisition or promotion. M065 models immutable original
+artifacts, derivatives, validation, quarantine-oriented outcomes, and non-dispatched requests without
+file-byte processing. M063 models consumer bindings, access-first candidate filtering, reference-only
+citations, and blocked retrieval sessions without index or model execution. No provider, document
+content, OCR, source fetch, retrieval, embedding, external action, or operational capability was activated.

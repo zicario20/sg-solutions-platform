@@ -11,8 +11,9 @@ M060 creates typed review sessions, control assessments, candidate findings, exc
 requests, and human handoffs. It does not own policies, legal conclusions, source authority,
 compliance approval, releases, or external actions.
 
-M076 remains the future canonical compliance-policy and control owner. M064 remains the source
-authority and freshness owner. M047 owns the AI control plane; M074/M075 own approvals and HITL.
+M076 remains the future canonical compliance-policy and control owner. M064 now has a
+provider-disabled source-management foundation and remains the source authority and freshness
+owner. M047 owns the AI control plane; M074/M075 own approvals and HITL.
 
 ## Fail-closed controls
 

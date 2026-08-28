@@ -8,8 +8,9 @@ acceptance and knowledge operations remain pending.
 ## Architecture and boundary
 
 M062 models curated knowledge items, unpublished draft versions, provenance references, scoped
-audience projections, and publication readiness. M063 owns future retrieval, indexing, ranking, and
-context assembly. M064 owns source authority, snapshots, and freshness. Domain modules own facts.
+audience projections, and publication readiness. M063 and M064 now have provider-disabled
+foundations for retrieval and source management; their operational activation remains pending.
+M064 owns source authority, snapshots, and freshness. Domain modules own facts.
 
 ## Fail-closed controls
 

@@ -149,3 +149,11 @@ planning before any flag can be enabled.
 | M060 | Compliance source lookup, policy evaluation, release, and external actions | Disabled | M064 source authority, M076 canonical controls, M074/M075 approvals, immutable audit, security evidence, and Product Owner authorization |
 | M061 | Model invocation, skill execution, tools, jobs, workflows, cache, fallback, and external writes | Disabled | M047 control-plane binding, IAM/resource enforcement, release/audit controls, staging evidence, and Product Owner authorization |
 | M062 | Source ingestion, publication, delivery, retrieval, indexing, AI drafting, and export | Disabled | M063 retrieval, M064 source authority, editorial/domain/compliance approval, projection controls, staging evidence, and Product Owner authorization |
+
+## M063-M065 - Retrieval, Sources, and Document Processing
+
+| Module | Provider or capability | Status | Connection requirement |
+| --- | --- | --- | --- |
+| M063 | Embeddings, vector/lexical retrieval, ranking, context delivery, cache, jobs, and AI | Disabled | M062 projections, M064 freshness, tenant/projection isolation, M072/M068 controls, evaluation, security review, and Product Owner authorization |
+| M064 | Source discovery, fetch, connectors, parsing handoff, snapshot promotion, refresh jobs, and source-direct retrieval | Disabled | Approved source governance, allowlisted connectors, SSRF protections, M065, M072/M068, audit, and Product Owner authorization |
+| M065 | File bytes, parsing, rendering, OCR, conversion, redaction, archive extraction, malware scanning, jobs, and delivery | Disabled | Sandbox, quarantine, M011/M058/M064 boundaries, PII/retention controls, M072/M068, security review, and Product Owner authorization |
