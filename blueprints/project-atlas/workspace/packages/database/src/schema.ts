@@ -1669,3 +1669,6 @@ export * from "./schema/audit.ts";
 export * from "./schema/consent-management.ts";
 export * from "./schema/risk-management.ts";
 export * from "./schema/iam.ts";
+export * from "./schema/authorization.ts";
+export * from "./schema/pii-protection.ts";
+export * from "./schema/secrets-management.ts";

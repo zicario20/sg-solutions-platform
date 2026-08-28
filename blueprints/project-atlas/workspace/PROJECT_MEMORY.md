@@ -1284,3 +1284,9 @@ The Product Owner authorized implementation of Modules 72 through 74. M072 recor
 - Added M079 Risk Management as a governance-only risk boundary. Assessment, scoring, appetite, treatment, risk acceptance, monitoring, and workflow effects are disabled; unknown risk remains unknown.
 - Added M080 IAM as a reference-only identity and authentication boundary. It does not change the existing client login, does not activate accounts, and never stores credentials or issues sessions/tokens.
 - These modules are implementation foundations only; Product Owner acceptance, provider selection, independent security review, and runtime activation remain pending.
+## 2026-08-28 - M081-M083 controlled foundations added
+
+- Added M081 RBAC / Least Privilege as a fail-closed authorization boundary. Draft role/grant/deny structures cannot activate, every runtime evaluation denies, and AI cannot self-elevate.
+- Added M082 PII Protection as a reference-only classification and data-handling boundary. Raw sensitive values are rejected from the registry; field release, exports, sharing, AI inclusion, and technical protection transforms are disabled.
+- Added M083 Secrets Management as a reference-only secret lifecycle boundary. Ordinary application models cannot receive raw secret material, no secret provider is connected, and AI cannot retrieve a raw secret.
+- These modules are implementation foundations only; Product Owner acceptance, provider selection, approved policy, and independent security review remain pending.

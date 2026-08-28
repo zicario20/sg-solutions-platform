@@ -191,3 +191,10 @@ planning before any flag can be enabled.
 | M078 | Consent presentation, grant, withdrawal, data sharing, and pre-action checks | Provider disabled | M080 identity binding, M081 authorization, approved consent copy/versioning, M067 signatures where needed, M068 gates, M075/M076 review, M077 audit, M082/M085 privacy and retention controls. |
 | M079 | Risk assessment, scoring, treatment, acceptance, KRI monitoring, and gates | Provider disabled | Product Owner-approved taxonomy, score/appetite/tolerance policy, M074 approvals, M075 review, M076 compliance, M077 audit, M078 consent, M080/M081 security, M068 workflow and M097 observability. |
 | M080 | Identity, authentication, MFA, sessions, service identities, federation, and delegation | Provider disabled | Product Owner-approved auth provider and lifecycle, M081 least privilege, M077 audit, M079 risk, M082 PII, M083 secrets, M084 integration security, M085 retention, M091 administration, and independent security review. |
+## M081-M083 control foundations
+
+| Module | Capability | Status | Activation requirements |
+| --- | --- | --- | --- |
+| M081 | RBAC, policy evaluation/enforcement, scopes, grants, denies, JIT, delegation, and break-glass | Provider disabled | M080 identity/authentication, Product Owner-approved role/permission catalog and SoD policy, M074-M079 controls, M082-M084 security boundaries, M091 administration, audit, security review, rollback plan. |
+| M082 | PII classification, field protection, filtering, masking, tokenization, redaction, export, sharing, and AI data release | Provider disabled | Product Owner-approved taxonomy/field policies, M078 consent, M080/M081 access controls, M076 compliance, M077 audit, M083/M084 security, M085 retention, M065 technical redaction, M097 observability. |
+| M083 | Vault/provider binding, secret retrieval/injection, leases, dynamic credentials, rotation, revocation, scanning, and cache | Provider disabled | Product Owner-approved vault/KMS, service identities, M081 policy, environment separation, rotation/revocation/incident runbooks, secret scanning, audit, backup/recovery, M080/M082/M084/M085 controls. |

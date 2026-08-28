@@ -440,3 +440,9 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - M079 Risk Management: typed taxonomy, register, item, evidence-reference, assessment, treatment, and acceptance-request contracts are implemented; scoring, appetite, treatment execution, acceptance, monitoring, workflow gates, and events are disabled.
 - M080 IAM: typed principal, identity, account-reference, authenticator-reference, attempt, result, session-candidate, service-identity, and delegation contracts are implemented; account activation, authentication, MFA, sessions, tokens, federation, recovery, and delegation are disabled.
 - Product Owner acceptance and provider/runtime activation remain pending for M078-M080.
+## M081-M083 controlled foundations
+
+- M081 RBAC / Least Privilege: typed subjects, resources, actions, permissions, roles, draft grants/denies, and fail-closed decisions are implemented; no policy, grant, deny, delegation, JIT, break-glass, or enforcement path is active.
+- M082 PII Protection: typed classifications, categories, field-policy references, purposes, access checks, export/sharing requests, and redaction plans are implemented; no filtering, masking, tokenization, redaction, export, sharing, AI release, or retention action is active.
+- M083 Secrets Management: reference-only identities, provider/version references, consumer bindings, and lifecycle request contracts are implemented; no secret value, vault connection, retrieval, injection, lease, rotation, revocation, scanning, or cache is active.
+- Product Owner acceptance and provider/runtime activation remain pending for M081-M083.
