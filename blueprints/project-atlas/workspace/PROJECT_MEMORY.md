@@ -1259,3 +1259,7 @@ artifacts, derivatives, validation, quarantine-oriented outcomes, and non-dispat
 file-byte processing. M063 models consumer bindings, access-first candidate filtering, reference-only
 citations, and blocked retrieval sessions without index or model execution. No provider, document
 content, OCR, source fetch, retrieval, embedding, external action, or operational capability was activated.
+
+## 2026-08-28 - M066-M068 controlled document, signature, and workflow foundations
+
+The Product Owner authorized foundations for M066 Document Generation, M067 Electronic Signature / DocuSeal, and M068 Workflow Engine. The implementation records typed contracts, disabled runtime policies, schemas, regression tests, and module documentation. It does not render documents, activate DocuSeal, send envelopes, expose signing links, receive provider webhooks, start workflow instances, run jobs or n8n, or execute external side effects. All provider and runtime activation remains subject to separate Product Owner authorization and safety evidence.

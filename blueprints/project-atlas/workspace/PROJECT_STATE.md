@@ -408,3 +408,10 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
   malware scan, job dispatch, delivery, or AI runtime is enabled.
 - Operational activation: not implemented. Product Owner acceptance: pending. All source, document,
   retrieval, security, audit, provider, workflow, and rollout dependencies need separate approval.
+
+## M066-M068 - Controlled document and workflow foundations
+
+- M066 Document Generation: provider-disabled template, version, binding, render-request, and artifact-lineage foundation implemented. No renderer, PDF/DOCX conversion, source refresh, AI drafting, delivery, or signature handoff is active.
+- M067 Electronic Signature / DocuSeal: provider-agnostic signature request, envelope, signer, evidence, and frozen-artifact foundation implemented. DocuSeal remains disabled; no credentials, signing URLs, provider calls, webhooks, or signed artifacts are active.
+- M068 Workflow Engine: runtime-disabled workflow definition, version, start request, wait, signal, side-effect, and outbox foundation implemented. No scheduler, n8n, jobs, signals, timers, or side effects are active.
+- Operational activation: not implemented. Product Owner acceptance: pending. Any future activation requires durable migrations, authorization, audit, security review, staging evidence, rollback planning, and separate Product Owner authorization.

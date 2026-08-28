@@ -1653,3 +1653,6 @@ export * from "./schema/skills-system.ts";
 export * from "./schema/source-management.ts";
 export * from "./schema/document-processing.ts";
 export * from "./schema/rag.ts";
+export * from "./schema/document-generation.ts";
+export * from "./schema/electronic-signature.ts";
+export * from "./schema/workflow-engine.ts";
