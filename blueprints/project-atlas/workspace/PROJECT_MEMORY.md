@@ -1290,3 +1290,9 @@ The Product Owner authorized implementation of Modules 72 through 74. M072 recor
 - Added M082 PII Protection as a reference-only classification and data-handling boundary. Raw sensitive values are rejected from the registry; field release, exports, sharing, AI inclusion, and technical protection transforms are disabled.
 - Added M083 Secrets Management as a reference-only secret lifecycle boundary. Ordinary application models cannot receive raw secret material, no secret provider is connected, and AI cannot retrieve a raw secret.
 - These modules are implementation foundations only; Product Owner acceptance, provider selection, approved policy, and independent security review remain pending.
+## 2026-08-28 - M084-M086 controlled foundations added
+
+- Added M084 Integration Security as a reference-only trust boundary. No provider connection or request path is active; outbound calls deny and inbound events reject until approved endpoint, identity, secret, authorization, replay, schema, and reconciliation controls exist.
+- Added M085 Retention / Deletion as a policy/state foundation. It does not archive or delete records; unknown hold, provider, backup, ownership, or eligibility state remains review-required.
+- Added M086 Information Architecture as an inactive route/navigation model. It does not alter existing application routes or menus, and unresolved destinations never redirect or expose navigation.
+- These modules are implementation foundations only; Product Owner acceptance, policy approval, independent security/compliance review, and runtime activation remain pending.

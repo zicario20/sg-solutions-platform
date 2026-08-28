@@ -1672,3 +1672,6 @@ export * from "./schema/iam.ts";
 export * from "./schema/authorization.ts";
 export * from "./schema/pii-protection.ts";
 export * from "./schema/secrets-management.ts";
+export * from "./schema/integration-security.ts";
+export * from "./schema/retention-deletion.ts";
+export * from "./schema/information-architecture.ts";
