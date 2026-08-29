@@ -212,3 +212,10 @@ planning before any flag can be enabled.
 | M087 Design System | Token distribution, themes, component registry, visual testing and telemetry | Disabled | Product Owner-approved versioned release, visual/accessibility evidence and rollback plan |
 | M088 UX Principles | Journey runtime, state rendering, feedback delivery, reviews and telemetry | Disabled | Product Owner-approved journey scope, canonical domain state integration and UX/accessibility evidence |
 | M089 Global Search | Search provider, indexing, lexical/semantic retrieval, autocomplete and telemetry | Disabled | Product Owner-approved corpus/provider, M081/M082/M085 policy validation, indexing/deletion tests and security review |
+## M090-M092 - Provider and runtime activation register
+
+| Module | Capability | Current status | Activation prerequisite |
+| --- | --- | --- | --- |
+| M090 System Configuration | Runtime resolution, feature flags, sourced-fact refresh, validation, activation, rollout and rollback | Disabled | Product Owner-approved lifecycle, M074/M081/M083/M084 integration, validation and rollback evidence |
+| M091 User Administration | Directory, invitations, provisioning, grants, suspension, session revocation, MFA reset and identity-provider actions | Disabled | Product Owner-approved lifecycle, M080/M081 integration, step-up controls, M074 approval policy and M077 audit evidence |
+| M092 Reports and Analytics | Analytical provider, query planning/execution, refresh, materialization, delivery, export and telemetry | Disabled | Product Owner-approved datasets/metrics/providers, M081/M082/M085 policy validation, export controls and audit evidence |

@@ -1299,3 +1299,6 @@ The Product Owner authorized implementation of Modules 72 through 74. M072 recor
 ## 2026-08-29 - M087-M089 controlled foundations
 
 The Product Owner authorized implementation of M087 Design System, M088 UX Principles and M089 Global Search. The repository now contains typed contracts, persistence preparation, documentation and contract tests. All three modules remain provider/runtime disabled: no visual system is applied, no UX behavior is activated and no search corpus/provider/query execution exists. This records implementation preparation only and does not record Product Owner acceptance, production readiness or provider activation.
+## 2026-08-29 - M090-M092 controlled foundations
+
+The Product Owner authorized implementation of M090 System Configuration, M091 User Administration and M092 Reports and Analytics. The repository now contains typed contracts, persistence preparation, documentation and contract tests. M090 has no runtime configuration resolution or activation; M091 has no IAM/RBAC, invitation, provisioning, session or MFA runtime; M092 has no analytical provider, query, reporting, export or telemetry runtime. This records implementation preparation only and does not record Product Owner acceptance, production readiness or provider activation.

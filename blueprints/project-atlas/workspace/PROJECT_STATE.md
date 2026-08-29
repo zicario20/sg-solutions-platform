@@ -458,3 +458,9 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - M088 UX Principles: typed journey, state and interaction safeguards added; no user-journey runtime, feedback delivery, research or telemetry is active.
 - M089 Global Search: safe projection and non-disclosure contracts added; no search provider, index, query execution, autocomplete, semantic retrieval or telemetry is active.
 - Product Owner acceptance, runtime/provider activation and production readiness remain pending.
+## M090-M092 controlled foundations
+
+- M090 System Configuration: definitions, safe value references, change sets, feature flags and sourced-fact metadata added; no configuration resolution, activation, rollout or rollback is active.
+- M091 User Administration: user lifecycle request contracts and non-secret persistence preparation added; no directory query, IAM/RBAC operation, invitation delivery, provisioning, MFA reset, session revocation or impersonation is active.
+- M092 Reports and Analytics: report/dataset/metric metadata and execution/export request contracts added; no provider, query, materialization, delivery, export or telemetry is active.
+- Product Owner acceptance, runtime/provider activation and production readiness remain pending.

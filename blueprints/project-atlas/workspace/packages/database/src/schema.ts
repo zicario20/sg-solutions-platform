@@ -1678,3 +1678,6 @@ export * from "./schema/information-architecture.ts";
 export * from "./schema/design-system.ts";
 export * from "./schema/ux-principles.ts";
 export * from "./schema/global-search.ts";
+export * from "./schema/system-configuration.ts";
+export * from "./schema/user-administration.ts";
+export * from "./schema/reports-analytics.ts";
