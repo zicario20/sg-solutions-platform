@@ -464,3 +464,9 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - M091 User Administration: user lifecycle request contracts and non-secret persistence preparation added; no directory query, IAM/RBAC operation, invitation delivery, provisioning, MFA reset, session revocation or impersonation is active.
 - M092 Reports and Analytics: report/dataset/metric metadata and execution/export request contracts added; no provider, query, materialization, delivery, export or telemetry is active.
 - Product Owner acceptance, runtime/provider activation and production readiness remain pending.
+## M093-M095 controlled foundations
+
+- M093 Homelab: safe topology, site, node, segmentation, remote-access and lifecycle contracts added; no node enrollment, network/storage provisioning, management, container, power, thermal or hardware runtime is active.
+- M094 Lightweight Local AI Node: local node/runtime/model/context/inference/tool/escalation contracts added; no model artifact, local AI endpoint, inference, RAG, tool execution, cloud fallback, memory or telemetry is active.
+- M095 GPU Node: RTX 3090 Ti reference, GPU runtime/model/budget/inference/load contracts added; no NVIDIA driver, CUDA, GPU discovery, model load, GPU scheduler, inference, tool execution or telemetry is active.
+- Product Owner acceptance, runtime/provider activation and production readiness remain pending.

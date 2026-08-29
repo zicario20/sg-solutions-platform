@@ -1681,3 +1681,6 @@ export * from "./schema/global-search.ts";
 export * from "./schema/system-configuration.ts";
 export * from "./schema/user-administration.ts";
 export * from "./schema/reports-analytics.ts";
+export * from "./schema/homelab.ts";
+export * from "./schema/lightweight-local-ai-node.ts";
+export * from "./schema/gpu-node.ts";

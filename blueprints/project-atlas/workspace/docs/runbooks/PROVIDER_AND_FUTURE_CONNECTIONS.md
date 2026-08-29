@@ -219,3 +219,10 @@ planning before any flag can be enabled.
 | M090 System Configuration | Runtime resolution, feature flags, sourced-fact refresh, validation, activation, rollout and rollback | Disabled | Product Owner-approved lifecycle, M074/M081/M083/M084 integration, validation and rollback evidence |
 | M091 User Administration | Directory, invitations, provisioning, grants, suspension, session revocation, MFA reset and identity-provider actions | Disabled | Product Owner-approved lifecycle, M080/M081 integration, step-up controls, M074 approval policy and M077 audit evidence |
 | M092 Reports and Analytics | Analytical provider, query planning/execution, refresh, materialization, delivery, export and telemetry | Disabled | Product Owner-approved datasets/metrics/providers, M081/M082/M085 policy validation, export controls and audit evidence |
+## M093-M095 - Provider and runtime activation register
+
+| Module | Capability | Current status | Activation prerequisite |
+| --- | --- | --- | --- |
+| M093 Homelab | Node enrollment, segmentation, management plane, remote access, storage/container runtime, power/thermal control | Disabled | Product Owner-approved topology/site/network/power plan, hardware validation and M080/M081/M083/M084/M097/M098/M099 evidence |
+| M094 Lightweight Local AI Node | Local runtime/model, inference gateway, RAG-assisted calls, tools, escalation, fallback and telemetry | Disabled | Product Owner-approved model/runtime/task classes, verified artifacts, M093 readiness, security/tool reviews and rollback evidence |
+| M095 GPU Node RTX 3090 Ti | NVIDIA/CUDA/runtime, GPU discovery, model artifacts/load, scheduler, inference, tools and telemetry | Disabled | Product Owner-approved hardware/power/cooling/workload scope, driver/CUDA compatibility, benchmark/certification and rollback evidence |
