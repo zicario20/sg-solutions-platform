@@ -1296,3 +1296,6 @@ The Product Owner authorized implementation of Modules 72 through 74. M072 recor
 - Added M085 Retention / Deletion as a policy/state foundation. It does not archive or delete records; unknown hold, provider, backup, ownership, or eligibility state remains review-required.
 - Added M086 Information Architecture as an inactive route/navigation model. It does not alter existing application routes or menus, and unresolved destinations never redirect or expose navigation.
 - These modules are implementation foundations only; Product Owner acceptance, policy approval, independent security/compliance review, and runtime activation remain pending.
+## 2026-08-29 - M087-M089 controlled foundations
+
+The Product Owner authorized implementation of M087 Design System, M088 UX Principles and M089 Global Search. The repository now contains typed contracts, persistence preparation, documentation and contract tests. All three modules remain provider/runtime disabled: no visual system is applied, no UX behavior is activated and no search corpus/provider/query execution exists. This records implementation preparation only and does not record Product Owner acceptance, production readiness or provider activation.

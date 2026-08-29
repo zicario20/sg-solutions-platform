@@ -452,3 +452,9 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - M085 Retention / Deletion: typed retention class/policy, reference-only record, hold, eligibility, archive, deletion, purge, and provider deletion contracts are implemented; no retention policy activation, archival, deletion, purge, backup reconciliation, or provider deletion is active.
 - M086 Information Architecture: typed surface, namespace, route, navigation, taxonomy, alias, and fail-closed route-resolution contracts are implemented; no route registry, menu composition, redirect, localization resolver, telemetry, or existing-route change is active.
 - Product Owner acceptance and provider/runtime activation remain pending for M084-M086.
+## M087-M089 controlled foundations
+
+- M087 Design System: typed governance, persistence preparation and contract tests added; no token distribution, theme application, component registry or visual runtime is active.
+- M088 UX Principles: typed journey, state and interaction safeguards added; no user-journey runtime, feedback delivery, research or telemetry is active.
+- M089 Global Search: safe projection and non-disclosure contracts added; no search provider, index, query execution, autocomplete, semantic retrieval or telemetry is active.
+- Product Owner acceptance, runtime/provider activation and production readiness remain pending.

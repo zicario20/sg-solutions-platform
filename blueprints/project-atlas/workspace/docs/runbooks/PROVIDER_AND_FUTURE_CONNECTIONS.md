@@ -205,3 +205,10 @@ planning before any flag can be enabled.
 | M084 | Provider/onboarding, allowlists, outbound egress, webhooks, signing, replay, retries, reconciliation, and provider health | Provider disabled | Product Owner-approved provider inventory/endpoints, M080-M083 controls, webhook and egress policy, PII/secret rules, provider capabilities, M068/M069/M070/M072 runtimes, audit/risk/compliance review, incident runbooks. |
 | M085 | Retention classes/policies, holds, archival, deletion, purge, provider deletion, tombstones, and backup reconciliation | Provider disabled | Approved legal/compliance retention policy and sources, hold/subject-request process, M064/M071/M076, M068 workflows, M077 audit, M082-M084 controls, backup lifecycle, provider deletion/recovery verification. |
 | M086 | Route registry, navigation composition, locale labels, aliases/redirects, permission-aware resolution, and IA telemetry | Provider disabled | Product Owner-approved surface/route/navigation map, M081 authorization mapping, M087/M088 UX/design review, M089/M090 integration, existing-route compatibility, redirect and telemetry privacy policy. |
+## M087-M089 - Provider and runtime activation register
+
+| Module | Capability | Current status | Activation prerequisite |
+| --- | --- | --- | --- |
+| M087 Design System | Token distribution, themes, component registry, visual testing and telemetry | Disabled | Product Owner-approved versioned release, visual/accessibility evidence and rollback plan |
+| M088 UX Principles | Journey runtime, state rendering, feedback delivery, reviews and telemetry | Disabled | Product Owner-approved journey scope, canonical domain state integration and UX/accessibility evidence |
+| M089 Global Search | Search provider, indexing, lexical/semantic retrieval, autocomplete and telemetry | Disabled | Product Owner-approved corpus/provider, M081/M082/M085 policy validation, indexing/deletion tests and security review |

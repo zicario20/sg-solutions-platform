@@ -1675,3 +1675,6 @@ export * from "./schema/secrets-management.ts";
 export * from "./schema/integration-security.ts";
 export * from "./schema/retention-deletion.ts";
 export * from "./schema/information-architecture.ts";
+export * from "./schema/design-system.ts";
+export * from "./schema/ux-principles.ts";
+export * from "./schema/global-search.ts";
