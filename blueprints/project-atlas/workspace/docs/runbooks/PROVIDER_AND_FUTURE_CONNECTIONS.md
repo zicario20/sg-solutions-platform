@@ -226,3 +226,10 @@ planning before any flag can be enabled.
 | M093 Homelab | Node enrollment, segmentation, management plane, remote access, storage/container runtime, power/thermal control | Disabled | Product Owner-approved topology/site/network/power plan, hardware validation and M080/M081/M083/M084/M097/M098/M099 evidence |
 | M094 Lightweight Local AI Node | Local runtime/model, inference gateway, RAG-assisted calls, tools, escalation, fallback and telemetry | Disabled | Product Owner-approved model/runtime/task classes, verified artifacts, M093 readiness, security/tool reviews and rollback evidence |
 | M095 GPU Node RTX 3090 Ti | NVIDIA/CUDA/runtime, GPU discovery, model artifacts/load, scheduler, inference, tools and telemetry | Disabled | Product Owner-approved hardware/power/cooling/workload scope, driver/CUDA compatibility, benchmark/certification and rollback evidence |
+## M096-M098 - Provider and runtime activation register
+
+| Module | Capability | Current status | Activation prerequisite |
+| --- | --- | --- | --- |
+| M096 Voice Gateway | Voice providers, numbers, signaling, media, STT/TTS, recording, transcription, transfers and failover | Disabled | Product Owner approval, M078 consent policy, M081/M082 authorization and data review, M083 secret references, M084 provider verification, M093 network evidence, M097 telemetry, sandbox test and rollback evidence |
+| M097 Observability | Collector/gateway, ingest, stores, exporters, queries, alerts, dashboards and synthetic probes | Disabled | Product Owner approval, trusted source identity, M081/M082 query access, M083 provider references, redaction/cardinality validation, M085 retention mapping, M098 recovery coverage and alert runbooks |
+| M098 Backup / Recovery | Schedules, source adapters, repositories, encryption, backup writes, replication, verification, restore, PITR and promotion | Disabled | Product Owner approval, M081/M082 restore controls, M083 key references, M085 retention rules, M093 repository/failure-domain evidence, M097 monitoring, M099 coordination, isolated restore tests and rollback evidence |

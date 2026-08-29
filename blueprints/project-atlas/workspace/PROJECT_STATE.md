@@ -470,3 +470,9 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - M094 Lightweight Local AI Node: local node/runtime/model/context/inference/tool/escalation contracts added; no model artifact, local AI endpoint, inference, RAG, tool execution, cloud fallback, memory or telemetry is active.
 - M095 GPU Node: RTX 3090 Ti reference, GPU runtime/model/budget/inference/load contracts added; no NVIDIA driver, CUDA, GPU discovery, model load, GPU scheduler, inference, tool execution or telemetry is active.
 - Product Owner acceptance, runtime/provider activation and production readiness remain pending.
+## M096-M098 controlled foundations
+
+- M096 Voice Gateway: provider-neutral gateway, call, capture, workload and transfer contracts added; no telephone number, PSTN/SIP/WebRTC, media, STT/TTS, recording, transcription, transfer or provider runtime is active.
+- M097 Observability: canonical technical telemetry contracts added to the existing observability package; no ingest, storage, exporter, alert evaluation, query, dashboard, synthetic probe or provider runtime is active.
+- M098 Backup / Recovery: policy, repository, recovery-point, backup-request, restore-request and recovery-group contracts added; no backup, repository, encryption, replication, integrity scan, restore, PITR or promotion runtime is active.
+- Product Owner acceptance, provider/runtime activation, security review, restore evidence and production readiness remain pending.

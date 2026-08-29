@@ -1684,3 +1684,6 @@ export * from "./schema/reports-analytics.ts";
 export * from "./schema/homelab.ts";
 export * from "./schema/lightweight-local-ai-node.ts";
 export * from "./schema/gpu-node.ts";
+export * from "./schema/voice-gateway.ts";
+export * from "./schema/observability.ts";
+export * from "./schema/backup-recovery.ts";
