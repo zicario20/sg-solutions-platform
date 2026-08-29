@@ -1308,3 +1308,11 @@ The Product Owner authorized implementation of M093 Homelab, M094 Lightweight Lo
 ## 2026-08-29 - M096-M098 controlled foundations
 
 The Product Owner authorized implementation of M096 Voice Gateway, M097 Observability and M098 Backup / Recovery. The repository now contains typed contracts, Drizzle schema preparation, module documentation and contract tests. No telephone, SIP, WebRTC, media, STT/TTS, recording, telemetry ingest/export, alerting, backup, repository, restore, PITR, encryption operation, provider connection or hardware/runtime activation has been performed. This records implementation preparation only and does not record Product Owner acceptance, production readiness, provider activation, recovery evidence or deployment.
+## 2026-08-29 - M099-M101 controlled planning and deployment foundations
+
+The Product Owner authorized implementation of M099 Deployments, M100 Technical Roadmap and M101
+Business Roadmap. The repository now contains typed domain contracts and database schemas for
+release/deployment planning, technical roadmap governance and business roadmap governance. All
+runtime integrations remain disabled: no artifact registry, build, deployment target, traffic,
+migration, rollback, telemetry query, market research, CRM, campaign, price, partner or payment
+action was activated. Product Owner acceptance and production activation remain pending.

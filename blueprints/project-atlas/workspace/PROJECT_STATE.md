@@ -476,3 +476,24 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - M097 Observability: canonical technical telemetry contracts added to the existing observability package; no ingest, storage, exporter, alert evaluation, query, dashboard, synthetic probe or provider runtime is active.
 - M098 Backup / Recovery: policy, repository, recovery-point, backup-request, restore-request and recovery-group contracts added; no backup, repository, encryption, replication, integrity scan, restore, PITR or promotion runtime is active.
 - Product Owner acceptance, provider/runtime activation, security review, restore evidence and production readiness remain pending.
+## M099 - Deployments
+
+- Status: controlled technical foundation implemented; Product Owner acceptance pending.
+- Artifact registry/build integration, deployment targets, rollout, traffic shifting, migration
+  execution, health evaluation, rollback and provider connections remain disabled.
+- No Dokploy, Cloudflare, Docker, registry, DNS, CI/CD, release promotion or production deployment
+  is configured or active.
+
+## M100 - Technical Roadmap
+
+- Status: controlled technical foundation implemented; Product Owner acceptance pending.
+- Roadmap aggregation, automatic prioritization, work creation, provider activation, deployment
+  orchestration, telemetry queries and change execution remain disabled.
+- Roadmap records cannot claim technical completion or authorize work.
+
+## M101 - Business Roadmap
+
+- Status: controlled technical foundation implemented; Product Owner acceptance pending.
+- Market research, KPI aggregation, CRM access, campaign activation, offer/price changes, partner
+  activation, payment actions and automatic commercial execution remain disabled.
+- Business waves/readiness records cannot claim outcomes, enable sales or bypass owner modules.

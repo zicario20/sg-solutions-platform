@@ -1687,3 +1687,7 @@ export * from "./schema/gpu-node.ts";
 export * from "./schema/voice-gateway.ts";
 export * from "./schema/observability.ts";
 export * from "./schema/backup-recovery.ts";
+
+export * from './schema/deployments';
+export * from './schema/technical-roadmap';
+export * from './schema/business-roadmap';
