@@ -1691,3 +1691,6 @@ export * from "./schema/backup-recovery.ts";
 export * from './schema/deployments';
 export * from './schema/technical-roadmap';
 export * from './schema/business-roadmap';
+
+export * from './schema/ideas.ts';
+export * from './schema/parking-lot.ts';

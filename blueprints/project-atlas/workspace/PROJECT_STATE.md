@@ -497,3 +497,18 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
 - Market research, KPI aggregation, CRM access, campaign activation, offer/price changes, partner
   activation, payment actions and automatic commercial execution remain disabled.
 - Business waves/readiness records cannot claim outcomes, enable sales or bypass owner modules.
+## M102 - Ideas
+
+- Status: controlled technical foundation implemented; Product Owner acceptance pending.
+- Intake, attachment/link access, semantic dedupe, search, ranking, jobs, notifications,
+  analytics, parking/promotional writes and provider connections remain disabled.
+- M102 records candidates and review-required requests only; it cannot create roadmap work,
+  experiments, services, commercial actions or destination writes.
+
+## M103 - Parking Lot
+
+- Status: controlled technical foundation implemented; Product Owner acceptance pending.
+- Source transfers, scheduling, trigger evaluation, context refresh, search, notifications,
+  destination writes, jobs, analytics, provider connections and automation remain disabled.
+- M103 preserves deferred context and reviewed reactivation requests only; it cannot reactivate,
+  promote, change roadmap status or create work.

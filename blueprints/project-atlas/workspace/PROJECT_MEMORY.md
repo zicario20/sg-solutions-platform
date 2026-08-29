@@ -1316,3 +1316,12 @@ release/deployment planning, technical roadmap governance and business roadmap g
 runtime integrations remain disabled: no artifact registry, build, deployment target, traffic,
 migration, rollback, telemetry query, market research, CRM, campaign, price, partner or payment
 action was activated. Product Owner acceptance and production activation remain pending.
+## 2026-08-29 - M102-M103 ideas and parking-lot controlled foundations
+
+The Product Owner authorized implementation of M102 Ideas and M103 Parking Lot. The repository now
+contains typed domain contracts and database schemas for governed idea capture, assumptions,
+evidence, scorecards, triage, packs, parking/promotion requests, deferred-context snapshots,
+revisit policies and reactivation/disposition requests. All runtime integrations remain disabled:
+no intake connection, attachment/link fetch, semantic dedupe, search, ranking, scheduler, trigger,
+context refresh, notification, analytics, source transfer or destination write was activated.
+Product Owner acceptance and operational activation remain pending.
