@@ -1694,3 +1694,12 @@ export * from './schema/business-roadmap';
 
 export * from './schema/ideas.ts';
 export * from './schema/parking-lot.ts';
+
+export * from "./schema/future-modules.ts";
+export * from "./schema/decisions-log.ts";
+export * from "./schema/research.ts";
+export * from "./schema/experiments.ts";
+export * from "./schema/lessons-learned.ts";
+export * from "./schema/changelog.ts";
+export * from "./schema/codex-developer-guide.ts";
+

@@ -246,3 +246,16 @@ planning before any flag can be enabled.
 | --- | --- | --- | --- |
 | M102 Ideas | Intake channels, attachments/links, semantic dedupe, search/ranking, workflow/jobs, notifications, destination adapters and analytics | Disabled | Product Owner governance, M081 authorization, M077 audit, M082/M085 privacy/retention, M063/M064 evidence/search controls, M072/M068 orchestration, M074/M075 review, M097 observability and bounded rollout. |
 | M103 Parking Lot | Source transfer, revisit scheduling/triggers, context refresh, search, notifications, reactivation/promotion adapters, jobs and analytics | Disabled | Product Owner governance, M102 source coordination, M074/M075 review, M077 audit, M081 authorization, M082/M085 privacy/retention, M064 freshness, M072/M068 scheduler/workflow evidence, M097 observability, M098 recovery and reconciliation tests. |
+
+## M104-M110 - Governance and knowledge-loop activation register
+
+| Module | Capability | Current status | Activation prerequisite |
+| --- | --- | --- | --- |
+| M104 | Future-module registry, evidence/dependency review, handoffs, readiness, and catalog maintenance | Disabled | Product Owner portfolio governance, M074/M075 review, M077 audit, M081/M082/M085 controls, source freshness, M068/M072, migration and rollback evidence. |
+| M105 | Decision lifecycle, authority resolution, canonical-document synchronization, and implementation handoffs | Disabled | Product Owner authority model, M074/M075 review, M077 audit, M081 access, durable history/reconciliation, and independent governance/security review. |
+| M106 | Source discovery/fetch, evidence verification, indexing, and synthesis publication | Disabled | Approved source policy, M064/M076 ownership, M081/M082/M085 controls, isolated ingestion, freshness/review controls, audit, rollback, and Product Owner authorization. |
+| M107 | Cohorts, variants, metrics, traffic/feature flags, execution, outcomes, and analytics | Disabled | Experiment policy, M090/M092 binding, M074/M075/M077 controls, privacy/security review, stop/rollback rules, staging evidence, and Product Owner authorization. |
+| M108 | Evidence ingest, review, practice/documentation changes, tasking, and learning analytics | Disabled | Learning governance, M074/M075 review, M077/M081/M082/M085 controls, evidence quality policy, controlled change process, and Product Owner authorization. |
+| M109 | Verification, canonical changelog writes, publication, distribution, correction, and retraction | Disabled | Communications policy, verified release evidence, M074/M075/M077/M081/M082/M085 controls, localization/accessibility, rollback plan, and Product Owner authorization. |
+| M110 | Policy enforcement, repository tooling, CI integration, command execution, secrets, and deployment controls | Disabled | Developer governance, authority hierarchy, M077/M081/M082/M083/M085 controls, independent security review, rollback evidence, and explicit release authorization. |
+

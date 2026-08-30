@@ -512,3 +512,11 @@ issue a refund, apply a migration, process a live webhook or activate Stripe.
   destination writes, jobs, analytics, provider connections and automation remain disabled.
 - M103 preserves deferred context and reviewed reactivation requests only; it cannot reactivate,
   promote, change roadmap status or create work.
+
+## M104-M110 governance, evidence, and developer-guide foundations
+
+- Status: implementation foundations complete; all runtime capabilities remain disabled.
+- Scope: M104 Future Modules, M105 Decisions Log, M106 Research, M107 Experiments, M108 Lessons Learned, M109 Changelog, and M110 Codex Developer Guide now have typed contracts, schema definitions, contract tests, and module documentation.
+- Constraints: no canonical document was replaced, no database migration was applied, no provider was connected, and no research, experiment, decision, publication, notification, deployment, or automation was executed.
+- Acceptance: Product Owner acceptance and any later operational activation remain pending.
+
